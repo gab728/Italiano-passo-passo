@@ -318,6 +318,26 @@ const MOCKS = `
   ok((await b.evaluate(async () => { try { await WEBAUTH.admin("health"); return "ok"; } catch (e) { return e.code; } })) === "forbidden", "vérification réservée au propriétaire");
   ok((await a.$$eval(".voices .switch-row", (r) => r.length)) === 3 && await a.isVisible(".voice-test button:has-text('Nonna Rosa')"), "réglages des voix dans le compte");
 
+  console.log("15. Toucher un mot dans une conversation");
+  await a.evaluate(() => { stopSpeech(); openPersona("marco"); });
+  await a.waitForSelector(".bub.it .tw");
+  await a.click(".bub.it .tw:text-is('prendi')");
+  await a.waitForFunction(() => /tu prends/.test((document.querySelector(".ws-fr") || {}).textContent || ""), null, { timeout: 8000 });
+  ok(/prendere/.test(await a.textContent(".ws-lem")) && /2e personne/.test(await a.textContent(".ws-note")), "traduction, forme du carnet et note de grammaire");
+  await a.click(".ws-acts button:has-text('Ajouter au carnet')");
+  ok(await a.evaluate(() => { const w = words().find((o) => o.it === "prendere"); return !!w && inNb(w.key) && !!w.fr; }), "mot ajouté au carnet avec sa traduction");
+  await a.click(".ws-x"); await a.waitForTimeout(250);
+  await a.click(".bub.it .tw:text-is('prendi')");
+  await a.waitForFunction(() => /Déjà dans ton carnet/.test((document.querySelector(".ws-acts .blue") || {}).textContent || ""), null, { timeout: 8000 });
+  ok(true, "un mot déjà au carnet est signalé");
+  await a.click(".ws-x"); await a.waitForTimeout(250);
+  await a.evaluate(() => { const b = document.querySelector(".bub.it"), ws = b.querySelectorAll(".tw"), r = document.createRange(); r.setStartBefore(ws[2]); r.setEndAfter(ws[3]); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  await a.waitForSelector(".sel-pill", { timeout: 3000 });
+  ok(/cosa prendi/.test(await a.textContent(".sel-pill")), "sélection de plusieurs mots : bouton Traduire");
+  await a.click(".sel-pill"); await a.waitForFunction(() => /cosa prendi/.test((document.querySelector(".ws-fr") || {}).textContent || ""), null, { timeout: 8000 });
+  ok(true, "expression traduite");
+  await a.evaluate(() => { document.querySelector(".ws-x").click(); dmLeave(); });
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

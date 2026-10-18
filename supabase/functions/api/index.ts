@@ -12,7 +12,7 @@
 //   MODEL_QUICK (claude-haiku-5-5), MODEL_DEFAULT (claude-sonnet-5-5)
 //   DAILY_CALLS (150) et OWNER_DAILY_CALLS (1000) : nombre d'appels à Claude par personne et par jour
 //   DAILY_OUTPUT_TOKENS (400000) : plafond de texte produit par personne et par jour
-//   STT_API_KEY, STT_URL (https://api.openai.com/v1/audio/transcriptions), STT_MODEL (gpt-4o-mini-transcribe), STT_DAILY_SECONDS (3600)
+//   STT_API_KEY, STT_URL (https://api.openai.com/v1/audio/transcriptions), STT_MODEL (gpt-4o-transcribe), STT_DAILY_SECONDS (3600)
 //   OPEN_SIGNUP (true) : toute personne qui crée un compte peut utiliser l'app ; false pour n'accepter que les invités
 //   GLOBAL_DAILY_CALLS (2000) : plafond d'appels à Claude par jour pour l'ensemble des membres (le propriétaire n'est pas bloqué)
 //   OPENAI_API_KEY : une clé OpenAI, utilisée pour le micro (à défaut de STT_API_KEY) et pour les voix (à défaut de TTS_API_KEY)
@@ -50,7 +50,7 @@ function cors(req: Request): Record<string, string> {
   const allow = !allowed.length ? "*" : allowed.includes(origin) ? origin : allowed[0];
   return {
     "access-control-allow-origin": allow,
-    "access-control-allow-headers": "authorization, apikey, content-type, x-client-info, x-duration",
+    "access-control-allow-headers": "authorization, apikey, content-type, x-client-info, x-duration, x-context",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -367,8 +367,19 @@ async function stt(req: Request, u: User): Promise<Response> {
   const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
   const form = new FormData();
   form.append("file", new Blob([buf], { type }), "audio." + ext);
-  form.append("model", env("STT_MODEL", "gpt-4o-mini-transcribe"));
+  const model = env("STT_MODEL", "gpt-4o-transcribe");
+  form.append("model", model);
   if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
+  // Contexte donné au modèle : un élève francophone qui parle italien, et la dernière réplique entendue.
+  // Il écrit l'italien avec la bonne orthographe et les accents, sans corriger les fautes de grammaire (elles servent aux corrections).
+  if (/gpt-4o|whisper/.test(model)) {
+    let ctx = ""; try { ctx = decodeURIComponent(req.headers.get("x-context") || "").replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 300); } catch { ctx = ""; }
+    const base = lang === "it"
+      ? "Uno studente francese parla italiano. Trascrivi esattamente le sue parole in italiano, con ortografia e accenti corretti (è, perché, città, più, già), apostrofi (l'amico, c'è) e punteggiatura. Non correggere la grammatica e non tradurre; se dice una parola francese, scrivila così."
+      : "";
+    const prompt = (base + (ctx ? " Ha appena sentito: «" + ctx + "»" : "")).trim();
+    if (prompt) form.append("prompt", prompt);
+  }
   form.append("response_format", "json");
   const r = await fetch(env("STT_URL", "https://api.openai.com/v1/audio/transcriptions"), { method: "POST", headers: { authorization: "Bearer " + key }, body: form });
   if (!r.ok) { console.error("stt", r.status, (await r.text()).slice(0, 300)); return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie."); }

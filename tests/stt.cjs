@@ -18,6 +18,8 @@ const O = "http://127.0.0.1:8787";
   const heard = await p.textContent(".car-heard");
   const after = (await (await fetch(O + "/__state")).json()).stt;
   console.log(/transcription par le serveur/.test(mode) ? "ok  mode serveur annoncé" : "FAIL mode: " + mode);
+  const last = (await (await fetch(O + "/__state")).json()).sttLast || {};
+  console.log(last.model === "gpt-4o-transcribe" && last.language === "it" && /studente francese/.test(last.prompt) ? "ok  transcription en italien, avec consignes d'orthographe" : "FAIL consignes de transcription : " + JSON.stringify(last));
   console.log(/Ciao, come stai/.test(heard) && after > before ? "ok  enregistrement transcrit par le serveur : " + heard : "FAIL " + heard);
   // Couper la parole : le faux micro de Chromium émet un bip régulier, pris pour une voix pendant que le personnage parle.
   const br2 = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--use-file-for-fake-audio-capture=" + require("path").join(__dirname, "fixtures/speech-like.wav")] });

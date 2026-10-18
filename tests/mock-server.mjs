@@ -28,14 +28,15 @@ globalThis.fetch = async (url, init) => {
     if (process.env.TTS_FAIL) return new Response("{}", { status: 500 });
     return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }
-  if (u.startsWith("https://api.openai.com/")) { state.stt++; return new Response(JSON.stringify({ text: "Ciao, come stai?" }), { headers: { "content-type": "application/json" } }); }
+  if (u.startsWith("https://api.openai.com/")) { state.stt++; try { state.sttLast = { model: init.body.get("model"), language: init.body.get("language"), prompt: init.body.get("prompt") || "" }; } catch (e) { /* rien */ } return new Response(JSON.stringify({ text: "Ciao, come stai?" }), { headers: { "content-type": "application/json" } }); }
   return realFetch(url, init);
 };
 function fakeClaude(b) {
   state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens });
   const last = b.messages[b.messages.length - 1].content, sys = b.system || "";
   let text;
-  if (/objet JSON/.test(last) && /resume/.test(last)) text = '{"resume":"Bonne conversation. Attention aux auxiliaires.","erreurs":[{"type":"grammaire","dit":"ho andato","mieux":"sono andato","regle":"andare se conjugue avec essere."}],"mots":[{"it":"il lavoro","fr":"le travail"}]}';
+  if (/^Mot ou expression/.test(last)) { const w = (last.match(/« ([^»]+) »/) || [])[1] || ""; text = w === "prendi" ? '{"it":"prendere","fr":"tu prends","note":"prendere, 2e personne du singulier au présent"}' : '{"it":"' + w + '","fr":"(' + w + ')","note":""}'; }
+  else if (/objet JSON/.test(last) && /resume/.test(last)) text = '{"resume":"Bonne conversation. Attention aux auxiliaires.","erreurs":[{"type":"grammaire","dit":"ho andato","mieux":"sono andato","regle":"andare se conjugue avec essere."}],"mots":[{"it":"il lavoro","fr":"le travail"}]}';
   else if (/Giulia/.test(sys)) text = "FR: On dit : sono andato.\nIT: Ah, interessante! E dopo il lavoro, che cosa fai?";
   else if (/^Jeu de rôle/.test(sys)) text = "FR: Plus naturel : vorrei un caffè.\nIT: Va bene! E poi che cosa prendi?";
   else if (/^Tu joues/.test(sys)) text = "IT: Certo! Il cornetto alla crema o vuoto?";
@@ -103,7 +104,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
     // Fonctions

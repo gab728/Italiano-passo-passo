@@ -141,7 +141,7 @@ const VO = (() => {
         const secs = Math.ceil((performance.now() - (began || t0)) / 1000);
         if (o.onPartial) o.onPartial("Transcription…");
         try {
-          const r = await WEBAUTH.call("stt?lang=" + (o.lang || IT()).slice(0, 2), blob, { raw: true, headers: { "content-type": blob.type.split(";")[0], "x-duration": String(secs) } });
+          const r = await WEBAUTH.call("stt?lang=" + (o.lang || IT()).slice(0, 2), blob, { raw: true, headers: Object.assign({ "content-type": blob.type.split(";")[0], "x-duration": String(secs) }, o.context ? { "x-context": encodeURIComponent(String(o.context).slice(0, 300)) } : {}) });
           const j = await r.json(); res({ text: String(j.text || ""), alts: [String(j.text || "")] });
         } catch (e) { rej({ code: (e && e.code) || "network" }); }
       };

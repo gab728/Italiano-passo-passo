@@ -421,3 +421,24 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .health-list li.ok b { color: var(--ok); font-weight: 600; }
 .health-list li.ko b { color: var(--ko); font-weight: 600; }
 .health-list li span { color: var(--muted); }
+
+/* Mots touchables et fiche de traduction */
+.msg.ai .bub.it { display: block !important; }
+.bub.it .tw { display: inline; cursor: pointer; border-radius: 4px; -webkit-tap-highlight-color: transparent; }
+.bub.it .tw:hover, .bub.it .tw:focus-visible { background: var(--azzurro-soft); outline: none; }
+.wsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; max-width: 520px; margin: 0 auto; background: var(--surface); border-radius: 24px 24px 0 0; padding: 18px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -12px 40px -12px rgba(18, 18, 24, .35); transform: translateY(105%); transition: transform .18s ease-out; display: flex; flex-direction: column; gap: 8px; }
+.wsheet.in { transform: none; }
+.ws-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ws-word { font: italic 400 32px/1.1 var(--it); color: var(--ink); }
+.ws-x { width: 36px; height: 36px; min-height: 36px; border-radius: 50%; background: var(--chip); color: var(--ink); border: 0; display: grid; place-items: center; }
+.ws-x svg { width: 18px; height: 18px; }
+.ws-fr { margin: 0; font-size: 18px; font-weight: 500; color: var(--ink); }
+.ws-lem { margin: 0; font-size: 14.5px; color: var(--azzurro-text); }
+.ws-note { margin: 0; font-size: 14px; color: var(--muted); }
+.ws-acts { display: flex; gap: 10px; margin-top: 8px; }
+.ws-acts .pill-btn { flex: 1; height: 46px; font-size: 15px; }
+.ws-acts .pill-btn:disabled { opacity: .55; }
+.ws-own { display: flex; gap: 8px; }
+.ws-own input { flex: 1; font: inherit; font-size: 16px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.sel-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 55; border: 0; border-radius: 999px; background: var(--ink); color: var(--bg); font: 500 14.5px/1 var(--body); padding: 12px 18px; box-shadow: 0 8px 24px -8px rgba(0,0,0,.4); max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: reduce) { .wsheet { transition: none; } }

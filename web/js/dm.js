@@ -105,6 +105,7 @@ function dmOpen(cfg) {
   if (DM.open) { DM.turns.push({ role: "user", content: "(Début de la conversation.)" }, { role: "assistant", content: "IT: " + DM.open }); dmBubble([{ lang: VO.IT(), t: DM.open }]); if (DM.autoHands) dmHands(true); }
   else dmAsk(true).then(() => { if (DM && DM.autoHands) dmHands(true); });
   vWake(true);
+  try { if (!localStorage.getItem("ipp-hint-words")) { localStorage.setItem("ipp-hint-words", "1"); setTimeout(() => speakNote("Astuce : touche un mot pour voir sa traduction et l'ajouter au carnet."), 1200); } } catch (e) { /* rien */ }
 }
 
 function dmScroll() { const l = DM && DM.ui.log; if (l) requestAnimationFrame(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }); }
@@ -113,7 +114,7 @@ function dmBubble(lines, opts) {
   const fr = lines.filter((l) => l.lang.startsWith("fr")), it = lines.filter((l) => !l.lang.startsWith("fr"));
   fr.forEach((l) => { const n = el("div", "note"); n.append(personaAvatar(PERSONAS.giulia, 22)); const s = el("span"); s.textContent = l.t; n.append(s); log.append(n); });
   if (it.length) {
-    const b = el("div", "bub it"); b.textContent = it.map((l) => l.t).join(" "); out.append(b);
+    const b = el("div", "bub it"); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
     const acts = el("div", "msg-acts"), tr = el("button", null, "Traduire"), re = el("button", null, "Réécouter"); tr.type = re.type = "button";
     re.onclick = () => dmSpeak(it);
     tr.onclick = async () => {
@@ -226,7 +227,9 @@ async function dmListenOnce(auto) {
   A.listening = true; A.ui.setAct(); A.ui.inp.placeholder = "J'écoute…";
   if (auto && hot == null) await VO.tick();
   let r = null;
-  try { r = await VO.listen({ lang: VO.IT(), hot, startMs: auto ? 9000 : 7000, maxMs: 30000, endMs: 1200, onPartial: (t) => { if (DM === A && t !== "…") A.ui.inp.value = t; } }); }
+  const lastAi = [...A.log].reverse().find((x) => x.who === "ai");
+  const context = lastAi ? lastAi.lines.filter((l) => !l.lang.startsWith("fr")).map((l) => l.t).join(" ") : "";
+  try { r = await VO.listen({ lang: VO.IT(), hot, context, startMs: auto ? 9000 : 7000, maxMs: 30000, endMs: 1200, onPartial: (t) => { if (DM === A && t !== "…") A.ui.inp.value = t; } }); }
   catch (e) { if (DM === A) { speakNote(VO.failText(e)); if (A.hands) dmHands(false); } }
   if (DM !== A) return;
   A.listening = false; A.ui.inp.placeholder = "Écris en " + LN() + "…";
@@ -268,3 +271,92 @@ function dmEnd() {
 conv = function (k) { openRole(k); };
 vchatScenario = function (k, car) { openRole(k, { autoHands: !!car }); };
 vchatTopics = function (car) { if (car) return openPersona("giulia", { autoHands: true }); if (window.UI) UI.go("talk"); };
+
+/* ---------- Toucher un mot : traduction et carnet ----------
+   Chaque mot des répliques se touche : sa traduction dans le contexte de la phrase, sa forme de dictionnaire,
+   une note de grammaire, l'écoute, et l'ajout au carnet. Une sélection de plusieurs mots (appui long) se traduit aussi. */
+function dmWords(host, text) {
+  host.textContent = "";
+  String(text).split(/(\s+)/).forEach((part) => {
+    if (!part) return;
+    if (/^\s+$/.test(part)) { host.append(document.createTextNode(part)); return; }
+    const m = part.match(/^([«"“(]*)(.*?)([.,;:!?…»"”)]*)$/);
+    const core = m ? m[2] : part;
+    if (m && m[1]) host.append(document.createTextNode(m[1]));
+    if (core) { const w = el("span", "tw"); w.textContent = core; w.setAttribute("role", "button"); w.tabIndex = 0; w.setAttribute("aria-label", "Traduire « " + core + " »"); host.append(w); }
+    if (m && m[3]) host.append(document.createTextNode(m[3]));
+  });
+}
+const WCACHE = new Map();
+async function wordInfo(word, sentence) {
+  const k = bare(word) + "|" + bare(sentence);
+  if (WCACHE.has(k)) return WCACHE.get(k);
+  const pr = (async () => {
+    const r = await AI("Mot ou expression en " + LN() + " : « " + word + " »\nPhrase : « " + sentence + " »\n\nRéponds uniquement par un objet JSON, sans texte autour : {\"it\": forme à mettre dans un carnet de vocabulaire (infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle), \"fr\": traduction française courte et naturelle, adaptée à cette phrase, \"note\": une précision utile en français, 12 mots maximum (par exemple « prendere, 2e personne du singulier au présent »), ou une chaîne vide}", { modelTier: "quick", cache: true, maxTokens: 200 });
+    const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
+    return { it: String(j.it || word).trim().slice(0, 80), fr: String(j.fr || "").trim().slice(0, 80), note: String(j.note || "").trim().slice(0, 140) };
+  })();
+  WCACHE.set(k, pr); pr.catch(() => WCACHE.delete(k));
+  return pr;
+}
+function wordSheet(word, sentence) {
+  word = String(word || "").replace(/^[^\p{L}']+|[^\p{L}']+$/gu, "").trim(); if (!word) return;
+  const old = document.querySelector(".wsheet"); if (old) old.remove();
+  const sh = el("div", "wsheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Traduction de " + word);
+  const close = () => { sh.classList.remove("in"); setTimeout(() => sh.remove(), 180); document.removeEventListener("pointerdown", outside, true); };
+  const outside = (e) => { if (!sh.contains(e.target) && !(e.target.closest && e.target.closest(".bub .tw"))) close(); };
+  const top = el("div", "ws-top"), w = el("b", "ws-word"); w.textContent = word;
+  const x = el("button", "icon-btn ws-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; x.onclick = close;
+  top.append(w, x);
+  const fr = el("p", "ws-fr", "…"), lem = el("p", "ws-lem"), note = el("p", "ws-note"); lem.hidden = note.hidden = true;
+  const acts = el("div", "ws-acts");
+  const listen = el("button", "pill-btn", "Écouter"); listen.type = "button"; listen.onclick = () => { stopSpeech(); VO.say(word, VO.IT(), 0.85); };
+  const add = el("button", "pill-btn blue", "Ajouter au carnet"); add.type = "button"; add.disabled = true;
+  acts.append(listen, add);
+  sh.append(top, fr, lem, note, acts); document.body.append(sh);
+  requestAnimationFrame(() => sh.classList.add("in"));
+  setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+  let info = null;
+  const known = (it) => { const hit = words().find((o) => bare(o.it) === bare(it)); return hit && inNb(hit.key); };
+  const ready = () => {
+    if (known(info.it)) { add.textContent = "Déjà dans ton carnet"; add.disabled = true; return; }
+    add.disabled = !info.fr;
+    add.onclick = () => { addCustom(info.it, info.fr); save(); add.textContent = "Ajouté au carnet"; add.disabled = true; try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) { /* rien */ } };
+  };
+  if (!AI) { fr.textContent = "Traduction indisponible sans l'assistant."; return; }
+  wordInfo(word, sentence).then((r) => {
+    if (!sh.isConnected) return; info = r;
+    fr.textContent = r.fr || "Pas de traduction trouvée.";
+    if (r.it && bare(r.it) !== bare(word)) { lem.hidden = false; lem.textContent = "Au carnet : " + r.it; }
+    if (r.note) { note.hidden = false; note.textContent = r.note; }
+    ready();
+  }).catch((e) => {
+    if (!sh.isConnected) return;
+    // Sans traduction automatique, on peut l'écrire soi-même.
+    fr.textContent = aiFail(e);
+    const f = el("form", "ws-own"), i = el("input"); i.placeholder = "Ta traduction"; i.setAttribute("aria-label", "Traduction en français"); i.maxLength = 80;
+    const ok = el("button", "pill-btn", "Ajouter"); ok.type = "submit"; f.append(i, ok); sh.insertBefore(f, acts);
+    f.onsubmit = (ev) => { ev.preventDefault(); if (!i.value.trim()) return i.focus(); addCustom(word, i.value.trim()); save(); f.remove(); add.textContent = "Ajouté au carnet"; add.disabled = true; };
+  });
+}
+// Toucher un mot ; ou sélectionner plusieurs mots (appui long), puis toucher « Traduire ».
+document.addEventListener("click", (e) => {
+  const w = e.target.closest && e.target.closest(".bub.it .tw"); if (!w) return;
+  const sel = window.getSelection && window.getSelection(); if (sel && String(sel).trim().length > w.textContent.length) return;
+  wordSheet(w.textContent, w.closest(".bub").textContent);
+});
+document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".bub.it .tw")) { e.preventDefault(); e.target.click(); } });
+let selT = 0;
+document.addEventListener("selectionchange", () => {
+  clearTimeout(selT);
+  selT = setTimeout(() => {
+    const sel = window.getSelection(), t = sel ? String(sel).replace(/\s+/g, " ").trim() : "";
+    let pill = document.querySelector(".sel-pill");
+    const node = sel && sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+    const bub = node && node.closest && node.closest(".bub.it");
+    if (!t || !bub || t.length > 80 || !/\p{L}/u.test(t)) { if (pill) pill.remove(); return; }
+    if (!pill) { pill = el("button", "sel-pill"); pill.type = "button"; document.body.append(pill); }
+    pill.textContent = "Traduire « " + (t.length > 28 ? t.slice(0, 26) + "…" : t) + " »";
+    pill.onclick = () => { pill.remove(); wordSheet(t, bub.textContent); try { sel.removeAllRanges(); } catch (x) { /* rien */ } };
+  }, 250);
+});
