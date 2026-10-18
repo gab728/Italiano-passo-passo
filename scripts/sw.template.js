@@ -1,0 +1,31 @@
+/* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
+   Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
+   Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
+const VERSION = "ipp-__BUILD__";
+const SHELL = __SHELL__;
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", (e) => {
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith("ipp-") && k !== VERSION && k !== "ipp-fonts").map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
+    e.respondWith(caches.open("ipp-fonts").then(async (c) => {
+      const hit = await c.match(req); if (hit) return hit;
+      const res = await fetch(req); if (res.ok || res.type === "opaque") c.put(req, res.clone()); return res;
+    }));
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+  const fresh = req.mode === "navigate" || url.pathname.endsWith("/catalog.json") || url.pathname.endsWith("/config.js");
+  if (fresh) {
+    e.respondWith(fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "index.html" : req, copy)); } return res; })
+      .catch(() => caches.match(req.mode === "navigate" ? "index.html" : req, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || caches.match("./"))));
+    return;
+  }
+  e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; })));
+});

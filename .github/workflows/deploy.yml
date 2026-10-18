@@ -1,0 +1,73 @@
+# Mise en ligne automatique à chaque modification de la branche main :
+#  1. le serveur Supabase (schéma de la base et fonction « api »), si les secrets Supabase sont renseignés ;
+#  2. l'app sur GitHub Pages.
+# Réglages du dépôt (Settings → Secrets and variables → Actions) :
+#   Variables : SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
+#   Secrets   : SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, SUPABASE_DB_PASSWORD (facultatifs : sans eux, seule l'app est publiée)
+name: Mise en ligne
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secrets Supabase présents ?
+        id: check
+        run: echo "ok=${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_REF != '' }}" >> "$GITHUB_OUTPUT"
+      - uses: supabase/setup-cli@v1
+        if: steps.check.outputs.ok == 'true'
+        with:
+          version: 2.120.0
+      - name: Schéma de la base
+        if: steps.check.outputs.ok == 'true' && env.SUPABASE_DB_PASSWORD != ''
+        run: |
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --include-all
+      - name: Fonction serveur
+        if: steps.check.outputs.ok == 'true'
+        run: supabase functions deploy api --project-ref "$PROJECT_REF" --no-verify-jwt
+
+  app:
+    needs: server
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Configuration de l'app
+        env:
+          URL: ${{ vars.SUPABASE_URL }}
+          KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$URL" && test -n "$KEY" || { echo "Renseigne les variables SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY du dépôt."; exit 1; }
+          node -e 'require("fs").writeFileSync("web/config.js", "window.APP_CONFIG = " + JSON.stringify({ supabaseUrl: process.env.URL, supabaseKey: process.env.KEY }) + ";\n")'
+      - name: Construction
+        run: node scripts/build.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: pages
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,6 @@
+# Réglages lus par la CLI Supabase lors du déploiement automatique.
+project_id = "italiano-passo-passo"
+
+[functions.api]
+# La fonction vérifie elle-même la connexion de chaque appel (compatible avec les nouvelles clés Supabase).
+verify_jwt = false

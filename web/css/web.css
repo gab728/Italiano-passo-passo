@@ -1,0 +1,47 @@
+/* Compléments de la web app : écran de connexion, micro, mode voiture qui écoute, compte. Les couleurs viennent des variables de l'app. */
+html, body { background: var(--bg); }
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+/* Connexion */
+[hidden] { display: none !important; }
+.gate { min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; }
+.gate-card { width: 100%; max-width: 420px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 28px 22px; display: flex; flex-direction: column; gap: 12px; }
+.gate-brand { display: flex; align-items: center; gap: 10px; font: 700 15px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.gate-flag { width: 24px; height: 16px; border-radius: 3px; background: linear-gradient(90deg, #1B7A43 0 33.3%, #fff 33.3% 66.6%, #B3372C 66.6%); box-shadow: inset 0 0 0 1px var(--line); }
+.gate h1 { font: 700 30px/1.1 var(--display); margin: 6px 0 0; color: var(--ink); }
+.gate-form { display: flex; flex-direction: column; gap: 10px; }
+.gate-form label { font-weight: 700; font-size: 15px; color: var(--ink); }
+.gate-form input { font: inherit; font-size: 18px; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; }
+.gate-form input:focus-visible { outline: 3px solid var(--brand); outline-offset: 1px; }
+.gate-code { letter-spacing: .3em; font-family: var(--mono) !important; text-align: center; font-size: 26px !important; }
+.gate-msg { margin: 4px 0 0; color: var(--muted); }
+
+/* Bouton micro dans les champs */
+.mic { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 16px; border-radius: 8px; border: 1.5px solid var(--brand); background: var(--brand-soft); color: var(--brand); font: 700 17px/1 var(--body); cursor: pointer; }
+.mic svg { width: 22px; height: 22px; }
+.mic.on { background: var(--ko-bg); border-color: var(--ko); color: var(--ko); animation: ipp-pulse 1.2s ease-in-out infinite; }
+@keyframes ipp-pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--ko) 18%, transparent); } }
+
+/* Mode voiture et conversation à voix haute */
+.aud-state.listening { color: var(--ko); }
+.vu { display: grid; place-items: center; width: 96px; height: 96px; margin: 4px auto 12px; border-radius: 50%; background: var(--ko-bg); color: var(--ko); animation: ipp-pulse 1.2s ease-in-out infinite; }
+.vu svg { width: 44px; height: 44px; }
+.car-say { font-size: 19px; }
+.car-heard { font: 400 21px/1.35 var(--body); color: var(--ink); background: var(--surface); border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px 14px; overflow-wrap: anywhere; }
+.car-verdict { font-weight: 700; font-size: 19px; }
+.car-verdict.ok { color: var(--ok); }
+.car-verdict.ko { color: var(--ko); }
+.bub .fr-line { font-style: italic; opacity: .85; }
+.bub.me .fr-line { opacity: 1; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; color: var(--ink); }
+.check input { width: 22px; height: 22px; accent-color: var(--brand); }
+
+/* Compte et amis */
+.code-out { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.big-code { font: 500 34px/1.1 var(--mono); letter-spacing: .25em; text-align: center; padding: 14px; border-radius: 10px; background: var(--brand-soft); color: var(--ink); }
+pre.invite { white-space: pre-wrap; overflow-wrap: anywhere; font: 15px/1.45 var(--body); background: var(--bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 0; color: var(--ink); }
+.members { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.members li { border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.m-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+input.lim { width: 96px; font: inherit; padding: 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+#import-text { width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
