@@ -1,8 +1,8 @@
 /* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
-const VERSION = "ipp-ab460237c6";
-const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","js/app.js?v=ab460237c6","js/voice.js?v=ab460237c6","js/web.js?v=ab460237c6","js/shim.js?v=ab460237c6","js/supabase.js?v=ab460237c6","css/web.css?v=ab460237c6","content/catalog.json?v=ab460237c6","config.js?v=ab460237c6"];
+const VERSION = "ipp-701203d8e9";
+const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","js/app.js?v=701203d8e9","js/voice.js?v=701203d8e9","js/web.js?v=701203d8e9","js/shim.js?v=701203d8e9","js/supabase.js?v=701203d8e9","css/web.css?v=701203d8e9","content/catalog.json?v=701203d8e9","config.js?v=701203d8e9"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
