@@ -61,8 +61,12 @@ jobs:
           URL: ${{ vars.SUPABASE_URL }}
           KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          test -n "$URL" && test -n "$KEY" || { echo "Renseigne les variables SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY du dépôt."; exit 1; }
-          node -e 'require("fs").writeFileSync("web/config.js", "window.APP_CONFIG = " + JSON.stringify({ supabaseUrl: process.env.URL, supabaseKey: process.env.KEY }) + ";\n")'
+          # Les variables du dépôt l'emportent ; sinon on garde web/config.js s'il a été rempli.
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            node -e 'require("fs").writeFileSync("web/config.js", "window.APP_CONFIG = " + JSON.stringify({ supabaseUrl: process.env.URL, supabaseKey: process.env.KEY }) + ";\n")'
+          elif grep -q "TON-PROJET" web/config.js; then
+            echo "Renseigne les variables SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY du dépôt (ou remplis web/config.js)."; exit 1
+          fi
       - name: Construction
         run: node scripts/build.mjs
       - uses: actions/configure-pages@v5
