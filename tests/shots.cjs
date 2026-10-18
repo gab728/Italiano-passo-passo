@@ -13,11 +13,11 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.goto(O + "/"); await p.waitForSelector("#gate-email");
     await p.screenshot({ path: `${OUT}/${scheme}-1-gate.png` });
     await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
-    await p.waitForSelector("text=Parler avec Claude", { timeout: 10000 });
+    await p.waitForSelector(".hero", { timeout: 10000 });
     await p.screenshot({ path: `${OUT}/${scheme}-3-home.png`, fullPage: false });
-    await p.evaluate(() => document.querySelector(".rowb").scrollIntoView());
+    await p.evaluate(() => document.querySelector(".path").scrollIntoView());
     await p.screenshot({ path: `${OUT}/${scheme}-4-tools.png` });
-    await p.click("text=Parler avec Claude"); await p.waitForSelector("text=Ma journée");
+    await p.click(".tabbar [data-tab=speak]"); await p.waitForSelector("text=Ma journée");
     await p.screenshot({ path: `${OUT}/${scheme}-5-topics.png` });
     await p.evaluate(() => { window.__said = ["Oggi ho andato al lavoro"]; });
     await p.click("button.opt:has-text('Ma journée')");
@@ -26,9 +26,9 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.screenshot({ path: `${OUT}/${scheme}-6-vchat.png` });
     await p.click("button:has-text('Pause')").catch(() => {});
     await p.click("text=← Terminer");
-    await p.waitForSelector("header.board");
+    await p.waitForSelector(".hero");
     await p.evaluate(() => { window.__said = Array(40).fill("ciao"); });
-    await p.click("text=Mode audio (voiture)"); await p.waitForSelector("text=En voiture, mains libres");
+    await p.click(".tile:has-text('En voiture')"); await p.waitForSelector("text=En voiture, mains libres");
     await p.screenshot({ path: `${OUT}/${scheme}-7-car.png` });
     const idx = await p.evaluate(() => M.findIndex((m) => m.vocab && m.vocab.length > 2));
     await p.selectOption("#aud-pick", String(idx));
@@ -36,7 +36,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.waitForFunction(() => VCAR && VCAR.listening, null, { timeout: 15000 });
     await p.screenshot({ path: `${OUT}/${scheme}-8-car-listen.png` });
     await p.click("button:has-text('Pause')"); await p.click("text=← Accueil");
-    await p.click("text=Compte et amis"); await p.waitForSelector("text=Tester le micro");
+    await p.click(".tabbar [data-tab=profile]"); await p.waitForSelector("text=Tester le micro");
     await p.screenshot({ path: `${OUT}/${scheme}-9-account.png`, fullPage: true });
     await p.click("text=Mes amis : inviter et suivre");
     await p.fill("#inv-name", "Luca"); await p.fill("#inv-email", "luca" + scheme + "@example.com"); await p.click("text=Créer l'invitation");

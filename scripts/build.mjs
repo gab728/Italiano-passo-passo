@@ -52,7 +52,7 @@ const catJSON = JSON.stringify(catalog);
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["js/app.js", "js/voice.js", "js/web.js", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js"];
+const files = ["js/app.js", "js/voice.js", "js/web.js", "js/ui.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js"];
 const hash = createHash("sha256");
 for (const f of files) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
@@ -76,6 +76,7 @@ const html = `<!doctype html>
 ${fonts}
 <style>${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
+<link rel="stylesheet" href="css/app.css?v=${BUILD}">
 </head>
 <body>
 <div id="gate" class="gate" hidden></div>

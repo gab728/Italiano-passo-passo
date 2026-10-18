@@ -226,6 +226,8 @@
     load();
   }
 
+  WEB.account = account; WEB.friends = friends;
+
   /* ---------- Synchronisation au retour du réseau ---------- */
   window.addEventListener("online", () => { if (typeof push === "function" && typeof cloud !== "undefined" && cloud) push(); else if (typeof connect === "function" && syncState !== "ok") connect(); });
 

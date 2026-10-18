@@ -59,17 +59,18 @@ const MOCKS = `
   await a.fill("#gate-newpass", "court"); await a.click("text=Enregistrer et entrer");
   await a.waitForFunction(() => /8 caractères/.test(document.querySelector(".gate-msg").textContent));
   await a.fill("#gate-newpass", "motdepasse1"); await a.click("text=Enregistrer et entrer");
-  await a.waitForSelector("header.board", { timeout: 10000 });
-  ok(await a.isVisible("header.board"), "accueil affiché après connexion");
+  await a.waitForSelector(".hero", { timeout: 10000 });
+  ok(await a.isVisible(".hero"), "accueil affiché après connexion");
   await a.waitForFunction(() => /enregistrée dans ton compte/.test(document.querySelector(".sync").textContent), null, { timeout: 8000 });
   ok(true, "synchronisation active : " + await a.textContent(".sync"));
-  await a.waitForSelector("text=Parler avec Claude", { timeout: 8000 });
-  ok(await a.isVisible("text=Compte et amis"), "bouton Compte et amis (propriétaire)");
-  const nUnits = await a.$$eval("details.unit", (d) => d.length);
+  await a.waitForSelector(".tile:has-text('Parler')", { timeout: 8000 });
+  ok(await a.isVisible(".tabbar"), "barre d'onglets affichée");
+  const nUnits = await a.$$eval("details.u2", (d) => d.length);
   ok(nUnits >= 20, "programme affiché (" + nUnits + " unités)");
 
   console.log("2. Une leçon : réponse enregistrée sur le serveur");
-  await a.click("details.unit[open] .stop >> nth=0");
+  await a.click("details.u2[open] .l2-row >> nth=0");
+  ok(await a.isHidden(".tabbar"), "pas d'onglets pendant une leçon");
   await a.waitForSelector("main.body");
   for (let i = 0; i < 4; i++) { const nx = await a.$("button:has-text('Suivant'), button:has-text('Continuer'), button:has-text('Commencer')"); if (!nx) break; await nx.click(); await a.waitForTimeout(150); }
   await a.waitForTimeout(1200);
@@ -81,9 +82,9 @@ const MOCKS = `
   ok(await a.$$eval(".field .mic", (x) => x.length) >= 0, "champ de réponse rendu");
 
   console.log("3. Inviter un ami");
-  await a.click("text=← Accueil").catch(() => {});
-  await a.waitForSelector("header.board");
-  await a.click("text=Compte et amis");
+  await a.click("[aria-label='Quitter la leçon']");
+  await a.waitForSelector(".hero");
+  await a.click(".tabbar [data-tab=profile]");
   await a.waitForSelector("text=Mes amis : inviter et suivre");
   ok(await a.isVisible("text=Reprendre ma progression de l'app Claude"), "section d'import visible");
   await a.click("text=Mes amis : inviter et suivre");
@@ -106,9 +107,11 @@ const MOCKS = `
   ok((await b.inputValue("#gate-email")) === "luca@example.com", "adresse gardée sur l'écran du code");
   await b.fill("#gate-code", code); await b.click("button:has-text('Continuer')");
   await b.fill("#gate-newpass", "lucapass99"); await b.click("text=Enregistrer et entrer");
-  await b.waitForSelector("header.board", { timeout: 10000 });
-  ok(!!(await b.waitForSelector("text=Mon compte", { timeout: 8000 }).catch(() => null)), "l'ami voit « Mon compte » (pas la gestion)");
-  ok(!(await b.isVisible("text=Compte et amis")), "l'ami n'a pas la gestion des amis");
+  await b.waitForSelector(".hero", { timeout: 10000 });
+  await b.click(".tabbar [data-tab=profile]"); await b.waitForSelector("text=Tester le micro, text=Mot de passe", { timeout: 8000 }).catch(() => null);
+  await b.waitForTimeout(600);
+  ok(!(await b.isVisible("text=Mes amis : inviter et suivre")), "l'ami n'a pas la gestion des amis");
+  await b.click(".tabbar [data-tab=today]");
   const doneB = await b.evaluate(() => slots().filter(isDone).length + ":" + Object.keys(S).filter((k) => /^\d+$|^L\./.test(k)).length);
   ok(doneB === "0:0", "progression de l'ami vierge (" + doneB + ")");
   const forbidden = await b.evaluate(async () => { const { data } = await WEBAUTH.sb.from("progress").select("user_id"); return data; });
@@ -118,7 +121,7 @@ const MOCKS = `
 
   console.log("5. Conversation à voix haute avec Claude");
   await b.evaluate(() => { window.__said = ["Oggi ho andato al lavoro", "basta"]; });
-  await b.click("text=Parler avec Claude");
+  await b.click(".tabbar [data-tab=speak]");
   await b.click("button.opt:has-text('Ma journée')");
   await b.waitForFunction(() => window.__said.length === 0 && /En pause/.test((document.querySelector(".aud-state") || {}).textContent || ""), null, { timeout: 15000 });
   const spokenB = await b.evaluate(() => window.__spoken);
@@ -142,7 +145,7 @@ const MOCKS = `
   await b.evaluate(() => { const i = M.findIndex((m) => m.vocab && m.vocab.length > 2 && m.ex.some((x) => x[0] === "o")); window.__mi = i; const m = M[i];
     const said = ["", ""]; m.vocab.forEach((v) => said.push(v[0])); m.ex.forEach((x) => { if (x[0] === "o") said.push(String(x[2]).split("|")[0]); else if (x[0] === "f") said.push("sbagliato completamente"); });
     window.__said = said.slice(2); });
-  await b.click("text=Mode audio (voiture)");
+  await b.click(".tile:has-text('En voiture')");
   await b.waitForSelector("text=En voiture, mains libres");
   ok(await b.isVisible("button.opt:has-text('Parler librement avec Claude')"), "conversation libre proposée en voiture");
   await b.selectOption("#aud-pick", String(await b.evaluate(() => window.__mi)));
@@ -164,8 +167,8 @@ const MOCKS = `
   ok(/plafond du jour/.test(capped), "plafond atteint : « " + capped + " »");
 
   console.log("8. Import de la progression de l'app Claude");
-  await a.goto(O + "/"); await a.waitForSelector("header.board");
-  await a.click("text=Compte et amis");
+  await a.goto(O + "/"); await a.waitForSelector(".hero");
+  await a.click(".tabbar [data-tab=profile]");
   await a.waitForSelector("#import-text");
   await a.fill("#import-text", JSON.stringify({ ipp: 1, s: { "L.it-u01-l1": { done: true, best: 90 }, "L.it-u01-l2": { done: true, best: 80 }, v: { "L.it-u01-l1-0": 2 }, nb: { "L.it-u01-l1-0": 1 }, t: 1 } }));
   await a.click("button:has-text('Importer')");
@@ -198,21 +201,21 @@ const MOCKS = `
   ok(xss === true, "aucune balise ne survit dans les textes d'une leçon venue de la base");
 
   console.log("11. Déconnexion : les données locales sont effacées");
-  await b.goto(O + "/"); await b.waitForSelector("header.board");
-  await b.click("text=Mon compte");
+  await b.goto(O + "/"); await b.waitForSelector(".hero");
+  await b.click(".tabbar [data-tab=profile]");
   await b.click("text=Se déconnecter de cet appareil");
   await b.waitForSelector("#gate-email", { timeout: 8000 });
   const left = await b.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("italiano")));
   ok(left.length === 0, "aucune donnée de leçon laissée sur l'appareil");
   await b.fill("#gate-email", "luca@example.com"); await b.fill("#gate-pass", "lucapass99"); await b.click("button:has-text('Se connecter')");
-  ok(!!(await b.waitForSelector("header.board", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
+  ok(!!(await b.waitForSelector(".hero", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
 
   console.log("12. Un compte créé sans invitation n'a pas accès à Claude");
   await post("/__seed", { email: "intrus@example.com" });
   const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
   await post("/__seed", { email: "intrus@example.com", password: "intrus123" });
-  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector("header.board", { timeout: 10000 });
+  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".hero", { timeout: 10000 });
   const intr = await c.evaluate(async () => { try { await AI("Ciao", { modelTier: "quick" }); return "passé"; } catch (e) { return e.code + "|" + aiFail(e); } });
   ok(/^not_invited\|/.test(intr), "Claude refusé : " + intr);
   const intrLesson = await c.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u09-l1").set({ course: "it", title: "Spam" }); return "écrite"; } catch (e) { return "refusée"; } });
