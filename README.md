@@ -24,25 +24,26 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 1. Sur supabase.com, crée un projet, région **Paris (eu-west-3)**. Note le mot de passe de la base.
 2. **Project Settings → API Keys** : note l'**URL du projet** (`https://xxxx.supabase.co`), la **clé publique** (*publishable*, commence par `sb_publishable_`) et l'**identifiant du projet** (les lettres de l'URL, avant `.supabase.co`).
 3. **Authentication → Sign In / Providers** (ou *Settings*, selon la version) : désactive **Allow new users to sign up**. Seules les personnes que tu invites depuis l'app pourront se connecter.
-4. **Authentication → Emails → Magic Link** : remplace le contenu du modèle par :
+4. **Authentication → Users → Add user → Create new user** : ton adresse e-mail (la même que `OWNER_EMAIL` plus bas), un mot de passe quelconque (il ne servira pas), et coche **Auto Confirm User**. C'est ton compte de propriétaire ; tes amis, eux, seront créés depuis l'app.
+5. **Authentication → Emails → Magic Link** : remplace le contenu du modèle par :
    ```html
    <h2>Ton code de connexion</h2>
    <p>Entre ce code dans l'app : <strong>{{ .Token }}</strong></p>
    <p>Il est valable une heure.</p>
    ```
    Sans réglage d'envoi d'e-mails, Supabase n'écrit qu'aux membres de ton équipe Supabase : utilise donc dans l'app **la même adresse que ton compte Supabase**. Tes amis, eux, reçoivent leur code par message (voir « Inviter des amis »).
-5. **Edge Functions → Secrets** : ajoute
+6. **Edge Functions → Secrets** : ajoute
    - `ANTHROPIC_API_KEY` = la clé de l'étape 1
    - `OWNER_EMAIL` = ton adresse e-mail (celle avec laquelle tu te connecteras)
    - facultatif, pour le micro sur iPhone : `STT_API_KEY` = une clé OpenAI
-6. **Account → Access Tokens** (en haut à droite, ton compte) : crée un jeton d'accès. Il sert au déploiement automatique.
+7. **Account → Access Tokens** (en haut à droite, ton compte) : crée un jeton d'accès. Il sert au déploiement automatique.
 
 ### 3. Le dépôt GitHub
 1. Crée un dépôt **public** vide, par exemple `italiano-passo-passo`, et dépose-y ce dossier (ou laisse Claude le faire si GitHub est connecté à Claude).
 2. **Settings → Pages** : *Source* = **GitHub Actions**.
 3. **Settings → Secrets and variables → Actions** :
    - onglet *Variables* : `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` (étape 2.2)
-   - onglet *Secrets* : `SUPABASE_ACCESS_TOKEN` (étape 2.6), `SUPABASE_PROJECT_REF` (l'identifiant du projet), `SUPABASE_DB_PASSWORD` (le mot de passe de la base)
+   - onglet *Secrets* : `SUPABASE_ACCESS_TOKEN` (étape 2.7), `SUPABASE_PROJECT_REF` (l'identifiant du projet), `SUPABASE_DB_PASSWORD` (le mot de passe de la base)
 4. **Actions → Mise en ligne → Run workflow**. En deux ou trois minutes, la base est créée, la fonction serveur déployée et l'app publiée. L'adresse de l'app s'affiche dans le résultat (du type `https://ton-nom.github.io/italiano-passo-passo/`).
 
 Ensuite, chaque modification du dépôt republie tout automatiquement.
@@ -55,7 +56,7 @@ Ensuite, chaque modification du dépôt republie tout automatiquement.
 ## Inviter des amis
 *Compte et amis → Mes amis* : entre le prénom et l'e-mail, puis envoie le message proposé (lien et code). Le code est valable environ une heure ; s'il a expiré, touche *Nouveau code* à côté du nom. Tu vois aussi l'usage de chacun, tu peux fixer un plafond quotidien ou retirer quelqu'un.
 
-Chacun a sa progression, son carnet et ses leçons à la carte, privés. Les leçons **du programme** sont partagées : quand l'une d'elles est préparée par quelqu'un, elle sert à tout le monde.
+Chacun a sa progression, son carnet et ses leçons à la carte, privés. Les leçons **du programme** sont partagées : quand l'une d'elles est préparée par quelqu'un, elle sert à tout le monde. Une fois enregistrée, une leçon partagée ne peut plus être modifiée depuis l'app ; pour en corriger ou en supprimer une, passe par Supabase (*Table Editor → lessons*), puis rouvre l'app : elle sera préparée à nouveau.
 
 ## Le micro
 - **Android (Chrome)** : la reconnaissance vocale du téléphone, gratuite, fonctionne dans le navigateur comme dans l'app installée.

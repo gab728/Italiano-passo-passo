@@ -879,7 +879,9 @@ function okEx(x){if(!Array.isArray(x))return false;const t=x[0];
   if(t==="o")return isS(x[1])&&noTag(x[2])&&x[2].trim().split(/\s+/).length>=3;
   if(t==="p")return Array.isArray(x[1])&&x[1].length>=3&&x[1].length<=6&&x[1].every(p=>Array.isArray(p)&&isS(p[0])&&isS(p[1]));
   return false}
-function toLesson(id,d){try{const c=JSON.parse(d.json);
+/* Les leçons de la base peuvent venir d'autres personnes : hors des explications (passées par clean), aucun texte ne garde de balise. */
+const noAngle=x=>typeof x==="string"?x.replace(/[<>]/g,""):Array.isArray(x)?x.map(noAngle):x&&typeof x==="object"?Object.fromEntries(Object.entries(x).map(([k,v])=>[k,noAngle(v)])):x;
+function toLesson(id,d){try{let c=JSON.parse(d.json);if(!c||typeof c!=="object")return null;const L0=c.lessons;c=noAngle(c);c.lessons=L0;d=noAngle(d);
   if(!isS(d.title)||!isS(d.course)||!Array.isArray(c.lessons)||!c.lessons.length||!c.lessons.every(isS))return null;
   if(!Array.isArray(c.vocab)||c.vocab.length<6||!c.vocab.every(v=>Array.isArray(v)&&isS(v[0])&&isS(v[1])))return null;
   if(!Array.isArray(c.ex)||c.ex.length<8||!c.ex.every(okEx))return null;

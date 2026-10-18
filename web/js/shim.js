@@ -106,6 +106,14 @@
     catalog = r && r.ok ? await r.json() : { courses: {}, lessons: {} };
     return catalog;
   }
+  function planIds(c) {
+    const ids = new Set();
+    Object.values(c.courses || {}).forEach((co) => {
+      let p = co && co.plan; try { if (typeof p === "string") p = JSON.parse(p); } catch (e) { p = null; }
+      ((p && p.levels) || []).forEach((lv) => (lv.units || []).forEach((u) => (u.lessons || []).forEach((l) => { if (l && l.id) ids.add(String(l.id)); })));
+    });
+    return ids;
+  }
   const snap = (id, data) => ({ id, exists: data != null, data: () => data });
   const dbErr = (e) => err(e && /fetch|network|Failed/i.test(String(e.message)) ? "unavailable" : "server", e && e.message);
   function progressRef(uid) {
@@ -154,9 +162,11 @@
           if (name === "courses") return { docs: Object.keys(c.courses).map((id) => snap(id, c.courses[id])) };
           if (name === "lessons") {
             const docs = Object.keys(c.lessons).map((id) => snap(id, c.lessons[id]));
-            const { data, error } = await sb.from("lessons").select("id,doc").limit(1000);
+            const { data, error } = await sb.from("lessons").select("id,doc,shared,owner").limit(1000);
             if (error) throw dbErr(error);
-            (data || []).forEach((r) => { if (!c.lessons[r.id]) docs.push(snap(r.id, r.doc)); });
+            // Leçons des autres membres : seulement celles qui occupent une place du programme.
+            const plan = planIds(c);
+            (data || []).forEach((r) => { if (!c.lessons[r.id] && (r.owner === uid || (r.shared && plan.has(r.id)))) docs.push(snap(r.id, r.doc)); });
             return { docs };
           }
           return { docs: [] };
@@ -195,7 +205,15 @@
     sb, admin, call, sample, token, loadMe,
     get me() { return me; },
     get user() { return session && session.user; },
-    async signOut() { try { await sb.auth.signOut(); } catch (e) { /* hors ligne */ } APP_KEYS.forEach(lsDel); lsDel(OWNER_KEY); location.reload(); },
+    // Déconnexion volontaire : la progression est d'abord enregistrée ; si c'est impossible, on renvoie false sans rien effacer.
+    async signOut(force) {
+      if (!force) {
+        try { if (typeof S !== "undefined" && session && !session.offline) await progressRef(session.user.id).set({ json: JSON.stringify(S), t: S.t || 0 }); }
+        catch (e) { return false; }
+      }
+      try { await sb.auth.signOut({ scope: "local" }); } catch (e) { /* hors ligne */ }
+      APP_KEYS.forEach(lsDel); lsDel(OWNER_KEY); location.reload(); return true;
+    },
   };
 
   /* ---------- Lancement de l'app après connexion ---------- */
@@ -287,18 +305,23 @@
   function storedSession() {
     try { const s = JSON.parse(lsGet("ipp-auth")); const u = s && (s.user || (s.currentSession && s.currentSession.user)); return u && u.id ? { user: u, offline: true } : null; } catch (e) { return null; }
   }
-  function noSession() {
+  // Pas de session : si c'est faute de réseau (jeton à rafraîchir, connexion faible), on démarre avec la session enregistrée.
+  function noSession(error) {
     if (started) return;
-    const st = navigator.onLine === false ? storedSession() : null;
+    const netFail = navigator.onLine === false || (error && (error.name === "AuthRetryableFetchError" || error.status === 0 || /fetch|network|Failed/i.test(String(error.message || ""))));
+    const st = netFail ? storedSession() : null;
     if (st) start(st); else showGate("email");
   }
   sb.auth.onAuthStateChange((event, s) => {
     setTimeout(() => {
-      if (event === "SIGNED_OUT" && started && !(session && session.offline)) { APP_KEYS.forEach(lsDel); lsDel(OWNER_KEY); location.reload(); }
-      else if (s && !started && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) start(s);
+      // Session perdue (jeton révoqué, compte retiré) : retour à la connexion, sans effacer ce qui n'est peut-être pas encore enregistré.
+      // Si une autre personne se connecte ensuite, start() écarte ces données.
+      if (event === "SIGNED_OUT" && started && !(session && session.offline)) location.reload();
+      else if (s && !started && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) start(s);
+      else if (s && started && session && session.offline && event === "TOKEN_REFRESHED") { session = s; if (typeof connect === "function") connect(); }
     }, 0);
   });
-  sb.auth.getSession().then(({ data }) => {
-    if (data && data.session) start(data.session); else noSession();
+  sb.auth.getSession().then(({ data, error }) => {
+    if (data && data.session) start(data.session); else noSession(error);
   }).catch(noSession);
 })();

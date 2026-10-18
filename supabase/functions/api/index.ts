@@ -33,7 +33,7 @@ const SERVICE = secretKey();
 const ANTHROPIC = "https://api.anthropic.com/v1/messages";
 const int = (k: string, d: number) => { const n = parseInt(env(k), 10); return Number.isFinite(n) && n >= 0 ? n : d; };
 
-type User = { id: string; email?: string };
+type User = { id: string; email?: string; confirmed?: boolean };
 type Json = Record<string, unknown>;
 
 // ---------- Réponses et CORS ----------
@@ -78,10 +78,10 @@ async function getUser(req: Request): Promise<User | null> {
   const r = await fetch(SB + "/auth/v1/user", { headers: { apikey: SERVICE, authorization: "Bearer " + jwt } });
   if (!r.ok) return null;
   const u = await r.json();
-  return u && typeof u.id === "string" ? { id: u.id, email: (u.email || "").toLowerCase() } : null;
+  return u && typeof u.id === "string" ? { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at) } : null;
 }
 const owners = () => env("OWNER_EMAIL").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
-const isOwner = (u: User) => !!u.email && owners().includes(u.email);
+const isOwner = (u: User) => !!u.email && !!u.confirmed && owners().includes(u.email);
 
 // Jour courant à Paris (AAAA-MM-JJ), pour remettre les compteurs à zéro à minuit.
 const today = () => new Intl.DateTimeFormat("fr-CA", { timeZone: env("APP_TZ", "Europe/Paris"), year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -103,7 +103,8 @@ async function limitsFor(u: User, prof?: any) {
   const p = prof !== undefined ? prof : await profile(u.id);
   const own = isOwner(u);
   const calls = p && p.daily_limit != null ? p.daily_limit : own ? int("OWNER_DAILY_CALLS", 1000) : int("DAILY_CALLS", 150);
-  return { calls, output_tokens: own ? int("OWNER_DAILY_OUTPUT_TOKENS", 4000000) : int("DAILY_OUTPUT_TOKENS", 400000), stt_seconds: int("STT_DAILY_SECONDS", 3600), profile: p };
+  return { calls, output_tokens: own ? int("OWNER_DAILY_OUTPUT_TOKENS", 4000000) : int("DAILY_OUTPUT_TOKENS", 400000),
+    input_tokens: own ? int("OWNER_DAILY_INPUT_TOKENS", 20000000) : int("DAILY_INPUT_TOKENS", 3000000), stt_seconds: int("STT_DAILY_SECONDS", 3600), profile: p };
 }
 
 // ---------- /claude ----------
@@ -141,10 +142,10 @@ async function claude(req: Request, u: User): Promise<Response> {
   const cap = quick ? 2048 : 16000;
   const maxTok = Math.min(Math.max(parseInt(b.max_tokens, 10) || (quick ? 1200 : 8000), 16), cap);
 
-  const lim = await limitsFor(u), used = await usageToday(u.id);
-  if (used.calls >= lim.calls || used.output_tokens >= lim.output_tokens)
-    return fail(req, 429, "rate_limited", "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.");
-  await addUsage(u.id, 1, 0, 0, 0);
+  // Réservation atomique : l'appel et le maximum de texte qu'il peut produire sont comptés avant d'appeler Claude.
+  const lim = await limitsFor(u);
+  const okCall = await restJSON("rpc/take_call", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_max_calls: lim.calls, p_max_out: lim.output_tokens, p_max_in: lim.input_tokens, p_reserve: maxTok }) });
+  if (okCall !== true) return fail(req, 429, "rate_limited", "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.");
 
   const payload: Json = { model, max_tokens: maxTok, messages, stream: true };
   if (system) payload.system = system;
@@ -178,7 +179,7 @@ async function claude(req: Request, u: User): Promise<Response> {
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      buf += dec.decode(value, { stream: true });
+      buf += dec.decode(value, { stream: true }).replace(/\r\n/g, "\n");
       let i: number;
       while ((i = buf.indexOf("\n\n")) >= 0) {
         const block = buf.slice(0, i); buf = buf.slice(i + 2);
@@ -192,20 +193,23 @@ async function claude(req: Request, u: User): Promise<Response> {
       }
     }
   }
-  const finish = () => addUsage(u.id, 0, inTok, outTok, 0);
+  // Fin d'appel : on remplace la réservation par le texte réellement produit (s'il est connu ; sinon la réservation reste comptée).
+  let settled = false;
+  const finish = () => { if (settled) return; settled = true; return addUsage(u.id, 0, inTok, stop ? outTok - maxTok : 0, 0); };
+  const truncated = () => stop === "max_tokens" || !stop || !!errMsg;
 
   if (!wantStream) {
     try { for await (const _ of deltas()) { /* accumule */ } } catch { errMsg = errMsg || "flux interrompu"; }
     await finish();
     if (errMsg && !text) return fail(req, 502, "unavailable", "Claude s'est interrompu. Réessaie.");
-    return json(req, { text, truncated: stop === "max_tokens" });
+    return json(req, { text, truncated: truncated() });
   }
   const stream = new ReadableStream({
     async start(ctrl) {
       const send = (o: unknown) => ctrl.enqueue(enc.encode("data: " + JSON.stringify(o) + "\n\n"));
       try { for await (const d of deltas()) send({ d }); } catch { errMsg = errMsg || "flux interrompu"; }
-      if (errMsg && !text) send({ error: { code: "unavailable", message: "Claude s'est interrompu. Réessaie." } });
-      else send({ done: true, truncated: stop === "max_tokens" });
+      if (errMsg) send({ error: { code: "unavailable", message: "Claude s'est interrompu. Réessaie." } });
+      else send({ done: true, truncated: truncated() });
       ctrl.close();
       await finish();
     },
@@ -250,6 +254,7 @@ async function admin(req: Request, u: User): Promise<Response> {
     return c ? json(req, { email: u.email, code: c.code }) : fail(req, 502, "unavailable", "Impossible de créer un code pour l'instant.");
   }
   if (act === "delete_me") {
+    await rest("lessons?owner=eq." + u.id + "&shared=eq.false", { method: "DELETE" });
     const r = await authAdmin("users/" + u.id, { method: "DELETE" });
     return r.ok ? json(req, { ok: true }) : fail(req, 502, "unavailable", "Suppression impossible pour l'instant.");
   }
@@ -298,6 +303,7 @@ async function admin(req: Request, u: User): Promise<Response> {
   if (act === "remove") {
     const id = String(b.user_id || "");
     if (!/^[0-9a-f-]{36}$/.test(id) || id === u.id) return fail(req, 400, "input", "Membre inconnu.");
+    await rest("lessons?owner=eq." + id + "&shared=eq.false", { method: "DELETE" });
     const r = await authAdmin("users/" + id, { method: "DELETE" });
     return r.ok ? json(req, { ok: true }) : fail(req, 502, "unavailable", "Suppression impossible pour l'instant.");
   }
@@ -311,8 +317,9 @@ async function stt(req: Request, u: User): Promise<Response> {
   const type = (req.headers.get("content-type") || "").split(";")[0].trim();
   if (!/^audio\//.test(type)) return fail(req, 400, "input", "Format audio inattendu.");
   const buf = await req.arrayBuffer();
-  if (!buf.byteLength || buf.byteLength > 6 * 1024 * 1024) return fail(req, 413, "too_long", "Enregistrement trop long.");
-  const secs = Math.min(Math.max(Math.ceil(Number(req.headers.get("x-duration")) || buf.byteLength / 16000), 1), 120);
+  if (!buf.byteLength || buf.byteLength > 1536 * 1024) return fail(req, 413, "too_long", "Enregistrement trop long.");
+  // Durée comptée : la plus grande entre celle annoncée et une estimation par la taille (le téléphone ne peut pas sous-déclarer).
+  const secs = Math.min(Math.max(Math.ceil(Number(req.headers.get("x-duration")) || 0), Math.ceil(buf.byteLength / 6000), 1), 300);
   const lim = await limitsFor(u), used = await usageToday(u.id);
   if (used.stt_seconds + secs > lim.stt_seconds) return fail(req, 429, "rate_limited", "Plafond de transcription du jour atteint.");
   const lang = (new URL(req.url).searchParams.get("lang") || "it").slice(0, 2).toLowerCase();

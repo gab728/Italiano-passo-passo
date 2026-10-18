@@ -59,10 +59,13 @@ const VO = (() => {
       const r = new SR();
       r.lang = o.lang || IT(); r.interimResults = true; r.maxAlternatives = 4; r.continuous = false;
       let fin = "", last = "", alts = [], done = false, heard = false, quiet = 0;
-      const t1 = setTimeout(() => { if (!heard) { try { r.stop(); } catch (e) { /* rien */ } } }, o.startMs || 7000);
-      const t2 = setTimeout(() => { try { r.stop(); } catch (e) { /* rien */ } }, o.maxMs || 15000);
+      // Certains navigateurs (Safari) ne signalent parfois jamais la fin : après stop(), on conclut de nous-mêmes.
+      let guard = 0;
+      const halt = () => { try { r.stop(); } catch (e) { /* rien */ } clearTimeout(guard); guard = setTimeout(() => finish(), 1800); };
+      const t1 = setTimeout(() => { if (!heard) halt(); }, o.startMs || 7000);
+      const t2 = setTimeout(halt, o.maxMs || 15000);
       const finish = (e) => {
-        if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(quiet); st.cur = null;
+        if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(quiet); clearTimeout(guard); st.cur = null;
         try { r.abort(); } catch (x) { /* rien */ }
         if (e) rej(e); else res({ text: (fin || last).trim(), alts: alts.length ? alts : [(fin || last).trim()] });
       };
@@ -76,7 +79,7 @@ const VO = (() => {
         heard = true; last = (fin + interim).trim();
         if (o.onPartial) o.onPartial(last);
         // Certains navigateurs ne signalent pas la fin : un court silence après la dernière parole suffit.
-        clearTimeout(quiet); quiet = setTimeout(() => { try { r.stop(); } catch (x) { /* rien */ } }, o.endMs || 1500);
+        clearTimeout(quiet); quiet = setTimeout(halt, o.endMs || 1500);
       };
       r.onerror = (e) => {
         const c = e && e.error;
@@ -87,7 +90,7 @@ const VO = (() => {
         finish({ code: c || "error" });
       };
       r.onend = () => finish();
-      st.cur = { stop: () => { try { r.stop(); } catch (e) { /* rien */ } }, cancel: () => { fin = ""; last = ""; finish(); } };
+      st.cur = { stop: halt, cancel: () => { fin = ""; last = ""; finish(); } };
       try { r.start(); } catch (e) { finish({ code: "busy" }); }
     });
   }
@@ -100,9 +103,11 @@ const VO = (() => {
   }
   function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } }
   function listenServer(o) {
-    return new Promise(async (res, rej) => {
+    return new Promise(async (res, rej) => { try {
       let stream; try { stream = await micStream(); } catch (e) { return rej({ code: "denied" }); }
       const c = audioCtx(); if (!c) return rej({ code: "error" });
+      // Si le son n'a pas pu être débloqué (iPhone, hors d'un toucher), on ne peut pas détecter la voix : on enregistre jusqu'à la fin.
+      const blind = c.state !== "running";
       const src = c.createMediaStreamSource(stream), an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
       const buf = new Float32Array(an.fftSize);
       const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"].find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
@@ -112,6 +117,7 @@ const VO = (() => {
       const tick = setInterval(() => {
         an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
         const rms = Math.sqrt(s / buf.length), now = performance.now();
+        if (blind) { if (!speaking) { speaking = true; began = t0; if (o.onPartial) o.onPartial("…"); } if (now - t0 > Math.min(o.maxMs || 15000, 12000)) stop(); return; }
         if (now - t0 < 300) { floor += rms; n++; return; }
         const thr = Math.max(0.012, (floor / Math.max(n, 1)) * 3);
         if (rms > thr) { if (!speaking) { began = now; if (o.onPartial) o.onPartial("…"); } speaking = true; lastVoice = now; }
@@ -131,11 +137,12 @@ const VO = (() => {
         } catch (e) { rej({ code: (e && e.code) || "network" }); }
       };
       rec.start(250);
-    });
+    } catch (e) { rej({ code: "error" }); } });
   }
 
   async function listen(o) {
     o = o || {};
+    audioCtx(); // à appeler pendant le toucher : sur iPhone, le son ne se débloque qu'à ce moment-là
     if (st.cur) st.cur.cancel();
     try { if (speechSynthesis.speaking) speechSynthesis.cancel(); } catch (e) { /* rien */ }
     // Sur iPhone, la reconnaissance d'Apple se bloque souvent après une lecture à voix haute et n'existe pas dans l'app installée :
@@ -216,6 +223,9 @@ function vbar(key, pct, count, title, backLabel, backFn) {
   bar.append(syncEl()); root.append(bar); body = el("main", "body"); root.append(body);
   if (VBAR_KEY !== key) { VBAR_KEY = key; window.scrollTo(0, 0); }
 }
+/* Mise à jour sur place d'un texte qui change souvent (transcription en cours, réponse qui arrive) : reconstruire l'écran
+   plusieurs fois par seconde ferait perdre les touchers sur les boutons. */
+function vLive(sel, text, render) { const n = document.querySelector(sel); if (n) n.textContent = text; else render(); }
 let VWL = null;
 async function vWake(on) {
   try {
@@ -286,16 +296,19 @@ async function carAsk(a, token, repeatOnly) {
     await VO.beep();
     VCAR.heard = ""; VCAR.listening = true; carRender();
     let r;
-    try { r = await VO.listen({ lang: VO.IT(), startMs: a.wait + 2000, maxMs: a.wait + 12000, onPartial: (t) => { if (VCAR) { VCAR.heard = t; carRender(); } } }); }
+    try { r = await VO.listen({ lang: VO.IT(), startMs: a.wait + 2000, maxMs: a.wait + 12000, onPartial: (t) => { if (VCAR) { VCAR.heard = t; vLive(".car-heard", "« " + t + " »", carRender); } } }); }
     catch (e) { if (VCAR) { VCAR.listening = false; VCAR.err = VO.failText(e); carRender(); } return "error"; }
     if (!VCAR || VCAR.token !== token) return "stop";
     VCAR.listening = false; VCAR.heard = r.text; carRender();
-    const cmd = VO.command(r.text);
-    if (cmd === "repeat" || cmd === "skip" || cmd === "stop") return cmd;
-    if (cmd === "slower") { VCAR.rate = Math.max(0.6, VCAR.rate - 0.1); return "repeat"; }
-    if (cmd === "dunno") return "ko";
     if (!r.text) { if (tries === 0) { await VO.say("Je n'ai rien entendu. Encore une fois.", "fr-FR", 1); continue; } return "silent"; }
+    // La réponse attendue passe avant les commandes : « ancora », « dopo » ou « basta » peuvent être la bonne réponse.
     const j = VO.judge(r.alts.concat([r.text]), a.exps);
+    if (!j.ok) {
+      const cmd = VO.command(r.text);
+      if (cmd === "repeat" || cmd === "skip" || cmd === "stop") return cmd;
+      if (cmd === "slower") { VCAR.rate = Math.max(0.6, VCAR.rate - 0.1); return "repeat"; }
+      if (cmd === "dunno") return "ko";
+    }
     VCAR.last = { said: r.text, ok: j.ok, exp: j.exp }; carRender();
     return j.ok ? "ok" : j.close && !repeatOnly ? "close" : "ko";
   }
@@ -490,7 +503,7 @@ function vcRender() {
   row.append(rep, end); body.append(main, hands, row);
   const log = el("div", "chat"); log.setAttribute("aria-live", "polite");
   A.log.forEach((x) => { const b = el("div", "bub " + (x.who === "me" ? "me" : "ai")); x.lines.forEach((l) => { const s = el("span", l.lang.startsWith("fr") ? "fr-line" : null); s.textContent = l.t; b.append(s); }); log.append(b); });
-  if (A.live) { const b = el("div", "bub ai"), s = el("span"); s.textContent = A.live; b.append(s); log.append(b); }
+  if (A.live) { const b = el("div", "bub ai live"), s = el("span"); s.textContent = A.live; b.append(s); log.append(b); }
   body.append(log);
 }
 function vcSet(state) { if (!VC) return; VC.state = state; vcRender(); }
@@ -513,7 +526,7 @@ async function vcAsk(token) {
   };
   let r;
   try {
-    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, signal: A.abort.signal, maxTokens: 400, onText: ({ text }) => { if (!VC || VC.token !== token) return; A.live = vParse(text).map((x) => x.t).join(" "); feed(text, false); if (VC.state === "think") vcRender(); } });
+    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, signal: A.abort.signal, maxTokens: 400, onText: ({ text }) => { if (!VC || VC.token !== token) return; A.live = vParse(text).map((x) => x.t).join(" "); feed(text, false); vLive(".bub.live span", A.live, vcRender); } });
   } catch (e) { if (e && e.code === "aborted") return null; throw e; }
   feed(r.text, true);
   await speaking;
@@ -535,7 +548,7 @@ async function vcLoop(resume) {
     while (alive()) {
       vcSet("listen"); A.heard = "";
       let r;
-      try { await VO.beep(); r = await VO.listen({ lang: VO.IT(), startMs: 9000, maxMs: 30000, endMs: 1700, onPartial: (t) => { if (alive()) { A.heard = t; vcRender(); } } }); }
+      try { await VO.beep(); r = await VO.listen({ lang: VO.IT(), startMs: 9000, maxMs: 30000, endMs: 1700, onPartial: (t) => { if (alive()) { A.heard = t; vLive(".car-heard", "« " + t + " »", vcRender); } } }); }
       catch (e) { if (!alive()) return; A.err = VO.failText(e); vcSet("idle"); return; }
       if (!alive()) return;
       const text = (r.text || "").trim();

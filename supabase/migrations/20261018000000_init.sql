@@ -75,14 +75,16 @@ drop policy if exists "leçons : lecture" on public.lessons;
 drop policy if exists "leçons : création" on public.lessons;
 drop policy if exists "leçons : mise à jour" on public.lessons;
 drop policy if exists "leçons : suppression" on public.lessons;
+-- Une leçon est partagée si et seulement si son identifiant est une place du programme (it-u07-l2…).
+-- Une leçon partagée ne se modifie ni ne se supprime depuis l'app (le propriétaire le fait depuis Supabase).
 create policy "leçons : lecture" on public.lessons
   for select to authenticated using (shared or owner = auth.uid());
 create policy "leçons : création" on public.lessons
   for insert to authenticated
-  with check (owner = auth.uid() and public.is_member() and (not shared or id ~ '^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$'));
+  with check (owner = auth.uid() and public.is_member() and shared = (id ~ '^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$'));
 create policy "leçons : mise à jour" on public.lessons
-  for update to authenticated using (owner = auth.uid())
-  with check (owner = auth.uid() and public.is_member() and (not shared or id ~ '^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$'));
+  for update to authenticated using (owner = auth.uid() and not shared)
+  with check (owner = auth.uid() and not shared and id !~ '^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$');
 create policy "leçons : suppression" on public.lessons
   for delete to authenticated using (owner = auth.uid() and not shared);
 
@@ -122,6 +124,22 @@ returns public.usage language sql security definer set search_path = public as $
     stt_seconds = u.stt_seconds + excluded.stt_seconds
   returning u.*;
 $$;
+-- Réserve un appel à Claude, de façon atomique : refusé si un plafond du jour est atteint.
+-- p_reserve (le maximum de texte que l'appel peut produire) est compté d'avance, puis corrigé à la fin de l'appel.
+create or replace function public.take_call(p_user uuid, p_day date, p_max_calls integer, p_max_out bigint, p_max_in bigint, p_reserve bigint)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare ok boolean;
+begin
+  insert into public.usage (user_id, day) values (p_user, p_day) on conflict (user_id, day) do nothing;
+  update public.usage set calls = calls + 1, output_tokens = output_tokens + p_reserve
+    where user_id = p_user and day = p_day
+      and calls < p_max_calls and output_tokens + p_reserve <= p_max_out and input_tokens < p_max_in
+    returning true into ok;
+  return coalesce(ok, false);
+end $$;
+revoke all on function public.take_call(uuid, date, integer, bigint, bigint, bigint) from public, anon, authenticated;
+grant execute on function public.take_call(uuid, date, integer, bigint, bigint, bigint) to service_role;
+
 revoke all on function public.add_usage(uuid, date, integer, bigint, bigint, integer) from public, anon, authenticated;
 grant execute on function public.add_usage(uuid, date, integer, bigint, bigint, integer) to service_role;
 

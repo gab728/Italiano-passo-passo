@@ -147,12 +147,17 @@
     if (me && me.owner) { const ad = btn("Mes amis : inviter et suivre", "primary"); ad.onclick = friends; body.append(ad); }
 
     const out = el("div", "notes");
-    const so = el("button", "linkbtn"); so.type = "button"; so.textContent = "Se déconnecter de cet appareil"; so.onclick = () => W.signOut();
+    const so = el("button", "linkbtn"); so.type = "button"; so.textContent = "Se déconnecter de cet appareil";
+    so.onclick = async () => {
+      if (so.dataset.force) return W.signOut(true);
+      so.disabled = true; const done = await W.signOut(false); so.disabled = false;
+      if (!done) { so.dataset.force = 1; so.textContent = "Pas de réseau : tes derniers progrès ne sont pas encore enregistrés. Toucher encore pour te déconnecter quand même (ils seront perdus)"; }
+    };
     const del = el("button", "linkbtn"); del.type = "button"; del.textContent = "Supprimer mon compte et mes données";
     del.onclick = async () => {
       if (!del.dataset.sure) { del.dataset.sure = 1; del.textContent = "Confirmer : supprimer définitivement mon compte, ma progression et mes leçons"; return; }
       del.disabled = true;
-      try { await W.admin("delete_me"); await W.signOut(); } catch (e) { del.disabled = false; speakNote(aiFail(e)); }
+      try { await W.admin("delete_me"); await W.signOut(true); } catch (e) { del.disabled = false; speakNote(aiFail(e)); }
     };
     out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone et n'est pas enregistré par l'app."));
     out.append(so, el("br"), del); body.append(out);

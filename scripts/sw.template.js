@@ -23,8 +23,15 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== self.location.origin) return;
   const fresh = req.mode === "navigate" || url.pathname.endsWith("/catalog.json") || url.pathname.endsWith("/config.js");
   if (fresh) {
-    e.respondWith(fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "index.html" : req, copy)); } return res; })
-      .catch(() => caches.match(req.mode === "navigate" ? "index.html" : req, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || caches.match("./"))));
+    // Réseau d'abord, mais pas plus de 3 secondes quand une copie existe : avec un réseau faible (voiture, train), l'app s'ouvre quand même.
+    const key = req.mode === "navigate" ? "index.html" : req;
+    const net = fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(key, copy)); } return res; });
+    const cached = () => caches.match(key, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || caches.match("./"));
+    e.respondWith(new Promise((resolve) => {
+      let done = false; const give = (r) => { if (!done && r) { done = true; resolve(r); } };
+      const t = setTimeout(() => cached().then(give), 3000);
+      net.then((r) => { clearTimeout(t); give(r); }).catch(() => { clearTimeout(t); cached().then((r) => { if (r) give(r); else if (!done) { done = true; resolve(Response.error()); } }); });
+    }));
     return;
   }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; })));

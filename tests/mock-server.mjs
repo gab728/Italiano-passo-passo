@@ -140,6 +140,8 @@ createServer(async (req, res) => {
       const w = who(req); if (!w) return send(res, 401, { message: "No API key" });
       const table = p.slice(9);
       if (table === "rpc/add_usage") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.calls += b.p_calls; r.input_tokens += b.p_in; r.output_tokens += b.p_out; r.stt_seconds += b.p_stt; state.usage.set(k, r); return send(res, 200, r); }
+      if (table === "rpc/take_call") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; state.usage.set(k, r);
+        if (r.calls < b.p_max_calls && r.output_tokens + b.p_reserve <= b.p_max_out && r.input_tokens < b.p_max_in) { r.calls++; r.output_tokens += b.p_reserve; return send(res, 200, true); } return send(res, 200, false); }
       const match = filters(url);
       if (table === "profiles") {
         let list = [...state.profiles.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid);
@@ -153,12 +155,13 @@ createServer(async (req, res) => {
       }
       if (table === "lessons") {
         if (req.method === "GET") { let list = [...state.lessons.values()].filter(match); if (!w.service) list = list.filter((r) => r.shared || r.owner === w.uid); return rows(res, req, url, list); }
+        if (req.method === "DELETE") { if (!w.service) return send(res, 403, {}); for (const [k, v] of [...state.lessons]) if (match(v)) state.lessons.delete(k); return send(res, 204); }
         if (req.method === "POST") {
           const b = JSON.parse((await readBody(req)).toString()); const arr = Array.isArray(b) ? b : [b];
           for (const r of arr) {
-            const old = state.lessons.get(r.id); const owner = w.uid;
-            if (old && old.owner !== owner) return send(res, 403, { code: "42501", message: "new row violates row-level security policy (USING expression)" });
-            if (r.shared && !/^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$/.test(r.id)) return send(res, 403, { code: "42501", message: "new row violates row-level security policy" });
+            const old = state.lessons.get(r.id); const owner = w.uid, slot = /^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$/.test(r.id);
+            if (old && (old.owner !== owner || old.shared || r.shared || slot)) return send(res, 403, { code: "42501", message: "new row violates row-level security policy (USING expression)" });
+            if (!!r.shared !== slot) return send(res, 403, { code: "42501", message: "new row violates row-level security policy" });
             if (!(state.profiles.get(owner) || {}).invited) return send(res, 403, { code: "42501", message: "new row violates row-level security policy (is_member)" });
             state.lessons.set(r.id, { ...r, owner });
           }

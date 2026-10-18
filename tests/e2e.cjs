@@ -143,6 +143,9 @@ const MOCKS = `
   ok(await b.isVisible("button:has-text('Reprendre')"), "pause en mode voiture");
   await b.click("text=← Accueil");
 
+  const cmdFirst = await b.evaluate(() => { const j = VO.judge(["ancora"], ["ancora"]); return j.ok; });
+  ok(cmdFirst === true, "« ancora » attendu comme réponse est jugé juste (et non pris pour une commande)");
+
   console.log("7. Plafond quotidien");
   const uidB = (await st()).users.find((u) => u.email === "luca@example.com").id;
   await a.evaluate(async (id) => WEBAUTH.admin("set_limit", { user_id: id, daily_limit: 0 }), uidB);
@@ -173,6 +176,15 @@ const MOCKS = `
   ok(seenByA.includes("it-u05-l1") && !seenByA.includes("ma-lecon-perso"), "le propriétaire voit la leçon partagée, pas la leçon perso de l'ami");
   const overwrite = await a.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u05-l1").set({ course: "it", title: "Écrasée" }); return "écrasée"; } catch (e) { return "refusé"; } });
   ok(overwrite === "refusé", "impossible d'écraser la leçon d'un autre membre");
+  const squat = await b.evaluate(async () => { const r = await WEBAUTH.sb.from("lessons").insert({ id: "it-u06-l2", course: "it", shared: false, doc: {} }); return r.error ? "refusé" : "accepté"; });
+  ok(squat === "refusé", "impossible de réserver une place du programme en privé");
+  const ownEdit = await b.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u05-l1").set({ course: "it", title: "Modifiée" }); return "modifiée"; } catch (e) { return "refusé"; } });
+  ok(ownEdit === "refusé", "une leçon partagée ne se modifie plus, même par son auteur");
+  const evil = await b.evaluate(async () => { const r = await WEBAUTH.sb.from("lessons").insert({ id: "it-u99-l1", course: "it", shared: true, doc: { course: "it", title: "<img src=x onerror=alert(1)>", json: "{}" } }); return r.error ? "refusé" : "écrite"; });
+  const seen = await a.evaluate(async () => { const db = await window.claude.use("db"); const r = await db.collection("lessons").get(); return r.docs.map((d) => d.id); });
+  ok(!seen.includes("it-u99-l1"), "une leçon partagée hors programme est ignorée par l'app (" + evil + " en base)");
+  const xss = await a.evaluate(() => { const m = toLesson("x", { course: "it", title: "<img src=x onerror=alert(1)>Titre", json: JSON.stringify({ lessons: ["<p>ok</p>"], vocab: Array(6).fill(["<b>a</b>", "b"]), ex: Array(8).fill(["o", "<i>x</i>", "uno due tre"]), dlg: Array(4).fill(["A", "<script>x</script>ciao", "fr"]), dq: [] }) }); return m && !/[<>]/.test(m.st + JSON.stringify(m.vocab) + JSON.stringify(m.dlg) + JSON.stringify(m.ex)); });
+  ok(xss === true, "aucune balise ne survit dans les textes d'une leçon venue de la base");
 
   console.log("11. Déconnexion : les données locales sont effacées");
   await b.goto(O + "/"); await b.waitForSelector("header.board");
