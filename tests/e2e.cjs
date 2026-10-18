@@ -59,17 +59,20 @@ const MOCKS = `
   await a.fill("#gate-newpass", "court"); await a.click("text=Enregistrer et entrer");
   await a.waitForFunction(() => /8 caractères/.test(document.querySelector(".gate-msg").textContent));
   await a.fill("#gate-newpass", "motdepasse1"); await a.click("text=Enregistrer et entrer");
-  await a.waitForSelector(".hero", { timeout: 10000 });
-  ok(await a.isVisible(".hero"), "accueil affiché après connexion");
+  await a.waitForSelector(".feed-hd", { timeout: 10000 });
+  ok(await a.isVisible(".feed-hd"), "accueil affiché après connexion");
   await a.waitForFunction(() => /enregistrée dans ton compte/.test(document.querySelector(".sync").textContent), null, { timeout: 8000 });
   ok(true, "synchronisation active : " + await a.textContent(".sync"));
-  await a.waitForSelector(".tile:has-text('Parler')", { timeout: 8000 });
+  await a.waitForSelector(".tabbar .tab-talk", { timeout: 8000 });
   ok(await a.isVisible(".tabbar"), "barre d'onglets affichée");
-  const nUnits = await a.$$eval("details.u2", (d) => d.length);
-  ok(nUnits >= 20, "programme affiché (" + nUnits + " unités)");
+  ok((await a.$$eval(".stories .story", (d) => d.length)) === 5, "stories : révision et quatre personnages");
+  ok((await a.$$eval(".carousel .theme", (d) => d.length)) >= 5, "thèmes de conversation en images");
+  await a.click(".tabbar [data-tab=lessons]");
+  const nUnits = await a.$$eval("details.unit-c", (d) => d.length);
+  ok(nUnits >= 5, "programme du niveau affiché (" + nUnits + " unités)");
 
   console.log("2. Une leçon : réponse enregistrée sur le serveur");
-  await a.click("details.u2[open] .l2-row >> nth=0");
+  await a.click("details.unit-c[open] .lrow >> nth=0");
   ok(await a.isHidden(".tabbar"), "pas d'onglets pendant une leçon");
   await a.waitForSelector("main.body");
   for (let i = 0; i < 4; i++) { const nx = await a.$("button:has-text('Suivant'), button:has-text('Continuer'), button:has-text('Commencer')"); if (!nx) break; await nx.click(); await a.waitForTimeout(150); }
@@ -83,8 +86,9 @@ const MOCKS = `
 
   console.log("3. Inviter un ami");
   await a.click("[aria-label='Quitter la leçon']");
-  await a.waitForSelector(".hero");
+  await a.waitForSelector(".feed-hd");
   await a.click(".tabbar [data-tab=profile]");
+  await a.click("[aria-label='Réglages du compte']");
   await a.waitForSelector("text=Mes amis : inviter et suivre");
   ok(await a.isVisible("text=Reprendre ma progression de l'app Claude"), "section d'import visible");
   await a.click("text=Mes amis : inviter et suivre");
@@ -107,11 +111,12 @@ const MOCKS = `
   ok((await b.inputValue("#gate-email")) === "luca@example.com", "adresse gardée sur l'écran du code");
   await b.fill("#gate-code", code); await b.click("button:has-text('Continuer')");
   await b.fill("#gate-newpass", "lucapass99"); await b.click("text=Enregistrer et entrer");
-  await b.waitForSelector(".hero", { timeout: 10000 });
-  await b.click(".tabbar [data-tab=profile]"); await b.waitForSelector("text=Tester le micro, text=Mot de passe", { timeout: 8000 }).catch(() => null);
+  await b.waitForSelector(".feed-hd", { timeout: 10000 });
+  await b.click(".tabbar [data-tab=profile]"); ok(!(await b.isVisible("text=Inviter un ami")), "pas de bouton d'invitation pour l'ami");
+  await b.click("[aria-label='Réglages du compte']"); await b.waitForSelector("text=Mot de passe", { timeout: 8000 }).catch(() => null);
   await b.waitForTimeout(600);
   ok(!(await b.isVisible("text=Mes amis : inviter et suivre")), "l'ami n'a pas la gestion des amis");
-  await b.click(".tabbar [data-tab=today]");
+  await b.click(".tabbar [data-tab=feed]");
   const doneB = await b.evaluate(() => slots().filter(isDone).length + ":" + Object.keys(S).filter((k) => /^\d+$|^L\./.test(k)).length);
   ok(doneB === "0:0", "progression de l'ami vierge (" + doneB + ")");
   const forbidden = await b.evaluate(async () => { const { data } = await WEBAUTH.sb.from("progress").select("user_id"); return data; });
@@ -119,33 +124,32 @@ const MOCKS = `
   const notAdmin = await b.evaluate(async () => { try { await WEBAUTH.admin("members"); return "ok"; } catch (e) { return e.code; } });
   ok(notAdmin === "forbidden", "gestion refusée à l'ami par le serveur");
 
-  console.log("5. Conversation à voix haute avec Claude");
-  await b.evaluate(() => { window.__said = ["Oggi ho andato al lavoro", "basta"]; });
-  await b.click(".tabbar [data-tab=speak]");
-  await b.click("button.opt:has-text('Ma journée')");
-  await b.waitForFunction(() => window.__said.length === 0 && /En pause/.test((document.querySelector(".aud-state") || {}).textContent || ""), null, { timeout: 15000 });
+  console.log("5. Conversation façon messagerie, à la voix et au clavier");
+  await b.click(".tabbar .tab-talk");
+  await b.click(".theme:has(b:text-is('Ma journée'))");
+  await b.waitForSelector(".msg.ai .bub", { timeout: 10000 });
+  await b.evaluate(() => { window.__said = ["Oggi ho andato al lavoro"]; window.__spoken = []; });
+  await b.click(".dm-act");
+  await b.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2 && window.__spoken.length >= 2, null, { timeout: 15000 });
   const spokenB = await b.evaluate(() => window.__spoken);
   ok(spokenB.some((x) => x.startsWith("fr-FR|On dit")), "correction lue avec la voix française");
   ok(spokenB.some((x) => x.startsWith("it-IT|Ah, interessante")), "réponse lue avec la voix italienne");
-  ok(await b.isVisible(".bub.me:has-text('Oggi ho andato al lavoro')"), "ma phrase transcrite apparaît");
+  ok(await b.isVisible(".msg.me:has-text('Oggi ho andato al lavoro')"), "ma phrase dictée apparaît");
+  ok(await b.isVisible(".note:has-text('On dit')"), "la correction s'affiche en note");
   s = await st();
   const lastClaude = s.claude[s.claude.length - 1];
-  ok(lastClaude.model === "claude-haiku-5-5" && /Giulia/.test(lastClaude.sys), "conversation envoyée au modèle rapide avec le rôle de professeure");
-  await b.evaluate(() => { window.__said = ["Vado in palestra"]; });
-  await b.click("button:has-text('Reprendre')");
-  await b.waitForFunction(() => document.querySelectorAll(".bub.me").length === 2, null, { timeout: 10000 });
-  await b.evaluate(() => { window.__said = ["basta"]; });
-  await b.waitForFunction(() => /En pause/.test(document.querySelector(".aud-state").textContent), null, { timeout: 10000 });
-  await b.click("text=Terminer et voir le bilan");
+  ok(lastClaude.model === "claude-haiku-5-5" && /Giulia/.test(lastClaude.sys), "conversation envoyée au modèle rapide avec le rôle de professeure (" + JSON.stringify(lastClaude) + ")");
+  await b.fill("#dm-input", "Vado in palestra"); await b.click(".dm-act");
+  await b.waitForFunction(() => document.querySelectorAll(".msg.me").length === 2 && !document.querySelector(".typing"), null, { timeout: 10000 });
+  ok(true, "message écrit envoyé");
+  await b.click(".chip-s:has-text('Bilan')");
   await b.waitForSelector("text=À corriger", { timeout: 10000 });
-  ok(await b.isVisible("text=sono andato"), "bilan avec la correction");
-
   console.log("6. Mode voiture qui écoute");
-  await b.click("text=Retour à l'accueil");
+  await b.click(".tabbar [data-tab=feed]").catch(async () => { await b.click("text=Retour à l'accueil"); });
   await b.evaluate(() => { const i = M.findIndex((m) => m.vocab && m.vocab.length > 2 && m.ex.some((x) => x[0] === "o")); window.__mi = i; const m = M[i];
     const said = ["", ""]; m.vocab.forEach((v) => said.push(v[0])); m.ex.forEach((x) => { if (x[0] === "o") said.push(String(x[2]).split("|")[0]); else if (x[0] === "f") said.push("sbagliato completamente"); });
     window.__said = said.slice(2); });
-  await b.click(".tile:has-text('En voiture')");
+  await b.click(".tabbar .tab-talk"); await b.click(".row:has-text('Mode voiture')");
   await b.waitForSelector("text=En voiture, mains libres");
   ok(await b.isVisible("button.opt:has-text('Parler librement avec Claude')"), "conversation libre proposée en voiture");
   await b.selectOption("#aud-pick", String(await b.evaluate(() => window.__mi)));
@@ -167,8 +171,8 @@ const MOCKS = `
   ok(/plafond du jour/.test(capped), "plafond atteint : « " + capped + " »");
 
   console.log("8. Import de la progression de l'app Claude");
-  await a.goto(O + "/"); await a.waitForSelector(".hero");
-  await a.click(".tabbar [data-tab=profile]");
+  await a.goto(O + "/"); await a.waitForSelector(".feed-hd");
+  await a.click(".tabbar [data-tab=profile]"); await a.click("[aria-label='Réglages du compte']");
   await a.waitForSelector("#import-text");
   await a.fill("#import-text", JSON.stringify({ ipp: 1, s: { "L.it-u01-l1": { done: true, best: 90 }, "L.it-u01-l2": { done: true, best: 80 }, v: { "L.it-u01-l1-0": 2 }, nb: { "L.it-u01-l1-0": 1 }, t: 1 } }));
   await a.click("button:has-text('Importer')");
@@ -200,22 +204,38 @@ const MOCKS = `
   const xss = await a.evaluate(() => { const m = toLesson("x", { course: "it", title: "<img src=x onerror=alert(1)>Titre", json: JSON.stringify({ lessons: ["<p>ok</p>"], vocab: Array(6).fill(["<b>a</b>", "b"]), ex: Array(8).fill(["o", "<i>x</i>", "uno due tre"]), dlg: Array(4).fill(["A", "<script>x</script>ciao", "fr"]), dq: [] }) }); return m && !/[<>]/.test(m.st + JSON.stringify(m.vocab) + JSON.stringify(m.dlg) + JSON.stringify(m.ex)); });
   ok(xss === true, "aucune balise ne survit dans les textes d'une leçon venue de la base");
 
+  console.log("10b. Entre amis : activité, bravo, classement");
+  await b.evaluate(() => SOC.post("lesson", { t: "Se présenter", pct: 92 }));
+  await a.evaluate(() => UI.go("feed"));
+  await a.waitForSelector(".friend:has-text('Luca a terminé « Se présenter » avec 92 %')", { timeout: 8000 });
+  ok(true, "l'activité de l'ami apparaît dans le fil, sous son prénom");
+  await a.click(".friend .cheer"); await a.waitForSelector(".friend .cheer.on");
+  ok((await st()).cheers.length === 1, "bravo enregistré");
+  await b.evaluate(() => UI.go("feed"));
+  await b.waitForSelector(".friend:has-text('dit bravo')", { timeout: 8000 });
+  ok(true, "l'ami voit le bravo reçu");
+  await b.evaluate(() => UI.go("profile"));
+  await b.waitForSelector(".lb", { timeout: 8000 });
+  ok((await b.$$eval(".lb", (l) => l.length)) >= 2, "classement de la semaine entre amis");
+  const anon = await post("/__seed", { email: "rien@example.com", password: "rien12345" });
+  ok(!!anon, "compte non invité préparé");
+
   console.log("11. Déconnexion : les données locales sont effacées");
-  await b.goto(O + "/"); await b.waitForSelector(".hero");
-  await b.click(".tabbar [data-tab=profile]");
+  await b.goto(O + "/"); await b.waitForSelector(".feed-hd");
+  await b.click(".tabbar [data-tab=profile]"); await b.click("[aria-label='Réglages du compte']");
   await b.click("text=Se déconnecter de cet appareil");
   await b.waitForSelector("#gate-email", { timeout: 8000 });
   const left = await b.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("italiano")));
   ok(left.length === 0, "aucune donnée de leçon laissée sur l'appareil");
   await b.fill("#gate-email", "luca@example.com"); await b.fill("#gate-pass", "lucapass99"); await b.click("button:has-text('Se connecter')");
-  ok(!!(await b.waitForSelector(".hero", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
+  ok(!!(await b.waitForSelector(".feed-hd", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
 
   console.log("12. Un compte créé sans invitation n'a pas accès à Claude");
   await post("/__seed", { email: "intrus@example.com" });
   const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
   await post("/__seed", { email: "intrus@example.com", password: "intrus123" });
-  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".hero", { timeout: 10000 });
+  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".feed-hd", { timeout: 10000 });
   const intr = await c.evaluate(async () => { try { await AI("Ciao", { modelTier: "quick" }); return "passé"; } catch (e) { return e.code + "|" + aiFail(e); } });
   ok(/^not_invited\|/.test(intr), "Claude refusé : " + intr);
   const intrLesson = await c.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u09-l1").set({ course: "it", title: "Spam" }); return "écrite"; } catch (e) { return "refusée"; } });

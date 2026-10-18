@@ -1,8 +1,8 @@
 /* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
-const VERSION = "ipp-add0881b91";
-const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","js/app.js?v=add0881b91","js/voice.js?v=add0881b91","js/web.js?v=add0881b91","js/ui.js?v=add0881b91","css/app.css?v=add0881b91","js/shim.js?v=add0881b91","js/supabase.js?v=add0881b91","css/web.css?v=add0881b91","content/catalog.json?v=add0881b91","config.js?v=add0881b91"];
+const VERSION = "ipp-1c6b737425";
+const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","js/app.js?v=1c6b737425","js/voice.js?v=1c6b737425","js/web.js?v=1c6b737425","js/dm.js?v=1c6b737425","js/ui.js?v=1c6b737425","css/app.css?v=1c6b737425","js/shim.js?v=1c6b737425","js/supabase.js?v=1c6b737425","css/web.css?v=1c6b737425","content/catalog.json?v=1c6b737425","config.js?v=1c6b737425"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

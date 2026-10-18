@@ -11,7 +11,7 @@ const O = "http://127.0.0.1:8787";
   await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
   await p.waitForSelector(".tabbar [data-tab=profile]", { timeout: 10000 });
   const before = (await (await fetch(O + "/__state")).json()).stt;
-  await p.click(".tabbar [data-tab=profile]"); await p.waitForSelector("text=Tester le micro");
+  await p.click(".tabbar [data-tab=profile]"); await p.click("[aria-label='Réglages du compte']"); await p.waitForSelector("text=Tester le micro");
   const mode = await p.textContent(".cj-facts");
   await p.click("section:has-text('Tester le micro') button:has-text('Écouter')");
   await p.waitForFunction(() => /Ciao, come stai/.test(document.querySelector(".car-heard").textContent) || /Rien entendu|échoué|refusé/.test(document.querySelector(".car-heard").textContent), null, { timeout: 25000 });

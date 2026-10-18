@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = +(process.argv[2] || 8787);
 const ORIGIN = "http://127.0.0.1:" + PORT;
 const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
-export const state = { users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0 };
+export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0 };
 
 // ---------- Environnement de la fonction ----------
 const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), ANTHROPIC_API_KEY: "test-key", OWNER_EMAIL: "bramigab@gmail.com", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
@@ -31,7 +31,8 @@ function fakeClaude(b) {
   let text;
   if (/objet JSON/.test(last) && /resume/.test(last)) text = '{"resume":"Bonne conversation. Attention aux auxiliaires.","erreurs":[{"type":"grammaire","dit":"ho andato","mieux":"sono andato","regle":"andare se conjugue avec essere."}],"mots":[{"it":"il lavoro","fr":"le travail"}]}';
   else if (/Giulia/.test(sys)) text = "FR: On dit : sono andato.\nIT: Ah, interessante! E dopo il lavoro, che cosa fai?";
-  else if (/Jeu de rôle à voix haute/.test(sys)) text = "IT: Va bene! E poi che cosa hai fatto?";
+  else if (/^Jeu de rôle/.test(sys)) text = "FR: Plus naturel : vorrei un caffè.\nIT: Va bene! E poi che cosa prendi?";
+  else if (/^Tu joues/.test(sys)) text = "IT: Certo! Il cornetto alla crema o vuoto?";
   else text = "Benissimo! E tu, che cosa ne pensi?";
   const ev = (o) => "event: " + o.type + "\ndata: " + JSON.stringify(o) + "\n\n";
   const parts = text.match(/[\s\S]{1,18}/g);
@@ -78,9 +79,10 @@ function who(req) {
 const send = (res, status, body, headers = {}) => { res.writeHead(status, { "content-type": "application/json", "access-control-allow-origin": "*", ...headers }); res.end(body === undefined ? "" : JSON.stringify(body)); };
 async function readBody(req) { const ch = []; for await (const c of req) ch.push(c); return Buffer.concat(ch); }
 function filters(url) {
-  const f = []; for (const [k, v] of url.searchParams) { const m = v.match(/^(eq|gte)\.(.*)$/); if (m && !["select", "order", "limit", "on_conflict"].includes(k)) f.push([k, m[1], decodeURIComponent(m[2])]); }
-  return (row) => f.every(([k, op, v]) => op === "eq" ? String(row[k]) === v : String(row[k]) >= v);
+  const f = []; for (const [k, v] of url.searchParams) { const m = v.match(/^(eq|gte|in)\.(.*)$/); if (m && !["select", "order", "limit", "on_conflict"].includes(k)) f.push([k, m[1], decodeURIComponent(m[2])]); }
+  return (row) => f.every(([k, op, v]) => op === "eq" ? String(row[k]) === v : op === "in" ? v.replace(/^\(|\)$/g, "").split(",").includes(String(row[k])) : String(row[k]) >= v);
 }
+const member = (w) => w.service || !!(state.profiles.get(w.uid) || {}).invited;
 function pick(row, url) { const s = url.searchParams.get("select"); if (!s || s === "*") return row; const o = {}; s.split(",").forEach((k) => { o[k] = row[k]; }); return o; }
 function rows(res, req, url, list) {
   const out = list.map((r) => pick(r, url));
@@ -94,7 +96,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; return send(res, 200, u); }
 
     // Fonctions
@@ -144,7 +146,21 @@ createServer(async (req, res) => {
       if (table === "rpc/add_usage") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.calls += b.p_calls; r.input_tokens += b.p_in; r.output_tokens += b.p_out; r.stt_seconds += b.p_stt; state.usage.set(k, r); return send(res, 200, r); }
       if (table === "rpc/take_call") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; state.usage.set(k, r);
         if (r.calls < b.p_max_calls && r.output_tokens + b.p_reserve <= b.p_max_out && r.input_tokens < b.p_max_in) { r.calls++; r.output_tokens += b.p_reserve; return send(res, 200, true); } return send(res, 200, false); }
+      if (table === "rpc/members") { if (!member(w)) return send(res, 200, []); return send(res, 200, [...state.profiles.values()].filter((p) => p.invited).map((p) => ({ user_id: p.user_id, name: p.name || "" }))); }
       const match = filters(url);
+      if (table === "activity") {
+        if (req.method === "GET") { if (!member(w)) return send(res, 200, []); return rows(res, req, url, state.activity.filter(match).sort((a, b) => b.id - a.id).slice(0, +(url.searchParams.get("limit") || 1000))); }
+        if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); if (!member(w) || b.user_id !== w.uid) return send(res, 403, { code: "42501", message: "row-level security" }); state.activity.push({ id: state.activity.length + 1, user_id: w.uid, kind: b.kind, data: b.data || {}, created_at: new Date().toISOString() }); return send(res, 201); }
+      }
+      if (table === "cheers") {
+        if (req.method === "GET") { if (!member(w)) return send(res, 200, []); return rows(res, req, url, state.cheers.filter(match)); }
+        if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); if (!member(w) || b.user_id !== w.uid) return send(res, 403, { code: "42501", message: "row-level security" }); if (!state.cheers.some((c) => c.activity_id === b.activity_id && c.user_id === w.uid)) state.cheers.push({ activity_id: b.activity_id, user_id: w.uid }); return send(res, 201); }
+        if (req.method === "DELETE") { state.cheers = state.cheers.filter((c) => !(match(c) && c.user_id === w.uid)); return send(res, 204); }
+      }
+      if (table === "weekly") {
+        if (req.method === "GET") { if (!member(w)) return send(res, 200, []); return rows(res, req, url, [...state.weekly.values()].filter(match)); }
+        if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); const arr = Array.isArray(b) ? b : [b]; for (const r of arr) { if (!member(w) || r.user_id !== w.uid) return send(res, 403, { code: "42501", message: "row-level security" }); state.weekly.set(r.user_id + "|" + r.week, { ...r }); } return send(res, 201); }
+      }
       if (table === "profiles") {
         let list = [...state.profiles.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid);
         if (req.method === "GET") return rows(res, req, url, list);

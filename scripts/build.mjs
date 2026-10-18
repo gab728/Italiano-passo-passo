@@ -52,7 +52,7 @@ const catJSON = JSON.stringify(catalog);
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["js/app.js", "js/voice.js", "js/web.js", "js/ui.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js"];
+const files = ["js/app.js", "js/voice.js", "js/web.js", "js/dm.js", "js/ui.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js"];
 const hash = createHash("sha256");
 for (const f of files) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
@@ -74,6 +74,7 @@ const html = `<!doctype html>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${fonts}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
 <style>${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">
@@ -92,7 +93,7 @@ ${fonts}
 writeFileSync(join(WEB, "index.html"), html);
 
 // Service worker : la coquille de l'app et le catalogue restent disponibles hors ligne.
-const shell = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"]
+const shell = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"].concat(readdirSync(join(WEB, "img", "themes")).filter((f) => f.endsWith(".svg")).map((f) => "img/themes/" + f))
   .concat(files.map((f) => f + "?v=" + BUILD));
 writeFileSync(join(WEB, "sw.js"), read("scripts/sw.template.js").replace("__BUILD__", BUILD).replace("__SHELL__", JSON.stringify(shell)));
 

@@ -13,7 +13,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.goto(O + "/"); await p.waitForSelector("#gate-email");
     await p.screenshot({ path: `${OUT}/${scheme}-1-gate.png` });
     await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
-    await p.waitForSelector(".hero", { timeout: 10000 });
+    await p.waitForSelector(".feed-hd", { timeout: 10000 });
     await p.screenshot({ path: `${OUT}/${scheme}-3-home.png`, fullPage: false });
     await p.evaluate(() => document.querySelector(".path").scrollIntoView());
     await p.screenshot({ path: `${OUT}/${scheme}-4-tools.png` });
@@ -26,7 +26,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.screenshot({ path: `${OUT}/${scheme}-6-vchat.png` });
     await p.click("button:has-text('Pause')").catch(() => {});
     await p.click("text=← Terminer");
-    await p.waitForSelector(".hero");
+    await p.waitForSelector(".feed-hd");
     await p.evaluate(() => { window.__said = Array(40).fill("ciao"); });
     await p.click(".tile:has-text('En voiture')"); await p.waitForSelector("text=En voiture, mains libres");
     await p.screenshot({ path: `${OUT}/${scheme}-7-car.png` });
@@ -36,7 +36,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     await p.waitForFunction(() => VCAR && VCAR.listening, null, { timeout: 15000 });
     await p.screenshot({ path: `${OUT}/${scheme}-8-car-listen.png` });
     await p.click("button:has-text('Pause')"); await p.click("text=← Accueil");
-    await p.click(".tabbar [data-tab=profile]"); await p.waitForSelector("text=Tester le micro");
+    await p.click(".tabbar [data-tab=profile]"); await p.click("[aria-label='Réglages du compte']"); await p.waitForSelector("text=Tester le micro");
     await p.screenshot({ path: `${OUT}/${scheme}-9-account.png`, fullPage: true });
     await p.click("text=Mes amis : inviter et suivre");
     await p.fill("#inv-name", "Luca"); await p.fill("#inv-email", "luca" + scheme + "@example.com"); await p.click("text=Créer l'invitation");
