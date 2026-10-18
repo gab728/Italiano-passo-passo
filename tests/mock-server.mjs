@@ -21,6 +21,7 @@ globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
+  if (u === "https://api.anthropic.com/v1/models" || u === "https://api.openai.com/v1/models") return new Response(JSON.stringify({ data: [] }), { headers: { "content-type": "application/json" } });
   if (u.startsWith("https://api.anthropic.com/")) return fakeClaude(JSON.parse(init.body));
   if (u.startsWith("https://api.openai.com/v1/audio/speech")) {
     const b = JSON.parse(init.body); state.tts.push({ voice: b.voice, input: b.input, speed: b.speed, instructions: (b.instructions || "").slice(0, 40) });
@@ -116,6 +117,7 @@ createServer(async (req, res) => {
     }
 
     // Stockage (cache des voix), clé serveur seulement
+    if (p === "/storage/v1/bucket/tts") return send(res, 200, { id: "tts" });
     if (p.startsWith("/storage/v1/object/")) {
       const w = who(req); if (!w || !w.service) return send(res, 403, { message: "Unauthorized" });
       const name = p.slice("/storage/v1/object/".length);

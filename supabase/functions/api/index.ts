@@ -293,6 +293,31 @@ async function admin(req: Request, u: User): Promise<Response> {
     const c = await loginCode(email);
     return c ? json(req, { email, code: c.code, user_id: found.id }) : fail(req, 502, "unavailable", "Compte créé, mais le code n'a pas pu être généré. Réessaie.");
   }
+  // Vérification de la configuration : chaque clé est essayée, sans jamais être renvoyée.
+  if (act === "health") {
+    const kind = (k: string) => !k ? "absente" : k.startsWith("sk-ant-") ? "anthropic" : /^sk-(proj-|svcacct-|admin-)?/.test(k) ? "openai" : "inconnue";
+    const probe = async (url: string, headers: Record<string, string>) => { try { const r = await fetch(url, { headers }); await r.body?.cancel(); return r.status; } catch { return 0; } };
+    const out: Json = {};
+    const ak = env("ANTHROPIC_API_KEY");
+    if (!ak) out.claude = { ok: false, why: "Le secret ANTHROPIC_API_KEY est absent." };
+    else if (kind(ak) === "openai") out.claude = { ok: false, why: "ANTHROPIC_API_KEY contient une clé OpenAI (elle commence par sk- mais pas par sk-ant-). Remets-y ta clé Anthropic, et mets la clé OpenAI dans OPENAI_API_KEY." };
+    else {
+      const st = await probe("https://api.anthropic.com/v1/models", { "x-api-key": ak, "anthropic-version": "2023-06-01" });
+      out.claude = st === 200 ? { ok: true } : { ok: false, why: st === 401 ? "La clé Anthropic est refusée (révoquée ou mal copiée). Crée-en une nouvelle sur console.anthropic.com et remplace ANTHROPIC_API_KEY." : st === 403 ? "La clé Anthropic n'a pas les droits nécessaires." : st === 0 ? "Anthropic injoignable depuis le serveur." : "Réponse inattendue d'Anthropic (" + st + ")." };
+    }
+    const ok = ttsKey();
+    const from = env("TTS_API_KEY") ? "TTS_API_KEY" : env("OPENAI_API_KEY") ? "OPENAI_API_KEY" : env("STT_API_KEY") ? "STT_API_KEY" : "";
+    if (!ok) out.voice = { ok: false, why: "Aucune clé OpenAI : ajoute le secret OPENAI_API_KEY pour les voix naturelles et le micro sur iPhone." };
+    else if (kind(ok) === "anthropic") out.voice = { ok: false, why: from + " contient une clé Anthropic : il faut une clé OpenAI (platform.openai.com)." };
+    else {
+      const st = await probe("https://api.openai.com/v1/models", { authorization: "Bearer " + ok });
+      out.voice = st === 200 ? { ok: true, from } : { ok: false, why: st === 401 ? "La clé OpenAI (" + from + ") est refusée." : st === 429 ? "Le compte OpenAI n'a plus de crédit ou est limité." : "Réponse inattendue d'OpenAI (" + st + ")." };
+    }
+    const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
+    out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
+    out.owner = { ok: true };
+    return json(req, out);
+  }
   if (act === "members") {
     const people = await restJSON("profiles?invited=eq.true&select=user_id,email,name,daily_limit,created_at&order=created_at.asc") || [];
     const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);

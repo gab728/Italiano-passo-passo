@@ -416,3 +416,8 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .dm.speaking .dm-hd .av { animation: ipp-speak 1.1s ease-in-out infinite; }
 @keyframes ipp-speak { 0%, 100% { box-shadow: 0 0 0 2px var(--spritz-soft); } 50% { box-shadow: 0 0 0 5px var(--spritz-soft), 0 0 0 6px var(--spritz); } }
 @media (prefers-reduced-motion: reduce) { .dm.speaking .dm-hd .av { animation: none; box-shadow: 0 0 0 3px var(--spritz); } }
+.health-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.health-list li { display: flex; flex-direction: column; gap: 3px; font-size: 14.5px; }
+.health-list li.ok b { color: var(--ok); font-weight: 600; }
+.health-list li.ko b { color: var(--ko); font-weight: 600; }
+.health-list li span { color: var(--muted); }

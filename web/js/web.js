@@ -19,6 +19,13 @@
     no_owner: "Le serveur ne connaît pas encore le propriétaire de l'app : il faut ajouter le secret OWNER_EMAIL dans Supabase.",
   });
 
+  // Pour le propriétaire, un problème de configuration affiche la cause exacte donnée par le serveur.
+  const baseFail = aiFail;
+  aiFail = function (e) {
+    if (e && e.code === "not_configured" && W.me && W.me.owner && e.message) return e.message + " Vérifie dans Mon compte → Vérifier la configuration.";
+    return baseFail(e);
+  };
+
   /* Accroches posées dans le code de l'app au moment de la construction (scripts/build.mjs). */
   window.WEB = {
     tools(tool) {
@@ -171,7 +178,23 @@
     };
     im.append(ta, ib2, msg); body.append(im);
 
-    if (me && me.owner) { const ad = btn("Membres : suivre et gérer", "primary"); ad.onclick = friends; body.append(ad); }
+    if (me && me.owner) {
+      const hc = el("section", "panel health"); hc.append(el("h2", null, "Vérifier la configuration"));
+      hc.append(el("p", "fr", "Essaie chaque clé du serveur (Claude, voix, cache) et dit ce qui manque."));
+      const res = el("ul", "health-list"); const go = btn("Vérifier");
+      go.onclick = async () => {
+        go.disabled = true; res.innerHTML = ""; res.append(el("li", null, "Vérification…"));
+        try {
+          const r = await W.admin("health"); res.innerHTML = "";
+          [["claude", "Claude"], ["voice", "Voix naturelles et micro"], ["cache", "Cache des voix"]].forEach(([k, label]) => {
+            const x = r[k] || {}, li = el("li", x.ok ? "ok" : "ko"); li.append(el("b", null, (x.ok ? "✓ " : "✕ ") + label)); if (!x.ok && x.why) li.append(el("span", null, x.why)); res.append(li);
+          });
+        } catch (e) { res.innerHTML = ""; res.append(el("li", "ko", e.message || aiFail(e))); }
+        go.disabled = false;
+      };
+      hc.append(go, res); body.append(hc);
+      const ad = btn("Membres : suivre et gérer", "primary"); ad.onclick = friends; body.append(ad);
+    }
 
     const out = el("div", "notes");
     const so = el("button", "linkbtn"); so.type = "button"; so.textContent = "Se déconnecter de cet appareil";

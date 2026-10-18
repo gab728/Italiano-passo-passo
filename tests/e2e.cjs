@@ -313,6 +313,9 @@ const MOCKS = `
   ok((await a.evaluate(() => window.__spoken)).some((x) => /Grazie mille/.test(x)), "voix du téléphone quand les voix naturelles sont coupées");
   await a.evaluate(() => { S.vx = {}; UI.go("profile"); WEB.account(); });
   await a.waitForSelector(".voices .switch-row");
+  await a.click(".health button:has-text('Vérifier')"); await a.waitForSelector(".health-list li.ok >> nth=2", { timeout: 8000 });
+  ok((await a.$$eval(".health-list li.ok", (l) => l.length)) === 3, "vérification de la configuration : tout est en ordre");
+  ok((await b.evaluate(async () => { try { await WEBAUTH.admin("health"); return "ok"; } catch (e) { return e.code; } })) === "forbidden", "vérification réservée au propriétaire");
   ok((await a.$$eval(".voices .switch-row", (r) => r.length)) === 3 && await a.isVisible(".voice-test button:has-text('Nonna Rosa')"), "réglages des voix dans le compte");
 
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
