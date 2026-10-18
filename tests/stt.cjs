@@ -8,7 +8,7 @@ const O = "http://127.0.0.1:8787";
   await ctx.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
   const p = await ctx.newPage(); const errs = []; p.on("pageerror", (e) => errs.push(e.message));
   await p.goto(O + "/"); await p.waitForSelector("#gate-email");
-  await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un code par e-mail");
+  await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un lien par e-mail");
   await p.fill("#gate-code", "123456"); await p.click("text=Se connecter");
   await p.waitForSelector("text=Compte et amis", { timeout: 10000 });
   const before = (await (await fetch(O + "/__state")).json()).stt;

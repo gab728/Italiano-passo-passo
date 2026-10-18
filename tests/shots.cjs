@@ -12,7 +12,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     const p = await ctx.newPage();
     await p.goto(O + "/"); await p.waitForSelector("#gate-email");
     await p.screenshot({ path: `${OUT}/${scheme}-1-gate.png` });
-    await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un code par e-mail");
+    await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un lien par e-mail");
     await p.waitForSelector("#gate-code"); await p.screenshot({ path: `${OUT}/${scheme}-2-code.png` });
     await p.fill("#gate-code", "123456"); await p.click("text=Se connecter");
     await p.waitForSelector("text=Parler avec Claude", { timeout: 10000 });

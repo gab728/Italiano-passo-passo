@@ -24,7 +24,7 @@
   const BASE = CFG.supabaseUrl.replace(/\/+$/, "");
   const FN = BASE + "/functions/v1/api";
   const sb = window.supabase.createClient(BASE, CFG.supabaseKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "ipp-auth" },
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "ipp-auth" },
   });
 
   let session = null, ready = null, resolveReady;
@@ -242,6 +242,9 @@
 
   /* ---------- Écran de connexion : e-mail puis code ---------- */
   const params = new URLSearchParams(location.search);
+  // Lien de connexion expiré ou déjà utilisé : Supabase revient avec l'erreur dans l'adresse.
+  const hashErr = new URLSearchParams(location.hash.replace(/^#/, "")).get("error_description");
+  if (hashErr) history.replaceState(null, "", location.pathname + location.search);
   function authError(e) {
     const m = String((e && e.message) || "");
     if (/signups? not allowed|not allowed for otp|user not found/i.test(m)) return "Cette adresse n'est pas encore invitée. Demande une invitation à la personne qui t'a fait découvrir l'app.";
@@ -258,27 +261,27 @@
     card.append(brand);
     const msg = $("p", "gate-msg"); msg.setAttribute("role", "status"); msg.hidden = !note; if (note) msg.textContent = note;
     if (step === "email") {
-      card.append($("h1", null, "Connexion"), $("p", "fr", "Entre ton adresse e-mail. Tu recevras un code de connexion, ou utilise celui qu'on t'a envoyé avec ton invitation."));
+      card.append($("h1", null, "Connexion"), $("p", "fr", "Entre ton adresse e-mail. Tu recevras un e-mail avec un lien de connexion ; si on t'a envoyé un code avec ton invitation, touche « J'ai déjà un code »."));
       const f = document.createElement("form"); f.className = "gate-form";
       const lab = $("label", null, "Adresse e-mail"); lab.htmlFor = "gate-email";
       const inp = document.createElement("input"); inp.id = "gate-email"; inp.type = "email"; inp.autocomplete = "email"; inp.required = true; inp.value = email || params.get("e") || ""; inp.setAttribute("autocapitalize", "off");
-      const send = $("button", "btn primary", "Recevoir un code par e-mail"); send.type = "submit";
+      const send = $("button", "btn primary", "Recevoir un lien par e-mail"); send.type = "submit";
       const have = $("button", "btn", "J'ai déjà un code"); have.type = "button";
       f.append(lab, inp, send, have, msg);
       const valid = () => { const v = inp.value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { msg.hidden = false; msg.textContent = "Cette adresse e-mail ne semble pas complète."; inp.focus(); return null; } return v; };
       f.onsubmit = async (ev) => {
         ev.preventDefault(); const v = valid(); if (!v) return;
         send.disabled = true; msg.hidden = false; msg.textContent = "Envoi du code…";
-        const { error } = await sb.auth.signInWithOtp({ email: v, options: { shouldCreateUser: false } });
+        const { error } = await sb.auth.signInWithOtp({ email: v, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
         send.disabled = false;
         if (error) { msg.textContent = authError(error); return; }
-        showGate("code", v, "Code envoyé à " + v + ". Regarde aussi dans les courriers indésirables.");
+        showGate("code", v, "E-mail envoyé à " + v + " (regarde aussi dans les indésirables). Ouvre-le sur ce téléphone et touche « Sign in » : tu seras connecté ici. Si l'e-mail contient plutôt un code, entre-le ci-dessous.");
       };
       have.onclick = () => { const v = valid(); if (v) showGate("code", v); };
       card.append(f);
       setTimeout(() => inp.focus(), 50);
     } else {
-      card.append($("h1", null, "Ton code"), $("p", "fr", "Entre le code reçu pour " + email + "."));
+      card.append($("h1", null, note ? "Vérifie tes e-mails" : "Ton code"), $("p", "fr", (note ? "Tu as plutôt un code ? " : "") + "Entre le code reçu pour " + email + "."));
       const f = document.createElement("form"); f.className = "gate-form";
       const lab = $("label", null, "Code de connexion"); lab.htmlFor = "gate-code";
       const inp = document.createElement("input"); inp.id = "gate-code"; inp.inputMode = "numeric"; inp.autocomplete = "one-time-code"; inp.pattern = "[0-9 ]*"; inp.maxLength = 12; inp.required = true; inp.className = "gate-code";
@@ -310,7 +313,7 @@
     if (started) return;
     const netFail = navigator.onLine === false || (error && (error.name === "AuthRetryableFetchError" || error.status === 0 || /fetch|network|Failed/i.test(String(error.message || ""))));
     const st = netFail ? storedSession() : null;
-    if (st) start(st); else showGate("email");
+    if (st) start(st); else showGate("email", "", hashErr ? "Ce lien de connexion a expiré ou a déjà servi. Demande-en un nouveau." : "");
   }
   sb.auth.onAuthStateChange((event, s) => {
     setTimeout(() => {

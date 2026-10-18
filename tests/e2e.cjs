@@ -41,10 +41,10 @@ const MOCKS = `
   await a.goto(O + "/");
   await a.waitForSelector("#gate-email");
   ok(await a.isHidden("#app"), "l'app reste cachée avant la connexion");
-  await a.fill("#gate-email", "inconnu@example.com"); await a.click("text=Recevoir un code par e-mail");
+  await a.fill("#gate-email", "inconnu@example.com"); await a.click("text=Recevoir un lien par e-mail");
   await a.waitForFunction(() => /pas encore invitée/.test(document.querySelector(".gate-msg").textContent));
   ok(true, "adresse non invitée refusée");
-  await a.fill("#gate-email", "bramigab@gmail.com"); await a.click("text=Recevoir un code par e-mail");
+  await a.fill("#gate-email", "bramigab@gmail.com"); await a.click("text=Recevoir un lien par e-mail");
   await a.waitForSelector("#gate-code");
   await a.fill("#gate-code", "000000"); await a.click("text=Se connecter");
   await a.waitForFunction(() => /pas valable/.test(document.querySelector(".gate-msg").textContent));
@@ -93,7 +93,7 @@ const MOCKS = `
   await b.goto(O + "/?e=luca%40example.com");
   await b.waitForSelector("#gate-email");
   ok((await b.inputValue("#gate-email")) === "luca@example.com", "adresse pré-remplie depuis le lien");
-  await b.click("text=J'ai déjà un code");
+  await b.click("button:has-text(\"J'ai déjà un code\")");
   await b.fill("#gate-code", code); await b.click("text=Se connecter");
   await b.waitForSelector("header.board", { timeout: 10000 });
   ok(!!(await b.waitForSelector("text=Mon compte", { timeout: 8000 }).catch(() => null)), "l'ami voit « Mon compte » (pas la gestion)");
@@ -198,7 +198,7 @@ const MOCKS = `
   await post("/__seed", { email: "intrus@example.com" });
   const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
-  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.click("text=Recevoir un code par e-mail");
+  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.click("text=Recevoir un lien par e-mail");
   await c.fill("#gate-code", "123456"); await c.click("text=Se connecter"); await c.waitForSelector("header.board", { timeout: 10000 });
   const intr = await c.evaluate(async () => { try { await AI("Ciao", { modelTier: "quick" }); return "passé"; } catch (e) { return e.code + "|" + aiFail(e); } });
   ok(/^not_invited\|/.test(intr), "Claude refusé : " + intr);

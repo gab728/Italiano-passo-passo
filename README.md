@@ -25,13 +25,7 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 2. **Project Settings → API Keys** : note l'**URL du projet** (`https://xxxx.supabase.co`), la **clé publique** (*publishable*, commence par `sb_publishable_`) et l'**identifiant du projet** (les lettres de l'URL, avant `.supabase.co`).
 3. **Authentication → Sign In / Providers** (ou *Settings*, selon la version) : désactive **Allow new users to sign up**. Seules les personnes que tu invites depuis l'app pourront se connecter.
 4. **Authentication → Users → Add user → Create new user** : ton adresse e-mail (la même que `OWNER_EMAIL` plus bas), un mot de passe quelconque (il ne servira pas), et coche **Auto Confirm User**. C'est ton compte de propriétaire ; tes amis, eux, seront créés depuis l'app.
-5. **Authentication → Emails → Magic Link** : remplace le contenu du modèle par :
-   ```html
-   <h2>Ton code de connexion</h2>
-   <p>Entre ce code dans l'app : <strong>{{ .Token }}</strong></p>
-   <p>Il est valable une heure.</p>
-   ```
-   Sans réglage d'envoi d'e-mails, Supabase n'écrit qu'aux membres de ton équipe Supabase : utilise donc dans l'app **la même adresse que ton compte Supabase**. Tes amis, eux, reçoivent leur code par message (voir « Inviter des amis »).
+5. **Authentication → URL Configuration** : dans *Site URL*, mets l'adresse de l'app (par exemple `https://ton-nom.github.io/italiano-passo-passo/`) et ajoute-la aussi dans *Redirect URLs*. C'est là que mène le lien « Sign in » des e-mails de connexion. Sans réglage d'envoi d'e-mails, Supabase n'écrit qu'aux membres de ton équipe Supabase : c'est suffisant pour toi ; tes amis, eux, reçoivent un code par message (voir « Inviter des amis »).
 6. **Edge Functions → Secrets** : ajoute
    - `ANTHROPIC_API_KEY` = la clé de l'étape 1
    - `OWNER_EMAIL` = ton adresse e-mail (celle avec laquelle tu te connecteras)
@@ -49,7 +43,7 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 Ensuite, chaque modification du dépôt republie tout automatiquement.
 
 ### 4. Premiers pas dans l'app
-1. Ouvre l'adresse de l'app sur ton téléphone, entre ton e-mail, puis le code reçu.
+1. Ouvre l'adresse de l'app sur ton téléphone, entre ton e-mail, puis ouvre sur ce même téléphone l'e-mail reçu et touche « Sign in ».
 2. Installe-la sur l'écran d'accueil (iPhone : Safari → Partager → *Sur l'écran d'accueil* ; Android : menu → *Installer l'application*). Sur iPhone, l'app installée a son propre stockage : connecte-toi une fois dedans avec un code obtenu par *Mon compte → Connecter un autre appareil*.
 3. **Reprendre ta progression** : dans l'app Claude « Italiano passo passo », touche *Transférer ma progression vers l'app mobile* en bas de l'accueil, puis colle le texte dans *Mon compte → Reprendre ma progression de l'app Claude*. Rien n'est effacé : les deux progressions sont fusionnées.
 
