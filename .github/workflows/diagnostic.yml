@@ -23,8 +23,8 @@ jobs:
                  --data-urlencode "iso_timestamp_start=$start" --data-urlencode "iso_timestamp_end=$end" --data-urlencode "sql=$1"; echo; }
           note() { t="$1"; m=$(cat | head -c 60000); m="${m//'%'/'%25'}"; m="${m//$'\n'/'%0A'}"; echo "::notice title=$t::$m"; }
           # Journaux de la fonction : route, statut, durée, et messages d'erreur (aucune donnée personnelle n'y est écrite).
-          q "select timestamp, log_attributes['request.method'] as m, log_attributes['request.path'] as path, log_attributes['response.status_code'] as st from logs where source = 'edge_logs' and log_attributes['request.path'] like '%/functions/%' order by timestamp desc limit 80" > gw.json
-          jq -r '.result[]? | "\(.timestamp)  \(.m)  \(.st)  \(.path)"' gw.json | note "Passerelle" || true
+          q "select timestamp, event_message, log_attributes['response.status_code'] as st from logs where source = 'edge_logs' and event_message like '%functions%' order by timestamp desc limit 60" > gw.json
+          jq -r '.result[]? | "\(.timestamp)  \(.st)  \(.event_message[0:160] | gsub("https?://[^/ ]+"; ""))"' gw.json | note "Passerelle" || true
           head -c 600 gw.json | note "Brut passerelle"
           q "select timestamp, source, event_message from logs where source in ('function_edge_logs', 'function_logs') order by timestamp desc limit 120" > fn.json
           jq -r '.result[]? | "\(.timestamp)  \(.source | sub("function_"; ""))  \(.event_message[0:300] | gsub("https?://[^/ ]+"; ""))"' fn.json | note "Fonction" || true
