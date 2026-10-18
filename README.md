@@ -43,12 +43,12 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 Ensuite, chaque modification du dépôt republie tout automatiquement.
 
 ### 4. Premiers pas dans l'app
-1. Ouvre l'adresse de l'app sur ton téléphone, entre ton e-mail, puis ouvre sur ce même téléphone l'e-mail reçu et touche « Sign in ».
-2. Installe-la sur l'écran d'accueil (iPhone : Safari → Partager → *Sur l'écran d'accueil* ; Android : menu → *Installer l'application*). Sur iPhone, l'app installée a son propre stockage : connecte-toi une fois dedans avec un code obtenu par *Mon compte → Connecter un autre appareil*.
+1. Ouvre l'adresse de l'app sur ton téléphone et connecte-toi avec ton e-mail et le mot de passe choisi dans Supabase (étape 2.4). Tu l'as oublié ? *Première connexion ou mot de passe oublié → Recevoir plutôt un lien par e-mail*, touche « Sign in » dans l'e-mail, puis choisis un nouveau mot de passe dans *Mon compte*.
+2. Installe-la sur l'écran d'accueil (iPhone : Safari → Partager → *Sur l'écran d'accueil* ; Android : menu → *Installer l'application*). Sur iPhone, l'app installée a son propre stockage : connecte-toi une fois dedans avec ton e-mail et ton mot de passe (le trousseau iCloud peut les remplir).
 3. **Reprendre ta progression** : dans l'app Claude « Italiano passo passo », touche *Transférer ma progression vers l'app mobile* en bas de l'accueil, puis colle le texte dans *Mon compte → Reprendre ma progression de l'app Claude*. Rien n'est effacé : les deux progressions sont fusionnées.
 
 ## Inviter des amis
-*Compte et amis → Mes amis* : entre le prénom et l'e-mail, puis envoie le message proposé (lien et code). Le code est valable environ une heure ; s'il a expiré, touche *Nouveau code* à côté du nom. Tu vois aussi l'usage de chacun, tu peux fixer un plafond quotidien ou retirer quelqu'un.
+*Compte et amis → Mes amis* : entre le prénom et l'e-mail, puis envoie le message proposé (lien et code). À la première connexion, ton ami entre ce code et choisit son mot de passe ; ensuite, il se connecte avec son e-mail et son mot de passe. Le code est valable environ une heure ; s'il a expiré, ou si ton ami a oublié son mot de passe, touche *Nouveau code* à côté de son nom. Tu vois aussi l'usage de chacun, tu peux fixer un plafond quotidien ou retirer quelqu'un.
 
 Chacun a sa progression, son carnet et ses leçons à la carte, privés. Les leçons **du programme** sont partagées : quand l'une d'elles est préparée par quelqu'un, elle sert à tout le monde. Une fois enregistrée, une leçon partagée ne peut plus être modifiée depuis l'app ; pour en corriger ou en supprimer une, passe par Supabase (*Table Editor → lessons*), puis rouvre l'app : elle sera préparée à nouveau.
 

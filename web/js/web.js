@@ -46,7 +46,7 @@
       const b = btn("Installer", "primary"); b.onclick = async () => { deferred.prompt(); try { await deferred.userChoice; } catch (e) { /* refus */ } deferred = null; account(); };
       box.append(b);
     } else if (VO.isIOS()) {
-      box.append(el("p", "fr", "Dans Safari, touche le bouton Partager (le carré avec une flèche), puis « Sur l'écran d'accueil ». L'app s'ouvre ensuite en plein écran. Après l'installation, connecte-toi une fois dans l'app avec un code : utilise « Connecter un autre appareil » ci-dessous."));
+      box.append(el("p", "fr", "Dans Safari, touche le bouton Partager (le carré avec une flèche), puis « Sur l'écran d'accueil ». L'app s'ouvre ensuite en plein écran. Après l'installation, connecte-toi une fois dans l'app avec ton e-mail et ton mot de passe."));
     } else {
       box.append(el("p", "fr", "Dans le menu du navigateur, choisis « Installer l'application » ou « Ajouter à l'écran d'accueil »."));
     }
@@ -112,17 +112,21 @@
       mt.append(t, out); body.append(mt);
     }
 
-    // Autre appareil
-    const dv = el("section", "panel"); dv.append(el("h2", null, "Connecter un autre appareil"));
-    dv.append(el("p", "fr", "Un code à usage unique pour te connecter ailleurs (autre téléphone, ordinateur, ou l'app installée sur l'écran d'accueil). Il reste valable environ une heure."));
-    const cb = btn("Obtenir un code"); const codeOut = el("div", "code-out"); codeOut.hidden = true;
-    cb.onclick = async () => {
-      cb.disabled = true;
-      try { const r = await W.admin("code"); codeOut.hidden = false; codeOut.innerHTML = ""; const c = el("div", "big-code"); c.textContent = r.code; codeOut.append(c, el("p", "fr", "Sur l'autre appareil : ouvre l'app, entre " + r.email + ", touche « J'ai déjà un code », puis saisis ce code.")); }
-      catch (e) { speakNote(aiFail(e)); }
-      cb.disabled = false;
+    // Mot de passe
+    const pw = el("section", "panel"); pw.append(el("h2", null, "Mot de passe"));
+    pw.append(el("p", "fr", "Pour te connecter sur un autre appareil ou dans l'app installée : ton e-mail et ce mot de passe. Ton téléphone peut le retenir."));
+    const pf = el("form", "gate-form");
+    const hid = document.createElement("input"); hid.type = "email"; hid.autocomplete = "username"; hid.value = u.email || ""; hid.hidden = true;
+    const pl = el("label", null, "Nouveau mot de passe"), pi = document.createElement("input"); pi.id = "acc-pass"; pl.htmlFor = pi.id; pi.type = "password"; pi.autocomplete = "new-password"; pi.required = true;
+    const ps = el("button", "btn", "Enregistrer le mot de passe"); ps.type = "submit"; const pm = el("p", "fr"); pm.hidden = true; pm.setAttribute("role", "status");
+    pf.onsubmit = async (ev) => {
+      ev.preventDefault(); pm.hidden = false;
+      if (pi.value.length < 8) { pm.textContent = "8 caractères au moins."; return; }
+      ps.disabled = true;
+      try { await W.setPassword(pi.value); pm.textContent = "Mot de passe enregistré."; pi.value = ""; } catch (e) { pm.textContent = e.message; }
+      ps.disabled = false;
     };
-    dv.append(cb, codeOut); body.append(dv);
+    pf.append(hid, pl, pi, ps, pm); pw.append(pf); body.append(pw);
 
     // Import depuis l'app Claude
     const im = el("section", "panel"); im.append(el("h2", null, "Reprendre ma progression de l'app Claude"));
@@ -167,8 +171,8 @@
   function inviteText(name, email, code) {
     return "Ciao" + (name ? " " + name : "") + " ! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude.\n\n" +
       "1. Ouvre " + appUrl() + "?e=" + encodeURIComponent(email) + "\n" +
-      "2. Touche « J'ai déjà un code » et entre : " + code + " (valable environ une heure)\n" +
-      "3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil »).";
+      "2. Touche « Première connexion », entre ton e-mail et ce code : " + code + " (valable environ une heure), puis choisis ton mot de passe\n" +
+      "3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.";
   }
   async function friends() {
     cur = null; qbar(null, null, "Mes amis", "← Mon compte", account); view = "friends";

@@ -5,16 +5,14 @@ const fs = require("fs"); fs.mkdirSync(OUT, { recursive: true });
 const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS = `([\s\S]*?)`;/)[1];
 (async () => {
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
-  await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com" }) });
+  await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com", password: "motdepasse1" }) });
   for (const scheme of ["light", "dark"]) {
     const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, deviceScaleFactor: 1 });
     await ctx.addInitScript(MOCKS);
     const p = await ctx.newPage();
     await p.goto(O + "/"); await p.waitForSelector("#gate-email");
     await p.screenshot({ path: `${OUT}/${scheme}-1-gate.png` });
-    await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un lien par e-mail");
-    await p.waitForSelector("#gate-code"); await p.screenshot({ path: `${OUT}/${scheme}-2-code.png` });
-    await p.fill("#gate-code", "123456"); await p.click("text=Se connecter");
+    await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
     await p.waitForSelector("text=Parler avec Claude", { timeout: 10000 });
     await p.screenshot({ path: `${OUT}/${scheme}-3-home.png`, fullPage: false });
     await p.evaluate(() => document.querySelector(".rowb").scrollIntoView());

@@ -94,8 +94,8 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { users: [...state.users.values()], profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
-    if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); return send(res, 200, u); }
+    if (p === "/__state") return send(res, 200, { users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
+    if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; return send(res, 200, u); }
 
     // Fonctions
     if (p.startsWith("/functions/v1/api/")) {
@@ -121,10 +121,12 @@ createServer(async (req, res) => {
     }
     if (p === "/auth/v1/token") {
       const b = JSON.parse((await readBody(req)).toString());
+      if (url.searchParams.get("grant_type") === "password") { const u = byEmail(b.email); if (!u || !u.password || u.password !== b.password) return send(res, 400, { code: "invalid_credentials", error_code: "invalid_credentials", msg: "Invalid login credentials", message: "Invalid login credentials" }); return send(res, 200, session(u)); }
       const uid = state.tokens.get(b.refresh_token); if (!uid) return send(res, 400, { error: "invalid_grant", error_description: "Invalid Refresh Token" });
       return send(res, 200, session(state.users.get(uid)));
     }
     if (p === "/auth/v1/logout") return send(res, 204);
+    if (p === "/auth/v1/user" && req.method === "PUT") { const w = who(req); if (!w || !w.uid) return send(res, 401, { msg: "invalid JWT" }); const b = JSON.parse((await readBody(req)).toString()); const u = state.users.get(w.uid); if (b.password) { if (b.password.length < 6) return send(res, 422, { code: "weak_password", msg: "Password should be at least 6 characters" }); u.password = b.password; } return send(res, 200, userJSON(u)); }
     if (p === "/auth/v1/user") { const w = who(req); if (!w || !w.uid || !state.users.has(w.uid)) return send(res, 401, { msg: "invalid JWT" }); return send(res, 200, userJSON(state.users.get(w.uid))); }
     if (p.startsWith("/auth/v1/admin/")) {
       const w = who(req); if (!w || !w.service) return send(res, 401, { msg: "service key required" });

@@ -41,15 +41,24 @@ const MOCKS = `
   await a.goto(O + "/");
   await a.waitForSelector("#gate-email");
   ok(await a.isHidden("#app"), "l'app reste cachée avant la connexion");
-  await a.fill("#gate-email", "inconnu@example.com"); await a.click("text=Recevoir un lien par e-mail");
+  await a.fill("#gate-email", "bramigab@gmail.com"); await a.fill("#gate-pass", "mauvais"); await a.click("button:has-text('Se connecter')");
+  await a.waitForFunction(() => /incorrect/.test(document.querySelector(".gate-msg").textContent));
+  ok(true, "mauvais mot de passe refusé");
+  await a.click("text=Première connexion ou mot de passe oublié");
+  await a.fill("#gate-email", "inconnu@example.com"); await a.click("text=Recevoir plutôt un lien de connexion par e-mail");
   await a.waitForFunction(() => /pas encore invitée/.test(document.querySelector(".gate-msg").textContent));
   ok(true, "adresse non invitée refusée");
-  await a.fill("#gate-email", "bramigab@gmail.com"); await a.click("text=Recevoir un lien par e-mail");
-  await a.waitForSelector("#gate-code");
-  await a.fill("#gate-code", "000000"); await a.click("text=Se connecter");
+  await a.fill("#gate-email", "bramigab@gmail.com"); await a.click("text=Recevoir plutôt un lien de connexion par e-mail");
+  await a.waitForFunction(() => /E-mail envoyé/.test(document.querySelector(".gate-msg").textContent));
+  await a.fill("#gate-code", "000000"); await a.click("button:has-text('Continuer')");
   await a.waitForFunction(() => /pas valable/.test(document.querySelector(".gate-msg").textContent));
   ok(true, "mauvais code refusé");
-  await a.fill("#gate-code", "123456"); await a.click("text=Se connecter");
+  await a.fill("#gate-code", "123456"); await a.click("button:has-text('Continuer')");
+  await a.waitForSelector("#gate-newpass");
+  ok(await a.isHidden("#app"), "l'app attend le choix du mot de passe");
+  await a.fill("#gate-newpass", "court"); await a.click("text=Enregistrer et entrer");
+  await a.waitForFunction(() => /8 caractères/.test(document.querySelector(".gate-msg").textContent));
+  await a.fill("#gate-newpass", "motdepasse1"); await a.click("text=Enregistrer et entrer");
   await a.waitForSelector("header.board", { timeout: 10000 });
   ok(await a.isVisible("header.board"), "accueil affiché après connexion");
   await a.waitForFunction(() => /enregistrée dans ton compte/.test(document.querySelector(".sync").textContent), null, { timeout: 8000 });
@@ -81,7 +90,7 @@ const MOCKS = `
   await a.fill("#inv-name", "Luca"); await a.fill("#inv-email", "luca@example.com"); await a.click("text=Créer l'invitation");
   await a.waitForSelector("pre.invite");
   const msg = await a.textContent("pre.invite");
-  const code = (msg.match(/entre : (\d{6})/) || [])[1];
+  const code = (msg.match(/ce code : (\d{6})/) || [])[1];
   ok(!!code && /luca%40example\.com/.test(msg), "message d'invitation avec lien et code");
   await a.waitForSelector(".members li >> nth=1");
   ok((await a.$$eval(".members li", (l) => l.length)) === 2, "deux membres listés");
@@ -93,8 +102,10 @@ const MOCKS = `
   await b.goto(O + "/?e=luca%40example.com");
   await b.waitForSelector("#gate-email");
   ok((await b.inputValue("#gate-email")) === "luca@example.com", "adresse pré-remplie depuis le lien");
-  await b.click("button:has-text(\"J'ai déjà un code\")");
-  await b.fill("#gate-code", code); await b.click("text=Se connecter");
+  await b.click("text=Première connexion ou mot de passe oublié");
+  ok((await b.inputValue("#gate-email")) === "luca@example.com", "adresse gardée sur l'écran du code");
+  await b.fill("#gate-code", code); await b.click("button:has-text('Continuer')");
+  await b.fill("#gate-newpass", "lucapass99"); await b.click("text=Enregistrer et entrer");
   await b.waitForSelector("header.board", { timeout: 10000 });
   ok(!!(await b.waitForSelector("text=Mon compte", { timeout: 8000 }).catch(() => null)), "l'ami voit « Mon compte » (pas la gestion)");
   ok(!(await b.isVisible("text=Compte et amis")), "l'ami n'a pas la gestion des amis");
@@ -164,10 +175,10 @@ const MOCKS = `
   s = await st();
   ok(JSON.parse(s.progress[uidA].json)["L.it-u01-l2"].done === true, "progression importée enregistrée sur le serveur");
 
-  console.log("9. Autre appareil : code personnel");
-  await a.click("text=Obtenir un code");
-  await a.waitForSelector(".big-code");
-  ok(/^\d{6}$/.test((await a.textContent(".big-code")).trim()), "code de connexion personnel affiché");
+  console.log("9. Changer de mot de passe");
+  await a.fill("#acc-pass", "nouveaumdp22"); await a.click("text=Enregistrer le mot de passe");
+  await a.waitForSelector("text=Mot de passe enregistré.");
+  ok((await st()).users.length > 0, "mot de passe changé depuis le compte");
 
   console.log("10. Une leçon préparée par un membre est partagée");
   const shared = await b.evaluate(async () => { const db = await window.claude.use("db"); await db.collection("lessons").doc("it-u05-l1").set({ course: "it", title: "Test", json: "{}" }); try { await db.collection("lessons").doc("ma-lecon-perso").set({ course: "it", title: "Perso", json: "{}" }); } catch (e) { return "perso:" + e.code; } return "ok"; });
@@ -193,13 +204,15 @@ const MOCKS = `
   await b.waitForSelector("#gate-email", { timeout: 8000 });
   const left = await b.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("italiano")));
   ok(left.length === 0, "aucune donnée de leçon laissée sur l'appareil");
+  await b.fill("#gate-email", "luca@example.com"); await b.fill("#gate-pass", "lucapass99"); await b.click("button:has-text('Se connecter')");
+  ok(!!(await b.waitForSelector("header.board", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
 
   console.log("12. Un compte créé sans invitation n'a pas accès à Claude");
   await post("/__seed", { email: "intrus@example.com" });
   const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
-  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.click("text=Recevoir un lien par e-mail");
-  await c.fill("#gate-code", "123456"); await c.click("text=Se connecter"); await c.waitForSelector("header.board", { timeout: 10000 });
+  await post("/__seed", { email: "intrus@example.com", password: "intrus123" });
+  await c.goto(O + "/"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector("header.board", { timeout: 10000 });
   const intr = await c.evaluate(async () => { try { await AI("Ciao", { modelTier: "quick" }); return "passé"; } catch (e) { return e.code + "|" + aiFail(e); } });
   ok(/^not_invited\|/.test(intr), "Claude refusé : " + intr);
   const intrLesson = await c.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u09-l1").set({ course: "it", title: "Spam" }); return "écrite"; } catch (e) { return "refusée"; } });

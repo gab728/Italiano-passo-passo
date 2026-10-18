@@ -3,13 +3,12 @@ const { chromium } = require("playwright");
 const O = "http://127.0.0.1:8787";
 (async () => {
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
-  await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com" }) });
+  await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com", password: "motdepasse1" }) });
   const ctx = await br.newContext({ permissions: ["microphone"] });
   await ctx.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
   const p = await ctx.newPage(); const errs = []; p.on("pageerror", (e) => errs.push(e.message));
   await p.goto(O + "/"); await p.waitForSelector("#gate-email");
-  await p.fill("#gate-email", "bramigab@gmail.com"); await p.click("text=Recevoir un lien par e-mail");
-  await p.fill("#gate-code", "123456"); await p.click("text=Se connecter");
+  await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
   await p.waitForSelector("text=Compte et amis", { timeout: 10000 });
   const before = (await (await fetch(O + "/__state")).json()).stt;
   await p.click("text=Compte et amis"); await p.waitForSelector("text=Tester le micro");
