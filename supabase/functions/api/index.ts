@@ -20,7 +20,8 @@
 //   TTS_DAILY_CHARS (25000, environ 25 minutes de voix) et OWNER_TTS_DAILY_CHARS (100000) : texte lu à voix haute par personne et par jour
 //   ALLOWED_ORIGINS : adresses autorisées à appeler la fonction (par défaut toutes, l'accès restant protégé par la connexion)
 
-const env = (k: string, d = ""): string => (Deno.env.get(k) ?? d).trim();
+// Les noms de secrets sont lus sans tenir compte des majuscules (anthropic_api_key vaut ANTHROPIC_API_KEY).
+const env = (k: string, d = ""): string => (Deno.env.get(k) ?? Deno.env.get(k.toLowerCase()) ?? d).trim();
 const SB = env("SUPABASE_URL").replace(/\/+$/, "");
 // Clé serveur : nouvelles clés Supabase (SUPABASE_SECRET_KEYS, objet JSON de clés nommées) ou ancienne clé service_role.
 function secretKey(): string {

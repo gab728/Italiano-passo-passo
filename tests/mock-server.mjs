@@ -14,7 +14,7 @@ const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
 export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map() };
 
 // ---------- Environnement de la fonction ----------
-const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), ANTHROPIC_API_KEY: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
+const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 
 // Claude et la transcription simulés : on intercepte fetch vers ces services.
