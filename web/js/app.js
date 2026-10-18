@@ -1077,7 +1077,7 @@ function applyReview(c,r){let fixed=0,cut=0;r=r&&typeof r==="object"?r:{};const 
   A(r.lessons).forEach(x=>{if(at(c.lessons,x)&&isS(x.fix)){c.lessons[x.i]=x.fix;fixed++}});
   return{fixed,cut}}
 const codeOf=e=>e&&e.code?" (code : "+e.code+")":"";
-async function creer(job,st){cur=null;st=st||{};const x=job.slot;
+async function creer(job,st){cur=null;st=st||{};if(window.WEB&&WEB.keepAwake)WEB.keepAwake();const x=job.slot;
   qbar(null,null,x?"Préparation":"Leçon à la carte","← Accueil",home);body.append(el("div","kind",x?"Unité "+x.un+", leçon "+(x.k+1):"À la carte"));
   const h=el("h2");h.textContent=x?x.l.t:"Ta leçon se prépare";body.append(h);
   const quote=el("p","fr");quote.textContent=x?(x.l.g||""):"« "+job.text+" »";body.append(quote);
@@ -1085,7 +1085,7 @@ async function creer(job,st){cur=null;st=st||{};const x=job.slot;
   const s1=mk("Explications et vocabulaire"),s2=mk("Exercices"),s3=mk("Dialogue et mise en situation"),s4=mk("Relecture indépendante"),s5=mk("Ajout à ton programme");body.append(ul);
   const note=el("p","fr","Compte deux à trois minutes. Tu peux revenir à l'accueil : la leçon s'ajoutera toute seule quand elle sera prête.");note.setAttribute("role","status");body.append(note);
   const host=body,here=()=>host.isConnected,row=el("div","rowb");
-  const fail=(step,e,lead,btns)=>{if(!here())return;step.textContent="échec";note.textContent=(lead?lead+" ":"")+aiFail(e)+codeOf(e);
+  const fail=(step,e,lead,btns)=>{if(!here())return;if(window.WEB&&WEB.resume&&WEB.resume(e,st,()=>creer(job,st),note,step))return;step.textContent="échec";note.textContent=(lead?lead+" ":"")+aiFail(e)+codeOf(e);
     btns.forEach(([t,fn,c])=>{const b=btn(t,c);b.onclick=fn;row.append(b)});host.append(row)};
   const again=[["Réessayer",()=>creer(job,st),"primary"],["Retour à l'accueil",home]];
   if(!AI)return fail(s1,{code:"not_granted"},"",[["Retour à l'accueil",home]]);

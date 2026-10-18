@@ -338,6 +338,24 @@ const MOCKS = `
   ok(true, "expression traduite");
   await a.evaluate(() => { document.querySelector(".ws-x").click(); dmLeave(); });
 
+  console.log("16. Leçon à la carte malgré les coupures de réseau");
+  // Coupures simulées : les prochains appels à Claude échouent comme sans réseau.
+  let cutsLeft = 0, cuts = 0;
+  await a.route("**/functions/v1/api/claude", (route) => { if (cutsLeft > 0) { cutsLeft--; cuts++; return route.abort("internetdisconnected"); } return route.continue(); });
+  cutsLeft = 1;
+  await a.evaluate(() => creer({ text: "Travailler en finance" }));
+  await a.waitForSelector("button:has-text('Commencer la leçon')", { timeout: 30000 });
+  ok(cuts === 1, "une coupure brève est rattrapée sans que rien ne s'affiche");
+  cutsLeft = 4; cuts = 0;
+  await a.evaluate(() => { creer({ text: "Parler de mon métier" }); });
+  await a.waitForFunction(() => /reprends où j'en étais/.test(document.body.textContent), null, { timeout: 20000 });
+  ok(true, "coupure plus longue : la préparation annonce qu'elle reprend");
+  await a.waitForSelector("button:has-text('Commencer la leçon')", { timeout: 40000 });
+  ok(cuts === 4, "la leçon est prête après la reprise automatique");
+  await a.unroute("**/functions/v1/api/claude");
+  await a.click("button:has-text('Commencer la leçon')"); await a.waitForSelector("main.body", { timeout: 5000 });
+  ok(await a.evaluate(() => M.filter((m) => m.custom).length >= 2), "les leçons à la carte sont dans le programme");
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

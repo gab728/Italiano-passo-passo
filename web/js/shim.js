@@ -35,27 +35,35 @@
   const err = (code, message) => { const e = new Error(message || code); e.code = code; return e; };
   const netCode = (e) => (e && (e.name === "TypeError" || /fetch|network|Failed/i.test(String(e.message || e)))) ? "unavailable" : "server";
   async function token() {
-    const { data } = await sb.auth.getSession();
+    let data;
+    try { ({ data } = await sb.auth.getSession()); } catch (e) { throw err("offline", "Pas de réseau."); }
     const s = data && data.session;
     if (!s) throw err("session_expired", "Reconnecte-toi.");
     return s.access_token;
   }
 
   /* ---------- Appels au serveur ---------- */
+  // Coupure brève (réseau mobile, téléphone qui sort de veille) : on attend le retour du réseau et on réessaie deux fois.
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const backOnline = (max) => navigator.onLine !== false ? Promise.resolve() : new Promise((r) => { const t = setTimeout(r, max); window.addEventListener("online", () => { clearTimeout(t); r(); }, { once: true }); });
   async function call(route, body, opts) {
     opts = opts || {};
     let res;
-    try {
-      res = await fetch(FN + "/" + route, {
-        method: "POST",
-        headers: Object.assign({ authorization: "Bearer " + await token(), apikey: CFG.supabaseKey }, opts.headers || { "content-type": "application/json" }),
-        body: opts.raw ? body : JSON.stringify(body),
-        signal: opts.signal,
-      });
-    } catch (e) {
-      if (e && e.name === "AbortError") throw err("aborted", "Annulé.");
-      if (e && e.code) throw e;
-      throw err("offline", "Pas de réseau.");
+    for (let attempt = 0; ; attempt++) {
+      try {
+        res = await fetch(FN + "/" + route, {
+          method: "POST",
+          headers: Object.assign({ authorization: "Bearer " + await token(), apikey: CFG.supabaseKey }, opts.headers || { "content-type": "application/json" }),
+          body: opts.raw ? body : JSON.stringify(body),
+          signal: opts.signal,
+        });
+        break;
+      } catch (e) {
+        if (e && e.name === "AbortError") throw err("aborted", "Annulé.");
+        if (e && e.code && e.code !== "offline") throw e;
+        if (attempt >= 2 || (opts.signal && opts.signal.aborted)) throw err("offline", "Pas de réseau.");
+        await backOnline(15000); await pause(attempt ? 2500 : 800);
+      }
     }
     if (!res.ok) {
       let j = {}; try { j = await res.json(); } catch (e) { /* corps vide */ }

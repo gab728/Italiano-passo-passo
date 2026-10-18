@@ -36,6 +36,22 @@
       if (!VO.available()) return;
       const b = vMicButton(inp); w.insertBefore(b, w.querySelector(".btn.primary"));
     },
+    // Préparation d'une leçon (deux à trois minutes) : l'écran reste allumé, et une coupure de réseau
+    // ou une mise en veille reprend toute seule là où elle s'était arrêtée (les étapes faites sont gardées).
+    keepAwake() { vWake(true); clearTimeout(this._wk); this._wk = setTimeout(() => vWake(false), 6 * 60000); },
+    resume(e, st, again, note, step) {
+      const c = e && e.code;
+      if (!["offline", "upstream_error", "unavailable", "truncated", "server"].includes(c) || (st.auto || 0) >= 3) return false;
+      st.auto = (st.auto || 0) + 1;
+      step.textContent = "reprise…";
+      note.textContent = "Connexion interrompue : je reprends où j'en étais" + (st.auto > 1 ? " (essai " + st.auto + " sur 3)" : "") + "…";
+      const host = note.parentNode;
+      const go = () => { if (!note.isConnected || host !== note.parentNode) return; if (document.hidden || navigator.onLine === false) return; cleanup(); setTimeout(() => { if (note.isConnected) again(); }, 1500); };
+      const cleanup = () => { document.removeEventListener("visibilitychange", go); window.removeEventListener("online", go); clearInterval(t); };
+      document.addEventListener("visibilitychange", go); window.addEventListener("online", go);
+      const t = setInterval(go, 4000); go();
+      return true;
+    },
     convExtra(row, k) {
       if (!VO.available()) return;
       const b = btn("Passer à l'oral"); b.onclick = () => { VO.beep(); vchatScenario(k, false); }; row.prepend(b);
