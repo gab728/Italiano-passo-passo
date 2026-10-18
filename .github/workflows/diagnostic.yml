@@ -1,0 +1,31 @@
+# Diagnostic : derniers journaux de la fonction serveur (codes de réponse et messages d'erreur, sans données personnelles).
+name: Diagnostic
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Nombre d'heures à remonter"
+        default: "3"
+permissions:
+  contents: read
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Journaux de la fonction
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          HOURS: ${{ github.event.inputs.hours }}
+        run: |
+          start=$(date -u -d "-${HOURS:-3} hours" +%Y-%m-%dT%H:%M:%SZ); end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          q() { curl -sS -G "https://api.supabase.com/v1/projects/$REF/analytics/endpoints/logs.all" -H "Authorization: Bearer $TOKEN" \
+                 --data-urlencode "iso_timestamp_start=$start" --data-urlencode "iso_timestamp_end=$end" --data-urlencode "sql=$1"; echo; }
+          echo "== Requêtes (route, statut, durée) =="
+          q "select datetime(timestamp) as t, event_message, r.status_code, m.execution_time_ms from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.response) as r order by timestamp desc limit 60" \
+            | jq -r '.result[]? | "\(.t)  \(.status_code)  \(.execution_time_ms)ms  \(.event_message | sub("https?://[^/]+"; ""))"' || true
+          echo "== Messages de la fonction (erreurs) =="
+          q "select datetime(timestamp) as t, event_message, m.level from function_logs cross join unnest(metadata) as m where m.level in ('error','warning') order by timestamp desc limit 40" \
+            | jq -r '.result[]? | "\(.t)  \(.level)  \(.event_message[0:300])"' || true
+          echo "== Réponse brute en cas de souci =="
+          q "select count(*) as n from function_edge_logs" | head -c 600
