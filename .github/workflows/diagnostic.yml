@@ -21,11 +21,9 @@ jobs:
           start=$(date -u -d "-${HOURS:-3} hours" +%Y-%m-%dT%H:%M:%SZ); end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           q() { curl -sS -G "https://api.supabase.com/v1/projects/$REF/analytics/endpoints/logs.all" -H "Authorization: Bearer $TOKEN" \
                  --data-urlencode "iso_timestamp_start=$start" --data-urlencode "iso_timestamp_end=$end" --data-urlencode "sql=$1"; echo; }
-          echo "== Requêtes (route, statut, durée) =="
+          note() { t="$1"; m=$(cat | head -c 60000); m="${m//'%'/'%25'}"; m="${m//$'\n'/'%0A'}"; echo "::notice title=$t::$m"; }
           q "select datetime(timestamp) as t, event_message, r.status_code, m.execution_time_ms from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.response) as r order by timestamp desc limit 60" \
-            | jq -r '.result[]? | "\(.t)  \(.status_code)  \(.execution_time_ms)ms  \(.event_message | sub("https?://[^/]+"; ""))"' || true
-          echo "== Messages de la fonction (erreurs) =="
+            | jq -r '.result[]? | "\(.t)  \(.status_code)  \(.execution_time_ms)ms  \(.event_message | sub("https?://[^/]+"; ""))"' | note "Requetes" || true
           q "select datetime(timestamp) as t, event_message, m.level from function_logs cross join unnest(metadata) as m where m.level in ('error','warning') order by timestamp desc limit 40" \
-            | jq -r '.result[]? | "\(.t)  \(.level)  \(.event_message[0:300])"' || true
-          echo "== Réponse brute en cas de souci =="
-          q "select count(*) as n from function_edge_logs" | head -c 600
+            | jq -r '.result[]? | "\(.t)  \(.level)  \(.event_message[0:300])"' | note "Erreurs" || true
+          q "select count(*) as n from function_edge_logs" | head -c 600 | note "Brut"
