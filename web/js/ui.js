@@ -147,7 +147,7 @@
     const c = card("name-card"); c.append(txt("b", null, "Comment tu t'appelles ?"), txt("p", "muted small", "Tes amis te verront sous ce prénom."));
     const f = el("form", "inline-form"); const l = txt("label", "sr", "Ton prénom"); const i = el("input"); i.id = "first-name"; l.htmlFor = i.id; i.placeholder = "Ton prénom"; i.maxLength = 40; i.autocomplete = "given-name";
     const b = el("button", "round-go"); b.type = "submit"; b.innerHTML = IC.arrow; b.setAttribute("aria-label", "Enregistrer");
-    f.onsubmit = async (e) => { e.preventDefault(); const v = i.value.trim(); if (!v) return i.focus(); b.disabled = true; try { const r = await W.admin("rename", { name: v }); if (W.me) W.me.name = r.name; who = r.name; home(); } catch (x) { speakNote(aiFail(x)); b.disabled = false; } };
+    f.onsubmit = async (e) => { e.preventDefault(); const v = i.value.trim(); if (!v) return i.focus(); b.disabled = true; try { const r = await W.admin("rename", { name: v }); if (W.me) W.me.name = r.name; who = r.name; home(); } catch (x) { speakNote(/^(no_owner|not_invited)$/.test(x.code) && x.message ? x.message : aiFail(x)); b.disabled = false; } };
     f.append(l, i, b); c.append(f); return c;
   }
 

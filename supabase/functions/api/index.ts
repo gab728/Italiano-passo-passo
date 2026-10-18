@@ -351,7 +351,11 @@ export async function handle(req: Request): Promise<Response> {
       if (!prof || !prof.invited) await restJSON(prof ? "profiles?user_id=eq." + u.id : "profiles", prof
         ? { method: "PATCH", body: JSON.stringify({ invited: true }) }
         : { method: "POST", body: JSON.stringify({ user_id: u.id, email: u.email, invited: true }) });
-    } else if (!prof || !prof.invited) return fail(req, 403, "not_invited", "Ce compte n'a pas été invité. Demande une invitation au propriétaire de l'app.");
+    } else if (!prof || !prof.invited) {
+      if (!owners().length) return fail(req, 403, "no_owner", "Le serveur ne connaît pas encore le propriétaire de l'app : ajoute le secret OWNER_EMAIL (ton adresse e-mail) dans Supabase, Edge Functions, Secrets.");
+      if (u.email && owners().includes(u.email) && !u.confirmed) return fail(req, 403, "not_invited", "Ton adresse n'est pas confirmée dans Supabase : dans Authentication, Users, confirme ton compte.");
+      return fail(req, 403, "not_invited", "Ce compte (" + (u.email || "?") + ") n'est ni invité ni le propriétaire déclaré dans OWNER_EMAIL.");
+    }
     if (route === "claude") return await claude(req, u);
     if (route === "admin") return await admin(req, u);
     if (route === "stt") return await stt(req, u);

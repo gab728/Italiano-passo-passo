@@ -16,6 +16,7 @@
     aborted: "Demande annulée.",
     server: "Erreur du serveur. Réessaie dans un moment.",
     not_invited: "Ce compte n'a pas été invité : l'assistant lui est fermé. Demande une invitation au propriétaire de l'app.",
+    no_owner: "Le serveur ne connaît pas encore le propriétaire de l'app : il faut ajouter le secret OWNER_EMAIL dans Supabase.",
   });
 
   /* Accroches posées dans le code de l'app au moment de la construction (scripts/build.mjs). */
