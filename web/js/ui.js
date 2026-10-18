@@ -250,11 +250,21 @@
     vals.forEach((v, i) => { const b = el("span", mon + i === t ? "now" : ""); b.style.height = Math.max(6, Math.round(100 * v / max)) + "%"; bars.append(b); labels.append(txt("span", mon + i === t ? "now" : "", "LMMJVSD"[i])); });
     bars.setAttribute("role", "img"); bars.setAttribute("aria-label", "Réponses par jour cette semaine : " + vals.join(", ")); wk.append(bars, labels); root.append(wk);
     const acts = el("div", "acts two");
-    if (W.me && W.me.owner) acts.append(pillBtn("Inviter un ami", "dark", () => { setTab("profile"); WEB.friends(); }));
-    acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'italien d'affilée" : "J'apprends l'italien") + " sur Italiano passo passo. " + location.origin + location.pathname.replace(/index\.html$/, ""); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
+    acts.append(pillBtn("Inviter un ami", "dark", () => {
+      const text = "Viens apprendre l'italien avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink();
+      if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié. Colle-le dans un message.")); else speakNote(text);
+    }));
+    acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'italien d'affilée" : "J'apprends l'italien") + " sur Italiano passo passo. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
     root.append(acts);
+    const goalC = card("goal-c"); goalC.append(txt("b", null, "Objectif du jour"), txt("small", "muted", "Nombre de réponses par jour"));
+    const gl = el("div", "chips"); [[8, "5 min"], [12, "10 min"], [20, "20 min"], [30, "30 min"]].forEach(([g, l]) => {
+      const c = el("button", "chip" + (GOAL === g ? " sel" : "")); c.type = "button"; c.textContent = l; c.setAttribute("aria-pressed", String(GOAL === g));
+      c.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { goal: g }); GOAL = g; save(); profileTab(); }; gl.append(c);
+    }); goalC.append(gl); root.append(goalC);
+    if (W.me && W.me.owner) { const adm = el("div", "acts"); adm.append(pillBtn("Gérer les membres", "", () => { setTab("profile"); WEB.friends(); })); root.append(adm); }
     sync();
   }
+  const appLink = () => location.origin + location.pathname.replace(/index\.html$/, "");
 
   /* ---------- Social : activité des amis, bravos, classement ---------- */
   const SOC = (() => {
@@ -354,6 +364,7 @@
   }
   const IMMERSIVE = new Set(["course", "carmic", "vchat", "audio", "vbilan", "dm"]);
   function sync() {
+    if (S.ob && [8, 12, 20, 30].includes(S.ob.goal) && GOAL !== S.ob.goal) GOAL = S.ob.goal;
     const imm = IMMERSIVE.has(view) || !!root.querySelector(".bar .prog");
     document.body.dataset.view = view;
     if (imm) delete document.body.dataset.tabs; else document.body.dataset.tabs = "1";
@@ -364,6 +375,17 @@
   let queued = false;
   new MutationObserver(() => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; sync(); }); }).observe(root, { childList: true, subtree: true });
 
+  // Réponses données à l'accueil, au moment de l'inscription sur ce téléphone : niveau de départ, objectif, prénom.
+  (function applyOnboarding() {
+    let ob = null; try { ob = JSON.parse(localStorage.getItem("ipp-onboarding") || "null"); localStorage.removeItem("ipp-onboarding"); } catch (e) { return; }
+    if (!ob || typeof ob !== "object" || !(Date.now() - (ob.at || 0) < 864e5)) return;
+    if (!S.ob) {
+      S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
+      GOAL = S.ob.goal; save();
+    }
+    const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
+    if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
+  })();
   window.UI = { setTab, sync, go: goTab };
   home();
 })();

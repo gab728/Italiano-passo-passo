@@ -14,7 +14,7 @@ const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
 export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0 };
 
 // ---------- Environnement de la fonction ----------
-const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), ANTHROPIC_API_KEY: "test-key", OWNER_EMAIL: "bramigab@gmail.com", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
+const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), ANTHROPIC_API_KEY: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 
 // Claude et la transcription simulés : on intercepte fetch vers ces services.
@@ -59,12 +59,13 @@ function session(user) {
   state.tokens.set(access, user.id); state.tokens.set(refresh, user.id);
   return { access_token: access, token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: refresh, user: userJSON(user) };
 }
-const userJSON = (u) => ({ id: u.id, aud: "authenticated", role: "authenticated", email: u.email, email_confirmed_at: new Date().toISOString(), app_metadata: { provider: "email" }, user_metadata: {}, created_at: new Date().toISOString() });
-export function addUser(email) {
+const userJSON = (u) => ({ id: u.id, aud: "authenticated", role: "authenticated", email: u.email, email_confirmed_at: u.unconfirmed ? null : new Date().toISOString(), app_metadata: { provider: "email" }, user_metadata: u.meta || {}, created_at: new Date().toISOString() });
+export function addUser(email, meta) {
   for (const u of state.users.values()) if (u.email === email) return u;
-  const u = { id: randomUUID(), email };
+  const u = { id: randomUUID(), email, meta: meta || {} };
   state.users.set(u.id, u);
-  state.profiles.set(u.id, { user_id: u.id, email, name: null, daily_limit: null, invited: false, created_at: new Date().toISOString() });
+  const nm = meta && typeof meta.name === "string" ? meta.name.trim().slice(0, 60) || null : null;
+  state.profiles.set(u.id, { user_id: u.id, email, name: nm, daily_limit: null, invited: false, created_at: new Date().toISOString() });
   return u;
 }
 const byEmail = (e) => [...state.users.values()].find((u) => u.email === e);
@@ -97,7 +98,7 @@ createServer(async (req, res) => {
   try {
     // État pour les tests
     if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
-    if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; return send(res, 200, u); }
+    if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
     // Fonctions
     if (p.startsWith("/functions/v1/api/")) {
@@ -115,6 +116,16 @@ createServer(async (req, res) => {
       if (!byEmail(b.email)) return send(res, 422, { code: "otp_disabled", error_code: "otp_disabled", msg: "Signups not allowed for otp", message: "Signups not allowed for otp" });
       state.otps.set(b.email, "123456"); return send(res, 200, {});
     }
+    // Inscription : confirmation des e-mails désactivée, la session est rendue tout de suite.
+    if (p === "/auth/v1/signup" && req.method === "POST") {
+      const b = JSON.parse((await readBody(req)).toString());
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email || "")) return send(res, 400, { code: "validation_failed", error_code: "validation_failed", msg: "Unable to validate email address: invalid format" });
+      if (byEmail(b.email)) return send(res, 422, { code: "user_already_exists", error_code: "user_already_exists", msg: "User already registered" });
+      if (!b.password || b.password.length < 6) return send(res, 422, { code: "weak_password", error_code: "weak_password", msg: "Password should be at least 6 characters" });
+      const u = addUser(b.email, b.data); u.password = b.password; state.signups = (state.signups || 0) + 1;
+      return send(res, 200, session(u));
+    }
+    if (p === "/auth/v1/recover" && req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); if (byEmail(b.email)) state.otps.set(b.email, "123456"); return send(res, 200, {}); }
     if (p === "/auth/v1/verify" && req.method === "POST") {
       const b = JSON.parse((await readBody(req)).toString());
       const u = byEmail(b.email);

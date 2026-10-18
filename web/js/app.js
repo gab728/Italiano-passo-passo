@@ -691,7 +691,7 @@ const mine=()=>{const ss=slots(),keys=new Set(ss.map(x=>x.key)),inPlan=ss.filter
   const extra=M.map((m,i)=>i).filter(i=>M[i].course===C().id&&!keys.has(String(M[i].id))&&(M[i].custom||!ss.length));
   return inPlan.concat(extra.sort((a,b)=>(M[a].order||0)-(M[b].order||0)))};
 const isDone=x=>!!(S[x.key]&&S[x.key].done);
-const current=()=>slots().find(x=>!isDone(x))||null;
+const current=()=>{const ss=slots(),lo=S.ob?Math.floor(S.ob.lv||0):0;return ss.find(x=>!isDone(x)&&x.li>=lo)||ss.find(x=>!isDone(x))||null};
 function openSlot(x){if(x.mi>=0)return go(x.mi);if(AI)return creer({slot:x});
   speakNote("Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, qui a besoin du réseau : réessaie quand tu captes.")}
 function stopRow(x,cls,label,stateText,pct,fn){const li=el("li"),s=el("button","stop "+cls);s.type="button";
@@ -886,7 +886,7 @@ function end(){const m=M[cur.mi],T=tally(),pct=T.n?Math.round(100*T.ok/T.n):100,
   const hbtn=btn("Retour à l'accueil");hbtn.onclick=home;r.append(hbtn);e.append(r);body.append(e)}
 
 /* ---------- Série, objectif du jour, révision espacée ---------- */
-const GOAL=20,INT=[1,3,7,14,30];
+let GOAL=20;const INT=[1,3,7,14,30];
 const day=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*6e4)/864e5)};
 function bump(){S.d=S.d||{};const k=day();S.d[k]=(S.d[k]||0)+1;for(const x in S.d)if(+x<k-120)delete S.d[x]}
 function streak(){const d=S.d||{},t=day();let n=0,k=d[t]?t:t-1;while(d[k]){n++;k--}return n}

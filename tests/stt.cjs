@@ -7,7 +7,7 @@ const O = "http://127.0.0.1:8787";
   const ctx = await br.newContext({ permissions: ["microphone"] });
   await ctx.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
   const p = await ctx.newPage(); const errs = []; p.on("pageerror", (e) => errs.push(e.message));
-  await p.goto(O + "/"); await p.waitForSelector("#gate-email");
+  await p.goto(O + "/"); await p.click("text=J'ai déjà un compte"); await p.waitForSelector("#gate-email");
   await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
   await p.waitForSelector(".tabbar [data-tab=profile]", { timeout: 10000 });
   const before = (await (await fetch(O + "/__state")).json()).stt;

@@ -10,7 +10,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
     const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, deviceScaleFactor: 1 });
     await ctx.addInitScript(MOCKS);
     const p = await ctx.newPage();
-    await p.goto(O + "/"); await p.waitForSelector("#gate-email");
+    await p.goto(O + "/"); await p.click("text=J'ai déjà un compte"); await p.waitForSelector("#gate-email");
     await p.screenshot({ path: `${OUT}/${scheme}-1-gate.png` });
     await p.fill("#gate-email", "bramigab@gmail.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");
     await p.waitForSelector(".feed-hd", { timeout: 10000 });

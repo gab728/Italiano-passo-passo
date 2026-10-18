@@ -12,6 +12,8 @@
 //   DAILY_CALLS (150) et OWNER_DAILY_CALLS (1000) : nombre d'appels à Claude par personne et par jour
 //   DAILY_OUTPUT_TOKENS (400000) : plafond de texte produit par personne et par jour
 //   STT_API_KEY, STT_URL (https://api.openai.com/v1/audio/transcriptions), STT_MODEL (gpt-4o-mini-transcribe), STT_DAILY_SECONDS (3600)
+//   OPEN_SIGNUP (true) : toute personne qui crée un compte peut utiliser l'app ; false pour n'accepter que les invités
+//   GLOBAL_DAILY_CALLS (2000) : plafond d'appels à Claude par jour pour l'ensemble des membres (le propriétaire n'est pas bloqué)
 //   ALLOWED_ORIGINS : adresses autorisées à appeler la fonction (par défaut toutes, l'accès restant protégé par la connexion)
 
 const env = (k: string, d = ""): string => (Deno.env.get(k) ?? d).trim();
@@ -94,6 +96,11 @@ async function usageToday(uid: string): Promise<any> {
   const rows = await restJSON("usage?user_id=eq." + uid + "&day=eq." + today() + "&select=calls,input_tokens,output_tokens,stt_seconds");
   return rows && rows[0] || { calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 };
 }
+// Appels du jour, tous membres confondus : garde-fou de la facture quand les inscriptions sont ouvertes.
+async function globalCalls(): Promise<number> {
+  try { const rows = await restJSON("usage?day=eq." + today() + "&select=calls") || []; return rows.reduce((n: number, r: any) => n + (Number(r.calls) || 0), 0); }
+  catch { return 0; }
+}
 async function addUsage(uid: string, calls: number, inTok: number, outTok: number, stt: number) {
   try {
     await restJSON("rpc/add_usage", { method: "POST", body: JSON.stringify({ p_user: uid, p_day: today(), p_calls: calls, p_in: inTok, p_out: outTok, p_stt: stt }) });
@@ -146,6 +153,10 @@ async function claude(req: Request, u: User): Promise<Response> {
   const lim = await limitsFor(u);
   const okCall = await restJSON("rpc/take_call", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_max_calls: lim.calls, p_max_out: lim.output_tokens, p_max_in: lim.input_tokens, p_reserve: maxTok }) });
   if (okCall !== true) return fail(req, 429, "rate_limited", "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.");
+  if (!isOwner(u) && await globalCalls() > int("GLOBAL_DAILY_CALLS", 2000)) {
+    await addUsage(u.id, -1, 0, -maxTok, 0);
+    return fail(req, 429, "rate_limited", "L'app a atteint son plafond du jour pour tout le monde. Il se remet à zéro à minuit.");
+  }
 
   const payload: Json = { model, max_tokens: maxTok, messages, stream: true };
   if (system) payload.system = system;
@@ -345,9 +356,10 @@ export async function handle(req: Request): Promise<Response> {
   try {
     const u = await getUser(req);
     if (!u) return fail(req, 401, "not_signed_in", "Connecte-toi pour continuer.");
-    // Seules les personnes invitées (et le propriétaire) utilisent Claude : protège la facture même si les inscriptions étaient ouvertes.
+    // Membres : le propriétaire, les invités et, si les inscriptions sont ouvertes, toute personne à l'adresse confirmée.
     const prof = await profile(u.id);
-    if (isOwner(u)) {
+    const open = !/^(false|0|no|non)$/i.test(env("OPEN_SIGNUP", "true"));
+    if (isOwner(u) || (open && u.confirmed)) {
       if (!prof || !prof.invited) await restJSON(prof ? "profiles?user_id=eq." + u.id : "profiles", prof
         ? { method: "PATCH", body: JSON.stringify({ invited: true }) }
         : { method: "POST", body: JSON.stringify({ user_id: u.id, email: u.email, invited: true }) });

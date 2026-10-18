@@ -23,6 +23,8 @@ const patches = [
   ["if(AI)tool(\"Conversation\",convList);root.append(tools);", "if(AI)tool(\"Conversation\",convList);if(window.WEB)WEB.tools(tool);root.append(tools);"],
   ["w.append(inp,keys,ok);", "w.append(inp,keys,ok);if(window.WEB)WEB.mic(w,inp);", 2],
   ["end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);", "end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);if(window.WEB)WEB.convExtra(row,k);"],
+  ["const current=()=>slots().find(x=>!isDone(x))||null;", "const current=()=>{const ss=slots(),lo=S.ob?Math.floor(S.ob.lv||0):0;return ss.find(x=>!isDone(x)&&x.li>=lo)||ss.find(x=>!isDone(x))||null};"],
+  ["const GOAL=20,INT=[1,3,7,14,30];", "let GOAL=20;const INT=[1,3,7,14,30];"],
   ["Ta progression est enregistrée dans ton compte Claude à chaque réponse.", "Ta progression est enregistrée dans ton compte à chaque réponse, et reste disponible hors ligne."],
   ["Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, indisponible ici : ouvre la page dans l'app Claude, avec du réseau.", "Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, qui a besoin du réseau : réessaie quand tu captes."],
   ["La conversation passe par l'assistant Claude, qui n'est pas disponible ici pour l'instant. Ouvre la page dans l'app Claude avec du réseau, et accepte quand elle demande à utiliser Claude.", "La conversation passe par l'assistant Claude, indisponible pour l'instant. Vérifie le réseau, puis réessaie."],

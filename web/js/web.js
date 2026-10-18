@@ -149,7 +149,7 @@
     };
     im.append(ta, ib2, msg); body.append(im);
 
-    if (me && me.owner) { const ad = btn("Mes amis : inviter et suivre", "primary"); ad.onclick = friends; body.append(ad); }
+    if (me && me.owner) { const ad = btn("Membres : suivre et gérer", "primary"); ad.onclick = friends; body.append(ad); }
 
     const out = el("div", "notes");
     const so = el("button", "linkbtn"); so.type = "button"; so.textContent = "Se déconnecter de cet appareil";
@@ -176,11 +176,11 @@
       "3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.";
   }
   async function friends() {
-    cur = null; qbar(null, null, "Mes amis", "← Mon compte", account); view = "friends";
+    cur = null; qbar(null, null, "Membres", "← Mon compte", account); view = "friends";
     body.append(el("div", "kind", "Propriétaire de l'app"));
-    body.append(el("h2", null, "Mes amis"));
-    body.append(el("p", "fr", "Seules les personnes invitées peuvent se connecter. Chaque invitation crée le compte et donne un code de connexion à envoyer par message."));
-    const inv = el("section", "panel"); inv.append(el("h2", null, "Inviter quelqu'un"));
+    body.append(el("h2", null, "Membres"));
+    body.append(el("p", "fr", "Tes amis créent leur compte eux-mêmes en ouvrant le lien de l'app. Tu peux aussi préparer un compte pour quelqu'un : tu reçois un code de connexion à lui envoyer."));
+    const inv = el("section", "panel"); inv.append(el("h2", null, "Préparer un compte"));
     const form = el("form", "gate-form");
     const ln = el("label", null, "Prénom"), n = document.createElement("input"); n.id = "inv-name"; ln.htmlFor = n.id; n.maxLength = 60; n.autocomplete = "off";
     const le = el("label", null, "Adresse e-mail"), e = document.createElement("input"); e.id = "inv-email"; le.htmlFor = e.id; e.type = "email"; e.required = true; e.autocomplete = "off"; e.setAttribute("autocapitalize", "off");

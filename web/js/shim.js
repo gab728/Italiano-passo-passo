@@ -23,6 +23,8 @@
   }
   const BASE = CFG.supabaseUrl.replace(/\/+$/, "");
   const FN = BASE + "/functions/v1/api";
+  // Lien « réinitialiser le mot de passe » : lu avant que la connexion n'efface l'adresse.
+  const RECOVERY = /(^|[#&])type=recovery(&|$)/.test(location.hash);
   const sb = window.supabase.createClient(BASE, CFG.supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "ipp-auth" },
   });
@@ -241,111 +243,198 @@
     }
   }
 
-  /* ---------- Écran de connexion : e-mail puis code ---------- */
+  /* ---------- Accueil, inscription et connexion ----------
+     Écran d'accueil, quatre questions (objectifs, niveau, temps par jour, prénom), puis création du compte.
+     Les réponses sont gardées à part et appliquées par l'app à son démarrage. */
   const params = new URLSearchParams(location.search);
-  // Lien de connexion expiré ou déjà utilisé : Supabase revient avec l'erreur dans l'adresse.
   const hashErr = new URLSearchParams(location.hash.replace(/^#/, "")).get("error_description");
   if (hashErr) history.replaceState(null, "", location.pathname + location.search);
+  const OB_KEY = "ipp-onboarding";
   function authError(e) {
     const m = String((e && e.message) || "");
-    if (/invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect. Première connexion ou mot de passe oublié : utilise le code de ton invitation.";
-    if (/signups? not allowed|not allowed for otp|user not found/i.test(m)) return "Cette adresse n'est pas encore invitée. Demande une invitation à la personne qui t'a fait découvrir l'app.";
+    if (/invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect.";
+    if (/already registered|already exists|user_already_exists/i.test(m)) return "Un compte existe déjà avec cette adresse. Connecte-toi.";
+    if (/signups? not allowed|signup.*disabled/i.test(m)) return "Les inscriptions sont fermées pour l'instant. Demande une invitation au créateur de l'app.";
+    if (/not allowed for otp|user not found/i.test(m)) return "Aucun compte avec cette adresse.";
+    if (/email not confirmed/i.test(m)) return "Confirme d'abord ton adresse avec l'e-mail reçu.";
+    if (/not authorized|authorized/i.test(m)) return "L'envoi d'e-mails n'est pas activé sur l'app. Demande un code au créateur de l'app.";
     if (/rate|too many|security purposes/i.test(m)) return "Trop de tentatives. Patiente une minute, puis réessaie.";
-    if (/expired|invalid|otp/i.test(m)) return "Ce code n'est pas valable ou a expiré. Demande-en un nouveau.";
     if (/password/i.test(m) && /(short|weak|least|characters)/i.test(m)) return "Mot de passe trop court : 8 caractères au moins.";
+    if (/valid email|invalid.*email|email.*invalid/i.test(m)) return "Cette adresse e-mail ne semble pas valide.";
+    if (/expired|invalid|otp/i.test(m)) return "Ce code n'est pas valable ou a expiré.";
     if (/fetch|network|Failed/i.test(m)) return "Pas de réseau. Vérifie ta connexion, puis réessaie.";
-    return "Connexion impossible pour l'instant. Réessaie dans un moment.";
+    return "Ça n'a pas marché. Réessaie dans un moment.";
   }
-  // Pendant la première connexion (code puis choix du mot de passe), l'app attend que le mot de passe soit choisi.
-  let holdStart = false;
-  const field = (id, label, type, extra) => {
-    const l = $("label", null, label); l.htmlFor = id;
-    const i = document.createElement("input"); i.id = id; i.type = type; i.required = true; i.setAttribute("autocapitalize", "off"); Object.assign(i, extra || {});
-    return [l, i];
-  };
+  let holdStart = RECOVERY;
+  const OB = { why: [], lv: 0, goal: 20, name: "" };
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  function showGate(step, email, note, sess) {
-    gate.hidden = false; gate.innerHTML = "";
-    document.getElementById("app").hidden = true;
-    const card = $("div", "gate-card");
-    const brand = $("div", "gate-brand"); brand.append($("span", "gate-flag"), $("span", null, "Italiano passo passo"));
-    card.append(brand);
-    const msg = $("p", "gate-msg"); msg.setAttribute("role", "status"); msg.hidden = !note; if (note) msg.textContent = note;
-    const say = (t) => { msg.hidden = false; msg.textContent = t; };
-    const f = document.createElement("form"); f.className = "gate-form";
-    email = email || params.get("e") || "";
-
-    if (step === "login") {
-      // Connexion habituelle : e-mail et mot de passe (le téléphone peut les retenir et les remplir tout seul).
-      card.append($("h1", null, "Connexion"));
-      const [le, ie] = field("gate-email", "Adresse e-mail", "email", { autocomplete: "username", value: email });
-      const [lp, ip] = field("gate-pass", "Mot de passe", "password", { autocomplete: "current-password" });
-      const ok = $("button", "btn primary", "Se connecter"); ok.type = "submit";
-      const first = $("button", "btn", "Première connexion ou mot de passe oublié"); first.type = "button";
-      f.append(le, ie, lp, ip, ok, first, msg);
-      f.onsubmit = async (ev) => {
-        ev.preventDefault(); const v = ie.value.trim().toLowerCase();
-        if (!validEmail(v)) return say("Cette adresse e-mail ne semble pas complète.");
-        ok.disabled = true; say("Connexion…");
-        const { data, error } = await sb.auth.signInWithPassword({ email: v, password: ip.value });
-        ok.disabled = false;
-        if (error || !data || !data.session) return say(authError(error));
-        start(data.session);
-      };
-      first.onclick = () => showGate("code", ie.value.trim().toLowerCase());
-      card.append(f);
-      setTimeout(() => (email ? ip : ie).focus(), 50);
-    } else if (step === "code") {
-      // Première connexion, ou mot de passe oublié : le code reçu avec l'invitation, puis le choix du mot de passe.
-      card.append($("h1", null, "Ton code"), $("p", "fr", "Entre le code reçu avec ton invitation. Ensuite, tu choisiras ton mot de passe. Pas de code, ou code expiré ? Demande-en un nouveau à la personne qui t'a invité."));
-      const [le, ie] = field("gate-email", "Adresse e-mail", "email", { autocomplete: "username", value: email });
-      const [lc, ic] = field("gate-code", "Code", "text", { inputMode: "numeric", autocomplete: "one-time-code", maxLength: 12, className: "gate-code" });
-      const ok = $("button", "btn primary", "Continuer"); ok.type = "submit";
-      const back = $("button", "btn", "J'ai déjà un mot de passe"); back.type = "button"; back.onclick = () => showGate("login", ie.value.trim().toLowerCase());
-      const link = $("button", "linkbtn", "Recevoir plutôt un lien de connexion par e-mail"); link.type = "button";
-      f.append(le, ie, lc, ic, ok, back, msg, link);
-      f.onsubmit = async (ev) => {
-        ev.preventDefault(); const v = ie.value.trim().toLowerCase(), code = ic.value.replace(/\D/g, "");
-        if (!validEmail(v)) return say("Cette adresse e-mail ne semble pas complète.");
-        if (code.length < 6) return say("Le code compte au moins 6 chiffres.");
-        ok.disabled = true; say("Vérification…"); holdStart = true;
-        let r = await sb.auth.verifyOtp({ email: v, token: code, type: "email" });
-        if (r.error) { const r2 = await sb.auth.verifyOtp({ email: v, token: code, type: "magiclink" }); if (!r2.error) r = r2; }
-        ok.disabled = false;
-        if (r.error || !r.data || !r.data.session) { holdStart = false; return say(authError(r.error)); }
-        showGate("password", v, "", r.data.session);
-      };
-      link.onclick = async () => {
-        const v = ie.value.trim().toLowerCase(); if (!validEmail(v)) return say("Entre d'abord ton adresse e-mail.");
-        link.disabled = true; say("Envoi…");
-        const { error } = await sb.auth.signInWithOtp({ email: v, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
-        link.disabled = false;
-        say(error ? authError(error) : "E-mail envoyé à " + v + " (regarde aussi dans les indésirables). Ouvre-le sur ce téléphone et touche « Sign in ».");
-      };
-      card.append(f);
-      setTimeout(() => (email ? ic : ie).focus(), 50);
-    } else {
-      // Choix du mot de passe, juste après le code.
-      card.append($("h1", null, "Ton mot de passe"), $("p", "fr", "Choisis un mot de passe (8 caractères au moins). Ton téléphone pourra le retenir : la prochaine fois, la connexion se fera en un geste."));
-      const hidden = document.createElement("input"); hidden.type = "email"; hidden.autocomplete = "username"; hidden.value = email; hidden.hidden = true;
-      const [lp, ip] = field("gate-newpass", "Nouveau mot de passe", "password", { autocomplete: "new-password" });
-      const ok = $("button", "btn primary", "Enregistrer et entrer"); ok.type = "submit";
-      const skip = $("button", "linkbtn", "Plus tard"); skip.type = "button"; skip.onclick = () => { holdStart = false; start(sess); };
-      f.append(hidden, lp, ip, ok, msg, skip);
-      f.onsubmit = async (ev) => {
-        ev.preventDefault();
-        if (ip.value.length < 8) return say("8 caractères au moins.");
-        ok.disabled = true; say("Enregistrement…");
-        const { error } = await sb.auth.updateUser({ password: ip.value });
-        ok.disabled = false;
-        if (error) return say(authError(error));
-        holdStart = false; start(sess);
-      };
-      card.append(f);
-      setTimeout(() => ip.focus(), 50);
+  const field = (id, label, type, extra) => {
+    const w = $("div", "g-field"), l = $("label", null, label); l.htmlFor = id;
+    const i = document.createElement("input"); i.id = id; i.type = type; i.required = true; i.setAttribute("autocapitalize", "off"); Object.assign(i, extra || {});
+    w.append(l, i);
+    if (type === "password") { const t = $("button", "g-eye", "Afficher"); t.type = "button"; t.onclick = () => { const s = i.type === "password"; i.type = s ? "text" : "password"; t.textContent = s ? "Masquer" : "Afficher"; }; w.append(t); }
+    return [w, i];
+  };
+  function frame(opts) {
+    gate.hidden = false; gate.innerHTML = ""; document.getElementById("app").hidden = true;
+    const box = $("div", "g-screen" + (opts.cls ? " " + opts.cls : ""));
+    if (opts.back || opts.step) {
+      const top = $("div", "g-top");
+      if (opts.back) { const b = $("button", "g-back"); b.type = "button"; b.setAttribute("aria-label", "Retour"); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.onclick = opts.back; top.append(b); }
+      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 5"); for (let k = 1; k <= 5; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
+      box.append(top);
     }
-    gate.append(card);
+    gate.append(box); return box;
   }
+  const msgEl = () => { const m = $("p", "g-msg"); m.setAttribute("role", "status"); m.hidden = true; return m; };
+  const say = (m, t) => { m.hidden = !t; m.textContent = t || ""; };
+
+  function welcome() {
+    const box = frame({ cls: "g-welcome" });
+    const art = $("div", "g-art"); art.setAttribute("aria-hidden", "true");
+    ["cafe", "viaggio", "cucina"].forEach((n) => { const i = document.createElement("img"); i.src = "img/themes/" + n + ".svg"; i.alt = ""; art.append(i); });
+    box.append(art);
+    const h = $("h1", "g-hello", "Ciao."); box.append(h);
+    box.append($("p", "g-lead", "L'italien en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
+    const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepWhy();
+    const have = $("button", "g-link", "J'ai déjà un compte"); have.type = "button"; have.onclick = () => login();
+    box.append(go, have);
+  }
+  function choice(box, items, multi, selected, onPick) {
+    const list = $("div", "g-choices");
+    items.forEach(([val, label, sub]) => {
+      const b = $("button", "g-choice"); b.type = "button"; b.setAttribute("aria-pressed", String(multi ? selected.includes(val) : selected === val));
+      const t = $("b", null, label); b.append(t); if (sub) b.append($("small", null, sub));
+      b.onclick = () => { onPick(val); [...list.children].forEach((c, k) => c.setAttribute("aria-pressed", String(multi ? OB.why.includes(items[k][0]) : items[k][0] === val))); };
+      list.append(b);
+    });
+    box.append(list); return list;
+  }
+  function stepWhy() {
+    const box = frame({ back: welcome, step: 1 });
+    box.append($("h1", null, "Pourquoi l'italien ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
+    const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
+    choice(box, [["voyage", "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
+      (v) => { OB.why = OB.why.includes(v) ? OB.why.filter((x) => x !== v) : OB.why.concat(v); go.disabled = !OB.why.length; });
+    go.onclick = stepLevel; box.append(go);
+  }
+  function stepLevel() {
+    const box = frame({ back: stepWhy, step: 2 });
+    box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", "Pas d'examen : tu pourras changer de niveau à tout moment."));
+    const go = $("button", "g-cta", "Continuer"); go.type = "button";
+    choice(box, [[0, "Je débute", "Quelques mots, pas plus"], [0.5, "Je connais les bases", "Je me présente, je commande un café"], [1, "Je me débrouille", "Je tiens une conversation simple (A2)"], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)"]], false, OB.lv, (v) => { OB.lv = v; });
+    go.onclick = stepGoal; box.append(go);
+  }
+  function stepGoal() {
+    const box = frame({ back: stepLevel, step: 3 });
+    box.append($("h1", null, "Combien de temps par jour ?"), $("p", "g-sub", "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps."));
+    const go = $("button", "g-cta", "Continuer"); go.type = "button";
+    choice(box, [[8, "5 minutes", "Tranquille"], [12, "10 minutes", "Régulier"], [20, "20 minutes", "Sérieux"], [30, "30 minutes et plus", "Intense"]], false, OB.goal, (v) => { OB.goal = v; });
+    go.onclick = stepName; box.append(go);
+  }
+  function stepName() {
+    const box = frame({ back: stepGoal, step: 4 });
+    box.append($("h1", null, "Comment tu t'appelles ?"), $("p", "g-sub", "C'est le prénom que verront tes amis dans l'app."));
+    const f = document.createElement("form"); f.className = "g-form";
+    const [w, i] = field("g-name", "Ton prénom", "text", { autocomplete: "given-name", maxLength: 40, value: OB.name });
+    i.setAttribute("autocapitalize", "words");
+    const go = $("button", "g-cta", "Continuer"); go.type = "submit";
+    f.append(w, go); f.onsubmit = (e) => { e.preventDefault(); OB.name = i.value.trim(); if (!OB.name) return i.focus(); signup(); };
+    box.append(f); setTimeout(() => i.focus(), 60);
+  }
+  function signup() {
+    const box = frame({ back: stepName, step: 5 });
+    box.append($("h1", null, "Crée ton compte, " + OB.name), $("p", "g-sub", "Pour retrouver ta progression sur tous tes appareils."));
+    const f = document.createElement("form"); f.className = "g-form";
+    const [we, ie] = field("g-email", "Adresse e-mail", "email", { autocomplete: "email", value: params.get("e") || "" });
+    const [wp, ip] = field("g-pass", "Mot de passe (8 caractères au moins)", "password", { autocomplete: "new-password" });
+    const go = $("button", "g-cta", "Créer mon compte"); go.type = "submit"; const m = msgEl();
+    f.append(we, wp, m, go);
+    f.append($("p", "g-legal", "Ta progression reste privée. Tes amis voient seulement ton prénom, tes leçons terminées et ta série."));
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = ie.value.trim().toLowerCase();
+      if (!validEmail(v)) return say(m, "Cette adresse e-mail ne semble pas complète.");
+      if (ip.value.length < 8) return say(m, "Mot de passe trop court : 8 caractères au moins.");
+      go.disabled = true; say(m, "Création du compte…");
+      try { localStorage.setItem(OB_KEY, JSON.stringify(Object.assign({ at: Date.now() }, OB))); } catch (x) { /* rien */ }
+      const { data, error } = await sb.auth.signUp({ email: v, password: ip.value, options: { data: { name: OB.name }, emailRedirectTo: location.origin + location.pathname } });
+      go.disabled = false;
+      if (error) { say(m, authError(error)); if (/existe déjà/.test(authError(error))) setTimeout(() => login(v), 1400); return; }
+      if (data && data.session) return start(data.session);
+      if (data && data.user && Array.isArray(data.user.identities) && !data.user.identities.length) return say(m, "Un compte existe déjà avec cette adresse. Connecte-toi.");
+      const b = frame({ back: welcome }); b.append($("h1", null, "Vérifie tes e-mails"), $("p", "g-sub", "Un lien de confirmation est parti à " + v + ". Ouvre-le sur ce téléphone pour activer ton compte."));
+      const l = $("button", "g-link", "J'ai confirmé, me connecter"); l.type = "button"; l.onclick = () => login(v); b.append(l);
+    };
+    box.append(f); setTimeout(() => ie.focus(), 60);
+  }
+  function login(email, note) {
+    const box = frame({ back: welcome });
+    box.append($("h1", null, "Bon retour !"));
+    const f = document.createElement("form"); f.className = "g-form";
+    const [we, ie] = field("gate-email", "Adresse e-mail", "email", { autocomplete: "username", value: email || params.get("e") || "" });
+    const [wp, ip] = field("gate-pass", "Mot de passe", "password", { autocomplete: "current-password" });
+    const go = $("button", "g-cta", "Se connecter"); go.type = "submit"; const m = msgEl(); if (note) say(m, note);
+    const forgot = $("button", "g-link", "Mot de passe oublié ?"); forgot.type = "button"; forgot.onclick = () => recover(ie.value.trim().toLowerCase());
+    const create = $("button", "g-link", "Créer un compte"); create.type = "button"; create.onclick = () => stepWhy();
+    f.append(we, wp, m, go, forgot, create);
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = ie.value.trim().toLowerCase();
+      if (!validEmail(v)) return say(m, "Cette adresse e-mail ne semble pas complète.");
+      go.disabled = true; say(m, "Connexion…");
+      const { data, error } = await sb.auth.signInWithPassword({ email: v, password: ip.value });
+      go.disabled = false;
+      if (error || !data || !data.session) return say(m, authError(error));
+      start(data.session);
+    };
+    box.append(f); setTimeout(() => ((email || params.get("e")) ? ip : ie).focus(), 60);
+  }
+  // Mot de passe oublié : un lien par e-mail si l'envoi est activé, sinon un code donné par le créateur de l'app.
+  function recover(email) {
+    const box = frame({ back: () => login(email) });
+    box.append($("h1", null, "Mot de passe oublié"), $("p", "g-sub", "Reçois un lien par e-mail, ou entre le code que t'a donné le créateur de l'app."));
+    const f = document.createElement("form"); f.className = "g-form";
+    const [we, ie] = field("gate-email", "Adresse e-mail", "email", { autocomplete: "username", value: email || "" });
+    const send = $("button", "g-cta ghost", "Recevoir un lien par e-mail"); send.type = "button"; const m = msgEl();
+    const [wc, ic] = field("gate-code", "Code reçu", "text", { inputMode: "numeric", autocomplete: "one-time-code", maxLength: 12, required: false });
+    const go = $("button", "g-cta", "Continuer avec le code"); go.type = "submit";
+    f.append(we, send, wc, m, go);
+    send.onclick = async () => {
+      const v = ie.value.trim().toLowerCase(); if (!validEmail(v)) return say(m, "Entre d'abord ton adresse e-mail.");
+      send.disabled = true; say(m, "Envoi…");
+      const { error } = await sb.auth.resetPasswordForEmail(v, { redirectTo: location.origin + location.pathname });
+      send.disabled = false; say(m, error ? authError(error) : "Si un compte existe, un e-mail est parti à " + v + ". Ouvre le lien sur ce téléphone.");
+    };
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = ie.value.trim().toLowerCase(), code = ic.value.replace(/\D/g, "");
+      if (!validEmail(v)) return say(m, "Cette adresse e-mail ne semble pas complète.");
+      if (code.length < 6) return say(m, "Le code compte au moins 6 chiffres.");
+      go.disabled = true; say(m, "Vérification…"); holdStart = true;
+      let r = await sb.auth.verifyOtp({ email: v, token: code, type: "email" });
+      for (const type of ["magiclink", "recovery"]) { if (!r.error) break; const r2 = await sb.auth.verifyOtp({ email: v, token: code, type }); if (!r2.error) r = r2; }
+      go.disabled = false;
+      if (r.error || !r.data || !r.data.session) { holdStart = false; return say(m, authError(r.error)); }
+      newPassword(v, r.data.session);
+    };
+    box.append(f);
+  }
+  function newPassword(email, sess) {
+    const box = frame({});
+    box.append($("h1", null, "Nouveau mot de passe"), $("p", "g-sub", "Choisis-le bien : ton téléphone pourra le retenir."));
+    const f = document.createElement("form"); f.className = "g-form";
+    const hid = document.createElement("input"); hid.type = "email"; hid.autocomplete = "username"; hid.value = email || ""; hid.hidden = true;
+    const [wp, ip] = field("gate-newpass", "Nouveau mot de passe", "password", { autocomplete: "new-password" });
+    const go = $("button", "g-cta", "Enregistrer et entrer"); go.type = "submit"; const m = msgEl();
+    f.append(hid, wp, m, go);
+    f.onsubmit = async (e) => {
+      e.preventDefault(); if (ip.value.length < 8) return say(m, "8 caractères au moins.");
+      go.disabled = true; say(m, "Enregistrement…");
+      const { error } = await sb.auth.updateUser({ password: ip.value });
+      go.disabled = false; if (error) return say(m, authError(error));
+      holdStart = false; start(sess);
+    };
+    box.append(f); setTimeout(() => ip.focus(), 60);
+  }
+  function showGate(step, email, note) { if (step === "code") return recover(email); if (step === "login" && (email || note)) return login(email, note); return params.get("e") ? login(params.get("e")) : welcome(); }
 
   // Sans réseau, la session enregistrée suffit pour réviser : l'app démarre et se resynchronise au retour du réseau.
   function storedSession() {
@@ -356,18 +445,20 @@
     if (started) return;
     const netFail = navigator.onLine === false || (error && (error.name === "AuthRetryableFetchError" || error.status === 0 || /fetch|network|Failed/i.test(String(error.message || ""))));
     const st = netFail ? storedSession() : null;
-    if (st) start(st); else showGate(hashErr ? "code" : "login", "", hashErr ? "Ce lien de connexion a expiré ou a déjà servi. Demande-en un nouveau." : "");
+    if (st) start(st); else showGate(hashErr ? "login" : "welcome", "", hashErr ? "Ce lien a expiré ou a déjà servi. Connecte-toi, ou demande un nouveau lien." : "");
   }
   sb.auth.onAuthStateChange((event, s) => {
     setTimeout(() => {
       // Session perdue (jeton révoqué, compte retiré) : retour à la connexion, sans effacer ce qui n'est peut-être pas encore enregistré.
       // Si une autre personne se connecte ensuite, start() écarte ces données.
       if (event === "SIGNED_OUT" && started && !(session && session.offline)) location.reload();
+      else if (event === "PASSWORD_RECOVERY" && s && !started && !document.getElementById("gate-newpass")) { holdStart = true; newPassword((s.user && s.user.email) || "", s); }
       else if (s && !started && !holdStart && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) start(s);
       else if (s && started && session && session.offline && event === "TOKEN_REFRESHED") { session = s; if (typeof connect === "function") connect(); }
     }, 0);
   });
   sb.auth.getSession().then(({ data, error }) => {
-    if (data && data.session) start(data.session); else noSession(error);
+    if (data && data.session && RECOVERY) newPassword((data.session.user && data.session.user.email) || "", data.session);
+    else if (data && data.session) start(data.session); else noSession(error);
   }).catch(noSession);
 })();
