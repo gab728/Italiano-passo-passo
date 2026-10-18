@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = +(process.argv[2] || 8787);
 const ORIGIN = "http://127.0.0.1:" + PORT;
 const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
-export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0 };
+export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map() };
 
 // ---------- Environnement de la fonction ----------
 const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), ANTHROPIC_API_KEY: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
@@ -22,6 +22,11 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u.startsWith("https://api.anthropic.com/")) return fakeClaude(JSON.parse(init.body));
+  if (u.startsWith("https://api.openai.com/v1/audio/speech")) {
+    const b = JSON.parse(init.body); state.tts.push({ voice: b.voice, input: b.input, speed: b.speed, instructions: (b.instructions || "").slice(0, 40) });
+    if (process.env.TTS_FAIL) return new Response("{}", { status: 500 });
+    return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
+  }
   if (u.startsWith("https://api.openai.com/")) { state.stt++; return new Response(JSON.stringify({ text: "Ciao, come stai?" }), { headers: { "content-type": "application/json" } }); }
   return realFetch(url, init);
 };
@@ -97,7 +102,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
     // Fonctions
@@ -108,6 +113,14 @@ createServer(async (req, res) => {
       res.writeHead(out.status, Object.fromEntries(out.headers));
       if (out.body) { const rd = out.body.getReader(); for (;;) { const { value, done } = await rd.read(); if (done) break; res.write(value); } }
       return res.end();
+    }
+
+    // Stockage (cache des voix), clé serveur seulement
+    if (p.startsWith("/storage/v1/object/")) {
+      const w = who(req); if (!w || !w.service) return send(res, 403, { message: "Unauthorized" });
+      const name = p.slice("/storage/v1/object/".length);
+      if (req.method === "GET") { const b = state.storage.get(name); if (!b) return send(res, 404, { message: "Object not found" }); res.writeHead(200, { "content-type": "audio/mpeg" }); return res.end(b); }
+      if (req.method === "POST") { state.storage.set(name, await readBody(req)); return send(res, 200, { Key: name }); }
     }
 
     // Connexion
@@ -157,6 +170,8 @@ createServer(async (req, res) => {
       if (table === "rpc/add_usage") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.calls += b.p_calls; r.input_tokens += b.p_in; r.output_tokens += b.p_out; r.stt_seconds += b.p_stt; state.usage.set(k, r); return send(res, 200, r); }
       if (table === "rpc/take_call") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; state.usage.set(k, r);
         if (r.calls < b.p_max_calls && r.output_tokens + b.p_reserve <= b.p_max_out && r.input_tokens < b.p_max_in) { r.calls++; r.output_tokens += b.p_reserve; return send(res, 200, true); } return send(res, 200, false); }
+      if (table === "rpc/take_tts") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.tts_chars = r.tts_chars || 0; state.usage.set(k, r);
+        if (r.tts_chars + b.p_chars <= b.p_max) { r.tts_chars += b.p_chars; return send(res, 200, true); } return send(res, 200, false); }
       if (table === "rpc/members") { if (!member(w)) return send(res, 200, []); return send(res, 200, [...state.profiles.values()].filter((p) => p.invited).map((p) => ({ user_id: p.user_id, name: p.name || "" }))); }
       const match = filters(url);
       if (table === "activity") {

@@ -237,7 +237,7 @@
     resolveReady(s);
     loadMe();
     try {
-      for (const f of ["js/app.js", "js/voice.js", "js/web.js", "js/dm.js", "js/ui.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
+      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
     } catch (e) {
       document.getElementById("app").textContent = "Impossible de charger l'app. Vérifie le réseau, puis recharge la page.";
     }
@@ -286,6 +286,8 @@
     }
     gate.append(box); return box;
   }
+  // Le curseur va dans le premier champ, sauf si la personne a déjà touché un autre champ entre-temps.
+  const softFocus = (i) => { const a = document.activeElement; if (!a || a === document.body || !gate.contains(a) || a.tagName === "BUTTON") i.focus(); };
   const msgEl = () => { const m = $("p", "g-msg"); m.setAttribute("role", "status"); m.hidden = true; return m; };
   const say = (m, t) => { m.hidden = !t; m.textContent = t || ""; };
 
@@ -340,7 +342,7 @@
     i.setAttribute("autocapitalize", "words");
     const go = $("button", "g-cta", "Continuer"); go.type = "submit";
     f.append(w, go); f.onsubmit = (e) => { e.preventDefault(); OB.name = i.value.trim(); if (!OB.name) return i.focus(); signup(); };
-    box.append(f); setTimeout(() => i.focus(), 60);
+    box.append(f); setTimeout(() => softFocus(i), 60);
   }
   function signup() {
     const box = frame({ back: stepName, step: 5 });
@@ -365,7 +367,7 @@
       const b = frame({ back: welcome }); b.append($("h1", null, "Vérifie tes e-mails"), $("p", "g-sub", "Un lien de confirmation est parti à " + v + ". Ouvre-le sur ce téléphone pour activer ton compte."));
       const l = $("button", "g-link", "J'ai confirmé, me connecter"); l.type = "button"; l.onclick = () => login(v); b.append(l);
     };
-    box.append(f); setTimeout(() => ie.focus(), 60);
+    box.append(f); setTimeout(() => softFocus(ie), 60);
   }
   function login(email, note) {
     const box = frame({ back: welcome });
@@ -386,7 +388,7 @@
       if (error || !data || !data.session) return say(m, authError(error));
       start(data.session);
     };
-    box.append(f); setTimeout(() => ((email || params.get("e")) ? ip : ie).focus(), 60);
+    box.append(f); setTimeout(() => softFocus(((email || params.get("e")) ? ip : ie)), 60);
   }
   // Mot de passe oublié : un lien par e-mail si l'envoi est activé, sinon un code donné par le créateur de l'app.
   function recover(email) {
@@ -432,7 +434,7 @@
       go.disabled = false; if (error) return say(m, authError(error));
       holdStart = false; start(sess);
     };
-    box.append(f); setTimeout(() => ip.focus(), 60);
+    box.append(f); setTimeout(() => softFocus(ip), 60);
   }
   function showGate(step, email, note) { if (step === "code") return recover(email); if (step === "login" && (email || note)) return login(email, note); return params.get("e") ? login(params.get("e")) : welcome(); }
 

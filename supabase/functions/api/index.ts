@@ -2,6 +2,7 @@
 //   POST /api/claude  → appelle Claude avec la clé du serveur (jamais envoyée au téléphone), en direct (streaming)
 //   POST /api/admin   → profil, codes de connexion, invitations et plafonds (le propriétaire seul pour la gestion)
 //   POST /api/stt     → transcription vocale de secours, si un service est configuré
+//   POST /api/tts     → voix naturelles (synthèse vocale OpenAI ou compatible), phrases des leçons gardées en cache pour tous
 // Chaque appel exige une personne connectée. La consommation est comptée par personne et par jour, avec un plafond.
 //
 // Secrets à définir (Supabase → Edge Functions → Secrets) :
@@ -14,6 +15,9 @@
 //   STT_API_KEY, STT_URL (https://api.openai.com/v1/audio/transcriptions), STT_MODEL (gpt-4o-mini-transcribe), STT_DAILY_SECONDS (3600)
 //   OPEN_SIGNUP (true) : toute personne qui crée un compte peut utiliser l'app ; false pour n'accepter que les invités
 //   GLOBAL_DAILY_CALLS (2000) : plafond d'appels à Claude par jour pour l'ensemble des membres (le propriétaire n'est pas bloqué)
+//   OPENAI_API_KEY : une clé OpenAI, utilisée pour le micro (à défaut de STT_API_KEY) et pour les voix (à défaut de TTS_API_KEY)
+//   TTS_API_KEY (sinon OPENAI_API_KEY, sinon STT_API_KEY si c'est une clé OpenAI), TTS_URL, TTS_MODEL (gpt-4o-mini-tts),
+//   TTS_DAILY_CHARS (25000, environ 25 minutes de voix) et OWNER_TTS_DAILY_CHARS (100000) : texte lu à voix haute par personne et par jour
 //   ALLOWED_ORIGINS : adresses autorisées à appeler la fonction (par défaut toutes, l'accès restant protégé par la connexion)
 
 const env = (k: string, d = ""): string => (Deno.env.get(k) ?? d).trim();
@@ -252,7 +256,7 @@ async function admin(req: Request, u: User): Promise<Response> {
 
   if (act === "me") {
     const lim = await limitsFor(u), used = await usageToday(u.id);
-    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!env("STT_API_KEY") });
+    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!sttKey(), tts: !!ttsKey() });
   }
   if (act === "rename") {
     const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
@@ -323,7 +327,7 @@ async function admin(req: Request, u: User): Promise<Response> {
 
 // ---------- /stt (secours, si un service de transcription est configuré) ----------
 async function stt(req: Request, u: User): Promise<Response> {
-  const key = env("STT_API_KEY");
+  const key = sttKey();
   if (!key) return fail(req, 503, "not_configured", "La transcription par le serveur n'est pas configurée.");
   const type = (req.headers.get("content-type") || "").split(";")[0].trim();
   if (!/^audio\//.test(type)) return fail(req, 400, "input", "Format audio inattendu.");
@@ -345,6 +349,61 @@ async function stt(req: Request, u: User): Promise<Response> {
   const j = await r.json().catch(() => ({}));
   await addUsage(u.id, 0, 0, 0, secs);
   return json(req, { text: String(j.text || "").trim() });
+}
+
+// ---------- /tts : voix naturelles ----------
+const TTS_VOICES = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse", "marin", "cedar"]);
+// Une seule clé OpenAI suffit pour le micro et les voix : STT_API_KEY ou OPENAI_API_KEY.
+function sttKey(): string { return env("STT_API_KEY") || (!env("STT_URL") || /openai\.com/.test(env("STT_URL")) ? env("OPENAI_API_KEY") : ""); }
+function ttsKey(): string {
+  const stt = env("STT_API_KEY"), sttUrl = env("STT_URL");
+  return env("TTS_API_KEY") || env("OPENAI_API_KEY") || (stt && (!sttUrl || /openai\.com/.test(sttUrl)) ? stt : "");
+}
+async function sha256(s: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+const audioHeaders = (req: Request, extra: Record<string, string> = {}) => ({ ...cors(req), "content-type": "audio/mpeg", "cache-control": "private, max-age=31536000", ...extra });
+async function tts(req: Request, u: User): Promise<Response> {
+  const key = ttsKey();
+  if (!key) return fail(req, 503, "not_configured", "Les voix naturelles ne sont pas configurées.");
+  let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
+  const text = String(b && b.text || "").replace(/[\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return fail(req, 400, "input", "Texte vide.");
+  if (text.length > 600) return fail(req, 413, "too_long", "Texte trop long pour une phrase.");
+  const voice = TTS_VOICES.has(String(b.voice)) ? String(b.voice) : "coral";
+  const instructions = String(b.instructions || "").replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 400);
+  const speed = Math.min(Math.max(Number(b.speed) || 1, 0.7), 1.25);
+  const model = env("TTS_MODEL", "gpt-4o-mini-tts");
+  // Phrases des leçons : même texte, même voix, même fichier pour tout le monde. Une phrase déjà produite ne coûte plus rien.
+  const cache = !!b.cache;
+  const name = cache ? "tts/" + (await sha256([model, voice, speed, instructions, text].join("\u0001"))) + ".mp3" : "";
+  if (cache) {
+    try {
+      const hit = await fetch(SB + "/storage/v1/object/" + name, { headers: svcHeaders() });
+      if (hit.ok) return new Response(hit.body, { headers: audioHeaders(req, { "x-cache": "hit" }) });
+    } catch { /* cache indisponible : on produit la voix */ }
+  }
+  const lim = await limitsFor(u);
+  const max = isOwner(u) ? int("OWNER_TTS_DAILY_CHARS", 100000) : int("TTS_DAILY_CHARS", 25000);
+  const okT = await restJSON("rpc/take_tts", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_chars: text.length, p_max: max }) });
+  if (okT !== true || lim.calls === 0) return fail(req, 429, "rate_limited", "Plafond de voix du jour atteint : la voix du téléphone prend le relais.");
+  let up: Response;
+  try {
+    up = await fetch(env("TTS_URL", "https://api.openai.com/v1/audio/speech"), {
+      method: "POST", headers: { authorization: "Bearer " + key, "content-type": "application/json" },
+      body: JSON.stringify({ model, voice, input: text, response_format: "mp3", speed, ...(instructions ? { instructions } : {}) }),
+    });
+  } catch { return fail(req, 502, "unavailable", "Service de voix injoignable."); }
+  if (!up.ok || !up.body) {
+    console.error("tts", up.status, (await up.text().catch(() => "")).slice(0, 300));
+    return fail(req, up.status === 429 ? 429 : 502, up.status === 429 ? "rate_limited" : "unavailable", "Voix indisponible pour l'instant.");
+  }
+  if (!cache) return new Response(up.body, { headers: audioHeaders(req) });
+  const buf = new Uint8Array(await up.arrayBuffer());
+  try { await fetch(SB + "/storage/v1/object/" + name, { method: "POST", headers: svcHeaders({ "content-type": "audio/mpeg", "x-upsert": "true" }), body: buf }); }
+  catch (e) { console.error("tts cache", e); }
+  return new Response(buf, { headers: audioHeaders(req, { "x-cache": "miss" }) });
 }
 
 // ---------- Routage ----------
@@ -371,6 +430,7 @@ export async function handle(req: Request): Promise<Response> {
     if (route === "claude") return await claude(req, u);
     if (route === "admin") return await admin(req, u);
     if (route === "stt") return await stt(req, u);
+    if (route === "tts") return await tts(req, u);
     return fail(req, 404, "input", "Adresse inconnue.");
   } catch (e) {
     console.error(e);

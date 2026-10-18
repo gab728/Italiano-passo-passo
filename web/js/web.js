@@ -113,6 +113,28 @@
       mt.append(t, out); body.append(mt);
     }
 
+    // Voix
+    const vx = el("section", "panel voices"); vx.append(el("h2", null, "Voix"));
+    const pref = () => (S.vx = S.vx || {});
+    const hasTts = !!(me && me.tts);
+    vx.append(el("p", "fr", hasTts ? "Les personnages et les leçons parlent avec des voix naturelles, produites par le serveur. Sans réseau, la voix du téléphone prend le relais." : "Les voix naturelles ne sont pas encore activées sur le serveur : c'est la voix du téléphone qui parle."));
+    const toggle = (label, sub, get, set) => {
+      const row = el("label", "switch-row"), t = el("span", "sw-t"); t.append(el("b", null, label)); if (sub) t.append(el("small", null, sub));
+      const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("role", "switch"); i.checked = get(); i.onchange = () => { set(i.checked); save(); };
+      row.append(t, i); vx.append(row); return i;
+    };
+    if (hasTts) toggle("Voix naturelles", "Plus vivantes ; consomment un peu de réseau", () => !pref().off, (v) => { pref().off = !v; });
+    toggle("Parler plus lentement", "Pour bien entendre chaque mot", () => !!pref().slow, (v) => { pref().slow = v; });
+    toggle("Couper la parole à la voix", "En mains libres, parle pendant que le personnage parle : il s'arrête et t'écoute", () => !pref().nobarge, (v) => { pref().nobarge = !v; });
+    if (canSpeak || hasTts) {
+      const tv = el("div", "voice-test"); tv.append(el("b", null, "Écouter les personnages"));
+      const SAMPLES = [["giulia", "Giulia", "Ciao! Allora, come è andata la giornata? Raccontami un po'."], ["marco", "Marco", "Buongiorno! Un caffè al volo o ti siedi un attimo?"], ["sofia", "Sofia", "Dai, sabato andiamo a quella mostra in centro? Poi un aperitivo!"], ["rosa", "Nonna Rosa", "Tesoro mio, hai mangiato? Vieni qua, assaggia questo ragù."]];
+      const row = el("div", "rowb");
+      SAMPLES.forEach(([who, name, line]) => { const b = btn(name); b.onclick = () => { stopSpeech(); VO.say(line, VO.IT(), 0.95, who); }; row.append(b); });
+      tv.append(row); vx.append(tv);
+    }
+    body.append(vx);
+
     // Mot de passe
     const pw = el("section", "panel"); pw.append(el("h2", null, "Mot de passe"));
     pw.append(el("p", "fr", "Pour te connecter sur un autre appareil ou dans l'app installée : ton e-mail et ce mot de passe. Ton téléphone peut le retenir."));
@@ -164,7 +186,7 @@
       del.disabled = true;
       try { await W.admin("delete_me"); await W.signOut(true); } catch (e) { del.disabled = false; speakNote(aiFail(e)); }
     };
-    out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone et n'est pas enregistré par l'app."));
+    out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone (ou par OpenAI sur iPhone) et n'est pas enregistré par l'app ; les voix naturelles sont produites par OpenAI à partir du texte des réponses."));
     out.append(so, el("br"), del); body.append(out);
   }
 

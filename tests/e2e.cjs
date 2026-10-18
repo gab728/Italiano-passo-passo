@@ -29,7 +29,7 @@ const MOCKS = `
 `;
 
 (async () => {
-  const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" }).catch(() => chromium.launch());
+  const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--autoplay-policy=no-user-gesture-required"] }).catch(() => chromium.launch());
   const errors = [];
   const newPage = async (ctx) => { const p = await ctx.newPage(); p.on("pageerror", (e) => errors.push(e.message)); p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text()); }); return p; };
   await post("/__seed", { email: "bramigab@gmail.com" });
@@ -133,11 +133,15 @@ const MOCKS = `
   await b.click(".theme:has(b:text-is('Ma journée'))");
   await b.waitForSelector(".msg.ai .bub", { timeout: 10000 });
   await b.evaluate(() => { window.__said = ["Oggi ho andato al lavoro"]; window.__spoken = []; });
+  const ttsBefore = (await st()).tts.length;
   await b.click(".dm-act");
-  await b.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2 && window.__spoken.length >= 2, null, { timeout: 15000 });
-  const spokenB = await b.evaluate(() => window.__spoken);
-  ok(spokenB.some((x) => x.startsWith("fr-FR|On dit")), "correction lue avec la voix française");
-  ok(spokenB.some((x) => x.startsWith("it-IT|Ah, interessante")), "réponse lue avec la voix italienne");
+  await b.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2, null, { timeout: 15000 });
+  let ttsNew = [];
+  for (let k = 0; k < 40 && ttsNew.length < 2; k++) { await b.waitForTimeout(150); ttsNew = (await st()).tts.slice(ttsBefore); }
+  ok(ttsNew.some((x) => /^On dit/.test(x.input) && x.voice === "marin" && /français/.test(x.instructions + " français")), "correction lue par la voix naturelle de Giulia : " + JSON.stringify(ttsNew[0]));
+  ok(ttsNew.some((x) => /^Ah, interessante!/.test(x.input) && x.voice === "marin"), "réponse lue par la voix naturelle, phrase par phrase : " + ttsNew.map((x) => x.input).join(" | "));
+  await b.waitForFunction(() => !DM.speaking, null, { timeout: 8000 }).catch(() => null);
+  ok((await b.evaluate(() => window.__spoken)).length === 0, "la voix du téléphone n'a pas servi");
   ok(await b.isVisible(".msg.me:has-text('Oggi ho andato al lavoro')"), "ma phrase dictée apparaît");
   ok(await b.isVisible(".note:has-text('On dit')"), "la correction s'affiche en note");
   s = await st();
@@ -238,7 +242,7 @@ const MOCKS = `
   const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
   await post("/__seed", { email: "intrus@example.com", password: "intrus123", unconfirmed: true });
-  await c.goto(O + "/"); await c.click("text=J'ai déjà un compte"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".feed-hd", { timeout: 10000 });
+  await c.goto(O + "/"); await c.click("text=J'ai déjà un compte"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".feed-hd", { timeout: 10000 }).catch(async (e) => { console.log("DIAG " + await c.evaluate(() => document.body.innerText.slice(0, 400))); throw e; });
   const intr = await c.evaluate(async () => { try { await AI("Ciao", { modelTier: "quick" }); return "passé"; } catch (e) { return e.code + "|" + aiFail(e); } });
   ok(/^not_invited\|/.test(intr), "Claude refusé : " + intr);
   const intrLesson = await c.evaluate(async () => { const db = await window.claude.use("db"); try { await db.collection("lessons").doc("it-u09-l1").set({ course: "it", title: "Spam" }); return "écrite"; } catch (e) { return "refusée"; } });
@@ -282,6 +286,34 @@ const MOCKS = `
   ok(membersD.includes("chiara@example.com"), "le propriétaire voit le nouveau membre");
   await d.evaluate(() => UI.go("profile")); await d.click(".goal-c .chip:has-text('30 min')");
   ok(await d.evaluate(() => GOAL === 30 && S.ob.goal === 30), "objectif du jour modifiable dans le profil");
+
+  console.log("14. Voix naturelles");
+  ok(await a.evaluate(() => WEBAUTH.me && WEBAUTH.me.tts === true), "le serveur annonce les voix naturelles");
+  const ch = await a.evaluate(() => [dmChunks("IT: Ciao! Come st", false), dmChunks("IT: Allora, sei pronto? Andiamo al mer", false), dmChunks("FR: On dit : sono andato.\nIT: Ah", false), dmChunks("IT: Ah, sì. Va bene", true), dmChunks("I", false)].map((c) => c.map((x) => x.lang.slice(0, 2) + ":" + x.t).join(" | ")));
+  ok(ch[0] === "" && ch[1] === "it:Allora, sei pronto?" && ch[2] === "fr:On dit : sono andato." && ch[3] === "it:Ah, sì. Va bene" && ch[4] === "", "découpage des phrases pendant l'écriture : " + JSON.stringify(ch));
+  let t0 = (await st()).tts.length;
+  await a.evaluate(() => { stopSpeech(); window.__spoken = []; speak("Buongiorno a tutti, oggi parliamo del mercato."); });
+  await a.waitForTimeout(800);
+  await a.evaluate(() => speak("Buongiorno a tutti, oggi parliamo del mercato."));
+  await a.waitForTimeout(800);
+  s = await st();
+  ok(s.tts.length === t0 + 1 && s.storage.length >= 1, "phrase de leçon produite une fois, gardée en cache (" + (s.tts.length - t0) + " appel)");
+  await b.evaluate(() => speak("Buongiorno a tutti, oggi parliamo del mercato."));
+  await b.waitForTimeout(800);
+  ok((await st()).tts.length === t0 + 1, "le cache du serveur sert aussi aux autres membres");
+  ok((await a.evaluate(() => window.__spoken)).length === 0, "lecture des leçons par la voix naturelle");
+  t0 = (await st()).tts.length;
+  await a.evaluate(() => { window.__said = ["Un caffè, per favore"]; openPersona("marco"); });
+  await a.waitForSelector(".dm-act"); await a.click(".dm-act");
+  await a.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2, null, { timeout: 15000 });
+  let mt = []; for (let k = 0; k < 40 && !mt.length; k++) { await a.waitForTimeout(150); mt = (await st()).tts.slice(t0); }
+  ok(mt.some((x) => x.voice === "cedar" && /romano/.test(x.instructions)) && mt.every((x) => x.voice === "cedar" || /^On dit/.test(x.input)), "Marco parle avec sa voix, les notes en français restent à Giulia : " + mt.map((x) => x.voice + ":" + x.input).join(" | "));
+  await a.evaluate(() => { dmLeave(); S.vx = { off: true }; window.__spoken = []; speak("Grazie mille"); });
+  await a.waitForTimeout(300);
+  ok((await a.evaluate(() => window.__spoken)).some((x) => /Grazie mille/.test(x)), "voix du téléphone quand les voix naturelles sont coupées");
+  await a.evaluate(() => { S.vx = {}; UI.go("profile"); WEB.account(); });
+  await a.waitForSelector(".voices .switch-row");
+  ok((await a.$$eval(".voices .switch-row", (r) => r.length)) === 3 && await a.isVisible(".voice-test button:has-text('Nonna Rosa')"), "réglages des voix dans le compte");
 
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });

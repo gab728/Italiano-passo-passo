@@ -398,3 +398,21 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .g-hello { font: italic 400 64px/1 var(--it) !important; letter-spacing: -.01em !important; }
 .g-lead { margin: 0 0 8px; font-size: 17px; color: var(--ink); }
 .goal-c { display: flex; flex-direction: column; gap: 2px; } .goal-c .chips { margin: 10px 0 0; padding: 0; flex-wrap: wrap; }
+
+/* Voix */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.switch-row .sw-t { display: flex; flex-direction: column; gap: 2px; }
+.switch-row .sw-t b { font-weight: 500; font-size: 15.5px; }
+.switch-row .sw-t small { color: var(--muted); font-size: 13px; }
+.switch-row input { appearance: none; -webkit-appearance: none; flex: none; width: 48px; height: 28px; border-radius: 999px; background: var(--line); position: relative; transition: background .15s; margin: 0; }
+.switch-row input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+.switch-row input:checked { background: var(--azzurro); }
+.switch-row input:checked::after { transform: translateX(20px); }
+.voice-test { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.voice-test b { font-weight: 500; }
+.voice-test .rowb { display: flex; flex-wrap: wrap; gap: 8px; }
+.voice-test .btn { min-height: 42px; padding: 6px 16px; font-size: 14.5px; }
+.dm-act.talk { background: var(--ink); color: var(--bg); box-shadow: 0 0 0 6px var(--chip); }
+.dm.speaking .dm-hd .av { animation: ipp-speak 1.1s ease-in-out infinite; }
+@keyframes ipp-speak { 0%, 100% { box-shadow: 0 0 0 2px var(--spritz-soft); } 50% { box-shadow: 0 0 0 5px var(--spritz-soft), 0 0 0 6px var(--spritz); } }
+@media (prefers-reduced-motion: reduce) { .dm.speaking .dm-hd .av { animation: none; box-shadow: 0 0 0 3px var(--spritz); } }

@@ -1,13 +1,13 @@
 /* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
-const VERSION = "ipp-2727072fec";
-const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","js/app.js?v=2727072fec","js/voice.js?v=2727072fec","js/web.js?v=2727072fec","js/dm.js?v=2727072fec","js/ui.js?v=2727072fec","css/app.css?v=2727072fec","js/shim.js?v=2727072fec","js/supabase.js?v=2727072fec","css/web.css?v=2727072fec","content/catalog.json?v=2727072fec","config.js?v=2727072fec"];
+const VERSION = "ipp-7776978a7f";
+const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","js/app.js?v=7776978a7f","js/voice.js?v=7776978a7f","js/tts.js?v=7776978a7f","js/web.js?v=7776978a7f","js/dm.js?v=7776978a7f","js/ui.js?v=7776978a7f","css/app.css?v=7776978a7f","js/shim.js?v=7776978a7f","js/supabase.js?v=7776978a7f","css/web.css?v=7776978a7f","content/catalog.json?v=7776978a7f","config.js?v=7776978a7f"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith("ipp-") && k !== VERSION && k !== "ipp-fonts").map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith("ipp-") && k !== VERSION && k !== "ipp-fonts" && !k.startsWith("ipp-tts")).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", (e) => {
   const req = e.request;

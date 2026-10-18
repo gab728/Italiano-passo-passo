@@ -19,13 +19,13 @@ const VO = (() => {
     if (st.ctx.state === "suspended") st.ctx.resume().catch(() => {});
     return st.ctx;
   }
-  function tone(seq) {
+  function tone(seq, vol) {
     const c = audioCtx(); if (!c) return Promise.resolve();
     let t = c.currentTime + 0.02;
     seq.forEach(([f, d]) => {
       const o = c.createOscillator(), g = c.createGain();
       o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      g.gain.exponentialRampToValueAtTime(vol || 0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
       o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + 0.02); t += d + 0.03;
     });
     return new Promise((r) => setTimeout(r, (t - c.currentTime) * 1000 + 30));
@@ -33,9 +33,15 @@ const VO = (() => {
   const beep = () => tone([[880, 0.12]]);
   const chimeOk = () => tone([[660, 0.1], [990, 0.16]]);
   const chimeKo = () => tone([[330, 0.22]]);
+  // Signal discret « à toi » pour la conversation : plus doux que le bip du mode voiture.
+  const tick = () => tone([[1046, 0.06], [1318, 0.08]], 0.08);
 
-  /* --- Lecture à voix haute, une phrase après l'autre --- */
-  function say(text, lang, rate) {
+  /* --- Lecture à voix haute, une phrase après l'autre : voix naturelle si possible, sinon celle du téléphone --- */
+  function say(text, lang, rate, who) {
+    if (window.TTS && TTS.on()) return TTS.say(text, lang, { who: who || "narrator", cache: !who || who === "narrator", rate, fallback: deviceSay });
+    return deviceSay(text, lang, rate);
+  }
+  function deviceSay(text, lang, rate) {
     return new Promise((res) => {
       text = String(text || "").replace(/ \/ /g, ", ").trim();
       if (!canSpeak || !text) return res();
@@ -114,11 +120,14 @@ const VO = (() => {
       let rec; try { rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined); } catch (e) { src.disconnect(); return rej({ code: "error" }); }
       const chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
       const t0 = performance.now(); let speaking = false, lastVoice = 0, floor = 0, n = 0, stopped = false, began = 0;
+      // La personne a déjà commencé à parler (elle vient de couper la parole) : le bruit de fond est connu, l'écoute est lancée.
+      const hot = o.hot != null && !blind;
+      if (hot) { speaking = true; began = t0; lastVoice = t0; floor = Math.max(o.hot, 0.004); n = 1; if (o.onPartial) o.onPartial("…"); }
       const tick = setInterval(() => {
         an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
         const rms = Math.sqrt(s / buf.length), now = performance.now();
         if (blind) { if (!speaking) { speaking = true; began = t0; if (o.onPartial) o.onPartial("…"); } if (now - t0 > Math.min(o.maxMs || 15000, 12000)) stop(); return; }
-        if (now - t0 < 300) { floor += rms; n++; return; }
+        if (!hot && now - t0 < 300) { floor += rms; n++; return; }
         const thr = Math.max(0.012, (floor / Math.max(n, 1)) * 3);
         if (rms > thr) { if (!speaking) { began = now; if (o.onPartial) o.onPartial("…"); } speaking = true; lastVoice = now; }
         if ((!speaking && now - t0 > (o.startMs || 7000)) || (speaking && now - lastVoice > (o.endMs || 1300)) || now - t0 > (o.maxMs || 15000)) stop();
@@ -145,9 +154,11 @@ const VO = (() => {
     audioCtx(); // à appeler pendant le toucher : sur iPhone, le son ne se débloque qu'à ce moment-là
     if (st.cur) st.cur.cancel();
     try { if (speechSynthesis.speaking) speechSynthesis.cancel(); } catch (e) { /* rien */ }
+    if (window.TTS) TTS.stop();
     // Sur iPhone, la reconnaissance d'Apple se bloque souvent après une lecture à voix haute et n'existe pas dans l'app installée :
     // la transcription par le serveur, si elle est configurée, est plus fiable.
     if (native() && !(isIOS() && server())) {
+      release(); // le micro tenu pour couper la parole gênerait la reconnaissance du téléphone
       try { return await listenNative(o); }
       catch (e) {
         // La reconnaissance du téléphone est refusée dans ce contexte (fréquent dans une app installée sur iPhone) : on passe au serveur.
@@ -163,6 +174,27 @@ const VO = (() => {
   }
   const stop = () => { if (st.cur) st.cur.stop(); };
   const cancel = () => { if (st.cur) st.cur.cancel(); };
+
+  /* --- Couper la parole : pendant que le personnage parle, on surveille le micro.
+     Le son du haut-parleur est en grande partie retiré par l'annulation d'écho ; on mesure d'abord le bruit ambiant,
+     puis une voix nette et soutenue (environ un tiers de seconde) déclenche onVoice. --- */
+  async function watchVoice(onVoice) {
+    const c = audioCtx(); if (!c || c.state !== "running" || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return () => {};
+    let stream; try { stream = await micStream(); } catch (e) { return () => {}; }
+    const src = c.createMediaStreamSource(stream), an = c.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    const buf = new Float32Array(an.fftSize), t0 = performance.now();
+    let floor = 0, n = 0, base = 0, run = 0, off = false;
+    const tick = setInterval(() => {
+      an.getFloatTimeDomainData(buf); let s2 = 0; for (let i = 0; i < buf.length; i++) s2 += buf[i] * buf[i];
+      const rms = Math.sqrt(s2 / buf.length);
+      if (performance.now() - t0 < 450) { floor += rms; n++; return; }
+      if (n) { base = floor / n; n = 0; }
+      const thr = Math.max(0.035, base * 4);
+      if (rms > thr) { run += 50; if (run >= 350) { stopW(); onVoice(base); } } else { run = Math.max(0, run - 50); base = base * 0.98 + rms * 0.02; }
+    }, 50);
+    const stopW = () => { if (off) return; off = true; clearInterval(tick); try { src.disconnect(); } catch (e) { /* rien */ } };
+    return stopW;
+  }
 
   function failText(e) {
     const c = e && e.code;
@@ -207,7 +239,7 @@ const VO = (() => {
     return null;
   }
 
-  return { available, native, server, standalone, isIOS, listen, stop, cancel, release, say, IT, beep, chimeOk, chimeKo, judge, command, failText, toks };
+  return { available, native, server, standalone, isIOS, listen, stop, cancel, release, say, deviceSay, IT, beep, tick, chimeOk, chimeKo, judge, command, failText, toks, watchVoice, ctx: audioCtx };
 })();
 
 /* ---------- Petites aides d'écran ---------- */

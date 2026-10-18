@@ -29,7 +29,7 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 6. **Edge Functions → Secrets** : ajoute
    - `ANTHROPIC_API_KEY` = la clé de l'étape 1
    - `OWNER_EMAIL` = ton adresse e-mail (celle avec laquelle tu te connecteras). Elle fait de toi le propriétaire de l'app : tu vois les membres et leur usage, tu fixes leurs plafonds, tu peux retirer quelqu'un, et ton plafond quotidien est plus élevé.
-   - facultatif, pour le micro sur iPhone : `STT_API_KEY` = une clé OpenAI
+   - recommandé : `OPENAI_API_KEY` = une clé OpenAI (platform.openai.com). Elle sert aux **voix naturelles** des personnages et des leçons, et au micro sur iPhone. `STT_API_KEY` (ancien nom) marche aussi.
 7. **Account → Access Tokens** (en haut à droite, ton compte) : crée un jeton d'accès. Il sert au déploiement automatique.
 
 ### 3. Le dépôt GitHub
@@ -58,6 +58,13 @@ Entre membres, chacun voit le prénom des autres, leurs leçons terminées, leur
 
 Chacun a sa progression, son carnet et ses leçons à la carte, privés. Les leçons **du programme** sont partagées : quand l'une d'elles est préparée par quelqu'un, elle sert à tout le monde. Une fois enregistrée, une leçon partagée ne peut plus être modifiée depuis l'app ; pour en corriger ou en supprimer une, passe par Supabase (*Table Editor → lessons*), puis rouvre l'app : elle sera préparée à nouveau.
 
+## Les voix
+Avec une clé OpenAI, les personnages parlent avec des voix naturelles (modèle `gpt-4o-mini-tts`) : Giulia, Marco, Sofia et Nonna Rosa ont chacun leur voix, leur accent et leur ton ; les leçons et le mode voiture sont lus par la voix de Giulia. Pendant une conversation, chaque phrase est lue dès que Claude l'a écrite : la réponse commence à se faire entendre presque tout de suite. En mains libres, il suffit de parler pendant que le personnage parle pour lui couper la parole.
+
+Les phrases des leçons sont gardées en cache (stockage Supabase, privé) : produites une fois, elles servent à tout le monde gratuitement, et restent sur le téléphone. Sans réseau, au-delà du plafond du jour, ou si on les coupe dans *Mon compte → Voix*, la voix du téléphone prend le relais.
+
+Coût : environ 0,015 $ par minute de voix produite. Plafond par personne : `TTS_DAILY_CHARS` (25 000 caractères par jour, environ 25 minutes de voix ; `OWNER_TTS_DAILY_CHARS` = 100 000 pour toi). Pense à fixer aussi une limite de dépense mensuelle sur platform.openai.com (*Settings → Limits*).
+
 ## Le micro
 - **Android (Chrome)** : la reconnaissance vocale du téléphone, gratuite, fonctionne dans le navigateur comme dans l'app installée.
 - **iPhone** : la reconnaissance d'Apple marche dans Safari (la dictée doit être activée dans *Réglages → Général → Clavier*), mais pas dans l'app installée sur l'écran d'accueil, et elle se bloque souvent après une lecture à voix haute. Avec `STT_API_KEY` (OpenAI), l'app enregistre la phrase et la fait transcrire par le serveur : c'est fiable partout, pour environ 0,003 $ par minute de parole. Pour Mistral à la place d'OpenAI : `STT_URL` = `https://api.mistral.ai/v1/audio/transcriptions`, `STT_MODEL` = `voxtral-mini-latest`, et la clé Mistral dans `STT_API_KEY` (à vérifier lors de la mise en place).
@@ -71,6 +78,7 @@ Réglages facultatifs (secrets de la fonction) : `OPEN_SIGNUP`, `GLOBAL_DAILY_CA
 ## Sécurité et données
 - La clé Claude ne quitte jamais le serveur. Chaque appel vérifie la connexion, l'adhésion (adresse confirmée, ou invitation si l'inscription est fermée) et les plafonds du jour.
 - La base est protégée par des règles par ligne : personne ne lit ni n'écrit la progression d'un autre.
+- Avec les voix naturelles, le texte des réponses (pas ta voix) est envoyé à OpenAI pour être lu à voix haute.
 - Ce qui est dit au micro est transcrit par le téléphone (Google ou Apple) ou, sur iPhone avec la transcription par le serveur, par OpenAI. L'app ne garde aucun enregistrement.
 - Chacun peut supprimer son compte et ses données depuis *Mon compte*.
 - Pour tes amis : dis-leur ce qui précède. Si l'app devait s'ouvrir plus largement, il faudrait une vraie politique de confidentialité.
