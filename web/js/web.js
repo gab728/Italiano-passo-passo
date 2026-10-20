@@ -14,6 +14,8 @@
     unavailable: "Claude est très demandé en ce moment. Réessaie dans un moment.",
     offline: "Pas de réseau. L'assistant a besoin d'une connexion.",
     aborted: "Demande annulée.",
+    stalled: "Claude ne répond pas : la connexion a peut-être sauté. Réessaie.",
+    empty: "Claude a renvoyé une réponse vide. Réessaie.",
     server: "Erreur du serveur. Réessaie dans un moment.",
     not_invited: "Ce compte n'a pas été invité : l'assistant lui est fermé. Demande une invitation au propriétaire de l'app.",
     no_owner: "Le serveur ne connaît pas encore le propriétaire de l'app : il faut ajouter le secret OWNER_EMAIL dans Supabase.",
@@ -41,7 +43,7 @@
     keepAwake() { vWake(true); clearTimeout(this._wk); this._wk = setTimeout(() => vWake(false), 6 * 60000); },
     resume(e, st, again, note, step) {
       const c = e && e.code;
-      if (!["offline", "upstream_error", "unavailable", "truncated", "server"].includes(c) || (st.auto || 0) >= 3) return false;
+      if (!["offline", "upstream_error", "unavailable", "truncated", "server", "stalled", "empty"].includes(c) || (st.auto || 0) >= 3) return false;
       st.auto = (st.auto || 0) + 1;
       step.textContent = "reprise…";
       note.textContent = "Connexion interrompue : je reprends où j'en étais" + (st.auto > 1 ? " (essai " + st.auto + " sur 3)" : "") + "…";

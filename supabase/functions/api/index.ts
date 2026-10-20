@@ -166,15 +166,22 @@ async function claude(req: Request, u: User): Promise<Response> {
   const payload: Json = { model, max_tokens: maxTok, messages, stream: true };
   if (system) payload.system = system;
   if (typeof b.temperature === "number") payload.temperature = Math.min(Math.max(b.temperature, 0), 1);
+  // Claude doit commencer à répondre en moins de 45 secondes, et ne jamais rester muet plus de 40 secondes ensuite.
+  const ac = new AbortController();
+  req.signal.addEventListener("abort", () => ac.abort(), { once: true });
+  let wait = setTimeout(() => ac.abort(), 45000);
   let up: Response;
   try {
     up = await fetch(ANTHROPIC, {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify(payload),
-      signal: req.signal,
+      signal: ac.signal,
     });
+    clearTimeout(wait);
   } catch (e) {
+    clearTimeout(wait);
+    await addUsage(u.id, -1, 0, -maxTok, 0);
     return fail(req, 502, "unavailable", "Claude ne répond pas pour l'instant. Réessaie dans un moment.");
   }
   if (!up.ok || !up.body) {
@@ -193,7 +200,8 @@ async function claude(req: Request, u: User): Promise<Response> {
   async function* deltas(): AsyncGenerator<string> {
     let buf = "";
     while (true) {
-      const { value, done } = await reader.read();
+      clearTimeout(wait); wait = setTimeout(() => ac.abort(), 40000);
+      const { value, done } = await reader.read().finally(() => clearTimeout(wait));
       if (done) break;
       buf += dec.decode(value, { stream: true }).replace(/\r\n/g, "\n");
       let i: number;

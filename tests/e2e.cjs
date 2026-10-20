@@ -356,6 +356,26 @@ const MOCKS = `
   await a.click("button:has-text('Commencer la leçon')"); await a.waitForSelector("main.body", { timeout: 5000 });
   ok(await a.evaluate(() => M.filter((m) => m.custom).length >= 2), "les leçons à la carte sont dans le programme");
 
+  console.log("17. Conversation : jamais bloquée sans réponse");
+  let hang = 0;
+  await a.route("**/functions/v1/api/claude", (route) => { if (hang > 0) { hang--; return; } return route.continue(); });
+  await a.evaluate(() => { window.__stallMs = 1500; openPersona("sofia"); });
+  await a.waitForSelector("#dm-input");
+  hang = 1;
+  await a.fill("#dm-input", "Sabato vado al cinema"); await a.press("#dm-input", "Enter");
+  await a.waitForFunction(() => document.querySelectorAll(".msg.ai .bub.it").length >= 2 && !DM.busy, null, { timeout: 15000 });
+  ok(true, "réponse arrivée malgré une demande restée sans réponse (relance automatique)");
+  hang = 2;
+  await a.fill("#dm-input", "E tu cosa fai?"); await a.press("#dm-input", "Enter");
+  await a.waitForSelector(".dm-err button:has-text('Réessayer')", { timeout: 15000 });
+  ok(/ne répond pas/.test(await a.textContent(".dm-err")), "message clair et bouton Réessayer quand Claude ne répond pas");
+  const nMe = await a.$$eval(".msg.me", (l) => l.length);
+  await a.click(".dm-err button:has-text('Réessayer')");
+  await a.waitForFunction(() => document.querySelectorAll(".msg.ai .bub.it").length >= 3 && !DM.busy, null, { timeout: 15000 });
+  ok((await a.$$eval(".msg.me", (l) => l.length)) === nMe && !(await a.$(".dm-err")), "Réessayer redemande la réponse sans renvoyer ta phrase");
+  await a.unroute("**/functions/v1/api/claude");
+  await a.evaluate(() => { window.__stallMs = 0; dmLeave(); });
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

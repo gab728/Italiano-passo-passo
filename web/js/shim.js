@@ -75,17 +75,34 @@
   const admin = async (action, data) => (await call("admin", Object.assign({ action }, data || {}))).json();
 
   /* ---------- Claude (même forme que la capacité « sample » de l'app Claude) ---------- */
+  // Garde-fou : si Claude ne donne aucun signe pendant 40 secondes (réseau qui a sauté, téléphone sorti de veille),
+  // la demande est coupée et l'erreur est rendue au lieu d'attendre indéfiniment. Une fois sans réponse, on réessaie.
+  const STALL_MS = () => window.__stallMs || 40000;
   async function sample(input, opts) {
     opts = opts || {};
-    const res = await call("claude", {
-      input, tier: opts.modelTier === "quick" ? "quick" : "default", stream: true,
-      system: typeof opts.system === "string" ? opts.system : undefined,
-      max_tokens: opts.maxTokens || undefined,
-    }, { signal: opts.signal });
+    for (let attempt = 0; ; attempt++) {
+      try { return await sampleOnce(input, opts); }
+      catch (e) { if (!(e && e.code === "stalled" && !(e.text) && attempt === 0)) throw e; }
+    }
+  }
+  async function sampleOnce(input, opts) {
+    const ac = new AbortController(); let stalled = false, timer = 0;
+    const arm = () => { clearTimeout(timer); timer = setTimeout(() => { stalled = true; ac.abort(); }, STALL_MS()); };
+    const outer = opts.signal; if (outer) { if (outer.aborted) ac.abort(); else outer.addEventListener("abort", () => ac.abort(), { once: true }); }
+    arm();
+    let res;
+    try {
+      res = await call("claude", {
+        input, tier: opts.modelTier === "quick" ? "quick" : "default", stream: true,
+        system: typeof opts.system === "string" ? opts.system : undefined,
+        max_tokens: opts.maxTokens || undefined,
+      }, { signal: ac.signal });
+    } catch (e) { clearTimeout(timer); if (stalled) throw err("stalled", "Pas de réponse."); throw e; }
     const reader = res.body.getReader(), dec = new TextDecoder();
     let buf = "", text = "", truncated = false, done = false;
     try {
       while (!done) {
+        arm();
         const r = await reader.read();
         if (r.done) break;
         buf += dec.decode(r.value, { stream: true });
@@ -100,11 +117,13 @@
         }
       }
     } catch (e) {
+      if (stalled) { const x = err("stalled", "Pas de réponse."); x.text = text; throw x; }
       if (e && e.code) throw e;
       if (e && e.name === "AbortError") throw err("aborted", "Annulé.");
       const x = err("upstream_error", "Flux interrompu."); x.text = text; throw x;
-    }
+    } finally { clearTimeout(timer); try { reader.cancel().catch(() => {}); } catch (e) { /* rien */ } }
     if (!done && !text) throw err("upstream_error", "Réponse vide.");
+    if (!text.trim()) throw err("empty", "Réponse vide.");
     return { text, truncated: truncated || !done };
   }
 

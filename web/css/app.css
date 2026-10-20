@@ -323,7 +323,8 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .5; animation: ipp-dot 1s infinite ease-in-out; }
 .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes ipp-dot { 50% { opacity: 1; transform: translateY(-2px); } }
-.dm-err { align-self: center; font-size: 13.5px; color: var(--ko); text-align: center; padding: 0 20px; }
+.dm-err { align-self: center; font-size: 13.5px; color: var(--ko); text-align: center; padding: 0 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dm-err p { margin: 0; }
 .dm-sug { position: fixed; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 6; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 8px 14px; max-width: 560px; margin: 0 auto; }
 .dm-sug::-webkit-scrollbar { display: none; }
 .chip-s { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13.5px; font-weight: 500; max-width: 80vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
