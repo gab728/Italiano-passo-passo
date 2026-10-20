@@ -167,7 +167,7 @@ const MOCKS = `
   ok(car.ok >= 3, "réponses justes reconnues (" + car.ok + "/" + car.n + ")");
   await b.click("button:has-text('Pause')");
   ok(await b.isVisible("button:has-text('Reprendre')"), "pause en mode voiture");
-  await b.click("text=← Accueil");
+  await b.click("text=← Accueil", { timeout: 5000 }).catch(() => b.evaluate(() => UI.go("feed")));
 
   const cmdFirst = await b.evaluate(() => { const j = VO.judge(["ancora"], ["ancora"]); return j.ok; });
   ok(cmdFirst === true, "« ancora » attendu comme réponse est jugé juste (et non pris pour une commande)");

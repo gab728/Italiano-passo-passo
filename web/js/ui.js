@@ -103,19 +103,13 @@
     hd.append(who, st); root.append(hd);
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
     if (!firstName()) root.append(nameCard());
-    personaStories(root);
-    // Leçon du jour
-    if (cu) {
-      const stt = S[cu.key] || {}, m = cu.mi >= 0 ? M[cu.mi] : null, pct = m && stt.i ? Math.round(100 * stt.i / screens(m).length) : 0;
-      const b = el("button", "today-c"); b.type = "button";
-      const t = el("span", "today-t"); t.append(txt("small", null, "Unité " + cu.un + " · leçon " + (cu.k + 1) + " sur " + cu.u.lessons.length), txt("b", null, cu.l.t));
-      const pg = el("span", "today-bar"); pg.innerHTML = "<i></i>"; pg.firstChild.style.width = Math.max(pct, 3) + "%"; t.append(pg);
-      if (!m) t.append(txt("small", "today-note", AI ? "Claude la prépare en deux à trois minutes" : "À préparer quand le réseau revient"));
-      const p = el("span", "today-go"); p.innerHTML = IC.play; b.append(t, p); b.setAttribute("aria-label", (m ? (stt.i ? "Reprendre" : "Commencer") : "Préparer") + " : " + cu.l.t);
-      b.onclick = () => openSlot(cu); root.append(b);
-    }
+    // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
+    const doneN = ss.filter(isDone).length, beginner = doneN < 3;
+    root.append(lessonHero(cu, ss, doneN));
+    if (!beginner) { root.append(txt("h2", "feed-sec talk-h", "Pratiquer à l'oral")); personaStories(root); }
     // Thèmes
-    if (AI) { const h = el("div", "sec-h"); h.append(txt("h2", null, "Parler de…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h, themeCarousel(8)); }
+    if (AI) { const h = el("div", "sec-h"); h.append(txt("h2", null, beginner ? "Ensuite, parle de…" : "Parler de…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h, themeCarousel(8)); }
+    if (beginner) { root.append(txt("h2", "feed-sec talk-h", "Bavarder avec eux")); personaStories(root); }
     // Mot du jour
     const wd = wordOfDay();
     if (wd) {
@@ -140,6 +134,44 @@
     SOC.pushWeekly();
     sync();
   };
+  /* Carte de la leçon du jour, en tête de l'accueil : où j'en suis dans l'unité, l'objectif du jour, un grand bouton. */
+  function lessonHero(cu, ss, doneN) {
+    const c = el("section", "lhero");
+    if (!cu) {
+      c.classList.add("over");
+      c.append(txt("span", "lh-eyebrow", "Programme terminé"), txt("h2", "lh-title", "Bravissimo !"), txt("p", "lh-sub", "Tu as fait toutes les leçons du programme. Demande une leçon sur mesure sur le sujet de ton choix."));
+      const g = el("button", "lh-cta"); g.type = "button"; g.textContent = "Créer une leçon sur mesure"; g.onclick = () => goTab("lessons"); c.append(g);
+      return c;
+    }
+    const stt = S[cu.key] || {}, m = cu.mi >= 0 ? M[cu.mi] : null, n = m ? screens(m).length : 0, pct = m && stt.i ? Math.round(100 * stt.i / n) : 0;
+    const first = doneN === 0 && !stt.i;
+    if (first) c.classList.add("start");
+    const top = el("div", "lh-top");
+    top.append(txt("span", "lh-eyebrow", first ? "Commence ici" : pct ? "Ta leçon en cours" : "Ta leçon du jour"));
+    const td = (S.d || {})[day()] || 0, gl = el("span", "lh-goal");
+    gl.innerHTML = ring(td, GOAL, 34, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--spritz)");
+    gl.append(txt("small", null, Math.min(td, GOAL) + "/" + GOAL));
+    top.append(gl); c.append(top);
+    const art = el("div", "lh-art"); const im = el("img"); im.src = themeImg(cu.u.t); im.alt = ""; im.width = 300; im.height = 220; art.append(im); c.append(art);
+    c.append(txt("small", "lh-meta", (cu.li === 0 ? "Bases" : "Niveau") + " " + cu.lv.cecr + " · Unité " + cu.un + " · " + cu.u.t));
+    c.append(txt("h2", "lh-title", cu.l.t));
+    if (isS(cu.l.g)) c.append(txt("p", "lh-sub", cu.l.g));
+    // Le chemin de l'unité : leçons faites, celle du jour, les suivantes.
+    const ux = ss.filter((x) => x.li === cu.li && x.ui === cu.ui);
+    if (ux.length > 1) {
+      const path = el("ol", "lh-path"); path.setAttribute("aria-label", "Unité " + cu.un + " : " + ux.filter(isDone).length + " leçon(s) faite(s) sur " + ux.length);
+      ux.forEach((x, k) => { const d = isDone(x), now = x.n === cu.n; const li = el("li", d ? "done" : now ? "now" : ""); li.innerHTML = d ? IC.check : "<b></b>"; if (!d) li.querySelector("b").textContent = String(k + 1); li.title = x.l.t; path.append(li); });
+      c.append(path);
+    }
+    const go = el("button", "lh-cta"); go.type = "button";
+    go.innerHTML = IC.play + "<span></span>";
+    go.querySelector("span").textContent = !m ? (AI ? "Préparer la leçon" : "Préparer quand le réseau revient") : pct ? "Reprendre · " + pct + " %" : first ? "Commencer ma première leçon" : "Commencer la leçon";
+    go.onclick = () => openSlot(cu); c.append(go);
+    c.append(txt("p", "lh-note", !m ? (AI ? "Claude l'écrit pour toi en deux à trois minutes." : "La leçon se prépare avec l'assistant, qui a besoin du réseau.")
+      : first ? "Explications, vocabulaire, exercices, puis un petit dialogue. Ensuite, tu pourras parler avec Giulia et les autres." : "Explications, exercices et dialogue, environ 20 minutes."));
+    const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le parcours (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); c.append(all);
+    return c;
+  }
   function postHead(p, name, sub, meta) {
     const h = el("div", "post-h"); h.append(personaAvatar(p, 34)); const t = el("div", "post-ht"); const n = el("b"); n.textContent = name + " "; n.append(txt("span", "muted", "· " + sub)); t.append(n, txt("small", null, meta)); h.append(t); return h;
   }
