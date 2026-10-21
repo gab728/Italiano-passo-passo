@@ -402,11 +402,11 @@ const MOCKS = `
   await a.fill(".qz input", await answerOf()); await a.press(".qz input", "Enter");
   await a.waitForSelector(".fb.ok"); ok(true, "bonne réponse écrite acceptée");
   await a.click(".fb .btn.primary");
-  const w2 = await answerOf();
   await a.click(".qz-help"); await a.waitForSelector(".opts .opt");
   ok((await a.$$eval(".opts .opt", (l) => l.length)) === 4, "le bouton affiche les 4 propositions");
   await a.click(".opts .opt[data-k='0']"); await a.waitForSelector(".fb.ok");
-  ok(/coup de pouce/.test(await a.textContent(".fb")) && await a.evaluate((it) => { const o = words().find((x) => x.it === it); return inNb(o.key); }, w2), "juste avec les propositions : le mot reste au carnet");
+  const w2b = await a.evaluate(() => { const p = [...document.querySelectorAll(".fb p")].find((x) => / = /.test(x.textContent)); return p.textContent.split(" = ")[0]; });
+  ok(/coup de pouce/.test(await a.textContent(".fb")) && await a.evaluate((it) => words().some((x) => x.it === it && inNb(x.key)), w2b), "juste avec les propositions : le mot reste au carnet");
   await a.click(".fb .btn.primary");
   await a.fill(".qz input", "zzzz"); await a.press(".qz input", "Enter");
   await a.waitForSelector(".fb.ko"); ok(true, "mauvaise réponse signalée");
@@ -418,6 +418,26 @@ const MOCKS = `
   await a.fill(".qz input", await a.evaluate(() => cur.q[cur.i].d[2][0])); await a.press(".qz input", "Enter");
   await a.waitForSelector(".fb", { timeout: 5000 }).catch(() => null);
   ok(await a.$(".fb.ok"), "réponse libre juste dans la leçon (" + mq + " → " + await a.evaluate(() => (document.querySelector(".fb") || {}).textContent) + ")");
+  await a.evaluate(() => home());
+
+  console.log("19. Carnet : chercher ou ajouter un mot");
+  await a.evaluate(() => UI.go("words"));
+  await a.waitForSelector("#wt-q");
+  ok(await a.evaluate(() => { const t = document.querySelector(".wt"), h = document.querySelector(".tab-hd"); return t && h && h.nextElementSibling === t; }), "barre en haut de l'onglet Mots");
+  await a.fill("#wt-q", "trottinette");
+  await a.waitForSelector(".wt-go"); ok(/Traduire « trottinette »/.test(await a.textContent(".wt-go")), "mot inconnu : proposition de le traduire");
+  await a.press("#wt-q", "Enter");
+  await a.waitForSelector(".wt-card .wt-it", { timeout: 8000 });
+  ok((await a.textContent(".wt-it")) === "il monopattino" && /Ajouté à ton carnet/.test(await a.textContent(".wt-st")) && await a.isVisible(".wt-ex"), "traduction affichée, avec exemple, et mot rangé au carnet");
+  ok(await a.evaluate(() => { const o = words().find((w) => w.it === "il monopattino"); return !!o && inNb(o.key); }), "le mot est bien dans le carnet");
+  await a.click(".wt-st button:has-text('Annuler')"); await a.waitForSelector(".wt-st button:has-text('Ajouter au carnet')");
+  ok(await a.evaluate(() => !words().some((w) => w.it === "il monopattino")), "Annuler retire le mot");
+  const known = await a.evaluate(() => { const w = words().find((o) => o.mi >= 0 && o.fr.length > 4); return w.fr; });
+  await a.fill("#wt-q", known); await a.waitForSelector(".wt-list li");
+  ok(await a.evaluate((k) => [...document.querySelectorAll(".wt-list li")].some((l) => l.textContent.includes(k)), known), "recherche dans les mots des leçons (" + known + ")");
+  await a.evaluate(() => carnet());
+  await a.waitForSelector("#wt-q");
+  ok(!(await a.$("form.addw")) && await a.evaluate(() => { const t = document.querySelector(".wt"), l = document.querySelector("ul.nb"); return !l || (t.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING); }), "dans le carnet : la barre est tout en haut, l'ancien formulaire du bas a disparu");
   await a.evaluate(() => home());
 
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
