@@ -110,12 +110,49 @@ const WT = (() => {
   return { tool, translate };
 })();
 
-/* L'outil en tête du carnet, à la place du formulaire du bas. */
+/* Carnet : l'outil en tête (à la place du formulaire du bas), et une seule liste, du mot le plus récent au plus ancien. */
 (function () {
+  // Date d'entrée au carnet, notée à chaque ajout (les mots plus anciens se rangent d'après leur date de création ou de révision).
+  const baseSetV = setV;
+  setV = function (key, val) {
+    const was = inNb(key); baseSetV(key, val);
+    if (!was && inNb(key)) { S.nt = S.nt || {}; S.nt[key] = Date.now(); }
+  };
+  function addedAt(w) {
+    const t = (S.nt || {})[w.key]; if (t) return t;
+    if (w.mi < 0) { const n = parseInt(w.key.slice(2, 10), 36); if (n > 1.5e12 && n < 4e12) return n; }
+    const sr = (S.sr || {})[w.key]; if (sr && sr.due) return (sr.due - (sr.b ? 7 : 0)) * 864e5;
+    return 0;
+  }
+  function list(say) {
+    const ws = vstat().nb.slice().sort((a, b) => addedAt(b) - addedAt(a));
+    const ul = el("ul", "nb");
+    ws.forEach((w) => {
+      const li = el("li"), it = el("span", "it"), tr = el("span", "tr"), acts = el("span", "acts");
+      it.textContent = w.it; tr.textContent = w.fr;
+      const n = dueIn(w.key), tg = el("span", "tag"); tg.textContent = n <= 0 ? "à réviser" : n === 1 ? "demain" : "dans " + n + " j"; it.append(tg);
+      if (canSpeak) { const sb = sayBtn(w.it, " "); sb.className = ""; sb.setAttribute("aria-label", "Écouter " + w.it); const sp = sb.querySelector("span"); if (sp) sp.remove(); acts.append(sb); }
+      const rm = el("button"); rm.type = "button"; rm.textContent = "Retirer"; rm.setAttribute("aria-label", "Retirer " + w.it + " du carnet");
+      rm.onclick = () => {
+        S.nb = S.nb || {}; S.v = S.v || {}; S.nb[w.key] = 0; if (S.sr) delete S.sr[w.key]; if (S.v[w.key] === 2) S.v[w.key] = 1;
+        if (w.mi < 0 && S.cw) S.cw[w.key.slice(2)] = null; if (S.nt) delete S.nt[w.key];
+        save(); li.remove(); if (!ul.children.length) ul.remove(); if (say) say();
+      };
+      acts.append(rm); li.append(it, acts, tr); ul.append(li);
+    });
+    return ul;
+  }
   const baseCarnet = carnet;
   carnet = function (fromCourse) {
     baseCarnet(fromCourse);
     const old = body.querySelector("form.addw"); if (old) old.remove();
+    // Les groupes par leçon laissent place à une seule liste, la plus récente en haut.
+    const groups = [...body.querySelectorAll("section.grp")].filter((g) => g.querySelector("ul.nb"));
+    if (groups.length) {
+      const info = body.querySelector("p.fr"), base = info ? info.textContent : "";
+      const ul = list(() => { const n = vstat().nb.length; if (info) info.textContent = n ? base.replace(/^\d+/, String(n)) : "Ton carnet est vide."; });
+      groups[0].before(ul); groups.forEach((g) => g.remove());
+    }
     const h = body.querySelector("h2"), tl = WT.tool(() => carnet(fromCourse));
     if (h) h.after(tl); else body.prepend(tl);
   };

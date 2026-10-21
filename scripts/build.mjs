@@ -26,6 +26,9 @@ const patches = [
   ["const current=()=>slots().find(x=>!isDone(x))||null;", "const current=()=>{const ss=slots(),lo=S.ob?Math.floor(S.ob.lv||0):0;return ss.find(x=>!isDone(x)&&x.li>=lo)||ss.find(x=>!isDone(x))||null};"],
   ["async function creer(job,st){cur=null;st=st||{};", "async function creer(job,st){cur=null;st=st||{};if(window.WEB&&WEB.keepAwake)WEB.keepAwake();"],
   ["const fail=(step,e,lead,btns)=>{if(!here())return;", "const fail=(step,e,lead,btns)=>{if(!here())return;if(window.WEB&&WEB.resume&&WEB.resume(e,st,()=>creer(job,st),note,step))return;"],
+  // Fusion de la progression : garde aussi les réglages propres à la web app (accueil, voix, dates d'ajout au carnet…).
+  ['["v","nb","cw","sr","cv"].forEach(', '["v","nb","cw","sr","cv","nbt"].forEach('],
+  ['["err","req","course"].forEach(k=>{const x=nw[k]!=null?nw[k]:ol[k];if(x!=null)o[k]=x});return o}', '["err","req","course"].forEach(k=>{const x=nw[k]!=null?nw[k]:ol[k];if(x!=null)o[k]=x});const kept=new Set(Object.keys(o));for(const src of [ol,nw])for(const k in src)if(!kept.has(k)&&!/^\\d+$/.test(k)&&!k.startsWith("L.")&&src[k]!=null)o[k]=src[k];return o}'],
   ["const GOAL=20,INT=[1,3,7,14,30];", "let GOAL=20;const INT=[1,3,7,14,30];"],
   ["Ta progression est enregistrée dans ton compte Claude à chaque réponse.", "Ta progression est enregistrée dans ton compte à chaque réponse, et reste disponible hors ligne."],
   ["Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, indisponible ici : ouvre la page dans l'app Claude, avec du réseau.", "Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, qui a besoin du réseau : réessaie quand tu captes."],

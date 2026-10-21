@@ -437,6 +437,8 @@ const MOCKS = `
   ok(await a.evaluate((k) => [...document.querySelectorAll(".wt-list li")].some((l) => l.textContent.includes(k)), known), "recherche dans les mots des leçons (" + known + ")");
   await a.evaluate(() => carnet());
   await a.waitForSelector("#wt-q");
+  const order = await a.evaluate(() => { const ws = words().filter((o) => o.mi >= 0 && !inNb(o.key)).slice(0, 2); setV(ws[0].key, 2); S.nt[ws[0].key] -= 5000; setV(ws[1].key, 2); save(); carnet(); const its = [...document.querySelectorAll("ul.nb li .it")].map((x) => x.firstChild.textContent); return { first: its[0], a: its.indexOf(ws[1].it), b: its.indexOf(ws[0].it), want: ws[1].it, groups: document.querySelectorAll("section.grp ul.nb").length }; });
+  ok(order.first === order.want && order.a < order.b && order.groups === 0, "carnet : une seule liste, du plus récent au plus ancien, sans le nom des leçons");
   ok(!(await a.$("form.addw")) && await a.evaluate(() => { const t = document.querySelector(".wt"), l = document.querySelector("ul.nb"); return !l || (t.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING); }), "dans le carnet : la barre est tout en haut, l'ancien formulaire du bas a disparu");
   await a.evaluate(() => home());
 

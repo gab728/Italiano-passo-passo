@@ -723,7 +723,7 @@ function merge(a,b){const ra=a.r||0,rb=b.r||0;if(ra!==rb)return ra>rb?a:b;
     const base=(!x.done&&!y.done&&(y.i||0)>(x.i||0))?y:x,m=Object.assign({},base);
     if(x.done||y.done){m.done=true;m.best=Math.max(x.best||0,y.best||0)}o[i]=m}
   const dd=Object.assign({},ol.d);for(const k in nw.d||{})dd[k]=Math.max(dd[k]||0,nw.d[k]);if(Object.keys(dd).length)o.d=dd;
-  ["v","nb","cw","sr","cv"].forEach(k=>{const x=Object.assign({},ol[k],nw[k]);if(Object.keys(x).length)o[k]=x});const qz=nw.qz||ol.qz;if(qz)o.qz=qz;["err","req","course"].forEach(k=>{const x=nw[k]!=null?nw[k]:ol[k];if(x!=null)o[k]=x});return o}
+  ["v","nb","cw","sr","cv","nbt"].forEach(k=>{const x=Object.assign({},ol[k],nw[k]);if(Object.keys(x).length)o[k]=x});const qz=nw.qz||ol.qz;if(qz)o.qz=qz;["err","req","course"].forEach(k=>{const x=nw[k]!=null?nw[k]:ol[k];if(x!=null)o[k]=x});const kept=new Set(Object.keys(o));for(const src of [ol,nw])for(const k in src)if(!kept.has(k)&&!/^\d+$/.test(k)&&!k.startsWith("L.")&&src[k]!=null)o[k]=src[k];return o}
 async function connect(){try{
     if(!window.claude||!window.claude.use)return setSync("local");
     window.claude.use("sample").then(x=>{AI=x||null;if(AI&&view==="home")home()}).catch(()=>{});
