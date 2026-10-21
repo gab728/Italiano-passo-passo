@@ -185,11 +185,25 @@
   }
 
   /* ---------- Leçons ---------- */
-  let LV = null;
+  let LV = null, LSEG = "prog", LEDIT = false;
+  // Onglet Leçons : le programme, les leçons d'actualité, et l'historique de tout ce que tu as fait.
+  function segs() {
+    const sg = el("div", "segs"); sg.setAttribute("role", "tablist");
+    [["prog", "Programme"], ["news", "Actualités"], ["hist", "Historique"]].forEach(([k, n]) => {
+      if (k === "news" && typeof NEWS === "undefined") return;
+      const b = el("button", "seg"); b.type = "button"; b.setAttribute("role", "tab"); b.textContent = n; b.setAttribute("aria-selected", String(LSEG === k));
+      b.onclick = () => { LSEG = k; LEDIT = false; lessonsTab(); }; sg.append(b);
+    });
+    root.append(sg);
+  }
+  function lessons(seg, edit) { LSEG = seg || "prog"; LEDIT = !!edit; goTab("lessons"); }
   function lessonsTab() {
     screen("lessons");
     const ss = slots(), cu = current(), doneN = ss.filter(isDone).length;
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : ""))); root.append(h);
+    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : LSEG === "news" ? "L'actu à ton niveau" : "Tout ce que tu as fait")); root.append(h);
+    segs();
+    if (LSEG === "news" && typeof NEWS !== "undefined") { const host = el("div", "seg-body"); root.append(host); NEWS.listInto(host, LEDIT, (edit) => lessons("news", edit)); sync(); return; }
+    if (LSEG === "hist" && typeof HIST !== "undefined") { const host = el("div", "seg-body hist"); root.append(host); HIST.renderInto(host); sync(); return; }
     const levels = (C().plan && C().plan.levels) || [];
     if (LV == null) LV = cu ? cu.li : 0;
     const chips = el("div", "chips");
@@ -213,7 +227,6 @@
       root.append(det);
     });
     root.append(customCard());
-    if (typeof NEWS !== "undefined") { const n = el("button", "row nw-entry"); n.type = "button"; const i = el("span", "row-ic"); i.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>'; const t = el("span", "row-t"); t.append(txt("b", null, "Leçons d'actualité"), txt("small", null, "L'actu italienne à ton niveau, avec des exercices d'écriture")); n.append(i, t); n.insertAdjacentHTML("beforeend", IC.chev); n.onclick = () => NEWS.hub(); root.append(n); }
     sync();
   }
   function customCard() {
@@ -364,7 +377,7 @@
       const top = b.querySelector(".top"), prog = b.querySelector(".prog"), sub = b.querySelector(".sub"), where = top.querySelector(".where"), count = sub && sub.querySelector(".count");
       if (prog) top.insertBefore(prog, where); if (count) top.insertBefore(count, where); if (sub && where) sub.insertBefore(where, sub.firstChild);
       b.classList.add("lesson-bar");
-    } else if (back) { back.innerHTML = IC.prev + "<span></span>"; back.classList.add("back-btn"); }
+    } else if (back) { const lbl = back.textContent.replace(/^←\s*/, "").trim(); back.innerHTML = IC.prev + "<span></span>"; back.classList.add("back-btn"); if (lbl) { back.setAttribute("aria-label", "Retour : " + lbl); back.title = lbl; } }
     b.querySelectorAll(".sub > .linkbtn").forEach((l) => { const hit = LINKS.find(([re]) => re.test(l.textContent)); if (hit) { l.innerHTML = hit[1]; l.classList.add("icon-btn"); l.setAttribute("aria-label", hit[2]); l.title = hit[2]; } });
   }
   function decorateBody() {
@@ -396,6 +409,7 @@
     const m = M[cur.mi], key = m.id + ":" + day(); if (posted.has(key)) return; posted.add(key);
     const pct = parseInt((e.querySelector(".score") || {}).textContent, 10);
     SOC.post("lesson", { t: m.st, pct: Number.isFinite(pct) ? pct : null }); SOC.pushWeekly(true);
+    if (typeof HIST !== "undefined") { HIST.add({ id: "lesson:" + m.id, k: "lesson", ref: m.id, title: m.st, sc: Number.isFinite(pct) ? pct : null }); save(); }
   }
   const IMMERSIVE = new Set(["course", "carmic", "vchat", "audio", "vbilan", "dm"]);
   function sync() {
@@ -421,6 +435,6 @@
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
   })();
-  window.UI = { setTab, sync, go: goTab };
+  window.UI = { setTab, sync, go: goTab, lessons };
   home();
 })();

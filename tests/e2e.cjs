@@ -473,7 +473,9 @@ const MOCKS = `
   ok(rows.length === 6 && /^economia : Roma, nuova linea del tram n\.1 & altro$/.test(rows[0]) && /^viaggiart/.test(rows[1]), "dépêches par thème, en alternance, texte décodé (" + rows[0] + ")");
   await a.click(".nw-row >> nth=0"); await a.waitForSelector(".nw-art", { timeout: 15000 });
   s = await st();
-  ok(s.news.length === 1 && /^n-[0-9a-f]{16}-(a2|b1)$/.test(s.news[0]), "notizia écrite par Claude et partagée dans la base (" + s.news[0] + ")");
+  ok(s.news.length === 1 && /^n-[0-9a-f]{16}-s1$/.test(s.news[0]), "notizia écrite pour ce que l'élève a appris (étape s1 : présent) et partagée (" + s.news[0] + ")");
+  const gen = s.claude.filter((c) => /dépêche de l'agence ANSA/.test(c.ask || "")).pop();
+  ok(gen && /présent de l'indicatif seulement/.test(gen.ask) && /AUCUN temps du passé/.test(gen.ask), "consigne à Claude : seulement la grammaire déjà apprise");
   const sonnet = s.claude.filter((c) => /sonnet/.test(c.model));
   ok(sonnet.length > 0 && sonnet.every((c) => c.thinking && c.thinking.type === "between_tools") && s.thinkRefused === 0, "Sonnet : réflexion coupée avec le réglage qu'il attend (aucun refus)");
   ok((await a.$$eval(".nw-art .tw", (l) => l.length)) > 10 && (await a.$$eval(".nw-kw li", (l) => l.length)) === 8 && await a.isVisible(".nw-struct"), "article aux mots touchables, 8 mots-clés, structure à retenir");
@@ -481,6 +483,8 @@ const MOCKS = `
   await a.click("button:has-text('Afficher la traduction')"); ok(await a.isVisible(".nw-fr"), "traduction de l'article à la demande");
   await a.click(".nw-kw li .wt-add >> nth=0"); ok(await a.evaluate(() => { const o = words().find((w) => w.it === "il Comune"); return !!o && inNb(o.key); }), "mot-clé ajouté au carnet");
   const plans = await a.evaluate(() => { const d = JSON.parse(localStorage.getItem("ipp-news-docs")); const doc = Object.values(d)[0]; return ["facile", "moyen", "difficile"].map((k) => NEWS.plan(doc, k).map((x) => x.t).join(",")); });
+  const tf = await a.evaluate(() => { const d = JSON.parse(localStorage.getItem("ipp-news-docs")); const doc = Object.values(d)[0]; return [].concat(...[0, 1, 2, 3, 4].map(() => NEWS.plan(doc, "difficile").filter((x) => x.t === "transform").map((x) => x.x[0]))); });
+  ok(tf.length && tf.every((x) => !/passé composé|futur/i.test(x)), "pas de transformation au passé composé ni au futur avant d'avoir fait ces leçons (" + [...new Set(tf)].join(", ") + ")");
   ok(!/order/.test(plans[1]) && /dictation/.test(plans[1]) && /transform/.test(plans[1]) && /summary/.test(plans[2]) && /opinion/.test(plans[2]) && !/word/.test(plans[2]), "trois niveaux, de plus en plus d'écriture (" + plans.map((p) => p.split(",").length).join(" / ") + " exercices)");
   ok((await a.evaluate(() => [NEWS.judge("il tram collega la stazione al centro", "Il tram collega la stazione con il centro|Il tram collega la stazione al centro."), NEWS.judge("Il Comune, ha presentato una linea", "Il Comune ha presentato una linea."), NEWS.judge("i lavori cominciano a genaio", "I lavori cominciano a gennaio.")].join())) === "exact,exact,typo", "correction locale des phrases : variantes, ponctuation, petite faute");
   await a.click(".nw-diff-b:has-text('Difficile')"); await a.click("button:has-text('Commencer les exercices')");
@@ -499,9 +503,15 @@ const MOCKS = `
   ok(kinds.some((k) => /Résume/.test(k)) && kinds.some((k) => /avis/.test(k)) && kinds.some((k) => /Dictée/.test(k)), "niveau difficile : dictée, résumé et avis rédigés (" + kinds.length + " exercices)");
   ok(await a.evaluate(() => { const v = Object.values(S.nw); return v.length === 1 && v[0].diff === "difficile" && v[0].sc > 0; }), "résultat enregistré");
   await a.evaluate(() => NEWS.hub()); await a.waitForSelector(".nw-row.done");
-  ok(/Lue/.test(await a.textContent(".nw-row.done")), "la notizia faite est marquée dans la liste");
+  ok(/Lue/.test(await a.textContent(".nw-row.done")) && await a.isVisible(".seg[aria-selected=true]:has-text('Actualités')"), "la liste est dans l'onglet Leçons, la notizia faite y est marquée");
+  await a.click(".seg:has-text('Historique')"); await a.waitForSelector(".hist-row");
+  const hist = await a.$$eval(".hist-row", (l) => l.map((x) => x.className.replace("hist-row ", "") + "|" + x.textContent));
+  ok(/^k-news\|.*Roma, un nuovo tram.*%/.test(hist[0]) && hist.some((h) => /^k-conv/.test(h)) && await a.isVisible(".hist-day"), "historique : l'actu avec son score en tête, les conversations aussi, rangés par jour");
+  await a.click(".hist-row.k-news"); await a.waitForSelector(".nw-log");
+  ok(/Tes réponses · Difficile/.test(await a.textContent(".nw-log h3")) && await a.$(".nw-log-r.ko") && /Historique/.test(await a.getAttribute(".bar .top > .linkbtn", "aria-label") || await a.textContent(".bar .top > .linkbtn")), "depuis l'historique : l'article et tes réponses corrigées, retour vers l'historique");
+  await a.click(".bar .top > .linkbtn"); await a.waitForSelector(".hist-row");
   const before = (await st()).claude.length;
-  await a.evaluate(() => { localStorage.removeItem("ipp-news-docs"); }); await a.click(".nw-row >> nth=0"); await a.waitForSelector(".nw-art", { timeout: 10000 });
+  await a.evaluate(() => { localStorage.removeItem("ipp-news-docs"); }); await a.click(".hist-row.k-news"); await a.waitForSelector(".nw-art", { timeout: 10000 });
   ok((await st()).claude.length === before, "notizia déjà écrite : relue depuis la base, sans rappeler Claude");
   await a.evaluate(() => home());
 

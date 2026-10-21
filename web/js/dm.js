@@ -51,6 +51,7 @@ function dmMemory(cfg) {
   return out;
 }
 async function dmRemember(A) {
+  if (A && A.n >= 1 && typeof HIST !== "undefined") { HIST.add({ id: "conv:" + A.id + ":" + day(), k: "conv", ref: A.id, title: A.title === A.p.name ? "Avec " + A.p.name : A.title, sub: A.p.name, n: A.n }); save(); }
   if (!A || !AI || A.n < 2 || A.memN === A.n) return;
   A.memN = A.n;
   const key = memKey(A), old = memOf(A) || {}, me = (S.mem && S.mem._me && S.mem._me.facts) || [];

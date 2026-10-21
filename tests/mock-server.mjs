@@ -42,7 +42,7 @@ globalThis.fetch = async (url, init) => {
   return realFetch(url, init);
 };
 function fakeClaude(b) {
-  state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens, thinking: b.thinking, temperature: b.temperature });
+  state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens, thinking: b.thinking, temperature: b.temperature, ask: String(b.messages[b.messages.length - 1].content).slice(0, 700) });
   const last = b.messages[b.messages.length - 1].content, sys = b.system || "";
   let text;
   if (/^Tu prépares une leçon d'italien à partir d'une dépêche/.test(last)) text = JSON.stringify({ title: "Roma, un nuovo tram per il centro", title_fr: "Rome, un nouveau tram pour le centre",
@@ -136,7 +136,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
@@ -238,7 +238,7 @@ createServer(async (req, res) => {
         if (req.method === "GET") { if (!member(w)) return rows(res, req, url, []); return rows(res, req, url, [...state.news.values()].filter(match)); }
         if (req.method === "POST") {
           const b = JSON.parse((await readBody(req)).toString()); const r = Array.isArray(b) ? b[0] : b;
-          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1)$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
+          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1|s[1-6])$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
           if (state.news.has(r.id)) return send(res, 409, { code: "23505", message: "duplicate key" });
           state.news.set(r.id, r); return send(res, 201);
         }

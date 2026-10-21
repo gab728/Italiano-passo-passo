@@ -11,7 +11,23 @@ const NEWS = (() => {
   const DIFF = [["facile", "Facile", "Mots, phrases à remettre en ordre, phrases courtes à traduire"], ["moyen", "Moyen", "Traductions, dictée, phrases à transformer, une réponse rédigée"], ["difficile", "Difficile", "Longues traductions, dictée, transformations, résumé et avis rédigés"]];
   const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
   const themes = () => (Array.isArray(S.nth) ? S.nth.filter((t) => NAME[t]) : []);
-  const lvl = () => { const v = vLevel(); return v.base || /A1/.test(v.cecr) ? "a2" : "b1"; };
+  /* Ce que l'élève a appris : l'étape dépend des leçons de grammaire terminées (passé composé, imparfait, futur…).
+     L'article et les exercices n'emploient que ces temps ; une notizia est partagée entre membres de la même étape. */
+  const STAGES = [
+    { id: "s1", name: "présent", allow: "le présent de l'indicatif seulement (verbes réguliers et irréguliers courants), c'è / ci sono, les prépositions, les possessifs, piacere, stare + gérondif, le futur proche exprimé par le présent. AUCUN temps du passé, ni futur, ni conditionnel, ni subjonctif, ni impératif : raconte tout au présent (« Oggi il Comune presenta… », « Domani comincia… »)", words: 90, block: /pass[ée] compos|passato|imparfait|imperfetto|futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|g[ée]rondif pass|passif/i },
+    { id: "s2", name: "présent et passé composé", allow: "le présent et le passato prossimo (avec avere et essere, participes irréguliers courants). PAS d'imparfait, de futur, de conditionnel, de subjonctif ni d'impératif", words: 110, block: /imparfait|imperfetto|futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|passif/i },
+    { id: "s3", name: "présent, passé composé, imparfait", allow: "le présent, le passato prossimo et l'imparfait. PAS de futur, de conditionnel, de subjonctif ni d'impératif", words: 130, block: /futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|passif/i },
+    { id: "s4", name: "jusqu'au futur et au conditionnel", allow: "le présent, le passato prossimo, l'imparfait, le futur, le conditionnel de politesse, l'impératif et les pronoms compléments. PAS de subjonctif", words: 150, block: /subjonctif|congiuntivo|plus-que-parfait|conditionnel pass|passif/i },
+    { id: "s5", name: "jusqu'au subjonctif présent", allow: "tous les temps de l'indicatif courants, le conditionnel, le subjonctif présent, le si impersonnel et le gérondif. PAS de subjonctif imparfait ni de phrases hypothétiques au passé", words: 170, block: /subjonctif imparfait|congiuntivo imperfetto|hypoth[ée]tique|plus-que-parfait du subj|passif/i },
+    { id: "s6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris les hypothèses, le conditionnel passé et le plus-que-parfait", words: 180, block: null },
+  ];
+  const MILESTONES = ["it-u07-l1", "it-u08-l1", "it-u11-l1", "it-u15-l1", "it-u16-l1"];
+  function stage() {
+    const ss = slots(), done = new Set(ss.filter(isDone).map((x) => String(x.l.id)));
+    let k = 0; while (k < MILESTONES.length && done.has(MILESTONES[k])) k++;
+    return STAGES[k];
+  }
+  const lvl = () => stage().id;
   const ago = (iso) => { if (!iso) return ""; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? "il y a " + Math.max(m, 1) + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* plein */ } } };
 
@@ -39,9 +55,11 @@ const NEWS = (() => {
     try { const { data } = await W.sb.from("news_lessons").select("doc").eq("id", id).maybeSingle(); if (data && data.doc) return keep(id, data.doc); } catch (e) { /* hors ligne : on écrit */ }
     if (!AI) throw { code: "offline" };
     onStep && onStep("write");
-    const prompt = "Tu prépares une leçon d'italien à partir d'une dépêche de l'agence ANSA, pour un francophone adulte de niveau " + (lv === "a2" ? "A2 (encore débutant : présent, passé composé, phrases courtes)" : "B1 (à l'aise : passé composé, imparfait, futur, subordonnées simples)") + ".\n" +
+    const sg = STAGES.find((x) => x.id === lv) || stage();
+    const prompt = "Tu prépares une leçon d'italien à partir d'une dépêche de l'agence ANSA, pour un francophone adulte qui apprend l'italien.\n" +
+      "Ce qu'il a déjà appris, et donc la seule grammaire permise dans l'article ET dans tous les exercices : " + sg.allow + ". Vocabulaire simple et fréquent ; phrases courtes. Les consignes de transformation ne portent que sur ce qu'il connaît (négation, pluriel, changer de personne, et les temps permis).\n" +
       "Dépêche (" + (NAME[it.theme] || it.theme) + ", " + (it.date || "") + ") :\nTitre : " + it.title + "\nRésumé : " + (it.summary || "") + "\n\n" +
-      "Écris ta propre courte notizia en italien sur ce sujet, à ce niveau : n'invente aucun fait au-delà de la dépêche (si le résumé est maigre, reste général), ne recopie pas de phrases entières de la dépêche. " + (lv === "a2" ? "Environ 110 mots." : "Environ 170 mots.") + "\n" +
+      "Écris ta propre courte notizia en italien sur ce sujet, à ce niveau : n'invente aucun fait au-delà de la dépêche (si le résumé est maigre, reste général), ne recopie pas de phrases entières de la dépêche. " + "Environ " + sg.words + " mots." + "\n" +
       "Réponds uniquement par un objet JSON, sans texte autour :\n" +
       '{"title": "titre en italien, simple", "title_fr": "titre en français", "text": ["3 ou 4 paragraphes en italien"], "text_fr": ["leur traduction, paragraphe par paragraphe"], ' +
       '"keywords": [["mot ou expression du texte, les noms avec article", "traduction", "note courte en français ou chaîne vide"]] (8), ' +
@@ -85,26 +103,27 @@ const NEWS = (() => {
     });
     host.append(wrap);
   }
-  async function hub(editThemes) {
-    stopSpeech(); qbar(null, null, "Actualités", "← Accueil", () => (window.UI ? UI.go("feed") : home())); view = "news";
-    body.append(txt("div", "kind", "L'italien avec l'actualité"), txt("h2", null, "Le notizie"));
+  // Liste des nouvelles, affichée dans l'onglet Leçons (segment « Actualités »).
+  async function listInto(host, editThemes, again) {
     const th = themes();
     if (!th.length || editThemes) {
-      body.append(txt("p", "fr", "Choisis les sujets qui t'intéressent (8 au plus). Chaque dépêche devient une petite leçon à ton niveau : article, traduction, mots-clés et exercices d'écriture."));
-      themePicker(body);
-      const ok = btn("Voir les nouvelles", "primary"); ok.onclick = () => (themes().length ? hub() : speakNote("Choisis au moins un thème.")); body.append(ok);
+      host.append(txt("p", "fr", "Choisis les sujets qui t'intéressent (8 au plus). Chaque dépêche devient une petite leçon à ton niveau : article, traduction, mots-clés et exercices d'écriture."));
+      themePicker(host);
+      const ok = btn("Voir les nouvelles", "primary"); ok.onclick = () => (themes().length ? again(false) : speakNote("Choisis au moins un thème.")); host.append(ok);
       return;
     }
     const top = el("div", "nw-top"); top.append(txt("span", "muted", th.map((t) => NAME[t]).join(" · ")));
-    const ed = el("button", "link"); ed.type = "button"; ed.textContent = "Mes thèmes"; ed.onclick = () => hub(true); top.append(ed); body.append(top);
-    const list = el("div", "nw-list"); list.append(txt("p", "muted", "Chargement des nouvelles…")); body.append(list);
+    const ed = el("button", "link"); ed.type = "button"; ed.textContent = "Mes thèmes"; ed.onclick = () => again(true); top.append(ed); host.append(top);
+    host.append(txt("p", "nw-stage", "Écrites pour ce que tu as appris : " + stage().name + "."));
+    const list = el("div", "nw-list"); list.append(txt("p", "muted", "Chargement des nouvelles…")); host.append(list);
     let its = [];
     try { its = await items(); } catch (e) { list.innerHTML = ""; list.append(txt("p", "fr", aiFail(e))); return; }
-    if (view !== "news") return;
+    if (!list.isConnected) return;
     list.innerHTML = "";
     if (!its.length) { list.append(txt("p", "fr", "Aucune nouvelle pour ces thèmes en ce moment. Réessaie plus tard ou ajoute un thème.")); return; }
     its.forEach((it) => list.append(row(it)));
   }
+  function hub(editThemes) { if (window.UI && UI.lessons) return UI.lessons("news", !!editThemes); }
   function row(it) {
     const done = (S.nw || {})[it.id];
     const b = el("button", "nw-row" + (done ? " done" : "")); b.type = "button";
@@ -113,9 +132,11 @@ const NEWS = (() => {
     b.append(t); b.insertAdjacentHTML("beforeend", '<svg class="nw-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');
     b.onclick = () => open(it); return b;
   }
-  async function open(it) {
-    stopSpeech(); qbar(null, null, "Actualités", "← Les notizie", () => hub()); view = "news";
-    body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · niveau " + lvl().toUpperCase()), txt("h2", null, it.title));
+  const backList = () => (CUR && CUR.fromHist ? UI.lessons("hist") : hub());
+  async function open(it, fromHist) {
+    CUR = { it, fromHist: !!fromHist };
+    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Les notizie", backList); view = "news";
+    body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + stage().name), txt("h2", null, it.title));
     const st = el("ul", "req"), mk = (t) => { const li = el("li"), a = txt("span", null, t), b = txt("span", "count", "à venir"); li.append(a, b); st.append(li); return b; };
     const s1 = mk("Lecture de la dépêche"), s2 = mk("Écriture de ta notizia et des exercices"), s3 = mk("Partage avec les autres membres");
     const note = txt("p", "fr", "Une notizia déjà préparée s'ouvre tout de suite ; sinon Claude l'écrit en une minute environ."); note.setAttribute("role", "status");
@@ -123,14 +144,16 @@ const NEWS = (() => {
     if (WEB && WEB.keepAwake) WEB.keepAwake();
     let d;
     try { d = await loadDoc(it, (k) => { s1.textContent = "fait"; if (k === "write") s2.textContent = "en cours…"; if (k === "save") { s2.textContent = "fait"; s3.textContent = "en cours…"; } }); }
-    catch (e) { if (view !== "news") return; s1.textContent = s1.textContent === "en cours…" ? "échec" : s1.textContent; note.textContent = aiFail(e); const r = el("div", "rowb"), a = btn("Réessayer", "primary"); a.onclick = () => open(it); const h = btn("Retour aux notizie"); h.onclick = () => hub(); r.append(a, h); body.append(r); return; }
+    catch (e) { if (view !== "news") return; s1.textContent = s1.textContent === "en cours…" ? "échec" : s1.textContent; note.textContent = aiFail(e); const r = el("div", "rowb"), a = btn("Réessayer", "primary"); a.onclick = () => open(it); const h = btn(fromHist ? "Retour à l'historique" : "Retour aux notizie"); h.onclick = backList; r.append(a, h); body.append(r); return; }
     if (view !== "news") return;
-    CUR = { it, d }; article();
+    CUR = { it, d, fromHist: !!fromHist };
+    HIST.add({ id: "news:" + it.id, k: "news", title: d.title, sub: NAME[it.theme] || it.theme, it: { id: it.id, theme: it.theme, title: it.title, link: it.link, date: it.date, summary: (it.summary || "").slice(0, 300) }, sc: ((S.nw || {})[it.id] || {}).sc, diff: ((S.nw || {})[it.id] || {}).diff });
+    save(); article();
   }
   function article() {
     const { it, d } = CUR;
-    stopSpeech(); qbar(null, null, "Actualités", "← Les notizie", () => hub()); view = "news";
-    body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · niveau " + (d.level || lvl()).toUpperCase()));
+    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Les notizie", backList); view = "news";
+    body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + ((STAGES.find((x) => x.id === d.level) || stage()).name)));
     body.append(txt("h2", "nw-title", d.title)); if (d.title_fr) body.append(txt("p", "muted nw-title-fr", d.title_fr));
     const src = el("p", "nw-src"); src.append(txt("span", null, "D'après une dépêche ANSA" + (it.date ? " · " + new Date(it.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
     const a = el("a"); a.href = it.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = "lire l'original"; src.append(a); body.append(src);
@@ -162,6 +185,18 @@ const NEWS = (() => {
       d.structure.examples.forEach((x) => { const e = el("div", "ex"); e.append(txt("span", "it", x[0]), txt("span", "muted", x[1])); sc.append(e); });
       body.append(sc);
     }
+    // Tes réponses de la dernière fois
+    const log = (S.nwlog || {})[it.id], res = (S.nw || {})[it.id];
+    if (log && log.length) {
+      const sec = el("section", "nw-sec nw-log"); sec.append(txt("h3", null, "Tes réponses" + (res ? " · " + (DIFF.find((x) => x[0] === res.diff) || ["", ""])[1] + " · " + res.sc + " %" : "")));
+      log.forEach((x) => {
+        const r = el("div", "nw-log-r " + (x.ok === true ? "ok" : x.ok === "near" ? "near" : "ko"));
+        r.append(txt("small", "muted", x.k), txt("p", "nw-log-q", x.q || ""), txt("p", "nw-log-a", (x.ok === true ? "✓ " : x.ok === "near" ? "≈ " : "✕ ") + (x.a || "—")));
+        if (x.fix && x.ok !== true) r.append(txt("p", "nw-log-fix it", x.fix));
+        sec.append(r);
+      });
+      body.append(sec);
+    }
     // Exercices
     const ex = el("section", "nw-sec nw-go"); ex.append(txt("h3", null, "Exercices d'écriture"));
     const pick = el("div", "nw-diff"); let diff = S.ndiff || "moyen";
@@ -187,8 +222,16 @@ const NEWS = (() => {
     });
     return best;
   }
+  // Par sécurité, on écarte aussi tout exercice qui mentionne un temps pas encore appris.
+  function allowed(d) {
+    const st = STAGES.find((x) => x.id === d.level) || stage(), cur = stage(), block = STAGES.indexOf(cur) <= STAGES.indexOf(st) ? cur.block : st.block;
+    if (!block) return d.ex;
+    const ok = (t) => !block.test(t);
+    const e = d.ex;
+    return Object.assign({}, e, { transform: e.transform.filter((x) => ok(x[0])), translate: e.translate.filter((x) => ok(x.join(" "))), translate_easy: e.translate_easy.filter((x) => ok(x.join(" "))), translate_hard: e.translate_hard.filter((x) => ok(x.join(" "))) });
+  }
   function plan(d, diff) {
-    const e = d.ex, q = [];
+    const e = allowed(d), q = [];
     const add = (t, list, n) => shuffleN(list || [], n).forEach((x) => q.push({ t, x }));
     if (diff === "facile") { add("word", d.keywords, 4); add("order", e.order, 2); add("translate", e.translate_easy.length ? e.translate_easy : e.translate, 2); add("question", e.questions, 1); }
     else if (diff === "moyen") { add("word", d.keywords, 3); add("translate", e.translate, 3); add("dictation", e.dictation, 2); add("transform", e.transform, 2); add("question", e.questions, 1); }
@@ -197,7 +240,7 @@ const NEWS = (() => {
   }
   // Correction par Claude quand la réponse ne correspond pas mot pour mot : synonymes et autres tournures correctes acceptés.
   async function correct(kind, consigne, expected, given) {
-    const r = await AI("Tu corriges un exercice d'italien d'un francophone (niveau " + vLevel().cecr + ").\nType : " + kind + "\nConsigne : " + consigne + "\n" + (expected ? "Une réponse correcte possible : " + expected + "\n" : "") + "Réponse de l'élève : " + given + "\n\n" +
+    const r = await AI("Tu corriges un exercice d'italien d'un francophone (niveau " + vLevel().cecr + ").\nType : " + kind + "\nConsigne : " + consigne + "\n" + (expected ? "Une réponse correcte possible : " + expected + "\n" : "") + "Réponse de l'élève : " + given + "\nIl ne connaît que : " + stage().allow + ". Ne lui reproche pas de ne pas employer d'autres temps.\n\n" +
       "Réponds uniquement par un objet JSON : {\"ok\": true si sa réponse est correcte et naturelle, même si elle diffère de la réponse proposée (ignore majuscules et ponctuation), \"presque\": true s'il n'y a qu'une petite faute (accent, accord, une lettre), \"corrige\": \"sa réponse corrigée, ou la meilleure version si elle est hors sujet\", \"explication\": \"en français, une ou deux phrases sur ses fautes et la règle, ou un encouragement précis si tout est juste\"}",
       { modelTier: "quick", cache: false, maxTokens: 500 });
     const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
@@ -205,13 +248,14 @@ const NEWS = (() => {
   }
   function run(diff) {
     const { d } = CUR, steps = plan(d, diff); let i = 0, score = 0;
-    const missed = [];
+    const missed = [], answers = []; let curQ = null, given = "";
     const ask = () => {
       if (i >= steps.length) return end();
       const s = steps[i];
       qbar(Math.round(100 * i / steps.length), (i + 1) + " / " + steps.length, "Exercices", "← Article", () => article()); view = "news";
       const done = (ok, html, fix) => {
         if (ok) score += ok === "near" ? 0.5 : 1; bump();
+        answers.push({ k: curQ ? curQ.kind : "", q: curQ ? String(curQ.q || "").slice(0, 300) : "", a: String(given || "").slice(0, 400), ok, fix: String(fix || "").slice(0, 400) });
         const f = el("div", "fb " + (ok === true ? "ok" : "ko")); f.setAttribute("role", "status");
         f.append(txt("strong", null, ok === true ? cheer() : ok === "near" ? "Presque !" : "Pas tout à fait."));
         if (fix) { const p = el("p", "nw-fix it"); p.textContent = fix; f.append(p); if (canSpeak) f.append(sayBtn(fix, "Écouter")); }
@@ -226,10 +270,10 @@ const NEWS = (() => {
         inp.setAttribute("aria-label", label); inp.placeholder = label; inp.autocomplete = "off"; inp.setAttribute("autocapitalize", opts.long ? "sentences" : "off"); inp.spellcheck = false; inp.setAttribute("autocorrect", "off");
         const keys = el("div", "keys"); C().keys.split("").forEach((c) => { const b = el("button"); b.type = "button"; b.textContent = c; b.setAttribute("aria-label", "Insérer " + c); b.onclick = () => { const a = inp.selectionStart ?? inp.value.length, z = inp.selectionEnd ?? a; inp.value = inp.value.slice(0, a) + c + inp.value.slice(z); inp.focus(); inp.setSelectionRange(a + 1, a + 1); }; keys.append(b); });
         const ok = btn("Vérifier", "primary"); let busy = false;
-        const go = async () => { const v = inp.value.trim(); if (!v || busy) return inp.focus(); busy = true; ok.disabled = true; inp.readOnly = true; keys.hidden = true; skip.remove(); ok.textContent = "Correction…"; await onSubmit(v); ok.hidden = true; };
+        const go = async () => { const v = inp.value.trim(); if (!v || busy) return inp.focus(); given = v; busy = true; ok.disabled = true; inp.readOnly = true; keys.hidden = true; skip.remove(); ok.textContent = "Correction…"; await onSubmit(v); ok.hidden = true; };
         ok.onclick = go; if (!opts.long) inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go(); } });
         const skip = el("button", "linkbtn nw-skip"); skip.type = "button"; skip.textContent = "Je ne sais pas";
-        skip.onclick = () => { if (busy) return; busy = true; inp.readOnly = true; keys.hidden = true; ok.hidden = true; skip.remove(); opts.onSkip ? opts.onSkip() : done(false, null, opts.answer || ""); };
+        skip.onclick = () => { if (busy) return; busy = true; given = "(je ne sais pas)"; inp.readOnly = true; keys.hidden = true; ok.hidden = true; skip.remove(); opts.onSkip ? opts.onSkip() : done(false, null, opts.answer || ""); };
         w.append(inp, keys); if (window.WEB && WEB.mic && !opts.noMic) WEB.mic(w, inp); w.append(ok);
         body.append(w, skip); setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { /* rien */ } }, 60);
         return inp;
@@ -242,7 +286,7 @@ const NEWS = (() => {
         try { const c = await correct(kind, consigne, first, given); done(c.ok ? true : c.near ? "near" : false, c.why, c.ok && !c.fix ? null : c.fix || first); if (!c.ok && s.t === "word") missed.push(s.x); }
         catch (e) { done(false, "Réponse attendue. (" + aiFail(e) + ")", first); if (s.t === "word") missed.push(s.x); }
       };
-      const head = (kind, q) => { body.append(txt("div", "kind", kind)); if (q) body.append(txt("p", "q", q)); };
+      const head = (kind, q) => { curQ = { kind, q: q || (s.t === "dictation" ? s.x : s.t === "order" ? s.x : "") }; given = ""; body.append(txt("div", "kind", kind)); if (q) body.append(txt("p", "q", q)); };
       if (s.t === "word") { head("Mot-clé · écris-le en italien", s.x[1]); box("En italien", (v) => check("traduire un mot", "Traduis en italien : " + s.x[1], s.x[0], v), { answer: s.x[0] }); }
       else if (s.t === "translate") { head("Traduis en italien", s.x[0]); box("Ta traduction", (v) => check("traduction", "Traduis en italien : " + s.x[0], s.x[1], v), { long: s.x[0].length > 60, rows: 2, answer: s.x[1].split("|")[0] }); }
       else if (s.t === "transform") { head(s.x[0], s.x[1]); box("La phrase transformée", (v) => check("transformation", s.x[0] + " : " + s.x[1], s.x[2], v), { long: s.x[1].length > 60, rows: 2, answer: s.x[2].split("|")[0] }); }
@@ -259,7 +303,7 @@ const NEWS = (() => {
         const target = s.x.replace(/[.,!?;:]/g, "").trim(), ws = target.split(/\s+/); let sh = shuffle(ws); if (sh.join(" ") === target) sh = sh.reverse();
         const tray = el("div", "tray"), pool = el("div", "pool"), ok = btn("Vérifier", "primary"); ok.disabled = true;
         sh.forEach((wd) => { const c = el("button", "chip"); c.type = "button"; c.textContent = wd; c.onclick = () => { (c.parentNode === pool ? tray : pool).append(c); ok.disabled = pool.children.length > 0; }; pool.append(c); });
-        ok.onclick = () => { ok.hidden = true; [...tray.children, ...pool.children].forEach((c) => { c.disabled = true; }); const got = [...tray.children].map((c) => c.textContent).join(" "); done(bare(got) === bare(target), null, bare(got) === bare(target) ? null : s.x); };
+        ok.onclick = () => { ok.hidden = true; [...tray.children, ...pool.children].forEach((c) => { c.disabled = true; }); const got = [...tray.children].map((c) => c.textContent).join(" "); given = got; done(bare(got) === bare(target), null, bare(got) === bare(target) ? null : s.x); };
         body.append(tray, pool, ok);
       }
       else if (s.t === "question") {
@@ -277,14 +321,18 @@ const NEWS = (() => {
     };
     const end = () => {
       const pct = Math.round(100 * score / Math.max(steps.length, 1));
-      S.nw = S.nw || {}; S.nw[CUR.it.id] = { d: day(), sc: pct, diff }; missed.forEach((k) => addCustom(k[0], k[1])); save();
+      S.nw = S.nw || {}; S.nw[CUR.it.id] = { d: day(), sc: pct, diff }; missed.forEach((k) => addCustom(k[0], k[1]));
+      S.nwlog = S.nwlog || {}; S.nwlog[CUR.it.id] = answers.slice(0, 14);
+      const ks = Object.keys(S.nwlog); ks.filter((k) => !(S.hist || []).some((h) => h.id === "news:" + k)).forEach((k) => delete S.nwlog[k]);
+      HIST.add({ id: "news:" + CUR.it.id, k: "news", title: CUR.d.title, sub: NAME[CUR.it.theme] || CUR.it.theme, it: { id: CUR.it.id, theme: CUR.it.theme, title: CUR.it.title, link: CUR.it.link, date: CUR.it.date, summary: (CUR.it.summary || "").slice(0, 300) }, sc: pct, diff });
+      save();
       qbar(100, null, "Exercices", "← Article", () => article()); view = "news";
       const e = el("div", "end"); e.append(txt("div", "kind", "Exercices terminés · " + DIFF.find((x) => x[0] === diff)[1]), txt("div", "score", pct + " %"));
       e.append(txt("p", null, missed.length ? "Les mots-clés ratés sont rangés dans ton carnet." : "Belle série d'écriture."));
       const r = el("div", "rowb");
       const talk = btn("En parler avec Giulia", "primary"); talk.onclick = () => openTopic(CUR.d.title, "l'actualité : « " + (CUR.d.title_fr || CUR.d.title) + " ». " + CUR.d.text.join(" ").slice(0, 500), { back: () => article() });
       const harder = DIFF.findIndex((x) => x[0] === diff) < 2 ? btn("Niveau au-dessus") : null; if (harder) harder.onclick = () => { S.ndiff = DIFF[DIFF.findIndex((x) => x[0] === diff) + 1][0]; save(); run(S.ndiff); };
-      const back = btn("Autres nouvelles"); back.onclick = () => hub();
+      const back = btn(CUR.fromHist ? "Historique" : "Autres nouvelles"); back.onclick = backList;
       r.append(talk); if (harder) r.append(harder); r.append(back); e.append(r); body.append(e);
     };
     ask();
@@ -312,7 +360,36 @@ const NEWS = (() => {
     }).catch((e) => { bodyC.innerHTML = ""; bodyC.append(txt("p", "muted", aiFail(e))); });
     return c;
   }
-  return { hub, open, homeCard, THEMES, items, tidy, plan, judge };
+  return { hub, open, listInto, homeCard, THEMES, items, tidy, plan, judge, stage, STAGES, NAME };
 })();
 // L'accueil s'affiche avant le chargement de ce module : on le redessine pour y ajouter la notizia du jour.
 if (typeof view !== "undefined" && view === "home" && typeof home === "function") home();
+
+/* ---------- Historique : leçons, actualités et conversations, du plus récent au plus ancien ---------- */
+const HIST = (() => {
+  const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
+  function add(e) { S.hist = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.id !== e.id); S.hist.unshift(Object.assign({ t: Date.now() }, e)); S.hist = S.hist.slice(0, 150); }
+  const label = (t) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0); const n = Math.round((d0 - d) / 864e5); return n === 0 ? "Aujourd'hui" : n === 1 ? "Hier" : d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
+  const KIND = { news: "Actu", lesson: "Leçon", conv: "Conversation" };
+  function renderInto(host) {
+    const list = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.k);
+    if (!list.length) { host.append(txt("p", "fr", "Rien pour l'instant. Tes leçons terminées, les actualités que tu lis (avec tes réponses aux exercices) et tes conversations s'afficheront ici.")); return; }
+    let cur = "";
+    list.forEach((e) => {
+      const g = label(e.t); if (g !== cur) { cur = g; host.append(txt("h3", "hist-day", g.charAt(0).toUpperCase() + g.slice(1))); }
+      const b = el("button", "hist-row k-" + e.k); b.type = "button";
+      const ic = txt("span", "hist-ic", KIND[e.k] ? KIND[e.k].charAt(0) : "·"); ic.setAttribute("aria-hidden", "true");
+      const t = el("span", "hist-t"); t.append(txt("small", null, (KIND[e.k] || "") + (e.sub ? " · " + e.sub : "") + (e.diff ? " · " + e.diff.charAt(0).toUpperCase() + e.diff.slice(1) : "")), txt("b", null, e.title || ""));
+      b.append(ic, t);
+      if (e.sc != null) b.append(txt("span", "hist-sc", e.sc + " %")); else if (e.k === "news") b.append(txt("span", "hist-sc muted", "lue"));
+      b.onclick = () => {
+        if (e.k === "news" && e.it) return NEWS.open(e.it, true);
+        if (e.k === "lesson") { const mi = M.findIndex((m) => m.id === e.ref); if (mi >= 0) return go(mi); }
+        if (e.k === "conv") { if (PERSONAS[e.ref]) return openPersona(e.ref); const mi = M.findIndex((m) => "role-" + m.id === e.ref); if (mi >= 0) return openRole(mi); }
+        speakNote("Cet élément n'est plus disponible.");
+      };
+      host.append(b);
+    });
+  }
+  return { add, renderInto };
+})();
