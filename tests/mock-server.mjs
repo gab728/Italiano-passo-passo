@@ -22,7 +22,12 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u === "https://api.anthropic.com/v1/models" || u === "https://api.openai.com/v1/models") return new Response(JSON.stringify({ data: [] }), { headers: { "content-type": "application/json" } });
-  if (u.startsWith("https://api.anthropic.com/")) return fakeClaude(JSON.parse(init.body));
+  if (u.startsWith("https://api.anthropic.com/")) {
+    const b = JSON.parse(init.body);
+    // Comme l'API réelle : Sonnet 5.5 refuse thinking « disabled » et indique la bonne valeur.
+    if (/sonnet-5-5/.test(b.model) && b.thinking && b.thinking.type === "disabled") { state.thinkRefused = (state.thinkRefused || 0) + 1; return new Response(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: 'To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}.' } }), { status: 400 }); }
+    return fakeClaude(b);
+  }
   if (u.startsWith("https://www.ansa.it/")) {
     state.ansa = (state.ansa || 0) + 1; const th = u.split("/").pop().replace("_rss.xml", "");
     const item = (k, d) => `<item><title><![CDATA[${th} : Roma, nuova linea del tram n.${k} &amp; altro]]></title><link>https://www.ansa.it/${th}/${k}.html</link><description>&lt;p&gt;Il Comune di Roma ha presentato una nuova linea del tram per il centro (${th} ${k}).&lt;/p&gt;</description><pubDate>${new Date(Date.now() - d * 3600e3).toUTCString()}</pubDate></item>`;
@@ -131,7 +136,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 

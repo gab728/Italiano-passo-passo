@@ -474,6 +474,8 @@ const MOCKS = `
   await a.click(".nw-row >> nth=0"); await a.waitForSelector(".nw-art", { timeout: 15000 });
   s = await st();
   ok(s.news.length === 1 && /^n-[0-9a-f]{16}-(a2|b1)$/.test(s.news[0]), "notizia écrite par Claude et partagée dans la base (" + s.news[0] + ")");
+  const sonnet = s.claude.filter((c) => /sonnet/.test(c.model));
+  ok(sonnet.length > 0 && sonnet.every((c) => c.thinking && c.thinking.type === "between_tools") && s.thinkRefused === 0, "Sonnet : réflexion coupée avec le réglage qu'il attend (aucun refus)");
   ok((await a.$$eval(".nw-art .tw", (l) => l.length)) > 10 && (await a.$$eval(".nw-kw li", (l) => l.length)) === 8 && await a.isVisible(".nw-struct"), "article aux mots touchables, 8 mots-clés, structure à retenir");
   await a.click(".nw-art .tw >> nth=1"); await a.waitForSelector(".wsheet"); ok(true, "toucher un mot de l'article ouvre sa traduction"); await a.click(".ws-x");
   await a.click("button:has-text('Afficher la traduction')"); ok(await a.isVisible(".nw-fr"), "traduction de l'article à la demande");

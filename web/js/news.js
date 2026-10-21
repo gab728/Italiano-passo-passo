@@ -51,7 +51,7 @@ const NEWS = (() => {
       '"dictation": ["phrase du texte, de 6 à 14 mots"] (3), "transform": [["consigne en français (ex. : Mets au passé composé, Mets à la forme négative, Remplace par un pronom)", "phrase de départ en italien", "phrase attendue|variante"]] (4), ' +
       '"questions": [["question en italien sur le texte", "sa traduction", "une réponse possible en italien"]] (2), "opinion": ["question en italien qui demande l\'avis de l\'élève", "sa traduction"]}}\n' +
       "Les traductions attendues doivent être irréprochables ; les variantes séparées par | couvrent les autres façons correctes et courantes de le dire.";
-    const r = await AI(prompt, { cache: false, maxTokens: 6000 });
+    const r = await AI(prompt, { cache: false, maxTokens: 9000 });
     let d; try { d = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, "")); } catch (e) { throw { code: r.truncated ? "truncated" : "invalid_json" }; }
     d = tidy(d); if (!d) throw { code: "invalid_json" };
     d.src = { title: it.title, link: it.link, date: it.date, theme: it.theme }; d.level = lv;

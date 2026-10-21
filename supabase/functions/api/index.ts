@@ -121,6 +121,8 @@ async function limitsFor(u: User, prof?: any) {
 }
 
 // ---------- /claude ----------
+// Façon de couper la réflexion selon le modèle (apprise des réponses d'erreur de l'API).
+const THINK_OFF: Record<string, string> = { "claude-sonnet-5-5": "between_tools" };
 const MAX_CHARS = 120000;
 function readInput(b: any): { messages: { role: string; content: string }[]; error?: string } {
   let msgs: any = b && b.input;
@@ -169,7 +171,7 @@ async function claude(req: Request, u: User): Promise<Response> {
   // Les modèles 5.5 réfléchissent d'eux-mêmes avant d'écrire, et cette réflexion compte dans max_tokens :
   // avec un petit plafond, la réponse pouvait s'arrêter avant le moindre mot. On écrit directement (plus rapide aussi).
   // THINKING=adaptive dans les secrets remet la réflexion. Les modèles 5.5 refusent temperature : on ne l'envoie plus.
-  if (env("THINKING", "disabled") === "disabled") payload.thinking = { type: "disabled" };
+  if (env("THINKING", "disabled") === "disabled") payload.thinking = { type: THINK_OFF[model] || "disabled" };
   // Claude doit commencer à répondre en moins de 45 secondes, et ne jamais rester muet plus de 40 secondes ensuite.
   const ac = new AbortController();
   req.signal.addEventListener("abort", () => ac.abort(), { once: true });
@@ -183,10 +185,17 @@ async function claude(req: Request, u: User): Promise<Response> {
   });
   try {
     up = await ask();
-    // Modèle qui n'accepte pas ce réglage : on redemande sans.
+    // Modèle qui veut une autre façon de couper la réflexion (Sonnet 5.5 : « between_tools ») : on suit son indication,
+    // et on la retient pour les appels suivants. À défaut, on redemande sans réglage.
     if (up.status === 400 && payload.thinking) {
       const t = await up.text().catch(() => "");
-      if (/thinking/i.test(t)) { console.error("thinking refusé", t.slice(0, 200)); delete payload.thinking; up = await ask(); }
+      if (/thinking/i.test(t)) {
+        const m = t.match(/send \\?"thinking\\?":\s*\{\\?"type\\?":\s*\\?"([a-z_]+)\\?"\}/);
+        console.error("thinking refusé", (payload.thinking as Json).type, "→", m ? m[1] : "sans");
+        if (m && m[1] !== (payload.thinking as Json).type) { THINK_OFF[model] = m[1]; payload.thinking = { type: m[1] }; }
+        else delete payload.thinking;
+        up = await ask();
+      }
       else up = new Response(t, { status: 400 });
     }
     clearTimeout(wait);
