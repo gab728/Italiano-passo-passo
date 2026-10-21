@@ -376,6 +376,34 @@ const MOCKS = `
   await a.unroute("**/functions/v1/api/claude");
   await a.evaluate(() => { window.__stallMs = 0; dmLeave(); });
 
+  console.log("18. Quiz : réponse libre, propositions en cas de besoin");
+  const jz = await a.evaluate(() => [QZ.judge("casa", ["la casa"]), QZ.judge("citta", ["città"]), QZ.judge("boire", ["prendre / boire"]), QZ.judge("bellissmo", ["bellissimo"]), QZ.judge("maison", ["la maison"]), QZ.judge("cane", ["gatto"])]);
+  ok(jz.join() === "exact,accent,exact,typo,exact,no", "correction souple : article, accents, variantes, petite faute (" + jz.join() + ")");
+  await a.evaluate(() => quizRun({ dir: "fr-it", src: "all", n: 3 }));
+  const answerOf = () => a.evaluate(() => { const q = document.querySelector(".word").textContent; return words().find((o) => o.fr === q).it; });
+  await a.waitForSelector(".qz input");
+  ok(!(await a.$(".opts .opt")) && await a.isVisible(".qz-help"), "champ libre d'abord, propositions cachées");
+  await a.fill(".qz input", await answerOf()); await a.press(".qz input", "Enter");
+  await a.waitForSelector(".fb.ok"); ok(true, "bonne réponse écrite acceptée");
+  await a.click(".fb .btn.primary");
+  const w2 = await answerOf();
+  await a.click(".qz-help"); await a.waitForSelector(".opts .opt");
+  ok((await a.$$eval(".opts .opt", (l) => l.length)) === 4, "le bouton affiche les 4 propositions");
+  await a.click(".opts .opt[data-k='0']"); await a.waitForSelector(".fb.ok");
+  ok(/coup de pouce/.test(await a.textContent(".fb")) && await a.evaluate((it) => { const o = words().find((x) => x.it === it); return inNb(o.key); }, w2), "juste avec les propositions : le mot reste au carnet");
+  await a.click(".fb .btn.primary");
+  await a.fill(".qz input", "zzzz"); await a.press(".qz input", "Enter");
+  await a.waitForSelector(".fb.ko"); ok(true, "mauvaise réponse signalée");
+  const mi = await a.evaluate(() => M.findIndex((m) => m.custom && m.ex.some((x) => x[0] === "m" && /___/.test(x[1]))));
+  await a.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "m"); show(); }, mi);
+  await a.waitForSelector(".qz input", { timeout: 5000 });
+  ok(await a.isVisible(".qz-help"), "exercice à trous de la leçon : champ libre aussi");
+  const mq = await a.evaluate(() => document.querySelector(".q").textContent);
+  await a.fill(".qz input", await a.evaluate(() => cur.q[cur.i].d[2][0])); await a.press(".qz input", "Enter");
+  await a.waitForSelector(".fb", { timeout: 5000 }).catch(() => null);
+  ok(await a.$(".fb.ok"), "réponse libre juste dans la leçon (" + mq + " → " + await a.evaluate(() => (document.querySelector(".fb") || {}).textContent) + ")");
+  await a.evaluate(() => home());
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

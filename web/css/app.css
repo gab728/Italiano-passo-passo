@@ -471,3 +471,8 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .lh-all { align-self: center; margin-top: 2px; }
 .lhero.over .lh-title { font-family: var(--it); font-style: italic; font-weight: 400; font-size: 34px; }
 .talk-h { margin-top: 10px; }
+
+/* Quiz à réponse libre */
+.qz { display: flex; flex-direction: column; gap: 10px; }
+.qz-help { align-self: center; color: var(--azzurro-text); font-size: 14.5px; padding: 8px 12px; }
+.qz-ask { margin-top: -4px; }
