@@ -442,6 +442,25 @@ const MOCKS = `
   ok(!(await a.$("form.addw")) && await a.evaluate(() => { const t = document.querySelector(".wt"), l = document.querySelector("ul.nb"); return !l || (t.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING); }), "dans le carnet : la barre est tout en haut, l'ancien formulaire du bas a disparu");
   await a.evaluate(() => home());
 
+  console.log("20. Les personnages se souviennent des conversations");
+  await a.evaluate(() => { S.mem = {}; save(); openPersona("sofia"); });
+  await a.waitForSelector("#dm-input"); await a.waitForFunction(() => DM && !DM.busy, null, { timeout: 10000 });
+  for (const t of ["Abito a Parigi", "Preferisco Roma"]) { await a.fill("#dm-input", t); await a.press("#dm-input", "Enter"); await a.waitForFunction(() => DM && !DM.busy && document.querySelectorAll(".msg.me").length >= 1, null, { timeout: 10000 }); await a.waitForTimeout(300); }
+  await a.evaluate(() => dmLeave());
+  await a.waitForFunction(() => S.mem && S.mem.sofia && S.mem.sofia.n === 1, null, { timeout: 10000 });
+  ok(await a.evaluate(() => S.mem._me.facts.includes("habite à Paris") && /Rome/.test(S.mem.sofia.suite)), "mémoire enregistrée : faits sur l'élève, résumé et piste pour la suite");
+  const nBefore = (await st()).claude.length;
+  await a.evaluate(() => openPersona("sofia"));
+  await a.waitForFunction(() => DM && !DM.busy && document.querySelectorAll(".msg.ai .bub.it").length >= 1, null, { timeout: 10000 });
+  const opener = await a.textContent(".msg.ai .bub.it");
+  ok(!/che fai questo weekend/.test(opener), "Sofia n'ouvre plus toujours avec la même phrase");
+  const sys = await a.evaluate(() => DM.system);
+  ok(/Ce que tu sais déjà de l'élève.*habite à Paris/.test(sys) && /Vous avez déjà parlé 1 fois/.test(sys) && /Piste pour cette fois : .*Rome/.test(sys), "le personnage reçoit l'historique et la piste à reprendre");
+  await a.evaluate(() => { dmLeave(); UI.go("profile"); WEB.account(); });
+  await a.waitForSelector(".mem .mem-list li");
+  ok(/habite à Paris/.test(await a.textContent(".mem")), "le compte montre ce que les personnages savent de toi");
+  await a.evaluate(() => home());
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

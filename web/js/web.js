@@ -161,6 +161,20 @@
     }
     body.append(vx);
 
+    // Mémoire des conversations
+    const mm = el("section", "panel mem"); mm.append(el("h2", null, "Ce que les personnages savent de toi"));
+    const memFacts = (S.mem && S.mem._me && S.mem._me.facts) || [], memWho = Object.keys(S.mem || {}).filter((k) => k !== "_me" && S.mem[k] && S.mem[k].n);
+    if (!memFacts.length && !memWho.length) mm.append(el("p", "fr", "Rien pour l'instant. Après chaque conversation, Giulia, Marco, Sofia et Nonna Rosa retiennent ce que tu leur as raconté, pour reprendre la discussion là où vous l'aviez laissée."));
+    else {
+      mm.append(el("p", "fr", "Retenu au fil de tes conversations, pour que chacun reprenne le fil et aille plus loin. Ça reste dans ton compte."));
+      if (memFacts.length) { const ul = el("ul", "mem-list"); memFacts.forEach((f) => { const li = el("li"); li.textContent = f; ul.append(li); }); mm.append(ul); }
+      if (memWho.length) mm.append(el("p", "small", "Conversations retenues : " + memWho.map((k) => ((window.PERSONAS || {})[k] || {}).name || (k.startsWith("role-") ? "jeux de rôle" : k)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + "."));
+      const clr = el("button", "linkbtn", "Effacer la mémoire"); clr.type = "button";
+      clr.onclick = () => { if (!clr.dataset.sure) { clr.dataset.sure = 1; clr.textContent = "Confirmer : tout oublier"; return; } S.mem = {}; save(); account(); };
+      mm.append(clr);
+    }
+    body.append(mm);
+
     // Mot de passe
     const pw = el("section", "panel"); pw.append(el("h2", null, "Mot de passe"));
     pw.append(el("p", "fr", "Pour te connecter sur un autre appareil ou dans l'app installée : ton e-mail et ce mot de passe. Ton téléphone peut le retenir."));

@@ -26,16 +26,56 @@ const DM_SVG = {
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
 };
 let DM = null;
+window.PERSONAS = PERSONAS;
 
 function personaAvatar(p, size) {
   const a = el("span", "av"); a.setAttribute("aria-hidden", "true");
   a.style.background = p.bg; a.style.color = p.fg; if (size) { a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * 0.55) + "px"; }
   a.textContent = p.name.replace(/^Nonna\s+/, "").charAt(0); return a;
 }
+/* ---------- Mémoire des conversations ----------
+   Chaque personnage se souvient de vos échanges (résumé, piste pour la prochaine fois), et tous partagent
+   ce qu'ils ont appris de toi (ville, travail, goûts, projets…). La mémoire est mise à jour en fin de conversation. */
+const memKey = (cfg) => String(cfg.id || "giulia");
+function memOf(cfg) { return ((S.mem || {})[memKey(cfg)]) || null; }
+function dmMemory(cfg) {
+  const me = (S.mem && S.mem._me && S.mem._me.facts) || [], m = memOf(cfg);
+  let out = "";
+  if (me.length) out += "\nCe que tu sais déjà de l'élève (ne lui redemande pas, sers-t'en pour rebondir) : " + me.join(" ; ") + ".";
+  if (m && m.n) {
+    const ago = Math.max(0, day() - (m.last || day()));
+    out += "\nVous avez déjà parlé " + m.n + (m.n > 1 ? " fois" : " fois") + ", la dernière " + (ago === 0 ? "aujourd'hui" : ago === 1 ? "hier" : "il y a " + ago + " jours") + ". Ce que vous vous êtes dit : " + (m.resume || "") +
+      (m.suite ? "\nPiste pour cette fois : " + m.suite : "") + (m.progres ? "\nSes progrès et ses difficultés : " + m.progres : "") +
+      "\nNe te présente pas à nouveau et ne repose pas les mêmes questions : reprends un fil, fais référence à ce qu'il t'a raconté, approfondis et fais-le aller plus loin (nouveaux sujets, questions plus riches, un peu plus de vocabulaire).";
+  }
+  return out;
+}
+async function dmRemember(A) {
+  if (!A || !AI || A.n < 2 || A.memN === A.n) return;
+  A.memN = A.n;
+  const key = memKey(A), old = memOf(A) || {}, me = (S.mem && S.mem._me && S.mem._me.facts) || [];
+  const script = A.log.map((x) => (x.who === "me" ? "Élève : " : A.p.name + " : ") + x.lines.map((l) => l.t).join(" ")).join("\n").slice(-6000);
+  try {
+    const r = await AI("Tu tiens la mémoire de " + A.p.name + ", qui discute en " + LN() + " avec un élève francophone" + (A.kind === "role" ? " (jeu de rôle : " + A.title + ")" : "") + ".\n" +
+      "Ce qu'on savait déjà de l'élève : " + (me.join(" ; ") || "rien") + "\nRésumé des conversations précédentes avec " + A.p.name + " : " + (old.resume || "aucune") + "\n\nNouvelle conversation :\n" + script + "\n\n" +
+      "Réponds uniquement par un objet JSON, sans texte autour : {\"eleve\": [faits durables sur l'élève, en français, très courts (prénom, ville, métier, famille, goûts, projets, voyages prévus…), 12 au plus, en fusionnant avec ceux d'avant et sans rien inventer], " +
+      "\"resume\": \"ce que l'élève et " + A.p.name + " se sont dit, en gardant l'essentiel des fois précédentes, 3 phrases au plus, en français\", \"suite\": \"une piste précise pour la prochaine conversation : une question à reprendre ou un sujet à approfondir\", " +
+      "\"progres\": \"en une phrase, ce que l'élève maîtrise mieux ou doit encore travailler\"}", { modelTier: "quick", cache: false, maxTokens: 700 });
+    const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
+    const str = (x, n) => (typeof x === "string" ? x.trim().slice(0, n) : "");
+    S.mem = S.mem || {};
+    const facts = Array.isArray(j.eleve) ? j.eleve.map((x) => str(x, 90)).filter(Boolean).slice(0, 12) : me;
+    S.mem._me = { facts, t: Date.now() };
+    S.mem[key] = { n: (old.n || 0) + 1, last: day(), resume: str(j.resume, 600) || old.resume || "", suite: str(j.suite, 240), progres: str(j.progres, 240) };
+    save();
+  } catch (e) { A.memN = 0; }
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden && typeof DM !== "undefined" && DM) dmRemember(DM); });
+
 function dmSystem(cfg) {
   const lvl = vLevel(), words = vWords();
   const heard = " Ce que dit l'élève t'arrive par écrit ou par une reconnaissance vocale réglée sur l'italien : des mots peuvent être mal transcrits. Ne commente jamais l'orthographe ni la ponctuation ; si une phrase est incompréhensible, demande-lui de répéter.";
-  const level = "\nNiveau de l'élève : " + lvl.cecr + ". Points qu'il étudie : " + lvl.grammar + "." + (lvl.base ? " Il est encore dans les bases : reste au présent et aux structures simples, sauf s'il utilise lui-même un autre temps." : "") + (words ? "\nMots de son carnet à réutiliser quand c'est naturel : " + words + "." : "");
+  const level = dmMemory(cfg) + "\nNiveau de l'élève : " + lvl.cecr + ". Points qu'il étudie : " + lvl.grammar + "." + (lvl.base ? " Il est encore dans les bases : reste au présent et aux structures simples, sauf s'il utilise lui-même un autre temps." : "") + (words ? "\nMots de son carnet à réutiliser quand c'est naturel : " + words + "." : "");
   const WHY = { voyage: "voyager en Italie", proches: "parler avec des amis ou de la famille", travail: "le travail", culture: "la culture (cinéma, musique, cuisine)", plaisir: "le plaisir d'apprendre" };
   const why = (typeof S !== "undefined" && S.ob && Array.isArray(S.ob.why) ? S.ob.why : []).map((k) => WHY[k]).filter(Boolean);
   const motive = why.length ? "\nIl apprend l'italien pour : " + why.join(", ") + ". Quand le thème est libre, choisis des sujets qui s'en rapprochent." : "";
@@ -102,7 +142,11 @@ function dmOpen(cfg) {
   root.append(wrap);
   DM.ui = { log, inp, act, setAct, end, hands, car, sug };
   setAct();
-  if (DM.open) { DM.turns.push({ role: "user", content: "(Début de la conversation.)" }, { role: "assistant", content: "IT: " + DM.open }); dmBubble([{ lang: VO.IT(), t: DM.open }]); if (DM.autoHands) dmHands(true); }
+  const mem = memOf(DM);
+  if (mem && mem.n) DM.firstAsk = DM.kind === "role"
+    ? "(Nouvelle partie de ce jeu de rôle. Ouvre la scène toi-même en variant la situation par rapport aux fois précédentes, en une ou deux phrases et une question.)"
+    : "(L'élève revient te parler. Ouvre la conversation naturellement en reprenant un fil de vos échanges précédents" + (mem.suite ? " (piste : " + mem.suite + ")" : "") + ", sans te présenter à nouveau. Une ou deux phrases et une question.)";
+  if (DM.open && !DM.firstAsk) { DM.turns.push({ role: "user", content: "(Début de la conversation.)" }, { role: "assistant", content: "IT: " + DM.open }); dmBubble([{ lang: VO.IT(), t: DM.open }]); if (DM.autoHands) dmHands(true); }
   else dmAsk(true).then(() => { if (DM && DM.autoHands) dmHands(true); });
   vWake(true);
   try { if (!localStorage.getItem("ipp-hint-words")) { localStorage.setItem("ipp-hint-words", "1"); setTimeout(() => speakNote("Astuce : touche un mot pour voir sa traduction et l'ajouter au carnet."), 1200); } } catch (e) { /* rien */ }
@@ -183,7 +227,7 @@ function dmChunks(text, final) {
 async function dmAsk(first, speakIt) {
   const A = DM; A.busy = true; A.cut = null; A.ui.setAct();
   const typing = el("div", "msg ai typing"); typing.innerHTML = '<div class="bub"><i></i><i></i><i></i></div>'; typing.setAttribute("aria-label", A.p.name + " écrit"); A.ui.log.append(typing); dmScroll();
-  const msgs = A.turns.length ? A.turns.slice(-30) : [{ role: "user", content: "(L'élève ouvre la conversation. Salue-le et pose ta première question.)" }];
+  const msgs = A.turns.length ? A.turns.slice(-30) : [{ role: "user", content: A.firstAsk || "(L'élève ouvre la conversation. Salue-le et pose ta première question.)" }];
   if (msgs[0].role !== "user") msgs.unshift({ role: "user", content: "(Suite de la conversation.)" });
   let liveB = null, r, sent = 0;
   const q = speakIt ? dmQueue(A) : null;
@@ -264,9 +308,9 @@ async function dmHint() {
   b.disabled = false;
 }
 function dmStop() { if (!DM) return; DM.token++; if (DM.unwatch) { DM.unwatch(); DM.unwatch = null; } DM.speaking = false; VO.cancel(); stopSpeech(); VO.release(); vWake(false); }
-function dmLeave() { const A = DM; dmStop(); DM = null; save(); if (A && A.back) A.back(); else if (window.UI) UI.go("talk"); else home(); }
+function dmLeave() { const A = DM; dmStop(); DM = null; dmRemember(A); save(); if (A && A.back) A.back(); else if (window.UI) UI.go("talk"); else home(); }
 function dmEnd() {
-  const A = DM; if (!A) return; dmStop(); DM = null; save();
+  const A = DM; if (!A) return; dmStop(); DM = null; dmRemember(A); save();
   const script = A.log.map((x) => (x.who === "me" ? "Élève : " : "Personnage : ") + x.lines.map((l) => (l.lang.startsWith("fr") ? "(note en français) " : "") + l.t).join(" ")).join("\n");
   if (A.kind === "role") return bilan(A.k, M[A.k].scenario, script, A.n);
   vBilan({ title: A.title === A.p.name ? "Avec " + A.p.name : A.title, goal: A.mission || A.topic || "Conversation avec " + A.p.name, focus: vLevel().grammar }, script);
