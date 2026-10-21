@@ -106,6 +106,7 @@
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
     const doneN = ss.filter(isDone).length, beginner = doneN < 3;
     root.append(lessonHero(cu, ss, doneN));
+    if (typeof NEWS !== "undefined" && AI) root.append(NEWS.homeCard());
     if (!beginner) { root.append(txt("h2", "feed-sec talk-h", "Pratiquer à l'oral")); personaStories(root); }
     // Thèmes
     if (AI) { const h = el("div", "sec-h"); h.append(txt("h2", null, beginner ? "Ensuite, parle de…" : "Parler de…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h, themeCarousel(8)); }
@@ -212,6 +213,7 @@
       root.append(det);
     });
     root.append(customCard());
+    if (typeof NEWS !== "undefined") { const n = el("button", "row nw-entry"); n.type = "button"; const i = el("span", "row-ic"); i.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>'; const t = el("span", "row-t"); t.append(txt("b", null, "Leçons d'actualité"), txt("small", null, "L'actu italienne à ton niveau, avec des exercices d'écriture")); n.append(i, t); n.insertAdjacentHTML("beforeend", IC.chev); n.onclick = () => NEWS.hub(); root.append(n); }
     sync();
   }
   function customCard() {

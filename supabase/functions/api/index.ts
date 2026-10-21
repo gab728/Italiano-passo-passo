@@ -2,6 +2,7 @@
 //   POST /api/claude  → appelle Claude avec la clé du serveur (jamais envoyée au téléphone), en direct (streaming)
 //   POST /api/admin   → profil, codes de connexion, invitations et plafonds (le propriétaire seul pour la gestion)
 //   POST /api/stt     → transcription vocale de secours, si un service est configuré
+//   POST /api/news    → dernières dépêches de l'agence ANSA, par thème (titre, résumé, lien : jamais l'article entier)
 //   POST /api/tts     → voix naturelles (synthèse vocale OpenAI ou compatible), phrases des leçons gardées en cache pour tous
 // Chaque appel exige une personne connectée. La consommation est comptée par personne et par jour, avec un plafond.
 //
@@ -467,6 +468,45 @@ async function tts(req: Request, u: User): Promise<Response> {
   return new Response(buf, { headers: audioHeaders(req, { "x-cache": "miss" }) });
 }
 
+// ---------- /news : dépêches ANSA par thème ----------
+const ANSA = "https://www.ansa.it/";
+export const NEWS_FEEDS: Record<string, string> = {
+  une: "sito/notizie/topnews/topnews_rss.xml", monde: "sito/notizie/mondo/mondo_rss.xml", politique: "sito/notizie/politica/politica_rss.xml",
+  economie: "sito/notizie/economia/economia_rss.xml", tech: "canale_tecnologia/notizie/tecnologia_rss.xml", sciences: "canale_scienza_tecnica/notizie/scienzaetecnica_rss.xml",
+  culture: "sito/notizie/cultura/cultura_rss.xml", cinema: "sito/notizie/cultura/cinema/cinema_rss.xml", voyages: "canale_viaggi/notizie/viaggiart_rss.xml",
+  gastronomie: "canale_terraegusto/notizie/terraegusto_rss.xml", sport: "sito/notizie/sport/sport_rss.xml", calcio: "sito/notizie/sport/calcio/calcio_rss.xml",
+  sante: "canale_saluteebenessere/notizie/saluteebenessere_rss.xml", lifestyle: "canale_lifestyle/notizie/lifestyle_rss.xml", moteurs: "canale_motori/notizie/motori_rss.xml",
+  rome: "lazio/notizie/lazio_rss.xml", milan: "lombardia/notizie/lombardia_rss.xml", naples: "campania/notizie/campania_rss.xml", toscane: "toscana/notizie/toscana_rss.xml",
+};
+const unxml = (t: string) => t.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " ")
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+  .replace(/\s+/g, " ").trim();
+const tag = (x: string, n: string) => { const m = x.match(new RegExp("<" + n + "[^>]*>([\\s\\S]*?)</" + n + ">", "i")); return m ? unxml(m[1]) : ""; };
+async function feed(theme: string) {
+  const path = NEWS_FEEDS[theme]; if (!path) return [];
+  try {
+    const r = await fetch(ANSA + path, { headers: { "user-agent": "Mozilla/5.0 (compatible; ItalianoPassoPasso/1.0; +https://github.com/gab728/Italiano-passo-passo)", accept: "application/rss+xml, application/xml, text/xml" }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) { console.error("ansa", theme, r.status); return []; }
+    const xml = await r.text();
+    const items = xml.split(/<item[\s>]/i).slice(1).map((x) => x.split(/<\/item>/i)[0]);
+    const out = [];
+    for (const x of items.slice(0, 12)) {
+      const title = tag(x, "title").slice(0, 200), link = tag(x, "link").slice(0, 600), summary = tag(x, "description").slice(0, 600);
+      if (!title || !/^https?:\/\//.test(link)) continue;
+      const d = Date.parse(tag(x, "pubDate"));
+      out.push({ id: (await sha256(link)).slice(0, 16), theme, title, summary, link, date: Number.isFinite(d) ? new Date(d).toISOString() : null });
+    }
+    return out;
+  } catch (e) { console.error("ansa", theme, String(e).slice(0, 120)); return []; }
+}
+async function news(req: Request): Promise<Response> {
+  let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
+  const themes = (Array.isArray(b && b.themes) ? b.themes : []).map(String).filter((t: string) => NEWS_FEEDS[t]).slice(0, 8);
+  if (!themes.length) return json(req, { items: [] });
+  const lists = await Promise.all(themes.map(feed));
+  return json(req, { items: lists.flat(), themes });
+}
+
 // ---------- Routage ----------
 export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });
@@ -492,6 +532,7 @@ export async function handle(req: Request): Promise<Response> {
     if (route === "admin") return await admin(req, u);
     if (route === "stt") return await stt(req, u);
     if (route === "tts") return await tts(req, u);
+    if (route === "news") return await news(req);
     return fail(req, 404, "input", "Adresse inconnue.");
   } catch (e) {
     console.error(e);

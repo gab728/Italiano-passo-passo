@@ -461,6 +461,48 @@ const MOCKS = `
   ok(/habite à Paris/.test(await a.textContent(".mem")), "le compte montre ce que les personnages savent de toi");
   await a.evaluate(() => home());
 
+  console.log("21. Leçons d'actualité");
+  await a.evaluate(() => { S.nth = []; S.nw = {}; save(); try { localStorage.removeItem("ipp-news-feed"); localStorage.removeItem("ipp-news-docs"); } catch (e) {} home(); });
+  await a.waitForSelector(".nw-card button:has-text('Choisir mes thèmes')");
+  ok(true, "carte « La notizia del giorno » sur l'accueil");
+  await a.click(".nw-card button:has-text('Choisir mes thèmes')");
+  await a.click(".chip-t:has-text('Économie')"); await a.click(".chip-t:has-text('Voyages')");
+  ok(await a.evaluate(() => S.nth.join() === "economie,voyages"), "thèmes choisis dans l'app et enregistrés");
+  await a.click("button:has-text('Voir les nouvelles')"); await a.waitForSelector(".nw-row");
+  const rows = await a.$$eval(".nw-row b", (l) => l.map((x) => x.textContent));
+  ok(rows.length === 6 && /^economia : Roma, nuova linea del tram n\.1 & altro$/.test(rows[0]) && /^viaggiart/.test(rows[1]), "dépêches par thème, en alternance, texte décodé (" + rows[0] + ")");
+  await a.click(".nw-row >> nth=0"); await a.waitForSelector(".nw-art", { timeout: 15000 });
+  s = await st();
+  ok(s.news.length === 1 && /^n-[0-9a-f]{16}-(a2|b1)$/.test(s.news[0]), "notizia écrite par Claude et partagée dans la base (" + s.news[0] + ")");
+  ok((await a.$$eval(".nw-art .tw", (l) => l.length)) > 10 && (await a.$$eval(".nw-kw li", (l) => l.length)) === 8 && await a.isVisible(".nw-struct"), "article aux mots touchables, 8 mots-clés, structure à retenir");
+  await a.click(".nw-art .tw >> nth=1"); await a.waitForSelector(".wsheet"); ok(true, "toucher un mot de l'article ouvre sa traduction"); await a.click(".ws-x");
+  await a.click("button:has-text('Afficher la traduction')"); ok(await a.isVisible(".nw-fr"), "traduction de l'article à la demande");
+  await a.click(".nw-kw li .wt-add >> nth=0"); ok(await a.evaluate(() => { const o = words().find((w) => w.it === "il Comune"); return !!o && inNb(o.key); }), "mot-clé ajouté au carnet");
+  const plans = await a.evaluate(() => { const d = JSON.parse(localStorage.getItem("ipp-news-docs")); const doc = Object.values(d)[0]; return ["facile", "moyen", "difficile"].map((k) => NEWS.plan(doc, k).map((x) => x.t).join(",")); });
+  ok(!/order/.test(plans[1]) && /dictation/.test(plans[1]) && /transform/.test(plans[1]) && /summary/.test(plans[2]) && /opinion/.test(plans[2]) && !/word/.test(plans[2]), "trois niveaux, de plus en plus d'écriture (" + plans.map((p) => p.split(",").length).join(" / ") + " exercices)");
+  ok((await a.evaluate(() => [NEWS.judge("il tram collega la stazione al centro", "Il tram collega la stazione con il centro|Il tram collega la stazione al centro."), NEWS.judge("Il Comune, ha presentato una linea", "Il Comune ha presentato una linea."), NEWS.judge("i lavori cominciano a genaio", "I lavori cominciano a gennaio.")].join())) === "exact,exact,typo", "correction locale des phrases : variantes, ponctuation, petite faute");
+  await a.click(".nw-diff-b:has-text('Difficile')"); await a.click("button:has-text('Commencer les exercices')");
+  let kinds = [];
+  for (let k = 0; k < 14; k++) {
+    await a.waitForTimeout(250); if (await a.$(".end")) break;
+    kinds.push(await a.textContent(".kind"));
+    const inp = await a.$(".nw-field input, .nw-field textarea");
+    await inp.fill(k === 0 ? "Il tram sbagliato" : "Il Comune ha presentato una nuova linea del tram per il centro.");
+    await a.click(".actionbar .btn.primary, .nw-field .btn.primary");
+    await a.waitForSelector(".fb", { timeout: 8000 });
+    if (k === 0) ok(/collegare/.test(await a.textContent(".fb")) && await a.isVisible(".fb .nw-fix"), "réponse fausse : corrigée par Claude, avec la règle et la bonne version");
+    await a.click(".fb .btn.primary");
+  }
+  await a.waitForSelector(".end", { timeout: 8000 });
+  ok(kinds.some((k) => /Résume/.test(k)) && kinds.some((k) => /avis/.test(k)) && kinds.some((k) => /Dictée/.test(k)), "niveau difficile : dictée, résumé et avis rédigés (" + kinds.length + " exercices)");
+  ok(await a.evaluate(() => { const v = Object.values(S.nw); return v.length === 1 && v[0].diff === "difficile" && v[0].sc > 0; }), "résultat enregistré");
+  await a.evaluate(() => NEWS.hub()); await a.waitForSelector(".nw-row.done");
+  ok(/Lue/.test(await a.textContent(".nw-row.done")), "la notizia faite est marquée dans la liste");
+  const before = (await st()).claude.length;
+  await a.evaluate(() => { localStorage.removeItem("ipp-news-docs"); }); await a.click(".nw-row >> nth=0"); await a.waitForSelector(".nw-art", { timeout: 10000 });
+  ok((await st()).claude.length === before, "notizia déjà écrite : relue depuis la base, sans rappeler Claude");
+  await a.evaluate(() => home());
+
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await a.screenshot({ path: "tests/shot-account.png", fullPage: false });
   await br.close();

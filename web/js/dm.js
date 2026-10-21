@@ -353,7 +353,7 @@ function wordSheet(word, sentence) {
   const old = document.querySelector(".wsheet"); if (old) old.remove();
   const sh = el("div", "wsheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Traduction de " + word);
   const close = () => { sh.classList.remove("in"); setTimeout(() => sh.remove(), 180); document.removeEventListener("pointerdown", outside, true); };
-  const outside = (e) => { if (!sh.contains(e.target) && !(e.target.closest && e.target.closest(".bub .tw"))) close(); };
+  const outside = (e) => { if (!sh.contains(e.target) && !(e.target.closest && e.target.closest(".bub .tw, .tapit .tw"))) close(); };
   const top = el("div", "ws-top"), w = el("b", "ws-word"); w.textContent = word;
   const x = el("button", "icon-btn ws-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; x.onclick = close;
   top.append(w, x);
@@ -390,11 +390,11 @@ function wordSheet(word, sentence) {
 }
 // Toucher un mot ; ou sélectionner plusieurs mots (appui long), puis toucher « Traduire ».
 document.addEventListener("click", (e) => {
-  const w = e.target.closest && e.target.closest(".bub.it .tw"); if (!w) return;
+  const w = e.target.closest && e.target.closest(".bub.it .tw, .tapit .tw"); if (!w) return;
   const sel = window.getSelection && window.getSelection(); if (sel && String(sel).trim().length > w.textContent.length) return;
-  wordSheet(w.textContent, w.closest(".bub").textContent);
+  wordSheet(w.textContent, (w.closest(".bub, .nw-p") || w.parentNode).textContent);
 });
-document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".bub.it .tw")) { e.preventDefault(); e.target.click(); } });
+document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".bub.it .tw, .tapit .tw")) { e.preventDefault(); e.target.click(); } });
 let selT = 0;
 document.addEventListener("selectionchange", () => {
   clearTimeout(selT);
@@ -402,7 +402,7 @@ document.addEventListener("selectionchange", () => {
     const sel = window.getSelection(), t = sel ? String(sel).replace(/\s+/g, " ").trim() : "";
     let pill = document.querySelector(".sel-pill");
     const node = sel && sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
-    const bub = node && node.closest && node.closest(".bub.it");
+    const bub = node && node.closest && node.closest(".bub.it, .tapit");
     if (!t || !bub || t.length > 80 || !/\p{L}/u.test(t)) { if (pill) pill.remove(); return; }
     if (!pill) { pill = el("button", "sel-pill"); pill.type = "button"; document.body.append(pill); }
     pill.textContent = "Traduire « " + (t.length > 28 ? t.slice(0, 26) + "…" : t) + " »";

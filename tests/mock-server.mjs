@@ -23,6 +23,11 @@ globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u === "https://api.anthropic.com/v1/models" || u === "https://api.openai.com/v1/models") return new Response(JSON.stringify({ data: [] }), { headers: { "content-type": "application/json" } });
   if (u.startsWith("https://api.anthropic.com/")) return fakeClaude(JSON.parse(init.body));
+  if (u.startsWith("https://www.ansa.it/")) {
+    state.ansa = (state.ansa || 0) + 1; const th = u.split("/").pop().replace("_rss.xml", "");
+    const item = (k, d) => `<item><title><![CDATA[${th} : Roma, nuova linea del tram n.${k} &amp; altro]]></title><link>https://www.ansa.it/${th}/${k}.html</link><description>&lt;p&gt;Il Comune di Roma ha presentato una nuova linea del tram per il centro (${th} ${k}).&lt;/p&gt;</description><pubDate>${new Date(Date.now() - d * 3600e3).toUTCString()}</pubDate></item>`;
+    return new Response(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>ANSA ${th}</title><image><title>ANSA</title></image>${item(1, 1)}${item(2, 3)}${item(3, 5)}</channel></rss>`, { headers: { "content-type": "application/rss+xml" } });
+  }
   if (u.startsWith("https://api.openai.com/v1/audio/speech")) {
     const b = JSON.parse(init.body); state.tts.push({ voice: b.voice, input: b.input, speed: b.speed, instructions: (b.instructions || "").slice(0, 40) });
     if (process.env.TTS_FAIL) return new Response("{}", { status: 500 });
@@ -35,7 +40,21 @@ function fakeClaude(b) {
   state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens, thinking: b.thinking, temperature: b.temperature });
   const last = b.messages[b.messages.length - 1].content, sys = b.system || "";
   let text;
-  if (/PREMIÈRE PARTIE/.test(last)) text = JSON.stringify({ title: "Parler de son travail", topic: "le vocabulaire de la finance", lessons: ["<h2>Il lavoro</h2><p>Lavoro <em>in</em> una banca.</p>", "<h2>Le parole</h2><div class=\"ex\">Faccio il consulente.<span>Je suis consultant.</span></div>"], vocab: Array.from({ length: 14 }, (_, i) => ["la parola " + i, "le mot " + i]) });
+  if (/^Tu prépares une leçon d'italien à partir d'une dépêche/.test(last)) text = JSON.stringify({ title: "Roma, un nuovo tram per il centro", title_fr: "Rome, un nouveau tram pour le centre",
+    text: ["Il Comune di Roma ha presentato una nuova linea del tram.", "Il tram collega la stazione Termini con il centro storico.", "I lavori cominciano a gennaio."],
+    text_fr: ["La mairie de Rome a présenté une nouvelle ligne de tram.", "Le tram relie la gare Termini au centre historique.", "Les travaux commencent en janvier."],
+    keywords: [["il Comune", "la mairie", "nom masculin"], ["la linea", "la ligne", ""], ["collegare", "relier", "verbe en -are"], ["il centro storico", "le centre historique", ""], ["i lavori", "les travaux", "pluriel"], ["cominciare", "commencer", ""], ["la stazione", "la gare", ""], ["nuovo", "nouveau", "adjectif"]],
+    structure: { name: "Le passé composé avec avere", explain: "On forme le passé composé avec avere et le participe passé.", examples: [["Il Comune ha presentato un progetto.", "La mairie a présenté un projet."], ["Abbiamo visto il tram.", "Nous avons vu le tram."]] },
+    ex: { order: ["Il tram collega la stazione con il centro", "I lavori cominciano a gennaio", "Roma ha una nuova linea"],
+      translate_easy: [["La gare est grande.", "La stazione è grande."], ["Le tram est nouveau.", "Il tram è nuovo."], ["Les travaux commencent.", "I lavori cominciano."]],
+      translate: [["La mairie a présenté une ligne.", "Il Comune ha presentato una linea."], ["Le tram relie la gare au centre.", "Il tram collega la stazione con il centro|Il tram collega la stazione al centro"], ["Les travaux commencent en janvier.", "I lavori cominciano a gennaio."], ["C'est une nouvelle ligne.", "È una nuova linea."]],
+      translate_hard: [["La mairie a présenté une ligne qui relie la gare au centre.", "Il Comune ha presentato una linea che collega la stazione con il centro."], ["Je pense que le tram est utile.", "Penso che il tram sia utile."], ["Les travaux, qui commencent en janvier, dureront un an.", "I lavori, che cominciano a gennaio, dureranno un anno."]],
+      dictation: ["Il tram collega la stazione Termini con il centro storico.", "I lavori cominciano a gennaio.", "Il Comune ha presentato una nuova linea."],
+      transform: [["Mets au passé composé", "Il Comune presenta una linea.", "Il Comune ha presentato una linea."], ["Mets à la forme négative", "Il tram è nuovo.", "Il tram non è nuovo."], ["Mets au pluriel", "La linea è nuova.", "Le linee sono nuove."], ["Mets au futur", "I lavori cominciano.", "I lavori cominceranno."]],
+      questions: [["Che cosa collega il tram?", "Que relie le tram ?", "Il tram collega la stazione Termini con il centro storico."], ["Quando cominciano i lavori?", "Quand commencent les travaux ?", "I lavori cominciano a gennaio."]],
+      opinion: ["Secondo te, il tram è una buona idea per Roma?", "D'après toi, le tram est-il une bonne idée pour Rome ?"] } });
+  else if (/^Tu corriges un exercice d'italien/.test(last)) { const g = (last.match(/Réponse de l'élève : (.*)/) || [])[1] || ""; text = /sbagliat/.test(g) ? '{"ok":false,"presque":false,"corrige":"Il tram collega la stazione con il centro.","explication":"Le verbe collegare est à la 3e personne : collega."}' : '{"ok":true,"presque":false,"corrige":"","explication":"Très bien, la phrase est naturelle."}'; }
+  else if (/PREMIÈRE PARTIE/.test(last)) text = JSON.stringify({ title: "Parler de son travail", topic: "le vocabulaire de la finance", lessons: ["<h2>Il lavoro</h2><p>Lavoro <em>in</em> una banca.</p>", "<h2>Le parole</h2><div class=\"ex\">Faccio il consulente.<span>Je suis consultant.</span></div>"], vocab: Array.from({ length: 14 }, (_, i) => ["la parola " + i, "le mot " + i]) });
   else if (/EXERCICES de cette leçon/.test(last)) text = JSON.stringify({ ex: Array.from({ length: 18 }, (_, i) => i % 3 === 0 ? ["m", "Io ___ in banca.", ["lavoro", "lavori", "lavora", "lavoriamo"], "Première personne."] : i % 3 === 1 ? ["f", "Tu ___ (lavorare) molto.", "lavori", "Deuxième personne."] : ["o", "Je travaille à Milan.", "Lavoro a Milano."]) });
   else if (/DIALOGUE et la mise en situation/.test(last)) text = JSON.stringify({ dlg: Array.from({ length: 6 }, (_, i) => [i % 2 ? "Luca" : "Anna", "Che lavoro fai? " + i, "Tu fais quoi comme travail ? " + i]), dq: Array.from({ length: 3 }, () => ["m", "Que fait Anna ?", ["Elle travaille", "Elle dort", "Elle mange", "Elle part"], "Explication."]), scenario: { title: "Au bureau", role: "un collega milanese", goal: "Parler de ton travail.", focus: "le présent", open: "Ciao! Che lavoro fai?" } });
   else if (/relecteur expert/.test(last)) text = JSON.stringify({ ex: [], dq: [], vocab: [], dlg: [], lessons: [] });
@@ -112,7 +131,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
@@ -208,6 +227,16 @@ createServer(async (req, res) => {
       if (table === "progress") {
         if (req.method === "GET") { let list = [...state.progress.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid); return rows(res, req, url, list); }
         if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); const arr = Array.isArray(b) ? b : [b]; for (const r of arr) { if (!w.service && r.user_id !== w.uid) return send(res, 403, { code: "42501", message: "new row violates row-level security policy" }); state.progress.set(r.user_id, { ...r, updated_at: new Date().toISOString() }); } return send(res, 201, (req.headers.prefer || "").includes("return=representation") ? arr : undefined); }
+      }
+      if (table === "news_lessons") {
+        state.news = state.news || new Map();
+        if (req.method === "GET") { if (!member(w)) return rows(res, req, url, []); return rows(res, req, url, [...state.news.values()].filter(match)); }
+        if (req.method === "POST") {
+          const b = JSON.parse((await readBody(req)).toString()); const r = Array.isArray(b) ? b[0] : b;
+          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1)$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
+          if (state.news.has(r.id)) return send(res, 409, { code: "23505", message: "duplicate key" });
+          state.news.set(r.id, r); return send(res, 201);
+        }
       }
       if (table === "lessons") {
         if (req.method === "GET") { let list = [...state.lessons.values()].filter(match); if (!w.service) list = list.filter((r) => r.shared || r.owner === w.uid); return rows(res, req, url, list); }
