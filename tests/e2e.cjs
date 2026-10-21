@@ -376,6 +376,22 @@ const MOCKS = `
   await a.unroute("**/functions/v1/api/claude");
   await a.evaluate(() => { window.__stallMs = 0; dmLeave(); });
 
+  console.log("17b. Réponse vide de Claude");
+  s = await st(); const lc = s.claude[s.claude.length - 1];
+  ok(lc.thinking && lc.thinking.type === "disabled" && lc.temperature === undefined, "réflexion désactivée, pas de temperature (modèles 5.5)");
+  await a.evaluate(() => openPersona("marco")); await a.waitForSelector("#dm-input");
+  await post("/__empty", { n: 1 });
+  await a.fill("#dm-input", "Un cappuccino, grazie"); await a.press("#dm-input", "Enter");
+  await a.waitForFunction(() => document.querySelectorAll(".msg.ai .bub.it").length >= 2 && !DM.busy, null, { timeout: 15000 });
+  ok(!(await a.$(".dm-err")), "réponse vide : relancée toute seule, la réponse arrive");
+  await post("/__empty", { n: 2 });
+  await a.fill("#dm-input", "E un cornetto"); await a.press("#dm-input", "Enter");
+  await a.waitForSelector(".dm-err button:has-text('Réessayer')", { timeout: 15000 });
+  await a.click(".dm-err button:has-text('Réessayer')");
+  await a.waitForFunction(() => document.querySelectorAll(".msg.ai .bub.it").length >= 3 && !DM.busy, null, { timeout: 15000 });
+  ok(true, "deux réponses vides de suite : bouton Réessayer, puis la réponse");
+  await a.evaluate(() => dmLeave());
+
   console.log("18. Quiz : réponse libre, propositions en cas de besoin");
   const jz = await a.evaluate(() => [QZ.judge("casa", ["la casa"]), QZ.judge("citta", ["città"]), QZ.judge("boire", ["prendre / boire"]), QZ.judge("bellissmo", ["bellissimo"]), QZ.judge("maison", ["la maison"]), QZ.judge("cane", ["gatto"])]);
   ok(jz.join() === "exact,accent,exact,typo,exact,no", "correction souple : article, accents, variantes, petite faute (" + jz.join() + ")");

@@ -82,7 +82,7 @@
     opts = opts || {};
     for (let attempt = 0; ; attempt++) {
       try { return await sampleOnce(input, opts); }
-      catch (e) { if (!(e && e.code === "stalled" && !(e.text) && attempt === 0)) throw e; }
+      catch (e) { if (!(e && (e.code === "stalled" || e.code === "empty") && !(e.text) && attempt === 0)) throw e; }
     }
   }
   async function sampleOnce(input, opts) {

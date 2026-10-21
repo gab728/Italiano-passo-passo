@@ -32,7 +32,7 @@ globalThis.fetch = async (url, init) => {
   return realFetch(url, init);
 };
 function fakeClaude(b) {
-  state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens });
+  state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens, thinking: b.thinking, temperature: b.temperature });
   const last = b.messages[b.messages.length - 1].content, sys = b.system || "";
   let text;
   if (/PREMIÈRE PARTIE/.test(last)) text = JSON.stringify({ title: "Parler de son travail", topic: "le vocabulaire de la finance", lessons: ["<h2>Il lavoro</h2><p>Lavoro <em>in</em> una banca.</p>", "<h2>Le parole</h2><div class=\"ex\">Faccio il consulente.<span>Je suis consultant.</span></div>"], vocab: Array.from({ length: 14 }, (_, i) => ["la parola " + i, "le mot " + i]) });
@@ -46,13 +46,15 @@ function fakeClaude(b) {
   else if (/^Tu joues/.test(sys)) text = "IT: Certo! Il cornetto alla crema o vuoto?";
   else text = "Benissimo! E tu, che cosa ne pensi?";
   const ev = (o) => "event: " + o.type + "\ndata: " + JSON.stringify(o) + "\n\n";
-  const parts = text.match(/[\s\S]{1,18}/g);
+  // Réponse sans texte simulée (réflexion qui épuise max_tokens).
+  if (state.emptyNext > 0) { state.emptyNext--; text = ""; }
+  const parts = text ? text.match(/[\s\S]{1,18}/g) : [];
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(c) {
       c.enqueue(enc.encode(ev({ type: "message_start", message: { usage: { input_tokens: 120 } } })));
       for (const p of parts) { await new Promise((r) => setTimeout(r, 15)); c.enqueue(enc.encode(ev({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: p } }))); }
-      c.enqueue(enc.encode(ev({ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 40 } })));
+      c.enqueue(enc.encode(ev({ type: "message_delta", delta: { stop_reason: text ? "end_turn" : "max_tokens" }, usage: { output_tokens: 40 } })));
       c.enqueue(enc.encode(ev({ type: "message_stop" })));
       c.close();
     },
@@ -108,7 +110,8 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens })), stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature })), stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }
 
     // Fonctions

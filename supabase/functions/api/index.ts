@@ -165,19 +165,29 @@ async function claude(req: Request, u: User): Promise<Response> {
 
   const payload: Json = { model, max_tokens: maxTok, messages, stream: true };
   if (system) payload.system = system;
-  if (typeof b.temperature === "number") payload.temperature = Math.min(Math.max(b.temperature, 0), 1);
+  // Les modèles 5.5 réfléchissent d'eux-mêmes avant d'écrire, et cette réflexion compte dans max_tokens :
+  // avec un petit plafond, la réponse pouvait s'arrêter avant le moindre mot. On écrit directement (plus rapide aussi).
+  // THINKING=adaptive dans les secrets remet la réflexion. Les modèles 5.5 refusent temperature : on ne l'envoie plus.
+  if (env("THINKING", "disabled") === "disabled") payload.thinking = { type: "disabled" };
   // Claude doit commencer à répondre en moins de 45 secondes, et ne jamais rester muet plus de 40 secondes ensuite.
   const ac = new AbortController();
   req.signal.addEventListener("abort", () => ac.abort(), { once: true });
   let wait = setTimeout(() => ac.abort(), 45000);
   let up: Response;
+  const ask = () => fetch(ANTHROPIC, {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: ac.signal,
+  });
   try {
-    up = await fetch(ANTHROPIC, {
-      method: "POST",
-      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: ac.signal,
-    });
+    up = await ask();
+    // Modèle qui n'accepte pas ce réglage : on redemande sans.
+    if (up.status === 400 && payload.thinking) {
+      const t = await up.text().catch(() => "");
+      if (/thinking/i.test(t)) { console.error("thinking refusé", t.slice(0, 200)); delete payload.thinking; up = await ask(); }
+      else up = new Response(t, { status: 400 });
+    }
     clearTimeout(wait);
   } catch (e) {
     clearTimeout(wait);
@@ -196,6 +206,7 @@ async function claude(req: Request, u: User): Promise<Response> {
   const wantStream = b.stream !== false;
   const enc = new TextEncoder(), dec = new TextDecoder();
   let inTok = 0, outTok = 0, stop = "", text = "", errMsg = "";
+  const kinds = new Set<string>();
   const reader = up.body.getReader();
   async function* deltas(): AsyncGenerator<string> {
     let buf = "";
@@ -214,12 +225,15 @@ async function claude(req: Request, u: User): Promise<Response> {
         else if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") { text += ev.delta.text; yield ev.delta.text; }
         else if (ev.type === "message_delta") { stop = ev.delta?.stop_reason || stop; outTok = ev.usage?.output_tokens || outTok; }
         else if (ev.type === "error") errMsg = ev.error?.message || "erreur";
+        else if (ev.type === "content_block_start" && ev.content_block?.type) kinds.add(ev.content_block.type);
       }
     }
   }
   // Fin d'appel : on remplace la réservation par le texte réellement produit (s'il est connu ; sinon la réservation reste comptée).
   let settled = false;
-  const finish = () => { if (settled) return; settled = true; return addUsage(u.id, 0, inTok, stop ? outTok - maxTok : 0, 0); };
+  // Réponse sans texte : on note pourquoi (raison d'arrêt, types de contenu), sans rien de la conversation.
+  const noteEmpty = () => { if (!text.trim()) console.error("claude vide", JSON.stringify({ model, stop, outTok, inTok, kinds: [...kinds], err: errMsg.slice(0, 120) })); };
+  const finish = () => { if (settled) return; settled = true; noteEmpty(); return addUsage(u.id, 0, inTok, stop ? outTok - maxTok : 0, 0); };
   const truncated = () => stop === "max_tokens" || !stop || !!errMsg;
 
   if (!wantStream) {
@@ -233,6 +247,8 @@ async function claude(req: Request, u: User): Promise<Response> {
       const send = (o: unknown) => ctrl.enqueue(enc.encode("data: " + JSON.stringify(o) + "\n\n"));
       try { for await (const d of deltas()) send({ d }); } catch { errMsg = errMsg || "flux interrompu"; }
       if (errMsg) send({ error: { code: "unavailable", message: "Claude s'est interrompu. Réessaie." } });
+      else if (stop === "refusal" && !text.trim()) send({ error: { code: "refusal", message: "Claude a préféré ne pas répondre à ce message. Reformule-le autrement." } });
+      else if (!text.trim()) send({ error: { code: "empty", message: "Réponse vide." } });
       else send({ done: true, truncated: truncated() });
       ctrl.close();
       await finish();

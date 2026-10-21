@@ -16,6 +16,7 @@
     aborted: "Demande annulée.",
     stalled: "Claude ne répond pas : la connexion a peut-être sauté. Réessaie.",
     empty: "Claude a renvoyé une réponse vide. Réessaie.",
+    refusal: "Claude a préféré ne pas répondre à ce message. Reformule-le autrement.",
     server: "Erreur du serveur. Réessaie dans un moment.",
     not_invited: "Ce compte n'a pas été invité : l'assistant lui est fermé. Demande une invitation au propriétaire de l'app.",
     no_owner: "Le serveur ne connaît pas encore le propriétaire de l'app : il faut ajouter le secret OWNER_EMAIL dans Supabase.",
