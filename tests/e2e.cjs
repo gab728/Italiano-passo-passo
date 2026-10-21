@@ -91,7 +91,7 @@ const MOCKS = `
   console.log("3. Inviter un ami");
   await a.click("[aria-label='Quitter la leçon']");
   await a.waitForSelector(".feed-hd");
-  await a.click(".tabbar [data-tab=profile]");
+  await a.evaluate(() => UI.go("profile"));
   await a.click("[aria-label='Réglages du compte']");
   await a.waitForSelector("text=Membres : suivre et gérer");
   ok(await a.isVisible("text=Reprendre ma progression de l'app Claude"), "section d'import visible");
@@ -116,7 +116,7 @@ const MOCKS = `
   await b.fill("#gate-code", code); await b.click("button:has-text('Continuer')");
   await b.fill("#gate-newpass", "lucapass99"); await b.click("text=Enregistrer et entrer");
   await b.waitForSelector(".feed-hd", { timeout: 10000 });
-  await b.click(".tabbar [data-tab=profile]"); ok(await b.isVisible("text=Inviter un ami") && !(await b.isVisible("text=Gérer les membres")), "l'ami peut inviter mais pas gérer les membres");
+  await b.evaluate(() => UI.go("profile")); ok(await b.isVisible("text=Inviter un ami") && !(await b.isVisible("text=Gérer les membres")), "l'ami peut inviter mais pas gérer les membres");
   await b.click("[aria-label='Réglages du compte']"); await b.waitForSelector("text=Mot de passe", { timeout: 8000 }).catch(() => null);
   await b.waitForTimeout(600);
   ok(!(await b.isVisible("text=Membres : suivre et gérer")), "l'ami n'a pas la gestion des membres");
@@ -180,7 +180,7 @@ const MOCKS = `
 
   console.log("8. Import de la progression de l'app Claude");
   await a.goto(O + "/"); await a.waitForSelector(".feed-hd");
-  await a.click(".tabbar [data-tab=profile]"); await a.click("[aria-label='Réglages du compte']");
+  await a.evaluate(() => UI.go("profile")); await a.click("[aria-label='Réglages du compte']");
   await a.waitForSelector("#import-text");
   await a.fill("#import-text", JSON.stringify({ ipp: 1, s: { "L.it-u01-l1": { done: true, best: 90 }, "L.it-u01-l2": { done: true, best: 80 }, v: { "L.it-u01-l1-0": 2 }, nb: { "L.it-u01-l1-0": 1 }, t: 1 } }));
   await a.click("button:has-text('Importer')");
@@ -230,7 +230,7 @@ const MOCKS = `
 
   console.log("11. Déconnexion : les données locales sont effacées");
   await b.goto(O + "/"); await b.waitForSelector(".feed-hd");
-  await b.click(".tabbar [data-tab=profile]"); await b.click("[aria-label='Réglages du compte']");
+  await b.evaluate(() => UI.go("profile")); await b.click("[aria-label='Réglages du compte']");
   await b.click("text=Se déconnecter de cet appareil");
   await b.waitForSelector(".g-hello", { timeout: 8000 });
   const left = await b.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("italiano")));
@@ -462,6 +462,8 @@ const MOCKS = `
   await a.evaluate(() => home());
 
   console.log("21. Leçons d'actualité");
+  await a.evaluate(() => home()); await a.click(".feed-hd .who"); await a.waitForSelector(".prof-top");
+  ok(true, "le profil s'ouvre en touchant son avatar en haut du Fil");
   await a.evaluate(() => { S.nth = []; S.nw = {}; save(); try { localStorage.removeItem("ipp-news-feed"); localStorage.removeItem("ipp-news-docs"); } catch (e) {} home(); });
   await a.waitForSelector(".nw-card button:has-text('Choisir mes thèmes')");
   ok(true, "carte « La notizia del giorno » sur l'accueil");
@@ -503,7 +505,9 @@ const MOCKS = `
   ok(kinds.some((k) => /Résume/.test(k)) && kinds.some((k) => /avis/.test(k)) && kinds.some((k) => /Dictée/.test(k)), "niveau difficile : dictée, résumé et avis rédigés (" + kinds.length + " exercices)");
   ok(await a.evaluate(() => { const v = Object.values(S.nw); return v.length === 1 && v[0].diff === "difficile" && v[0].sc > 0; }), "résultat enregistré");
   await a.evaluate(() => NEWS.hub()); await a.waitForSelector(".nw-row.done");
-  ok(/Lue/.test(await a.textContent(".nw-row.done")) && await a.isVisible(".seg[aria-selected=true]:has-text('Actualités')"), "la liste est dans l'onglet Leçons, la notizia faite y est marquée");
+  ok(/Lue/.test(await a.textContent(".nw-row.done")) && await a.isVisible(".tabbar [data-tab=news].on"), "la liste a son propre onglet « Actu » dans la barre du bas, la notizia faite y est marquée");
+  ok((await a.$$eval(".tabbar button", (l) => l.map((b) => b.dataset.tab).join())) === "feed,lessons,talk,news,words", "barre du bas : Fil, Leçons, Parler, Actu, Mots");
+  await a.click(".tabbar [data-tab=lessons]"); ok((await a.$$eval(".seg", (l) => l.map((x) => x.textContent).join())) === "Programme,Historique", "onglet Leçons : Programme et Historique");
   await a.click(".seg:has-text('Historique')"); await a.waitForSelector(".hist-row");
   const hist = await a.$$eval(".hist-row", (l) => l.map((x) => x.className.replace("hist-row ", "") + "|" + x.textContent));
   ok(/^k-news\|.*Roma, un nuovo tram.*%/.test(hist[0]) && hist.some((h) => /^k-conv/.test(h)) && await a.isVisible(".hist-day"), "historique : l'actu avec son score en tête, les conversations aussi, rangés par jour");

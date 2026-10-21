@@ -591,3 +591,4 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 .nw-log-r.ok .nw-log-a { color: var(--ok); }
 .nw-log-r.ko .nw-log-a { color: var(--ko); }
 .nw-log-fix { font-family: var(--it); font-size: 17px; }
+button.who { border: 0; background: none; padding: 0; margin: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; border-radius: 999px; }

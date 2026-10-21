@@ -11,6 +11,7 @@
     lessons: svg('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20"/>'),
     talk: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>', 2),
     words: svg('<rect x="3" y="7" width="13" height="13" rx="2.5"/><path d="M8 4h10.5A2.5 2.5 0 0 1 21 6.5V17"/>'),
+    news: svg('<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/>'),
     profile: svg('<circle cx="12" cy="8.5" r="4"/><path d="M4 20.5c1.6-3.6 4.6-5.5 8-5.5s6.4 1.9 8 5.5"/>'),
     close: svg('<path d="M6 6l12 12M18 6 6 18"/>', 2), prev: svg('<path d="M15 5l-7 7 7 7"/>', 2),
     book: svg('<path d="M6 3.5h12v17l-6-4-6 4z"/>'), table: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>'),
@@ -28,10 +29,11 @@
 
   /* ---------- Barre d'onglets ---------- */
   let TAB = "feed";
-  const SCREENS = { feed: () => home(), lessons: () => lessonsTab(), talk: () => talkHub(), words: () => wordsTab(), profile: () => profileTab() };
-  const LABEL = { feed: "Fil", lessons: "Leçons", talk: "Parler", words: "Mots", profile: "Profil" };
+  // Le profil s'ouvre en touchant ton avatar en haut du Fil ; sa place dans la barre va aux actualités.
+  const SCREENS = { feed: () => home(), lessons: () => lessonsTab(), talk: () => talkHub(), news: () => newsTab(), words: () => wordsTab(), profile: () => profileTab() };
+  const LABEL = { feed: "Fil", lessons: "Leçons", talk: "Parler", news: "Actu", words: "Mots", profile: "Profil" };
   const bar = el("nav", "tabbar"); bar.setAttribute("aria-label", "Navigation principale");
-  ["feed", "lessons", "talk", "words", "profile"].forEach((id) => {
+  ["feed", "lessons", "talk", "news", "words"].forEach((id) => {
     const b = el("button", id === "talk" ? "tab-talk" : ""); b.type = "button"; b.dataset.tab = id;
     b.innerHTML = IC[id] + (id === "talk" ? "" : "<span></span>"); if (id !== "talk") b.querySelector("span").textContent = LABEL[id]; else b.setAttribute("aria-label", "Parler");
     b.onclick = () => goTab(id); bar.append(b);
@@ -98,7 +100,7 @@
     screen("feed", "home"); if (pendingBase) { applyBase(pendingBase); pendingBase = null; }
     const ss = slots(), cu = current(), sk = streak();
     const hd = el("header", "feed-hd");
-    const who = el("div", "who"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || "Ciao !")); who.append(nm);
+    const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", "Mon profil"); who.onclick = () => goTab("profile"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || "Ciao !")); who.append(nm);
     const st = node('<span class="streak' + (sk ? " on" : "") + '">' + IC.flame + "<b></b></span>"); st.querySelector("b").textContent = sk; st.setAttribute("aria-label", "Série : " + sk + (sk > 1 ? " jours" : " jour") + " d'affilée"); st.title = st.getAttribute("aria-label");
     hd.append(who, st); root.append(hd);
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
@@ -189,20 +191,28 @@
   // Onglet Leçons : le programme, les leçons d'actualité, et l'historique de tout ce que tu as fait.
   function segs() {
     const sg = el("div", "segs"); sg.setAttribute("role", "tablist");
-    [["prog", "Programme"], ["news", "Actualités"], ["hist", "Historique"]].forEach(([k, n]) => {
-      if (k === "news" && typeof NEWS === "undefined") return;
+    [["prog", "Programme"], ["hist", "Historique"]].forEach(([k, n]) => {
       const b = el("button", "seg"); b.type = "button"; b.setAttribute("role", "tab"); b.textContent = n; b.setAttribute("aria-selected", String(LSEG === k));
       b.onclick = () => { LSEG = k; LEDIT = false; lessonsTab(); }; sg.append(b);
     });
     root.append(sg);
   }
+  /* ---------- Actu ---------- */
+  let NEDIT = false;
+  function newsTab() {
+    screen("news");
+    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Actu"), txt("span", "muted", "L'actualité italienne à ton niveau")); root.append(h);
+    if (typeof NEWS === "undefined") { root.append(txt("p", "fr", "Chargement…")); return; }
+    const host = el("div", "seg-body"); root.append(host);
+    NEWS.listInto(host, NEDIT, (edit) => news(edit)); NEDIT = false; sync();
+  }
+  function news(edit) { NEDIT = !!edit; goTab("news"); }
   function lessons(seg, edit) { LSEG = seg || "prog"; LEDIT = !!edit; goTab("lessons"); }
   function lessonsTab() {
     screen("lessons");
     const ss = slots(), cu = current(), doneN = ss.filter(isDone).length;
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : LSEG === "news" ? "L'actu à ton niveau" : "Tout ce que tu as fait")); root.append(h);
+    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : "Tout ce que tu as fait")); root.append(h);
     segs();
-    if (LSEG === "news" && typeof NEWS !== "undefined") { const host = el("div", "seg-body"); root.append(host); NEWS.listInto(host, LEDIT, (edit) => lessons("news", edit)); sync(); return; }
     if (LSEG === "hist" && typeof HIST !== "undefined") { const host = el("div", "seg-body hist"); root.append(host); HIST.renderInto(host); sync(); return; }
     const levels = (C().plan && C().plan.levels) || [];
     if (LV == null) LV = cu ? cu.li : 0;
@@ -435,6 +445,6 @@
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
   })();
-  window.UI = { setTab, sync, go: goTab, lessons };
+  window.UI = { setTab, sync, go: goTab, lessons, news };
   home();
 })();

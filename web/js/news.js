@@ -123,7 +123,7 @@ const NEWS = (() => {
     if (!its.length) { list.append(txt("p", "fr", "Aucune nouvelle pour ces thèmes en ce moment. Réessaie plus tard ou ajoute un thème.")); return; }
     its.forEach((it) => list.append(row(it)));
   }
-  function hub(editThemes) { if (window.UI && UI.lessons) return UI.lessons("news", !!editThemes); }
+  function hub(editThemes) { if (window.UI && UI.news) return UI.news(!!editThemes); }
   function row(it) {
     const done = (S.nw || {})[it.id];
     const b = el("button", "nw-row" + (done ? " done" : "")); b.type = "button";
@@ -135,7 +135,7 @@ const NEWS = (() => {
   const backList = () => (CUR && CUR.fromHist ? UI.lessons("hist") : hub());
   async function open(it, fromHist) {
     CUR = { it, fromHist: !!fromHist };
-    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Les notizie", backList); view = "news";
+    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + stage().name), txt("h2", null, it.title));
     const st = el("ul", "req"), mk = (t) => { const li = el("li"), a = txt("span", null, t), b = txt("span", "count", "à venir"); li.append(a, b); st.append(li); return b; };
     const s1 = mk("Lecture de la dépêche"), s2 = mk("Écriture de ta notizia et des exercices"), s3 = mk("Partage avec les autres membres");
@@ -152,7 +152,7 @@ const NEWS = (() => {
   }
   function article() {
     const { it, d } = CUR;
-    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Les notizie", backList); view = "news";
+    stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + ((STAGES.find((x) => x.id === d.level) || stage()).name)));
     body.append(txt("h2", "nw-title", d.title)); if (d.title_fr) body.append(txt("p", "muted nw-title-fr", d.title_fr));
     const src = el("p", "nw-src"); src.append(txt("span", null, "D'après une dépêche ANSA" + (it.date ? " · " + new Date(it.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
