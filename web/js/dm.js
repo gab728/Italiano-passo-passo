@@ -135,13 +135,13 @@ function dmOpen(cfg) {
     act.disabled = DM.busy && !DM.listening && !talk;
     wrap.classList.toggle("speaking", !!talk);
   };
-  inp.addEventListener("input", setAct);
-  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (inp.value.trim() && !DM.busy) dmSend(inp.value.trim(), false); } });
-  act.onclick = () => { if (DM.listening) { VO.stop(); return; } if (DM.speaking) { dmInterrupt(false); return; } if (inp.value.trim()) { if (!DM.busy) dmSend(inp.value.trim(), false); return; } dmListenOnce(); };
+  inp.addEventListener("input", () => { if (!inp.value.trim()) DM.fromVoice = false; setAct(); });
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (inp.value.trim() && !DM.busy) dmSend(inp.value.trim(), !!DM.fromVoice); } });
+  act.onclick = () => { if (DM.listening) { VO.stop(); return; } if (DM.speaking) { dmInterrupt(false); return; } if (inp.value.trim()) { if (!DM.busy) dmSend(inp.value.trim(), !!DM.fromVoice); return; } dmListenOnce(); };
   if (!VO.available()) act.dataset.nomic = "1";
   comp.append(lab, inp, act); wrap.append(sug, comp);
   root.append(wrap);
-  DM.ui = { log, inp, act, setAct, end, hands, car, sug };
+  DM.ui = { log, inp, act, setAct, end, hands, car, sug, wrap };
   setAct();
   const mem = memOf(DM);
   if (mem && mem.n) DM.firstAsk = DM.kind === "role"
@@ -161,7 +161,7 @@ function dmBubble(lines, opts) {
   if (it.length) {
     const b = el("div", "bub it"); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
     const acts = el("div", "msg-acts"), tr = el("button", null, "Traduire"), re = el("button", null, "Réécouter"); tr.type = re.type = "button";
-    re.onclick = () => dmSpeak(it);
+    re.onclick = () => { if (re.disabled) return; re.disabled = true; re.textContent = "Lecture…"; dmSpeak(it).finally(() => { re.disabled = false; re.textContent = "Réécouter"; }); };
     tr.onclick = async () => {
       tr.disabled = true; const t = el("p", "tr", "…"); out.append(t);
       try { const r = await AI("Traduis en français, naturellement, sans rien ajouter : " + b.textContent, { modelTier: "quick", cache: false, onText: ({ text }) => { t.textContent = text; } }); t.textContent = r.text.trim(); }
@@ -185,15 +185,20 @@ function dmQueue(A) {
     end: () => q.end(), done: q.done.then(() => dmSpeaking(A, false)),
   };
 }
+// Mêmes morceaux qu'à la première lecture : « Réécouter » rejoue l'audio déjà reçu, sans attendre.
+const dmRaw = (lines) => lines.map((l) => (l.lang.startsWith("fr") ? "FR: " : "IT: ") + l.t).join("\n");
 async function dmSpeak(lines) {
   const A = DM; if (!A) return;
-  const q = dmQueue(A); lines.forEach((l) => q.push(l.t, l.lang)); q.end(); await q.done;
+  const q = dmQueue(A); dmChunks(dmRaw(lines), true).forEach((c) => q.push(c.t, c.lang)); q.end(); await q.done;
 }
+// Réglages d'écoute : pause tolérée avant l'envoi en mains libres, et couper la parole à la voix (désactivé par défaut sur iPhone).
+const dmPause = () => ({ 1: 1500, 2: 2500, 3: 4000 })[(S.vx && S.vx.pause) || 2] || 2500;
+const dmBarge = () => (S.vx && typeof S.vx.barge === "boolean" ? S.vx.barge : !(S.vx && S.vx.nobarge) && !VO.isIOS());
 /* Pendant que le personnage parle : le bouton coupe la parole et, en mains libres, il suffit de parler pour l'interrompre. */
 async function dmSpeaking(A, on) {
   if (DM !== A || !!A.speaking === !!on) return;
   A.speaking = !!on; A.ui.setAct();
-  if (on && A.hands && !(S.vx && S.vx.nobarge)) { const u = await VO.watchVoice((base) => { if (DM === A && A.speaking) dmInterrupt(true, base); }); if (A.speaking && DM === A) A.unwatch = u; else u(); }
+  if (on && A.hands && dmBarge()) { const u = await VO.watchVoice((base) => { if (DM === A && A.speaking) dmInterrupt(true, base); }); if (A.speaking && DM === A) A.unwatch = u; else u(); }
   if (!on && A.unwatch) { A.unwatch(); A.unwatch = null; }
 }
 function dmInterrupt(byVoice, base) {
@@ -253,6 +258,8 @@ async function dmAsk(first, speakIt) {
   if (DM !== A) return null;
   typing.remove(); if (liveB) liveB.remove();
   const lines = vParse(r.text); A.turns.push({ role: "assistant", content: r.text });
+  // Réponse lue en silence : son audio est préparé en avance, pour que « Réécouter » parte tout de suite.
+  if (!speakIt && TTS.on()) dmChunks(r.text, true).forEach((c) => TTS.prefetch(c.t, c.lang, { who: c.lang.startsWith("fr") ? "giulia" : A.voice, rate: c.lang.startsWith("fr") ? 1 : 0.95 }));
   dmBubble(lines); A.busy = false; A.ui.setAct();
   return lines;
 }
@@ -260,7 +267,7 @@ async function dmSend(text, voice) {
   const A = DM; if (!A || A.busy) return;
   const cmd = voice ? VO.command(text) : null;
   if (cmd === "stop" && A.hands) { dmHands(false); return; }
-  A.ui.inp.value = ""; A.ui.setAct();
+  A.ui.inp.value = ""; A.fromVoice = false; A.ui.setAct();
   dmMine(text, voice); A.turns.push({ role: "user", content: text }); A.n++; bump();
   S.pc = S.pc || {}; S.pc[A.id] = day(); S.dmn = (S.dmn || 0) + (A.n === 1 ? 1 : 0); if (A.n % 3 === 1) save();
   A.ui.end.disabled = A.n < 2;
@@ -272,18 +279,29 @@ async function dmSend(text, voice) {
 async function dmListenOnce(auto) {
   const A = DM; if (!A || A.listening || A.busy) return;
   if (!VO.available()) { speakNote(VO.failText({ code: "unsupported" })); return; }
+  // Hors mains libres : on parle autant qu'on veut, avec des pauses, et on touche ■ pour finir ; le texte s'affiche pour être relu avant l'envoi.
+  const manual = !auto && !A.hands;
   // Coupé à la voix : la personne parle déjà, pas de signal ni de mesure du silence.
   const hot = A.cut && A.cut.base != null ? A.cut.base : null; A.cut = null;
-  A.listening = true; A.ui.setAct(); A.ui.inp.placeholder = "J'écoute…";
+  const before = manual ? A.ui.inp.value.trim() : "";
+  A.listening = true; A.ui.setAct(); A.ui.inp.placeholder = manual ? "Parle… touche ■ quand tu as fini" : "J'écoute…";
+  A.ui.wrap.classList.add("listening");
   if (auto && hot == null) await VO.tick();
   let r = null;
   const lastAi = [...A.log].reverse().find((x) => x.who === "ai");
   const context = lastAi ? lastAi.lines.filter((l) => !l.lang.startsWith("fr")).map((l) => l.t).join(" ") : "";
-  try { r = await VO.listen({ lang: VO.IT(), hot, context, startMs: auto ? 9000 : 7000, maxMs: 30000, endMs: 1200, onPartial: (t) => { if (DM === A && t !== "…") A.ui.inp.value = t; } }); }
+  const show = (t) => { if (DM === A && t !== "…") A.ui.inp.value = (before ? before + " " : "") + t; };
+  try { r = await VO.listen(manual ? { lang: VO.IT(), context, manual: true, maxMs: 60000, onPartial: show } : { lang: VO.IT(), hot, context, startMs: 12000, maxMs: 45000, endMs: dmPause(), keepMic: dmBarge(), onPartial: show }); }
   catch (e) { if (DM === A) { speakNote(VO.failText(e)); if (A.hands) dmHands(false); } }
   if (DM !== A) return;
-  A.listening = false; A.ui.inp.placeholder = "Écris en " + LN() + "…";
+  A.listening = false; A.ui.inp.placeholder = "Écris en " + LN() + "…"; A.ui.wrap.classList.remove("listening");
   const text = r && r.text ? r.text.trim() : "";
+  if (manual) {
+    A.ui.inp.value = (before ? before + " " : "") + text; A.fromVoice = A.fromVoice || !!text; A.ui.setAct();
+    if (text) speakNote("Relis, corrige si besoin, puis envoie avec la flèche.");
+    else if (!before) speakNote("Je n'ai rien entendu. Touche le micro et parle, puis touche ■.");
+    return;
+  }
   A.ui.inp.value = ""; A.ui.setAct();
   if (text) dmSend(text, true);
   else if (A.hands) { A.silent = (A.silent || 0) + 1; if (A.silent >= 2) { A.silent = 0; dmHands(false); await VO.say("Je mets en pause. Touche la voiture pour reprendre.", "fr-FR", 1); } else dmListenOnce(true); }

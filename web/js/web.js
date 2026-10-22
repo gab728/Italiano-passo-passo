@@ -151,7 +151,10 @@
     };
     if (hasTts) toggle("Voix naturelles", "Plus vivantes ; consomment un peu de réseau", () => !pref().off, (v) => { pref().off = !v; });
     toggle("Parler plus lentement", "Pour bien entendre chaque mot", () => !!pref().slow, (v) => { pref().slow = v; });
-    toggle("Couper la parole à la voix", "En mains libres, parle pendant que le personnage parle : il s'arrête et t'écoute", () => !pref().nobarge, (v) => { pref().nobarge = !v; });
+    toggle("Couper la parole à la voix", "En mains libres, parle pendant que le personnage parle : il s'arrête et t'écoute" + (VO.isIOS() ? " (déconseillé sur iPhone : le son sort moins fort)" : ""), () => (typeof pref().barge === "boolean" ? pref().barge : !pref().nobarge && !VO.isIOS()), (v) => { pref().barge = v; });
+    const pz = el("div", "voice-test"); pz.append(el("b", null, "Pause avant l'envoi, en mains libres"));
+    const pr = el("div", "chips pause-chips"); [[1, "Courte"], [2, "Normale"], [3, "Longue"]].forEach(([k, n]) => { const c = el("button", "chip" + (((pref().pause || 2) === k) ? " sel" : "")); c.type = "button"; c.textContent = n; c.setAttribute("aria-pressed", String((pref().pause || 2) === k)); c.onclick = () => { pref().pause = k; save(); pr.querySelectorAll(".chip").forEach((x, j) => { const on = j + 1 === k; x.classList.toggle("sel", on); x.setAttribute("aria-pressed", String(on)); }); }; pr.append(c); });
+    pz.append(pr, el("p", "fr small", "Hors mains libres, le micro écoute jusqu'à ce que tu touches ■, même si tu fais des pauses.")); vx.append(pz);
     if (canSpeak || hasTts) {
       const tv = el("div", "voice-test"); tv.append(el("b", null, "Écouter les personnages"));
       const SAMPLES = [["giulia", "Giulia", "Ciao! Allora, come è andata la giornata? Raccontami un po'."], ["marco", "Marco", "Buongiorno! Un caffè al volo o ti siedi un attimo?"], ["sofia", "Sofia", "Dai, sabato andiamo a quella mostra in centro? Poi un aperitivo!"], ["rosa", "Nonna Rosa", "Tesoro mio, hai mangiato? Vieni qua, assaggia questo ragù."]];

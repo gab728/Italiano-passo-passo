@@ -60,54 +60,69 @@ const VO = (() => {
   const IT = () => C().speech || "it-IT";
 
   /* --- Écoute par la reconnaissance du téléphone --- */
+  // Écoute par la reconnaissance du téléphone. En mode manuel (o.manual), l'écoute continue malgré les pauses,
+  // jusqu'à ce que la personne touche « stop » : le navigateur qui s'arrête de lui-même est relancé.
   function listenNative(o) {
     return new Promise((res, rej) => {
-      const r = new SR();
-      r.lang = o.lang || IT(); r.interimResults = true; r.maxAlternatives = 4; r.continuous = false;
-      let fin = "", last = "", alts = [], done = false, heard = false, quiet = 0;
-      // Certains navigateurs (Safari) ne signalent parfois jamais la fin : après stop(), on conclut de nous-mêmes.
-      let guard = 0;
-      const halt = () => { try { r.stop(); } catch (e) { /* rien */ } clearTimeout(guard); guard = setTimeout(() => finish(), 1800); };
-      const t1 = setTimeout(() => { if (!heard) halt(); }, o.startMs || 7000);
+      let fin = "", last = "", alts = [], done = false, heard = false, quiet = 0, guard = 0, stopping = false, r = null;
+      const t0 = Date.now();
+      const halt = () => { stopping = true; try { r && r.stop(); } catch (e) { /* rien */ } clearTimeout(guard); guard = setTimeout(() => finish(), 1800); };
+      const t1 = o.manual ? 0 : setTimeout(() => { if (!heard) halt(); }, o.startMs || 7000);
       const t2 = setTimeout(halt, o.maxMs || 15000);
       const finish = (e) => {
         if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); clearTimeout(quiet); clearTimeout(guard); st.cur = null;
-        try { r.abort(); } catch (x) { /* rien */ }
+        try { r && r.abort(); } catch (x) { /* rien */ }
         if (e) rej(e); else res({ text: (fin || last).trim(), alts: alts.length ? alts : [(fin || last).trim()] });
       };
-      r.onresult = (e) => {
-        let interim = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const x = e.results[i];
-          if (x.isFinal) { fin += x[0].transcript + " "; alts = Array.from(x).map((a) => a.transcript.trim()); }
-          else interim += x[0].transcript;
-        }
-        heard = true; last = (fin + interim).trim();
-        if (o.onPartial) o.onPartial(last);
-        // Certains navigateurs ne signalent pas la fin : un court silence après la dernière parole suffit.
-        clearTimeout(quiet); quiet = setTimeout(halt, o.endMs || 1500);
+      const begin = () => {
+        r = new SR();
+        r.lang = o.lang || IT(); r.interimResults = true; r.maxAlternatives = 4; r.continuous = !!o.manual;
+        let seg = "";
+        r.onresult = (e) => {
+          let interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const x = e.results[i];
+            if (x.isFinal) { fin += x[0].transcript.trim() + " "; alts = Array.from(x).map((a) => a.transcript.trim()); }
+            else interim += x[0].transcript;
+          }
+          seg = interim; heard = true; last = (fin + interim).trim();
+          if (o.onPartial) o.onPartial(last);
+          // En mode automatique, un silence après la dernière parole termine l'écoute.
+          if (!o.manual) { clearTimeout(quiet); quiet = setTimeout(halt, o.endMs || 2500); }
+        };
+        r.onerror = (e) => {
+          const c = e && e.error;
+          if (c === "no-speech" || c === "aborted") return;
+          if (c === "not-allowed" || c === "service-not-allowed") return finish({ code: "denied", detail: c });
+          if (c === "network") return finish({ code: "network" });
+          if (c === "audio-capture") return finish({ code: "no_mic" });
+          finish({ code: c || "error" });
+        };
+        r.onend = () => {
+          if (o.manual && !stopping && !done && Date.now() - t0 < (o.maxMs || 60000) - 1000) {
+            if (seg) { fin += seg.trim() + " "; seg = ""; }
+            try { begin(); return; } catch (e) { /* on conclut */ }
+          }
+          finish();
+        };
+        try { r.start(); } catch (e) { finish({ code: "busy" }); }
       };
-      r.onerror = (e) => {
-        const c = e && e.error;
-        if (c === "no-speech" || c === "aborted") return;
-        if (c === "not-allowed" || c === "service-not-allowed") return finish({ code: "denied", detail: c });
-        if (c === "network") return finish({ code: "network" });
-        if (c === "audio-capture") return finish({ code: "no_mic" });
-        finish({ code: c || "error" });
-      };
-      r.onend = () => finish();
       st.cur = { stop: halt, cancel: () => { fin = ""; last = ""; finish(); } };
-      try { r.start(); } catch (e) { finish({ code: "busy" }); }
+      begin();
     });
   }
 
+
   /* --- Écoute de secours : enregistrement, puis transcription par le serveur --- */
+  // iPhone : tant que le micro est ouvert, le son sort faiblement par l'écouteur. On l'ouvre au besoin, on le referme après.
+  const session = (t) => { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) { /* rien */ } };
   async function micStream() {
     if (st.stream && st.stream.active) return st.stream;
+    session("play-and-record");
     st.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
     return st.stream;
   }
-  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } }
+  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } session("auto"); }
   function listenServer(o) {
     return new Promise(async (res, rej) => { try {
       let stream; try { stream = await micStream(); } catch (e) { return rej({ code: "denied" }); }
@@ -126,16 +141,18 @@ const VO = (() => {
       const tick = setInterval(() => {
         an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
         const rms = Math.sqrt(s / buf.length), now = performance.now();
-        if (blind) { if (!speaking) { speaking = true; began = t0; if (o.onPartial) o.onPartial("…"); } if (now - t0 > Math.min(o.maxMs || 15000, 12000)) stop(); return; }
+        if (blind || o.manual) { if (!speaking) { speaking = true; began = t0; if (o.onPartial) o.onPartial("…"); } if (now - t0 > (o.manual ? (o.maxMs || 60000) : Math.min(o.maxMs || 15000, 12000))) stop(); return; }
         if (!hot && now - t0 < 300) { floor += rms; n++; return; }
         const thr = Math.max(0.012, (floor / Math.max(n, 1)) * 3);
         if (rms > thr) { if (!speaking) { began = now; if (o.onPartial) o.onPartial("…"); } speaking = true; lastVoice = now; }
-        if ((!speaking && now - t0 > (o.startMs || 7000)) || (speaking && now - lastVoice > (o.endMs || 1300)) || now - t0 > (o.maxMs || 15000)) stop();
+        if (o.manual) { if (now - t0 > (o.maxMs || 60000)) stop(); return; }
+        if ((!speaking && now - t0 > (o.startMs || 7000)) || (speaking && now - lastVoice > (o.endMs || 2500)) || now - t0 > (o.maxMs || 15000)) stop();
       }, 60);
       const stop = () => { if (stopped) return; stopped = true; clearInterval(tick); try { rec.stop(); } catch (e) { /* rien */ } };
       st.cur = { stop, cancel: () => { speaking = false; stop(); } };
       rec.onstop = async () => {
         src.disconnect(); st.cur = null;
+        if (!o.keepMic || isIOS()) release();
         if (!speaking || !chunks.length) return res({ text: "", alts: [] });
         const blob = new Blob(chunks, { type: rec.mimeType || type || "audio/webm" });
         const secs = Math.ceil((performance.now() - (began || t0)) / 1000);

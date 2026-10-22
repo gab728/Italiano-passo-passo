@@ -39,6 +39,14 @@ const O = "http://127.0.0.1:8787";
   console.log(/^voix ok/.test(cut) ? "ok  une voix pendant la lecture est détectée (couper la parole)" : "FAIL couper la parole : " + cut);
   const hot = await p.evaluate(async () => { try { const r = await VO.listen({ hot: 0.004, maxMs: 4000, endMs: 600 }); return r.text; } catch (e) { return "erreur " + (e && e.code); } });
   console.log(/Ciao, come stai/.test(hot) ? "ok  écoute reprise au milieu d'une phrase, transcrite" : "FAIL écoute après coupure : " + hot);
+  // Tour de parole manuel par le serveur (cas de l'iPhone) : pas d'arrêt au silence, ■ pour finir, texte à relire.
+  await p.evaluate(() => openPersona("sofia")); await p.waitForSelector(".dm-act");
+  await p.click(".dm-act"); await p.waitForTimeout(3500);
+  const still = await p.evaluate(() => DM.listening);
+  await p.click(".dm-act"); await p.waitForFunction(() => DM && !DM.listening, null, { timeout: 10000 });
+  const val = await p.inputValue("#dm-input"), sent = await p.$$eval(".msg.me", (l) => l.length);
+  console.log(still && /Ciao, come stai/.test(val) && sent === 0 ? "ok  micro par le serveur : écoute jusqu'à ■, texte à relire avant l'envoi" : "FAIL tour manuel serveur : " + JSON.stringify({ still, val, sent }));
+  await p.evaluate(() => dmLeave());
   // Mains libres avec Marco : la réponse est lue, puis l'écoute reprend toute seule.
   await p.evaluate(() => { openPersona("marco"); });
   await p.waitForSelector(".dm-car"); await p.click(".dm-car");
