@@ -19,8 +19,14 @@ const O = "http://127.0.0.1:8787";
   const after = (await (await fetch(O + "/__state")).json()).stt;
   console.log(/transcription par le serveur/.test(mode) ? "ok  mode serveur annoncé" : "FAIL mode: " + mode);
   const last = (await (await fetch(O + "/__state")).json()).sttLast || {};
-  console.log(last.model === "gpt-4o-transcribe" && last.language === "it" && !last.prompt && last.temperature === "0" ? "ok  transcription fidèle : italien, sans consigne ni contexte, température 0" : "FAIL réglages de transcription : " + JSON.stringify(last));
+  console.log(last.model === "gpt-4o-transcribe" && last.language === "it" && last.prompt === "Trascrizione fedele in italiano, parola per parola." && last.temperature === "0" ? "ok  transcription fidèle : italien, consigne neutre sans contexte, température 0" : "FAIL réglages de transcription : " + JSON.stringify(last));
   console.log(/Ciao, come stai/.test(heard) && after > before ? "ok  enregistrement transcrit par le serveur : " + heard : "FAIL " + heard);
+  // Transcription traduite en anglais par erreur : refaite avec whisper-1, dans la langue parlée.
+  await fetch(O + "/__sttEnglish", { method: "POST" });
+  await p.click("section:has-text('Tester le micro') button:has-text('Écouter')");
+  await p.waitForFunction(() => /Non lo so|I don't know|Rien entendu|échoué/.test(document.querySelector(".car-heard").textContent), null, { timeout: 25000 });
+  const fixed = await p.textContent(".car-heard"), models = (await (await fetch(O + "/__state")).json()).sttModels;
+  console.log(/Non lo so/.test(fixed) && models.join() === "gpt-4o-transcribe,whisper-1" ? "ok  transcription en anglais détectée, refaite en italien avec whisper-1" : "FAIL retraduction : " + fixed + " " + models.join());
   // Couper la parole : le faux micro de Chromium émet un bip régulier, pris pour une voix pendant que le personnage parle.
   const br2 = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--use-file-for-fake-audio-capture=" + require("path").join(__dirname, "fixtures/speech-like.wav")] });
   const ctx2 = await br2.newContext({ permissions: ["microphone"] }); await ctx2.addInitScript(() => { window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });

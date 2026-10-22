@@ -51,7 +51,7 @@ function cors(req: Request): Record<string, string> {
   const allow = !allowed.length ? "*" : allowed.includes(origin) ? origin : allowed[0];
   return {
     "access-control-allow-origin": allow,
-    "access-control-allow-headers": "authorization, apikey, content-type, x-client-info, x-duration, x-context",
+    "access-control-allow-headers": "authorization, apikey, content-type, x-client-info, x-duration, x-context, x-peak",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -399,20 +399,44 @@ async function stt(req: Request, u: User): Promise<Response> {
   if (used.stt_seconds + secs > lim.stt_seconds) return fail(req, 429, "rate_limited", "Plafond de transcription du jour atteint.");
   const lang = (new URL(req.url).searchParams.get("lang") || "it").slice(0, 2).toLowerCase();
   const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
-  const form = new FormData();
-  form.append("file", new Blob([buf], { type }), "audio." + ext);
-  const model = env("STT_MODEL", "gpt-4o-transcribe");
-  form.append("model", model);
-  if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
-  // Transcription fidèle : aucune consigne ni contexte (ils poussaient le modèle à compléter ou « améliorer » la phrase),
-  // seulement la langue, et la température à zéro.
-  form.append("temperature", "0");
-  form.append("response_format", "json");
-  const r = await fetch(env("STT_URL", "https://api.openai.com/v1/audio/transcriptions"), { method: "POST", headers: { authorization: "Bearer " + key }, body: form });
-  if (!r.ok) { console.error("stt", r.status, (await r.text()).slice(0, 300)); return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie."); }
-  const j = await r.json().catch(() => ({}));
+  // Transcription fidèle, dans la langue parlée : le modèle reçoit seulement la langue et une consigne neutre (sans contexte,
+  // qui le poussait à compléter la phrase). S'il renvoie malgré tout une traduction anglaise ou une formule inventée sur un
+  // enregistrement presque muet, on refait la transcription avec whisper-1, qui suit strictement la langue demandée.
+  const url = env("STT_URL", "https://api.openai.com/v1/audio/transcriptions"), main = env("STT_MODEL", "gpt-4o-transcribe");
+  const once = async (model: string) => {
+    const form = new FormData();
+    form.append("file", new Blob([buf], { type }), "audio." + ext);
+    form.append("model", model);
+    if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
+    if (lang === "it" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Trascrizione fedele in italiano, parola per parola.");
+    form.append("temperature", "0");
+    form.append("response_format", "json");
+    const r = await fetch(url, { method: "POST", headers: { authorization: "Bearer " + key }, body: form });
+    if (!r.ok) { console.error("stt", model, r.status, (await r.text()).slice(0, 300)); return null; }
+    const j = await r.json().catch(() => ({}));
+    return String(j.text || "").trim();
+  };
+  const peak = Number(req.headers.get("x-peak"));
+  let text = await once(main), model = main;
+  const odd = (t: string) => lang === "it" && !!t && (looksEnglish(t) || HALLU.test(t));
+  if (text !== null && odd(text) && /api\.openai\.com/.test(url)) {
+    const t2 = await once("whisper-1");
+    console.error("stt douteuse", JSON.stringify({ model: main, len: text.length, english: looksEnglish(text), retry: t2 === null ? "échec" : odd(t2) ? "douteuse" : "ok", secs, bytes: buf.byteLength, peak: Number.isFinite(peak) ? peak : null }));
+    if (t2 !== null) { text = odd(t2) ? "" : t2; model = "whisper-1"; } else text = "";
+  }
+  if (text === null) return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie.");
   await addUsage(u.id, 0, 0, 0, secs);
-  return json(req, { text: String(j.text || "").trim() });
+  return json(req, { text, model });
+}
+// Formules que les modèles inventent sur du silence, et phrases manifestement en anglais.
+const HALLU = /^(sottotitoli|sottotitolato|grazie (per|a tutti)( la visione| l'attenzione)?\.?$|amara\.org|thank you\.?$|thanks for watching)/i;
+function looksEnglish(t: string): boolean {
+  const w = t.toLowerCase().replace(/[^a-z' ]+/g, " ").split(/\s+/).filter(Boolean);
+  if (!w.length) return false;
+  const en = new Set(["i", "you", "the", "is", "are", "don't", "dont", "know", "what", "it's", "this", "that", "and", "to", "of", "my", "your", "have", "do", "yes", "thank", "thanks", "okay", "so", "we", "they", "he", "she", "was", "can", "not", "be", "like", "just", "with", "for"]);
+  const it = new Set(["il", "la", "lo", "le", "gli", "di", "che", "e", "è", "non", "un", "una", "per", "sono", "ho", "mi", "ti", "si", "ma", "con", "io", "tu", "lei", "noi", "voi", "anche", "molto", "bene", "grazie", "ciao", "sì", "no"]);
+  const e = w.filter((x) => en.has(x)).length, i = w.filter((x) => it.has(x)).length;
+  return e >= Math.max(1, Math.ceil(w.length * 0.34)) && e > i;
 }
 
 // ---------- /tts : voix naturelles ----------

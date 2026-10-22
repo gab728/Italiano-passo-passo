@@ -300,7 +300,7 @@ async function dmListenOnce(auto) {
     // ■ touché : la phrase part tout de suite.
     const all = ((before ? before + " " : "") + text).trim();
     A.ui.inp.value = ""; A.ui.setAct();
-    if (all) dmSend(all, true); else speakNote("Je n'ai rien entendu. Touche le micro, parle, puis touche ■.");
+    if (all) dmSend(all, true); else speakNote(r && r.silent ? "Le micro n'a capté aucune voix. Vérifie qu'aucune autre app ne l'utilise, puis réessaie." : "Je n'ai rien compris. Touche le micro, parle, puis touche ■.");
     return;
   }
   A.ui.inp.value = ""; A.ui.setAct();

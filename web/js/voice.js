@@ -115,14 +115,12 @@ const VO = (() => {
 
   /* --- Écoute de secours : enregistrement, puis transcription par le serveur --- */
   // iPhone : tant que le micro est ouvert, le son sort faiblement par l'écouteur. On l'ouvre au besoin, on le referme après.
-  const session = (t) => { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) { /* rien */ } };
   async function micStream() {
     if (st.stream && st.stream.active) return st.stream;
-    session("play-and-record");
     st.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
     return st.stream;
   }
-  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } session("auto"); }
+  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } }
   function listenServer(o) {
     return new Promise(async (res, rej) => { try {
       let stream; try { stream = await micStream(); } catch (e) { return rej({ code: "denied" }); }
@@ -134,13 +132,13 @@ const VO = (() => {
       const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"].find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || "";
       let rec; try { rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined); } catch (e) { src.disconnect(); return rej({ code: "error" }); }
       const chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-      const t0 = performance.now(); let speaking = false, lastVoice = 0, floor = 0, n = 0, stopped = false, began = 0;
+      const t0 = performance.now(); let speaking = false, lastVoice = 0, floor = 0, n = 0, stopped = false, began = 0, peak = 0;
       // La personne a déjà commencé à parler (elle vient de couper la parole) : le bruit de fond est connu, l'écoute est lancée.
       const hot = o.hot != null && !blind;
       if (hot) { speaking = true; began = t0; lastVoice = t0; floor = Math.max(o.hot, 0.004); n = 1; if (o.onPartial) o.onPartial("…"); }
       const tick = setInterval(() => {
         an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
-        const rms = Math.sqrt(s / buf.length), now = performance.now();
+        const rms = Math.sqrt(s / buf.length), now = performance.now(); if (!blind && rms > peak) peak = rms;
         if (blind || o.manual) { if (!speaking) { speaking = true; began = t0; if (o.onPartial) o.onPartial("…"); } if (now - t0 > (o.manual ? (o.maxMs || 60000) : Math.min(o.maxMs || 15000, 12000))) stop(); return; }
         if (!hot && now - t0 < 300) { floor += rms; n++; return; }
         const thr = Math.max(0.012, (floor / Math.max(n, 1)) * 3);
@@ -154,11 +152,13 @@ const VO = (() => {
         src.disconnect(); st.cur = null;
         if (!o.keepMic || isIOS()) release();
         if (!speaking || !chunks.length) return res({ text: "", alts: [] });
+        // Micro resté muet (aucune voix captée) : rien à transcrire. Envoyer du silence fait inventer des phrases au modèle.
+        if (!blind && peak < 0.006) return res({ text: "", alts: [], silent: true });
         const blob = new Blob(chunks, { type: rec.mimeType || type || "audio/webm" });
         const secs = Math.ceil((performance.now() - (began || t0)) / 1000);
         if (o.onPartial) o.onPartial("Transcription…");
         try {
-          const r = await WEBAUTH.call("stt?lang=" + (o.lang || IT()).slice(0, 2), blob, { raw: true, headers: Object.assign({ "content-type": blob.type.split(";")[0], "x-duration": String(secs) }, o.context ? { "x-context": encodeURIComponent(String(o.context).slice(0, 300)) } : {}) });
+          const r = await WEBAUTH.call("stt?lang=" + (o.lang || IT()).slice(0, 2), blob, { raw: true, headers: Object.assign({ "content-type": blob.type.split(";")[0], "x-duration": String(secs), "x-peak": blind ? "" : peak.toFixed(4) }) });
           const j = await r.json(); res({ text: String(j.text || ""), alts: [String(j.text || "")] });
         } catch (e) { rej({ code: (e && e.code) || "network" }); }
       };
