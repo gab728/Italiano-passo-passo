@@ -404,16 +404,9 @@ async function stt(req: Request, u: User): Promise<Response> {
   const model = env("STT_MODEL", "gpt-4o-transcribe");
   form.append("model", model);
   if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
-  // Contexte donné au modèle : un élève francophone qui parle italien, et la dernière réplique entendue.
-  // Il écrit l'italien avec la bonne orthographe et les accents, sans corriger les fautes de grammaire (elles servent aux corrections).
-  if (/gpt-4o|whisper/.test(model)) {
-    let ctx = ""; try { ctx = decodeURIComponent(req.headers.get("x-context") || "").replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 300); } catch { ctx = ""; }
-    const base = lang === "it"
-      ? "Uno studente francese parla italiano. Trascrivi esattamente le sue parole in italiano, con ortografia e accenti corretti (è, perché, città, più, già), apostrofi (l'amico, c'è) e punteggiatura. Non correggere la grammatica e non tradurre; se dice una parola francese, scrivila così."
-      : "";
-    const prompt = (base + (ctx ? " Ha appena sentito: «" + ctx + "»" : "")).trim();
-    if (prompt) form.append("prompt", prompt);
-  }
+  // Transcription fidèle : aucune consigne ni contexte (ils poussaient le modèle à compléter ou « améliorer » la phrase),
+  // seulement la langue, et la température à zéro.
+  form.append("temperature", "0");
   form.append("response_format", "json");
   const r = await fetch(env("STT_URL", "https://api.openai.com/v1/audio/transcriptions"), { method: "POST", headers: { authorization: "Bearer " + key }, body: form });
   if (!r.ok) { console.error("stt", r.status, (await r.text()).slice(0, 300)); return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie."); }

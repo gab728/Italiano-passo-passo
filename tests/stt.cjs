@@ -19,7 +19,7 @@ const O = "http://127.0.0.1:8787";
   const after = (await (await fetch(O + "/__state")).json()).stt;
   console.log(/transcription par le serveur/.test(mode) ? "ok  mode serveur annoncé" : "FAIL mode: " + mode);
   const last = (await (await fetch(O + "/__state")).json()).sttLast || {};
-  console.log(last.model === "gpt-4o-transcribe" && last.language === "it" && /studente francese/.test(last.prompt) ? "ok  transcription en italien, avec consignes d'orthographe" : "FAIL consignes de transcription : " + JSON.stringify(last));
+  console.log(last.model === "gpt-4o-transcribe" && last.language === "it" && !last.prompt && last.temperature === "0" ? "ok  transcription fidèle : italien, sans consigne ni contexte, température 0" : "FAIL réglages de transcription : " + JSON.stringify(last));
   console.log(/Ciao, come stai/.test(heard) && after > before ? "ok  enregistrement transcrit par le serveur : " + heard : "FAIL " + heard);
   // Couper la parole : le faux micro de Chromium émet un bip régulier, pris pour une voix pendant que le personnage parle.
   const br2 = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--use-file-for-fake-audio-capture=" + require("path").join(__dirname, "fixtures/speech-like.wav")] });
@@ -44,8 +44,9 @@ const O = "http://127.0.0.1:8787";
   await p.click(".dm-act"); await p.waitForTimeout(3500);
   const still = await p.evaluate(() => DM.listening);
   await p.click(".dm-act"); await p.waitForFunction(() => DM && !DM.listening, null, { timeout: 10000 });
-  const val = await p.inputValue("#dm-input"), sent = await p.$$eval(".msg.me", (l) => l.length);
-  console.log(still && /Ciao, come stai/.test(val) && sent === 0 ? "ok  micro par le serveur : écoute jusqu'à ■, texte à relire avant l'envoi" : "FAIL tour manuel serveur : " + JSON.stringify({ still, val, sent }));
+  await p.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1, null, { timeout: 10000 }).catch(() => null);
+  const sent = await p.$$eval(".msg.me", (l) => l.map((x) => x.textContent));
+  console.log(still && sent.length === 1 && /Ciao, come stai/.test(sent[0]) ? "ok  micro par le serveur : écoute jusqu'à ■ malgré les pauses, puis envoi" : "FAIL tour manuel serveur : " + JSON.stringify({ still, sent }));
   await p.evaluate(() => dmLeave());
   // Mains libres avec Marco : la réponse est lue, puis l'écoute reprend toute seule.
   await p.evaluate(() => { openPersona("marco"); });

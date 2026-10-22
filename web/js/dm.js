@@ -279,7 +279,7 @@ async function dmSend(text, voice) {
 async function dmListenOnce(auto) {
   const A = DM; if (!A || A.listening || A.busy) return;
   if (!VO.available()) { speakNote(VO.failText({ code: "unsupported" })); return; }
-  // Hors mains libres : on parle autant qu'on veut, avec des pauses, et on touche ■ pour finir ; le texte s'affiche pour être relu avant l'envoi.
+  // Hors mains libres : on parle autant qu'on veut, avec des pauses, et on touche ■ pour finir : la phrase est alors envoyée.
   const manual = !auto && !A.hands;
   // Coupé à la voix : la personne parle déjà, pas de signal ni de mesure du silence.
   const hot = A.cut && A.cut.base != null ? A.cut.base : null; A.cut = null;
@@ -297,9 +297,10 @@ async function dmListenOnce(auto) {
   A.listening = false; A.ui.inp.placeholder = "Écris en " + LN() + "…"; A.ui.wrap.classList.remove("listening");
   const text = r && r.text ? r.text.trim() : "";
   if (manual) {
-    A.ui.inp.value = (before ? before + " " : "") + text; A.fromVoice = A.fromVoice || !!text; A.ui.setAct();
-    if (text) speakNote("Relis, corrige si besoin, puis envoie avec la flèche.");
-    else if (!before) speakNote("Je n'ai rien entendu. Touche le micro et parle, puis touche ■.");
+    // ■ touché : la phrase part tout de suite.
+    const all = ((before ? before + " " : "") + text).trim();
+    A.ui.inp.value = ""; A.ui.setAct();
+    if (all) dmSend(all, true); else speakNote("Je n'ai rien entendu. Touche le micro, parle, puis touche ■.");
     return;
   }
   A.ui.inp.value = ""; A.ui.setAct();

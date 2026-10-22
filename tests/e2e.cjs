@@ -138,9 +138,7 @@ const MOCKS = `
   await b.click(".dm-act");
   await b.waitForFunction(() => /andato/.test(document.querySelector("#dm-input").value), null, { timeout: 8000 });
   await b.waitForTimeout(1500);
-  ok(await b.evaluate(() => DM.listening && document.querySelectorAll(".msg.me").length === 0), "le micro reste ouvert malgré la pause : rien n'est envoyé tant que je n'ai pas fini");
-  await b.click(".dm-act"); await b.waitForFunction(() => !DM.listening, null, { timeout: 5000 });
-  ok((await b.inputValue("#dm-input")) === "Oggi ho andato al lavoro" && (await b.$$eval(".msg.me", (l) => l.length)) === 0, "après ■ : ma phrase est dans le champ, à relire avant l'envoi");
+  ok(await b.evaluate(() => DM.listening && document.querySelectorAll(".msg.me").length === 0), "le micro reste ouvert malgré la pause : rien n'est envoyé tant que je n'ai pas touché ■");
   await b.click(".dm-act");
   await b.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2, null, { timeout: 15000 });
   let ttsNew = [];
@@ -313,7 +311,7 @@ const MOCKS = `
   await a.evaluate(() => { window.__said = ["Un caffè, per favore"]; openPersona("marco"); });
   await a.waitForSelector(".dm-act"); await a.click(".dm-act");
   await a.waitForFunction(() => /caffè/.test(document.querySelector("#dm-input").value), null, { timeout: 8000 });
-  await a.click(".dm-act"); await a.waitForFunction(() => !DM.listening, null, { timeout: 5000 }); await a.click(".dm-act");
+  await a.click(".dm-act");
   await a.waitForFunction(() => document.querySelectorAll(".msg.me").length === 1 && document.querySelectorAll(".msg.ai .bub").length >= 2, null, { timeout: 15000 });
   let mt = []; for (let k = 0; k < 40 && !mt.length; k++) { await a.waitForTimeout(150); mt = (await st()).tts.slice(t0); }
   ok(mt.some((x) => x.voice === "cedar" && /romano/.test(x.instructions)) && mt.every((x) => x.voice === "cedar" || /^On dit/.test(x.input)), "Marco parle avec sa voix, les notes en français restent à Giulia : " + mt.map((x) => x.voice + ":" + x.input).join(" | "));

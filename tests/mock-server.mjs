@@ -38,7 +38,7 @@ globalThis.fetch = async (url, init) => {
     if (process.env.TTS_FAIL) return new Response("{}", { status: 500 });
     return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }
-  if (u.startsWith("https://api.openai.com/")) { state.stt++; try { state.sttLast = { model: init.body.get("model"), language: init.body.get("language"), prompt: init.body.get("prompt") || "" }; } catch (e) { /* rien */ } return new Response(JSON.stringify({ text: "Ciao, come stai?" }), { headers: { "content-type": "application/json" } }); }
+  if (u.startsWith("https://api.openai.com/")) { state.stt++; try { state.sttLast = { model: init.body.get("model"), language: init.body.get("language"), prompt: init.body.get("prompt") || "", temperature: init.body.get("temperature") }; } catch (e) { /* rien */ } return new Response(JSON.stringify({ text: "Ciao, come stai?" }), { headers: { "content-type": "application/json" } }); }
   return realFetch(url, init);
 };
 function fakeClaude(b) {
