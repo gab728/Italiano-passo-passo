@@ -772,6 +772,11 @@ function speak(t,rate){if(!canSpeak)return speakNote("Ce navigateur ne sait pas 
     speakNote(pickVoice(lang)?"Rien ne sort ? Monte le volume et vérifie que le téléphone n'est pas en mode silencieux.":"Aucune voix en "+LN()+" n'est installée sur cet appareil. Ajoute-la dans les réglages de synthèse vocale (accessibilité), puis recharge la page.")},2500)}
 function sayBtn(t,label){const b=el("button","say",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg><span></span>');
   b.type="button";b.querySelector("span").textContent=label||"Écouter";b.onclick=()=>speak(t);return b}
+/* Si l'élève recopie toute la phrase au lieu du seul mot manquant, on en extrait ce qui remplit le(s) trou(s). */
+function blankOf(q,u){const pun=/[.,;:!?¿¡«»"…]/g,cl=t=>String(t).toLowerCase().replace(/[’`]/g,"'").replace(pun," ").replace(/\s+/g," ").trim();
+  const parts=cl(q.replace(/\s*\([^)]*\)/g,"")).split(/\s*_{3,}\s*/);if(parts.length<2)return u;
+  const re=new RegExp("^"+parts.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*(.+?)\\s*")+"$"),m=cl(u).match(re);
+  return m?m.slice(1).map(x=>x.trim()).join(" / "):u}
 function filled(q,a){const parts=a.split(" / ");let k=0;return q.replace(/\s*\([^)]*\)/g,"").replace(/___/g,()=>parts[Math.min(k++,parts.length-1)])}
 function screens(m){const a=[];m.lessons.forEach(l=>a.push({t:"l",d:l}));a.push({t:"v"});m.ex.forEach(x=>a.push({t:x[0],d:x}));a.push({t:"d"});m.dq.forEach(x=>a.push({t:"m",d:x}));return a}
 const LABEL={l:"Leçon",v:"Vocabulaire",m:"Exercice",f:"Exercice",o:"Exercice",p:"Exercice",d:"Dialogue"};
@@ -1567,7 +1572,7 @@ f(s){const d=s.d,answers=d[2].split("|");if(d[4])body.append(el("p","fr",d[4]));
     b.onclick=()=>{const a=inp.selectionStart??inp.value.length,z=inp.selectionEnd??a;inp.value=inp.value.slice(0,a)+c+inp.value.slice(z);inp.focus();inp.setSelectionRange(a+1,a+1)};keys.append(b)});
   const ok=btn("Vérifier","primary");w.append(inp,keys,ok);if(window.WEB)WEB.mic(w,inp);body.append(w);let done=false;
   const check=()=>{if(done||!inp.value.trim())return;done=true;inp.readOnly=true;ok.disabled=true;keys.hidden=true;
-    const u=inp.value,exact=answers.some(a=>norm(a)===norm(u)),loose=answers.some(a=>bare(a)===bare(u));
+    const u=blankOf(d[1],inp.value),exact=answers.some(a=>norm(a)===norm(u)),loose=answers.some(a=>bare(a)===bare(u));
     let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?"Attention à l'accent. ":"")+msg;
     fb(loose,s,msg,filled(d[1],answers[0]),u)};
   ok.onclick=check;inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();check()}})},

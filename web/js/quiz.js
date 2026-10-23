@@ -64,6 +64,7 @@
     body.append(el("p", "q", fmt(d[1])));
     const options = shuffle(d[2].map((t, k) => ({ t, good: k === 0 })));
     body.append(answerBox({ answers: [good], options, onDone: (r) => {
+      if (!r.help) { const g = blankOf(d[1], r.given); if (g !== r.given) r.how = judge(g, [good]); }
       const ok = r.how !== "no", v = verdict(r, good);
       let msg = d[3];
       if (!ok && !r.help) msg = "Réponse : <b>" + esc(good) + "</b>. " + msg;
