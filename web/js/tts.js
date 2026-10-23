@@ -184,3 +184,88 @@ const TTS = (() => {
     return TTS.say(part.t, part.l, { who: "narrator", cache: true, rate: isFr ? 1 : AUD.rate, fallback: () => devPart(part, token) });
   };
 })();
+
+/* ---------- Dialogues des leçons : lecture enchaînée, une voix par personnage ----------
+   À l'ouverture du dialogue, toutes les répliques sont demandées d'un coup (préparées dès le début de la leçon),
+   puis lues à la suite, chacune avec une voix de femme ou d'homme selon le personnage.
+   « Écouter » sous une réplique la rejoue seule, avec la même voix. */
+const DLG = (() => {
+  const bareN = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+  const set = (s) => new Set(s.split(" "));
+  const F = set("nonna mamma madre zia sorella figlia ragazza bambina donna signora signorina dottoressa professoressa maestra infermiera impiegata commessa cameriera cassiera segretaria amica vicina padrona proprietaria cuoca poliziotta moglie fidanzata studentessa direttrice attrice"
+    + "beatrice alice irene adele agnese rachele nicole marie sophie claire camille chloe manon julie ines louise zoe celine aurelie isabelle nathalie catherine helene mathilde charlotte pauline juliette cecile elise lucie noemi noemie margot elisabeth carmen miriam ester ruth gabrielle aude maud oceane amelie emilie stephanie sandrine valerie caroline delphine virginie laure clemence eloise heloise anais rachel agathe berenice");
+  const Mm = set("nonno papa babbo padre zio fratello figlio ragazzo bambino uomo signore signor dottore professore maestro infermiere impiegato commesso cameriere cassiere segretario amico vicino padrone proprietario cuoco poliziotto vigile ferroviere controllore marito fidanzato studente direttore attore "
+    + "andrea luca nicola mattia elia tobia enea battista gianluca joshua");
+  const AMBI = set("cliente turista nipote barista collega farmacista giornalista guida tassista receptionist cantante insegnante paziente viaggiatore ospite passeggero utente");
+  const OLD = set("nonna nonno");
+  function guess(name, lines) {
+    const w = bareN(name).split(/[\s,.]+/), first = w[0], last = w[w.length - 1];
+    for (const x of [first, last]) { if (F.has(x)) return "f"; if (Mm.has(x)) return "m"; }
+    if (/essa$/.test(first)) return "f";
+    if (!AMBI.has(first)) return /a$/.test(first) ? "f" : "m";
+    // Rôle sans genre : l'accord de ce que le personnage dit de lui-même (« sono stanca », « sono andato »).
+    let f = 0, m = 0;
+    lines.forEach((t) => { const re = /\b(?:sono|son|ero|sarò|sarei)\s+(?:molto\s+|così\s+|un po'\s+|già\s+|stat[oaie]\s+)?([a-zàèéìòù]+)/gi; let k;
+      while ((k = re.exec(t))) { const v = k[1].toLowerCase(); if (/^(la|una|le|di|in|a|qui|qua|io)$/.test(v)) continue; if (/[^i]a$/.test(v)) f++; else if (/o$/.test(v)) m++; } });
+    return f > m ? "f" : m > f ? "m" : null;
+  }
+  const POOL = { f: ["coral", "sage", "shimmer", "marin"], m: ["ash", "cedar", "verse", "onyx"] };
+  const BASE = "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.";
+  // Distribution des voix : chaque personnage garde la sienne pendant tout le dialogue, deux personnages n'ont jamais la même.
+  function cast(dlg) {
+    const names = [], lines = {};
+    dlg.forEach((l) => { if (!lines[l[0]]) { lines[l[0]] = []; names.push(l[0]); } lines[l[0]].push(l[1]); });
+    const g = {}; names.forEach((n) => { g[n] = guess(n, lines[n]); });
+    names.forEach((n, i) => { if (g[n]) return; const known = names.filter((o) => o !== n && g[o]); g[n] = known.length ? (known.every((o) => g[o] === "f") ? "m" : known.every((o) => g[o] === "m") ? "f" : "f") : (i % 2 ? "m" : "f"); });
+    const used = { f: 0, m: 0 }, who = {};
+    const taken = new Set();
+    names.forEach((n) => { const k = g[n], old = OLD.has(bareN(n).split(" ")[0]);
+      let v = old && k === "f" && !taken.has("sage") ? "sage" : old && k === "m" && !taken.has("onyx") ? "onyx" : null;
+      while (!v || (taken.has(v) && used[k] < 8)) v = POOL[k][used[k]++ % POOL[k].length];
+      taken.add(v);
+      who[n] = { voice: v, it: BASE + (old ? " Voce matura e calda, ritmo un po' più lento." : "") }; });
+    return who;
+  }
+  const lang = () => (typeof C === "function" && C().speech) || "it-IT";
+  const opts = (who) => ({ who, cache: true, rate: 0.9, fallback: (t, l, r) => VO.deviceSay(t, l, r) });
+  let primed = null;
+  function prime(m) {
+    if (!m || !m.dlg || !m.dlg.length || primed === m || !TTS.on()) return;
+    primed = m; const who = cast(m.dlg);
+    m.dlg.forEach((l) => TTS.prefetch(l[1], lang(), opts(who[l[0]])));
+  }
+  let tok = 0;
+  const halt = () => { tok++; TTS.stop(); try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); } catch (e) { /* rien */ } };
+  function mount(m) {
+    const box = [...body.querySelectorAll(".dlg")].pop(); if (!box || !m.dlg) return;
+    const who = cast(m.dlg), lns = [...box.querySelectorAll(".ln")];
+    const bar = el("div", "dlg-bar"), all = el("button", "pill-btn"); all.type = "button";
+    const ICON = { play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>', pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>' };
+    const setBtn = (on) => { all.innerHTML = (on ? ICON.pause : ICON.play) + "<span>" + (on ? "Pause" : "Écouter tout le dialogue") + "</span>"; all.setAttribute("aria-pressed", String(on)); };
+    bar.append(all); box.before(bar); setBtn(false);
+    const mark = (i) => lns.forEach((x, k) => x.classList.toggle("playing", k === i));
+    async function play(from, only) {
+      halt(); const my = tok; setBtn(!only); prime(m);
+      if (!only) m.dlg.forEach((l, k) => { if (k >= from) TTS.prefetch(l[1], lang(), opts(who[l[0]])); });
+      for (let i = from; i < m.dlg.length; i++) {
+        if (my !== tok || !box.isConnected) return;
+        mark(i); if (!only && i > from) lns[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+        await TTS.say(m.dlg[i][1], lang(), opts(who[m.dlg[i][0]]));
+        if (my !== tok) return;
+        if (only) break;
+        await new Promise((r) => setTimeout(r, 280));
+      }
+      if (my === tok) { mark(-1); setBtn(false); }
+    }
+    all.onclick = () => { if (all.getAttribute("aria-pressed") === "true") { halt(); mark(-1); setBtn(false); } else play(0); };
+    lns.forEach((ln, i) => { const b = ln.querySelector(".say"); if (b) b.onclick = () => play(i, true); });
+    // Départ automatique, sans attendre : les répliques ont été demandées dès le début de la leçon.
+    if (TTS.on() || canSpeak) setTimeout(() => { if (box.isConnected) play(0); }, 60);
+  }
+  if (typeof R !== "undefined") {
+    const baseD = R.d;
+    R.d = function () { baseD.apply(this, arguments); try { mount(M[cur.mi]); } catch (e) { /* rien */ } };
+    Object.keys(R).forEach((k) => { if (k === "d") return; const f = R[k]; R[k] = function () { try { if (cur) prime(M[cur.mi]); } catch (e) { /* rien */ } return f.apply(this, arguments); }; });
+  }
+  return { cast, guess };
+})();

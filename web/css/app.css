@@ -594,3 +594,7 @@ body[data-view="dm"] #app { padding: 0 0 calc(130px + env(safe-area-inset-bottom
 button.who { border: 0; background: none; padding: 0; margin: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; border-radius: 999px; }
 .pause-chips { margin: 0; padding: 0; flex-wrap: wrap; }
 .dm.listening .dm-comp input { border-color: var(--ko-fill) !important; box-shadow: 0 0 0 3px var(--ko-bg); }
+/* Dialogue lu à voix haute */
+.dlg-bar { display: flex; margin: 4px 0 14px; }
+.dlg .ln { padding: 6px 10px; margin: 0 -10px; border-radius: 12px; transition: background .2s; }
+.dlg .ln.playing { background: var(--chip); }
