@@ -9,7 +9,8 @@ L'app d'italien de Claude, en version installable sur téléphone : inscription 
 | **Anthropic Console** (console.anthropic.com) | la clé qui donne accès à Claude | à l'usage, voir plus bas |
 | **Supabase** (supabase.com) | comptes, base de données, fonction serveur | gratuit (le projet se met en pause après une semaine sans aucune utilisation : il suffit de le relancer depuis le tableau de bord) |
 | **GitHub** (github.com) | héberge le code et publie l'app (GitHub Pages) | gratuit avec un dépôt public (aucun secret n'est dans le code) |
-| *Facultatif* : **OpenAI** (platform.openai.com) | transcription de la voix sur iPhone, voir « Le micro » | environ 0,003 $ par minute de parole |
+| *Facultatif* : **OpenAI** (platform.openai.com) | voix naturelles, et transcription de secours | environ 0,003 $ par minute de parole |
+| *Facultatif* : **ElevenLabs** (elevenlabs.io) | transcription de la voix sur iPhone, voir « Le micro » | environ 0,4 $ de l'heure de parole selon l'offre |
 
 Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par une clé API, facturée à part.
 
@@ -70,7 +71,7 @@ Dans *Leçons → Leçons d'actualité* (ou la carte « La notizia del giorno »
 
 ## Le micro
 - **Android (Chrome)** : la reconnaissance vocale du téléphone, gratuite, fonctionne dans le navigateur comme dans l'app installée.
-- **iPhone** : la reconnaissance d'Apple marche dans Safari (la dictée doit être activée dans *Réglages → Général → Clavier*), mais pas dans l'app installée sur l'écran d'accueil, et elle se bloque souvent après une lecture à voix haute. Avec une clé OpenAI (`OPENAI_API_KEY`), l'app enregistre la phrase et la fait transcrire par le serveur, en italien (modèle `gpt-4o-transcribe`, langue italienne, sans consigne ni contexte pour rester fidèle à ce qui est dit). C'est fiable partout, pour moins d'un centime par minute de parole ; `STT_MODEL` = `gpt-4o-mini-transcribe` divise ce coût par deux. Pour Mistral à la place d'OpenAI : `STT_URL` = `https://api.mistral.ai/v1/audio/transcriptions`, `STT_MODEL` = `voxtral-mini-latest`, et la clé Mistral dans `STT_API_KEY` (à vérifier lors de la mise en place).
+- **iPhone** : la reconnaissance d'Apple marche dans Safari (la dictée doit être activée dans *Réglages → Général → Clavier*), mais pas dans l'app installée sur l'écran d'accueil, et elle se bloque souvent après une lecture à voix haute. L'app enregistre donc la phrase et la fait transcrire par le serveur, en italien. Avec une clé **ElevenLabs** (`ELEVENLABS_API_KEY`, sur elevenlabs.io → *Developers → API Keys*, avec la permission *Speech to Text*), c'est le modèle Scribe qui écrit (`scribe_v2` par défaut, réglable avec `ELEVENLABS_STT_MODEL`), langue italienne imposée. Si sa transcription manque ou paraît douteuse (anglais, formule parasite), l'app la refait avec OpenAI (`OPENAI_API_KEY`, modèle `gpt-4o-transcribe` puis `whisper-1`). Une seule des deux clés suffit. Pour Mistral à la place d'OpenAI : `STT_URL` = `https://api.mistral.ai/v1/audio/transcriptions`, `STT_MODEL` = `voxtral-mini-latest`, et la clé Mistral dans `STT_API_KEY`.
 - En voiture, l'écran doit rester allumé et l'app ouverte : si le téléphone se verrouille, la lecture s'arrête (limite des navigateurs).
 
 ## Ce que coûte Claude

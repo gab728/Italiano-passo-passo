@@ -14,7 +14,7 @@ const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
 export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map() };
 
 // ---------- Environnement de la fonction ----------
-const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test" };
+const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test", ELEVENLABS_API_KEY: process.env.NO_STT ? "" : "el-test" };
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 
 // Claude et la transcription simulés : on intercepte fetch vers ces services.
@@ -38,6 +38,12 @@ globalThis.fetch = async (url, init) => {
     if (process.env.TTS_FAIL) return new Response("{}", { status: 500 });
     return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }
+  if (u.startsWith("https://api.elevenlabs.io/v1/speech-to-text")) {
+    state.stt++; const m = init.body.get("model_id"); state.sttModels = (state.sttModels || []).concat(m);
+    state.sttLast = { provider: "elevenlabs", model: m, language: init.body.get("language_code"), tags: init.body.get("tag_audio_events"), key: (init.headers || {})["xi-api-key"] };
+    return new Response(JSON.stringify({ text: state.sttEnglish ? "I don't know." : "Ciao, come stai? (risate)", language_code: "ita" }), { headers: { "content-type": "application/json" } });
+  }
+  if (u.startsWith("https://api.elevenlabs.io/v1/user")) return new Response(JSON.stringify({ subscription: {} }), { headers: { "content-type": "application/json" } });
   if (u.startsWith("https://api.openai.com/v1/audio/transcriptions") && state.sttEnglish) {
     state.stt++; const m = init.body.get("model"); state.sttModels = (state.sttModels || []).concat(m);
     if (m === "whisper-1") { state.sttEnglish = 0; return new Response(JSON.stringify({ text: "Non lo so." }), { headers: { "content-type": "application/json" } }); }

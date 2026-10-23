@@ -291,7 +291,7 @@ async function admin(req: Request, u: User): Promise<Response> {
 
   if (act === "me") {
     const lim = await limitsFor(u), used = await usageToday(u.id);
-    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!sttKey(), tts: !!ttsKey() });
+    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!ttsKey() });
   }
   if (act === "rename") {
     const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
@@ -348,6 +348,12 @@ async function admin(req: Request, u: User): Promise<Response> {
       const st = await probe("https://api.openai.com/v1/models", { authorization: "Bearer " + ok });
       out.voice = st === 200 ? { ok: true, from } : { ok: false, why: st === 401 ? "La clé OpenAI (" + from + ") est refusée." : st === 429 ? "Le compte OpenAI n'a plus de crédit ou est limité." : "Réponse inattendue d'OpenAI (" + st + ")." };
     }
+    const ek = env("ELEVENLABS_API_KEY");
+    if (ek) {
+      let st = 0, body = "";
+      try { const r = await fetch("https://api.elevenlabs.io/v1/user", { headers: { "xi-api-key": ek } }); st = r.status; body = (await r.text()).slice(0, 300); } catch { st = 0; }
+      out.dictee = st === 200 ? { ok: true, from: "ElevenLabs" } : st === 401 && /permission/i.test(body) ? { ok: true, from: "ElevenLabs (clé restreinte : vérifie qu'elle autorise Speech to Text)" } : { ok: false, why: st === 401 ? "La clé ElevenLabs (ELEVENLABS_API_KEY) est refusée." : st === 0 ? "ElevenLabs injoignable depuis le serveur." : "Réponse inattendue d'ElevenLabs (" + st + ")." };
+    } else out.dictee = sttKey() ? { ok: true, from: "OpenAI" } : { ok: false, why: "Aucune clé de transcription : ajoute ELEVENLABS_API_KEY ou OPENAI_API_KEY." };
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
     out.owner = { ok: true };
@@ -387,8 +393,8 @@ async function admin(req: Request, u: User): Promise<Response> {
 
 // ---------- /stt (secours, si un service de transcription est configuré) ----------
 async function stt(req: Request, u: User): Promise<Response> {
-  const key = sttKey();
-  if (!key) return fail(req, 503, "not_configured", "La transcription par le serveur n'est pas configurée.");
+  const key = sttKey(), eleven = env("ELEVENLABS_API_KEY");
+  if (!key && !eleven) return fail(req, 503, "not_configured", "La transcription par le serveur n'est pas configurée.");
   const type = (req.headers.get("content-type") || "").split(";")[0].trim();
   if (!/^audio\//.test(type)) return fail(req, 400, "input", "Format audio inattendu.");
   const buf = await req.arrayBuffer();
@@ -399,34 +405,62 @@ async function stt(req: Request, u: User): Promise<Response> {
   if (used.stt_seconds + secs > lim.stt_seconds) return fail(req, 429, "rate_limited", "Plafond de transcription du jour atteint.");
   const lang = (new URL(req.url).searchParams.get("lang") || "it").slice(0, 2).toLowerCase();
   const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
-  // Transcription fidèle, dans la langue parlée : le modèle reçoit seulement la langue et une consigne neutre (sans contexte,
-  // qui le poussait à compléter la phrase). S'il renvoie malgré tout une traduction anglaise ou une formule inventée sur un
-  // enregistrement presque muet, on refait la transcription avec whisper-1, qui suit strictement la langue demandée.
+  const file = () => new Blob([buf], { type });
+  // ElevenLabs Scribe d'abord (si sa clé est là) : transcription fidèle, langue imposée, sans balises d'ambiance.
+  const viaEleven = async (): Promise<string | null> => {
+    const ask = async (model: string) => {
+      const form = new FormData();
+      form.append("file", file(), "audio." + ext);
+      form.append("model_id", model);
+      if (/^[a-z]{2}$/.test(lang)) form.append("language_code", lang);
+      form.append("tag_audio_events", "false");
+      form.append("diarize", "false");
+      return await fetch("https://api.elevenlabs.io/v1/speech-to-text", { method: "POST", headers: { "xi-api-key": eleven }, body: form, signal: AbortSignal.timeout(30000) });
+    };
+    try {
+      const model = env("ELEVENLABS_STT_MODEL", "scribe_v2");
+      let r = await ask(model);
+      if (!r.ok && r.status >= 400 && r.status < 500 && model !== "scribe_v1") { const t = await r.text(); if (/model/i.test(t)) { console.error("stt elevenlabs", model, r.status, t.slice(0, 200)); r = await ask("scribe_v1"); } else { console.error("stt elevenlabs", r.status, t.slice(0, 300)); return null; } }
+      if (!r.ok) { console.error("stt elevenlabs", r.status, (await r.text()).slice(0, 300)); return null; }
+      const j = await r.json().catch(() => ({}));
+      return String(j.text || "").replace(/\s*\((?:[^)]{1,30})\)\s*/g, " ").replace(/\s+/g, " ").trim();
+    } catch (e) { console.error("stt elevenlabs", String(e).slice(0, 120)); return null; }
+  };
+  // OpenAI : consigne neutre, sans contexte (qui poussait le modèle à compléter la phrase).
   const url = env("STT_URL", "https://api.openai.com/v1/audio/transcriptions"), main = env("STT_MODEL", "gpt-4o-transcribe");
-  const once = async (model: string) => {
+  const viaOpenAI = async (model: string): Promise<string | null> => {
+    if (!key) return null;
     const form = new FormData();
-    form.append("file", new Blob([buf], { type }), "audio." + ext);
+    form.append("file", file(), "audio." + ext);
     form.append("model", model);
     if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
     if (lang === "it" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Trascrizione fedele in italiano, parola per parola.");
     form.append("temperature", "0");
     form.append("response_format", "json");
-    const r = await fetch(url, { method: "POST", headers: { authorization: "Bearer " + key }, body: form });
-    if (!r.ok) { console.error("stt", model, r.status, (await r.text()).slice(0, 300)); return null; }
-    const j = await r.json().catch(() => ({}));
-    return String(j.text || "").trim();
+    try {
+      const r = await fetch(url, { method: "POST", headers: { authorization: "Bearer " + key }, body: form, signal: AbortSignal.timeout(30000) });
+      if (!r.ok) { console.error("stt", model, r.status, (await r.text()).slice(0, 300)); return null; }
+      const j = await r.json().catch(() => ({}));
+      return String(j.text || "").trim();
+    } catch (e) { console.error("stt", model, String(e).slice(0, 120)); return null; }
   };
-  const peak = Number(req.headers.get("x-peak"));
-  let text = await once(main), model = main;
+  // Dans l'ordre : ElevenLabs, OpenAI, puis whisper-1 (qui suit strictement la langue) ; une traduction anglaise
+  // ou une formule inventée sur du silence fait passer au suivant.
+  const tries: [string, () => Promise<string | null>][] = [];
+  if (eleven) tries.push([env("ELEVENLABS_STT_MODEL", "scribe_v2"), viaEleven]);
+  if (key) tries.push([main, () => viaOpenAI(main)]);
+  if (key && /api\.openai\.com/.test(url) && main !== "whisper-1") tries.push(["whisper-1", () => viaOpenAI("whisper-1")]);
   const odd = (t: string) => lang === "it" && !!t && (looksEnglish(t) || HALLU.test(t));
-  if (text !== null && odd(text) && /api\.openai\.com/.test(url)) {
-    const t2 = await once("whisper-1");
-    console.error("stt douteuse", JSON.stringify({ model: main, len: text.length, english: looksEnglish(text), retry: t2 === null ? "échec" : odd(t2) ? "douteuse" : "ok", secs, bytes: buf.byteLength, peak: Number.isFinite(peak) ? peak : null }));
-    if (t2 !== null) { text = odd(t2) ? "" : t2; model = "whisper-1"; } else text = "";
+  const peak = Number(req.headers.get("x-peak"));
+  let text: string | null = null, used2 = "", failed = 0;
+  for (const [name, fn] of tries) {
+    const t = await fn(); if (t === null) { failed++; continue; }
+    if (odd(t)) { console.error("stt douteuse", JSON.stringify({ model: name, len: t.length, english: looksEnglish(t), secs, bytes: buf.byteLength, peak: Number.isFinite(peak) ? peak : null })); text = text ?? ""; continue; }
+    text = t; used2 = name; break;
   }
   if (text === null) return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie.");
   await addUsage(u.id, 0, 0, 0, secs);
-  return json(req, { text, model });
+  return json(req, { text, model: used2 });
 }
 // Formules que les modèles inventent sur du silence, et phrases manifestement en anglais.
 const HALLU = /^(sottotitoli|sottotitolato|grazie (per|a tutti)( la visione| l'attenzione)?\.?$|amara\.org|thank you\.?$|thanks for watching)/i;
