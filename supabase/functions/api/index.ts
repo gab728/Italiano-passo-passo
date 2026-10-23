@@ -350,9 +350,24 @@ async function admin(req: Request, u: User): Promise<Response> {
     }
     const ek = env("ELEVENLABS_API_KEY");
     if (ek) {
+      // Vrai essai de transcription sur une demi-seconde de silence : seule façon de savoir si une clé restreinte a le droit.
       let st = 0, body = "";
-      try { const r = await fetch("https://api.elevenlabs.io/v1/user", { headers: { "xi-api-key": ek } }); st = r.status; body = (await r.text()).slice(0, 300); } catch { st = 0; }
-      out.dictee = st === 200 ? { ok: true, from: "ElevenLabs" } : st === 401 && /permission/i.test(body) ? { ok: true, from: "ElevenLabs (clé restreinte : vérifie qu'elle autorise Speech to Text)" } : { ok: false, why: st === 401 ? "La clé ElevenLabs (ELEVENLABS_API_KEY) est refusée." : st === 0 ? "ElevenLabs injoignable depuis le serveur." : "Réponse inattendue d'ElevenLabs (" + st + ")." };
+      try {
+        const n = 8000, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), w = (o: number, t: string) => { for (let k = 0; k < t.length; k++) b[o + k] = t.charCodeAt(k); };
+        w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+        const form = new FormData();
+        form.append("file", new Blob([b], { type: "audio/wav" }), "test.wav");
+        form.append("model_id", env("ELEVENLABS_STT_MODEL", "scribe_v2")); form.append("language_code", "it"); form.append("tag_audio_events", "false");
+        const r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", { method: "POST", headers: { "xi-api-key": ek }, body: form, signal: AbortSignal.timeout(20000) });
+        st = r.status; body = (await r.text()).slice(0, 300);
+      } catch { st = 0; }
+      if (st !== 200) console.error("health elevenlabs", st, body);
+      out.dictee = st === 200 ? { ok: true, from: "ElevenLabs" }
+        : st === 401 || st === 403 ? { ok: false, why: /permission|missing/i.test(body) ? "La clé ElevenLabs n'a pas la permission Speech to Text : sur elevenlabs.io, modifie la clé (API Keys) et coche Speech to Text." + (sttKey() ? " En attendant, OpenAI transcrit." : "") : "La clé ElevenLabs (ELEVENLABS_API_KEY) est refusée." + (sttKey() ? " En attendant, OpenAI transcrit." : "") }
+        : st === 0 ? { ok: false, why: "ElevenLabs injoignable depuis le serveur." + (sttKey() ? " OpenAI prend le relais." : "") }
+        : st >= 400 && st < 500 && !/quota|credit|limit/i.test(body) ? { ok: true, from: "ElevenLabs" }
+        : { ok: false, why: "ElevenLabs a répondu " + st + (/quota|credit|limit/i.test(body) ? " : crédits épuisés." : ".") + (sttKey() ? " OpenAI prend le relais." : "") };
     } else out.dictee = sttKey() ? { ok: true, from: "OpenAI" } : { ok: false, why: "Aucune clé de transcription : ajoute ELEVENLABS_API_KEY ou OPENAI_API_KEY." };
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };

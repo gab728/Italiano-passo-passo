@@ -216,7 +216,7 @@
 
     if (me && me.owner) {
       const hc = el("section", "panel health"); hc.append(el("h2", null, "Vérifier la configuration"));
-      hc.append(el("p", "fr", "Essaie chaque clé du serveur (Claude, voix, cache) et dit ce qui manque."));
+      hc.append(el("p", "fr", "Essaie chaque clé du serveur (Claude, voix, dictée, cache) et dit ce qui manque."));
       const res = el("ul", "health-list"); const go = btn("Vérifier");
       go.onclick = async () => {
         go.disabled = true; res.innerHTML = ""; res.append(el("li", null, "Vérification…"));
@@ -245,7 +245,7 @@
       del.disabled = true;
       try { await W.admin("delete_me"); await W.signOut(true); } catch (e) { del.disabled = false; speakNote(aiFail(e)); }
     };
-    out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone (ou par OpenAI sur iPhone) et n'est pas enregistré par l'app ; les voix naturelles sont produites par OpenAI à partir du texte des réponses."));
+    out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone (ou, sur iPhone, par ElevenLabs ou OpenAI) et n'est pas enregistré par l'app ; les voix naturelles sont produites par OpenAI à partir du texte des réponses."));
     out.append(so, el("br"), del); body.append(out);
   }
 
