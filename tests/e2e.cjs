@@ -327,6 +327,17 @@ const MOCKS = `
   ok(await a.evaluate(() => document.querySelector(".dlg .ln").classList.contains("playing") && document.querySelector(".dlg-bar button").getAttribute("aria-pressed") === "false"), "« Écouter » rejoue une seule réplique");
   await a.evaluate(() => home()); await a.waitForTimeout(300);
   ok(await a.evaluate(() => !TTS.speaking()), "la lecture s'arrête en quittant la leçon");
+  const fr = await a.evaluate(async () => {
+    const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh-" + M[mi].id);
+    go(mi); const k = cur.q.findIndex((x) => x.t === "f" && /___ \(/.test(x.d[1])); cur.i = k; show();
+    for (let n = 0; n < 40 && !Object.keys(FRH.get(M[mi].id)).length; n++) await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 100));
+    const h = FRH.get(M[mi].id), q = cur.q[k].d[1];
+    return { shown: document.querySelector("p.q").textContent, hint: h[q], orig: q, n: Object.keys(h).length };
+  });
+  ok(fr.hint && fr.shown.includes("(" + fr.hint + ")") && !/\((venire|fare|sapere|uscire|dovere|volere|dire)/.test(fr.shown), "indice en français entre parenthèses dans les phrases à trous : « " + fr.shown + " » (" + fr.n + " indices pour la leçon)");
+  ok(await a.evaluate(() => FRH.withHint("Abito in una strada ___.", "calme") === "Abito in una strada ___ (calme)." && FRH.withHint("Non ___ (sapere, io) a che ora.", "savoir ; io") === "Non ___ (savoir ; io) a che ora." && FRH.withHint("Abito ___ Parigi, ___ Francia.", "à / en") === "Abito ___ Parigi, ___ Francia (à / en)."), "placement de l'indice (après le trou, ou en fin de phrase s'il y a plusieurs trous)");
+  await a.evaluate(() => home());
   t0 = (await st()).tts.length;
   await a.evaluate(() => { window.__said = ["Un caffè, per favore"]; openPersona("marco"); });
   await a.waitForSelector(".dm-act"); await a.click(".dm-act");

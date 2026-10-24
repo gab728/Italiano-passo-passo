@@ -157,3 +157,63 @@
     ask();
   };
 })();
+
+/* ---------- Indice en français dans les phrases à trous ----------
+   Chaque phrase à trous affiche entre parenthèses la traduction française du mot attendu, à sa forme de base :
+   « Abito in una strada ___ (calme). » L'élève retrouve le mot italien, puis l'accorde ou le conjugue.
+   Les indices d'une leçon sont demandés à Claude une seule fois, dès le début de la leçon, et gardés sur l'appareil. */
+(function () {
+  "use strict";
+  const KEY = (id) => "ipp-frh-" + id;
+  const load = (id) => { try { return JSON.parse(localStorage.getItem(KEY(id)) || "{}") || {}; } catch (e) { return {}; } };
+  const store = (id, v) => { try { localStorage.setItem(KEY(id), JSON.stringify(v)); } catch (e) { /* rien */ } };
+  const answerOf = (x) => Array.isArray(x[2]) ? String(x[2][0]) : String(x[2]).split("|")[0];
+  const holes = (m) => (m.ex || []).concat(m.dq || []).filter((x) => Array.isArray(x) && typeof x[1] === "string" && /___/.test(x[1]) && x[2] != null);
+  const pending = {};
+  async function prime(m) {
+    if (!m || m.id == null || typeof AI !== "function" || pending[m.id]) return;
+    const have = load(m.id), todo = holes(m).filter((x) => !(x[1] in have));
+    if (!todo.length) return;
+    pending[m.id] = true;
+    try {
+      const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  " + answerOf(x)).join("\n");
+      const r = await AI("Pour chaque phrase d'exercice d'italien ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot italien et le mette à la bonne forme.\n" +
+        "Règles : jamais le mot italien attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / » ; si la phrase a déjà une précision entre parenthèses (personne comme « io », contraction comme « in + la »), ajoute-la après « ; » telle quelle (« savoir ; io », « dans la ; in + la »).\n\n" + list +
+        "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre, sans parenthèses.",
+        { modelTier: "quick", cache: true, maxTokens: 120 + 40 * todo.length });
+      const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));
+      if (Array.isArray(arr) && arr.length === todo.length) {
+        const v = load(m.id);
+        todo.forEach((x, i) => { const h = String(arr[i] || "").replace(/[<>()]/g, "").replace(/\s+/g, " ").trim().slice(0, 60); if (h && norm(h) !== norm(answerOf(x))) v[x[1]] = h; });
+        store(m.id, v); refresh(m, v);
+      }
+    } catch (e) { /* sans indice : l'exercice reste jouable */ } finally { pending[m.id] = false; }
+  }
+  function withHint(q, h) {
+    if (!h || q.includes("(" + h + ")")) return q;
+    if ((q.match(/___/g) || []).length > 1) return q.replace(/\s*([.!?…]*)$/, " (" + h + ")$1");
+    if (/___\s*\([^)]*\)/.test(q)) return q.replace(/___\s*\([^)]*\)/, "___ (" + h + ")");
+    return q.replace("___", "___ (" + h + ")");
+  }
+  // Indices arrivés pendant l'exercice : la phrase affichée est complétée tant que la réponse n'est pas donnée.
+  function refresh(m, v) {
+    if (typeof cur === "undefined" || !cur || M[cur.mi] !== m || !body) return;
+    const s = cur.q[cur.i]; if (!s || !s.d || !(s.d[1] in v)) return;
+    const p = body.querySelector("p.q"), done = body.querySelector(".fb");
+    if (p && !done && p.dataset.frh !== "1") { p.innerHTML = fmt(withHint(s.d[1], v[s.d[1]])); p.dataset.frh = "1"; }
+  }
+  window.FRH = { prime, withHint, get: (id) => load(id) };
+  if (typeof R === "undefined") return;
+  ["m", "f"].forEach((k) => {
+    const base = R[k];
+    R[k] = function (s) {
+      try {
+        const m = M[cur.mi]; prime(m);
+        const h = s && s.d && /___/.test(s.d[1]) && load(m.id)[s.d[1]];
+        if (h) { const d = s.d.slice(); d[1] = withHint(s.d[1], h); return base.call(this, Object.assign({}, s, { d, orig: s.d })); }
+      } catch (e) { /* rien */ }
+      return base.call(this, s);
+    };
+  });
+  Object.keys(R).forEach((k) => { if (k === "m" || k === "f") return; const f = R[k]; R[k] = function () { try { if (cur) prime(M[cur.mi]); } catch (e) { /* rien */ } return f.apply(this, arguments); }; });
+})();
