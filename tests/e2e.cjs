@@ -344,7 +344,7 @@ const MOCKS = `
   await a.evaluate(() => home()); await a.waitForTimeout(300);
   ok(await a.evaluate(() => !TTS.speaking()), "la lecture s'arrête en quittant la leçon");
   const fr = await a.evaluate(async () => {
-    const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh-" + M[mi].id);
+    const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh2-" + M[mi].id);
     go(mi); const k = cur.q.findIndex((x) => x.t === "f" && /___ \(/.test(x.d[1])); cur.i = k; show();
     for (let n = 0; n < 40 && !Object.keys(FRH.get(M[mi].id)).length; n++) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 100));
@@ -352,6 +352,8 @@ const MOCKS = `
     return { shown: document.querySelector("p.q").textContent, hint: h[q], orig: q, n: Object.keys(h).length };
   });
   ok(fr.hint && fr.shown.includes("(" + fr.hint + ")") && !/\((venire|fare|sapere|uscire|dovere|volere|dire)/.test(fr.shown), "indice en français entre parenthèses dans les phrases à trous : « " + fr.shown + " » (" + fr.n + " indices pour la leçon)");
+  const fin = await a.evaluate(() => [FRH.finish("___ (quanti) anni hai?", "combien quanti", "Quanti"), FRH.finish("Non ___ (sapere, io) a che ora.", "savoir", "so"), FRH.finish("Il biglietto è ___ (in + la) borsa.", "dans la", "nella"), FRH.finish("Abito in una strada ___.", "calme", "tranquilla")]);
+  ok(fin.join("|") === "combien|savoir ; io|dans la ; in + la|calme", "indice : jamais le mot italien, la personne et la contraction gardées : " + fin.join(" | "));
   ok(await a.evaluate(() => FRH.withHint("Abito in una strada ___.", "calme") === "Abito in una strada ___ (calme)." && FRH.withHint("Non ___ (sapere, io) a che ora.", "savoir ; io") === "Non ___ (savoir ; io) a che ora." && FRH.withHint("Abito ___ Parigi, ___ Francia.", "à / en") === "Abito ___ Parigi, ___ Francia (à / en)."), "placement de l'indice (après le trou, ou en fin de phrase s'il y a plusieurs trous)");
   await a.evaluate(() => home());
   t0 = (await st()).tts.length;

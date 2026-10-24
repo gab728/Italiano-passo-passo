@@ -164,7 +164,7 @@
    Les indices d'une leçon sont demandés à Claude une seule fois, dès le début de la leçon, et gardés sur l'appareil. */
 (function () {
   "use strict";
-  const KEY = (id) => "ipp-frh-" + id;
+  const KEY = (id) => "ipp-frh2-" + id;
   const load = (id) => { try { return JSON.parse(localStorage.getItem(KEY(id)) || "{}") || {}; } catch (e) { return {}; } };
   const store = (id, v) => { try { localStorage.setItem(KEY(id), JSON.stringify(v)); } catch (e) { /* rien */ } };
   const answerOf = (x) => Array.isArray(x[2]) ? String(x[2][0]) : String(x[2]).split("|")[0];
@@ -178,16 +178,27 @@
     try {
       const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  " + answerOf(x)).join("\n");
       const r = await AI("Pour chaque phrase d'exercice d'italien ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot italien et le mette à la bonne forme.\n" +
-        "Règles : jamais le mot italien attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / » ; si la phrase a déjà une précision entre parenthèses (personne comme « io », contraction comme « in + la »), ajoute-la après « ; » telle quelle (« savoir ; io », « dans la ; in + la »).\n\n" + list +
+        "Règles : jamais le mot italien attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
         "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre, sans parenthèses.",
         { modelTier: "quick", cache: true, maxTokens: 120 + 40 * todo.length });
       const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));
       if (Array.isArray(arr) && arr.length === todo.length) {
         const v = load(m.id);
-        todo.forEach((x, i) => { const h = String(arr[i] || "").replace(/[<>()]/g, "").replace(/\s+/g, " ").trim().slice(0, 60); if (h && norm(h) !== norm(answerOf(x))) v[x[1]] = h; });
+        todo.forEach((x, i) => { const h = finish(x[1], arr[i], answerOf(x)); if (h) v[x[1]] = h; });
         store(m.id, v); refresh(m, v);
       }
     } catch (e) { /* sans indice : l'exercice reste jouable */ } finally { pending[m.id] = false; }
+  }
+  // L'indice final : la traduction française, plus ce qui reste utile de l'indice italien d'origine
+  // (la personne, ou une contraction comme « in + la »), jamais le mot italien lui-même.
+  const PRON = /\b(io|tu|lui|lei|Lei|noi|voi|loro)\b/g;
+  function finish(q, fr, answer) {
+    const orig = ((q.match(/___\s*\(([^)]*)\)/) || [])[1] || "").trim();
+    const banned = new Set((/\+/.test(orig) ? [] : orig.toLowerCase().split(/[\s,;/]+/)).concat(String(answer).toLowerCase().split(/\s+/)).filter((w) => w.length >= 3 && !/^(lui|lei|noi|voi|loro)$/.test(w)));
+    let h = String(fr || "").replace(/[<>()]/g, " ").split(/\s+/).filter((w) => !banned.has(w.toLowerCase().replace(/[.,;:!?]/g, ""))).join(" ").replace(/\s*;\s*$/, "").replace(/\s+/g, " ").trim().slice(0, 60);
+    if (!h) return "";
+    const keep = /\+/.test(orig) ? orig : (orig.match(PRON) || []).join(", ");
+    return keep && !h.includes(keep) ? h + " ; " + keep : h;
   }
   function withHint(q, h) {
     if (!h || q.includes("(" + h + ")")) return q;
@@ -202,7 +213,7 @@
     const p = body.querySelector("p.q"), done = body.querySelector(".fb");
     if (p && !done && p.dataset.frh !== "1") { p.innerHTML = fmt(withHint(s.d[1], v[s.d[1]])); p.dataset.frh = "1"; }
   }
-  window.FRH = { prime, withHint, get: (id) => load(id) };
+  window.FRH = { prime, withHint, finish, get: (id) => load(id) };
   if (typeof R === "undefined") return;
   ["m", "f"].forEach((k) => {
     const base = R[k];
