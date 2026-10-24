@@ -1571,8 +1571,9 @@ f(s){const d=s.d,answers=d[2].split("|");if(d[4])body.append(el("p","fr",d[4]));
   const keys=el("div","keys");C().keys.split("").forEach(c=>{const b=el("button");b.type="button";b.textContent=c;b.setAttribute("aria-label","Insérer "+c);
     b.onclick=()=>{const a=inp.selectionStart??inp.value.length,z=inp.selectionEnd??a;inp.value=inp.value.slice(0,a)+c+inp.value.slice(z);inp.focus();inp.setSelectionRange(a+1,a+1)};keys.append(b)});
   const ok=btn("Vérifier","primary");w.append(inp,keys,ok);if(window.WEB)WEB.mic(w,inp);body.append(w);let done=false;
-  const check=()=>{if(done||!inp.value.trim())return;done=true;inp.readOnly=true;ok.disabled=true;keys.hidden=true;
+  const check=async()=>{if(done||!inp.value.trim())return;done=true;inp.readOnly=true;ok.disabled=true;keys.hidden=true;
     const u=blankOf(d[1],inp.value),exact=answers.some(a=>norm(a)===norm(u)),loose=answers.some(a=>bare(a)===bare(u));
+    if(!loose&&window.QZ&&QZ.alt){const v=await QZ.alt(d[1],answers[0],u,d[3]);if(v&&v.ok){fb(true,s,"Juste aussi ! "+esc(v.why)+" Réponse prévue : <b>"+answers[0]+"</b>.",filled(d[1],u),inp.value);return}}
     let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?"Attention à l'accent. ":"")+msg;
     fb(loose,s,msg,filled(d[1],answers[0]),u)};
   ok.onclick=check;inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();check()}})},

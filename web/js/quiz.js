@@ -25,7 +25,31 @@
     }));
     return best;
   }
-  window.QZ = { judge };
+  // Mot de départ à accorder, quand les propositions ne sont que des formes du même mot (tranquillo, tranquilla…).
+  function hint(opts) {
+    const w = opts.map((o) => String(o).trim().toLowerCase());
+    if (w.length < 2 || w.some((x) => !/^[a-zàèéìíòóù']+$/.test(x))) return "";
+    let p = w[0]; w.forEach((x) => { while (p && !x.startsWith(p)) p = p.slice(0, -1); });
+    if (p.length < 3 || w.some((x) => x.length - p.length > 3)) return "";
+    return w.find((x) => /o$/.test(x)) || w.find((x) => /e$/.test(x)) || w.slice().sort((x, y) => x.length - y.length)[0];
+  }
+  // Une autre réponse que celle prévue peut être juste : Claude vérifie qu'elle va dans la phrase et respecte la règle travaillée.
+  async function alt(sentence, expected, given, rule) {
+    if (typeof AI !== "function" || !String(given || "").trim()) return null;
+    const wait = el("p", "fr qz-wait", "Ce n'est pas la réponse prévue : je vérifie si la tienne marche aussi…"); body.append(wait);
+    try {
+      const r = await Promise.race([
+        AI("Exercice à trous d'italien pour un francophone.\nPhrase : " + sentence + "\nRéponse prévue : " + expected + "\nCe que l'exercice fait travailler : " + String(rule || "").replace(/<[^>]+>/g, "") + "\nRéponse de l'élève : " + given + "\n\n" +
+          "Mise dans le trou, sa réponse donne-t-elle une phrase correcte et naturelle, qui respecte aussi le point travaillé (même accord, même temps, même personne) ? Un autre mot que celui prévu est accepté s'il convient. Ignore majuscules et ponctuation.\n" +
+          "Réponds uniquement par un objet JSON : {\"ok\": true ou false, \"explication\": \"en français, une phrase courte : pourquoi c'est juste, ou ce qui ne va pas\"}",
+          { modelTier: "quick", cache: true, maxTokens: 250 }),
+        new Promise((_, rej) => setTimeout(() => rej({ code: "slow" }), 12000)),
+      ]);
+      const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
+      return { ok: j.ok === true, why: String(j.explication || "").slice(0, 300) };
+    } catch (e) { return null; } finally { wait.remove(); }
+  }
+  window.QZ = { judge, hint, alt };
 
   /* Zone de réponse : champ libre, et un bouton pour afficher les propositions si on bloque. */
   function answerBox(opts) {
@@ -61,13 +85,21 @@
     const d = s.d, good = d[2][0];
     if (!(/___/.test(d[1]) && good.split(/\s+/).length <= 4 && good.length <= 32)) return baseM(s);
     if (d[4]) body.append(el("p", "fr", d[4]));
-    body.append(el("p", "q", fmt(d[1])));
+    const h = (d[1].match(/___/g) || []).length === 1 && !/___\s*\(/.test(d[1]) ? hint(d[2]) : "";
+    body.append(el("p", "q", fmt(h ? d[1].replace("___", "___ (" + h + ")") : d[1])));
     const options = shuffle(d[2].map((t, k) => ({ t, good: k === 0 })));
-    body.append(answerBox({ answers: [good], options, onDone: (r) => {
-      if (!r.help) { const g = blankOf(d[1], r.given); if (g !== r.given) r.how = judge(g, [good]); }
+    body.append(answerBox({ answers: [good], options, onDone: async (r) => {
+      let g = r.given;
+      if (!r.help) { g = blankOf(d[1], r.given); if (g !== r.given) r.how = judge(g, [good]); }
+      // Réponse différente de toutes les propositions : peut-être un autre mot juste.
+      if (!r.help && r.how === "no" && !d[2].some((o) => judge(g, [o]) !== "no")) {
+        const a = await alt(d[1], good, g, d[3]);
+        if (a && a.ok) return fb(true, s, "Juste aussi ! " + esc(a.why) + " Réponse prévue : <b>" + esc(good) + "</b>.", filled(d[1], g), r.given);
+        if (a && a.why) r.why = a.why;
+      }
       const ok = r.how !== "no", v = verdict(r, good);
       let msg = d[3];
-      if (!ok && !r.help) msg = "Réponse : <b>" + esc(good) + "</b>. " + msg;
+      if (!ok && !r.help) msg = "Réponse : <b>" + esc(good) + "</b>. " + (r.why ? esc(r.why) + " " : "") + msg;
       else if (v) msg = esc(v) + " " + msg;
       if (ok && r.help) msg = "Trouvé avec les propositions. " + msg;
       fb(ok, s, msg, d[1].includes("___") ? filled(d[1], good) : null, r.given);

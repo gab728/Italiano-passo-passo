@@ -307,6 +307,9 @@ const MOCKS = `
   await b.waitForTimeout(800);
   ok((await st()).tts.length === t0 + 1, "le cache du serveur sert aussi aux autres membres");
   ok((await a.evaluate(() => window.__spoken)).length === 0, "lecture des leçons par la voix naturelle");
+  ok(await a.evaluate(() => QZ.hint(["tranquilla", "tranquillo", "tranquille", "tranquilli"]) === "tranquillo" && QZ.hint(["dal", "al", "nel", "sul"]) === "" && QZ.hint(["grandi", "grande"]) === "grande"), "exercice d'accord : le mot à accorder est indiqué");
+  const alt = await a.evaluate(async () => [await QZ.alt("Abito in una strada ___.", "tranquilla", "luminosa", "Strada est féminin singulier."), await QZ.alt("Abito in una strada ___.", "tranquilla", "luminoso", "Strada est féminin singulier.")]);
+  ok(alt[0] && alt[0].ok === true && alt[1] && alt[1].ok === false, "un autre adjectif bien accordé est accepté, un mauvais accord reste faux");
   t0 = (await st()).tts.length;
   const dl = await a.evaluate(() => { const mi = M.findIndex((m) => m.dlg && m.dlg.length >= 4 && m.dlg.some((l) => /^(Sara|Anna|Elena|Impiegata|Nonna)$/.test(l[0]))); go(mi); cur.i = cur.q.findIndex((x) => x.t === "d") - 1; show(); return { n: M[mi].dlg.length, cast: DLG.cast(M[mi].dlg) }; });
   await a.waitForTimeout(500);
