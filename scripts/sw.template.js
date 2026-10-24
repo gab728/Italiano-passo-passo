@@ -26,7 +26,8 @@ self.addEventListener("fetch", (e) => {
     // Réseau d'abord, mais pas plus de 3 secondes quand une copie existe : avec un réseau faible (voiture, train), l'app s'ouvre quand même.
     const key = req.mode === "navigate" ? "index.html" : req;
     const net = fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(key, copy)); } return res; });
-    const cached = () => caches.match(key, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || caches.match("./"));
+    // La page d'accueil sert de secours seulement pour une navigation : jamais à la place de config.js ou du catalogue.
+    const cached = () => caches.match(key, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || (req.mode === "navigate" ? caches.match("./") : null));
     e.respondWith(new Promise((resolve) => {
       let done = false; const give = (r) => { if (!done && r) { done = true; resolve(r); } };
       const t = setTimeout(() => cached().then(give), 3000);

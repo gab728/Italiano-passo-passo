@@ -280,6 +280,9 @@ createServer(async (req, res) => {
     let f = join(ROOT, "web", decodeURIComponent(p === "/" ? "/index.html" : p));
     if (!f.startsWith(join(ROOT, "web")) || !existsSync(f) || statSync(f).isDirectory()) return send(res, 404, { error: "not found" });
     const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
-    res.writeHead(200, { "content-type": types[extname(f)] || "application/octet-stream" }); res.end(readFileSync(f));
+    res.writeHead(200, { "content-type": types[extname(f)] || "application/octet-stream" });
+    // La configuration recopiée dans la page pointe elle aussi vers ce serveur.
+    if (extname(f) === ".html") return res.end(readFileSync(f, "utf8").replace(/window\.APP_CONFIG_BUILT=[^<]*;/, "window.APP_CONFIG_BUILT=" + JSON.stringify({ supabaseUrl: ORIGIN, supabaseKey: PUB }) + ";"));
+    res.end(readFileSync(f));
   } catch (e) { console.error(e); send(res, 500, { message: String(e) }); }
 }).listen(PORT, "127.0.0.1", () => console.log("mock " + ORIGIN));

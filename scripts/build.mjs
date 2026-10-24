@@ -65,6 +65,18 @@ for (const f of files) if (existsSync(join(WEB, f))) hash.update(readFileSync(jo
 hash.update(css);
 const BUILD = hash.digest("hex").slice(0, 10);
 
+// La configuration publique (adresse Supabase, clé publique) est aussi recopiée dans la page :
+// si config.js n'arrive pas (réseau faible, cache vidé par le téléphone), l'app se connecte quand même.
+const INLINE_CFG = (() => {
+  try {
+    const box = { window: {} };
+    const src = existsSync(join(WEB, "config.js")) ? readFileSync(join(WEB, "config.js"), "utf8") : "";
+    new Function("window", src)(box.window);
+    const c = box.window.APP_CONFIG || {};
+    if (!/^https:\/\//.test(c.supabaseUrl || "") || !c.supabaseKey || /TON-PROJET/.test(c.supabaseUrl)) return "null";
+    return JSON.stringify({ supabaseUrl: c.supabaseUrl, supabaseKey: c.supabaseKey }).replace(/</g, "\\u003c");
+  } catch (e) { return "null"; }
+})();
 const html = `<!doctype html>
 <html lang="fr">
 <head>
@@ -90,7 +102,7 @@ ${fonts}
 <div id="gate" class="gate" hidden></div>
 <div id="app" hidden></div>
 <noscript>Cette app a besoin de JavaScript.</noscript>
-<script>window.APP_BUILD="${BUILD}";</script>
+<script>window.APP_BUILD="${BUILD}";window.APP_CONFIG_BUILT=${INLINE_CFG};</script>
 <script src="config.js?v=${BUILD}"></script>
 <script src="js/supabase.js?v=${BUILD}"></script>
 <script src="js/shim.js?v=${BUILD}"></script>

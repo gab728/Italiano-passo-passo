@@ -1,8 +1,8 @@
 /* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
-const VERSION = "ipp-d68450fe17";
-const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","js/app.js?v=d68450fe17","js/voice.js?v=d68450fe17","js/tts.js?v=d68450fe17","js/web.js?v=d68450fe17","js/dm.js?v=d68450fe17","js/ui.js?v=d68450fe17","js/quiz.js?v=d68450fe17","js/words.js?v=d68450fe17","js/news.js?v=d68450fe17","css/app.css?v=d68450fe17","js/shim.js?v=d68450fe17","js/supabase.js?v=d68450fe17","css/web.css?v=d68450fe17","content/catalog.json?v=d68450fe17","config.js?v=d68450fe17"];
+const VERSION = "ipp-2d64667de6";
+const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","js/app.js?v=2d64667de6","js/voice.js?v=2d64667de6","js/tts.js?v=2d64667de6","js/web.js?v=2d64667de6","js/dm.js?v=2d64667de6","js/ui.js?v=2d64667de6","js/quiz.js?v=2d64667de6","js/words.js?v=2d64667de6","js/news.js?v=2d64667de6","css/app.css?v=2d64667de6","js/shim.js?v=2d64667de6","js/supabase.js?v=2d64667de6","css/web.css?v=2d64667de6","content/catalog.json?v=2d64667de6","config.js?v=2d64667de6"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -26,7 +26,8 @@ self.addEventListener("fetch", (e) => {
     // Réseau d'abord, mais pas plus de 3 secondes quand une copie existe : avec un réseau faible (voiture, train), l'app s'ouvre quand même.
     const key = req.mode === "navigate" ? "index.html" : req;
     const net = fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(key, copy)); } return res; });
-    const cached = () => caches.match(key, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || caches.match("./"));
+    // La page d'accueil sert de secours seulement pour une navigation : jamais à la place de config.js ou du catalogue.
+    const cached = () => caches.match(key, { ignoreSearch: req.mode !== "navigate" }).then((r) => r || (req.mode === "navigate" ? caches.match("./") : null));
     e.respondWith(new Promise((resolve) => {
       let done = false; const give = (r) => { if (!done && r) { done = true; resolve(r); } };
       const t = setTimeout(() => cached().then(give), 3000);

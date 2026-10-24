@@ -34,6 +34,22 @@ const MOCKS = `
   const newPage = async (ctx) => { const p = await ctx.newPage(); p.on("pageerror", (e) => errors.push(e.message)); p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text()); }); return p; };
   await post("/__seed", { email: "bramigab@gmail.com" });
 
+  console.log("0. Réseau faible : config.js absent ou remplacé par une page");
+  {
+    const cx = await br.newContext({ viewport: { width: 390, height: 844 } });
+    await cx.route("**/config.js*", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html></html>" }));
+    const z = await cx.newPage(); await z.goto(O + "/");
+    await z.waitForSelector(".g-hello", { timeout: 8000 }).catch(() => {});
+    ok(await z.isVisible(".g-hello") && !(await z.textContent("#gate")).includes("config.js"), "l'app démarre quand même avec la configuration recopiée dans la page");
+    await cx.close();
+    const cy = await br.newContext({ viewport: { width: 390, height: 844 } });
+    await cy.route("**/js/supabase.js*", (r) => r.abort());
+    const y = await cy.newPage(); await y.goto(O + "/");
+    await y.waitForSelector("#gate button:has-text('Réessayer')", { timeout: 10000 }).catch(() => {});
+    ok(await y.isVisible("#gate button:has-text('Réessayer')") && !(await y.textContent("#gate")).includes("config.js"), "fichier introuvable : rechargement automatique, puis bouton Réessayer");
+    await cy.close();
+  }
+
   console.log("1. Connexion");
   const ctxA = await br.newContext({ viewport: { width: 390, height: 844 }, permissions: ["clipboard-read", "clipboard-write"] });
   await ctxA.addInitScript(MOCKS);

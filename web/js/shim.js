@@ -5,7 +5,8 @@
    même appareil sont écartées avant le lancement. */
 (function () {
   "use strict";
-  const CFG = window.APP_CONFIG || {};
+  const okCfg = (c) => !!(c && c.supabaseUrl && c.supabaseKey && !/TON-PROJET/.test(c.supabaseUrl));
+  const CFG = okCfg(window.APP_CONFIG) ? window.APP_CONFIG : okCfg(window.APP_CONFIG_BUILT) ? window.APP_CONFIG_BUILT : (window.APP_CONFIG || {});
   const gate = document.getElementById("gate");
   const APP_KEYS = ["italiano-in-treno-v1", "italiano-in-treno-v1-base"];
   const OWNER_KEY = "ipp-local-owner";
@@ -17,10 +18,20 @@
 
   if (!CFG.supabaseUrl || !CFG.supabaseKey || !window.supabase) {
     gate.hidden = false;
-    gate.append($("h1", null, "Italiano passo passo"),
-      $("p", "fr", "L'app n'est pas encore reliée à son serveur : il manque l'adresse Supabase et la clé publique dans config.js. Le guide de mise en ligne explique où les trouver."));
+    gate.append($("h1", null, "Italiano passo passo"));
+    if (!CFG.supabaseUrl || !CFG.supabaseKey) {
+      gate.append($("p", "fr", "L'app n'est pas encore reliée à son serveur : il manque l'adresse Supabase et la clé publique dans config.js. Le guide de mise en ligne explique où les trouver."));
+      return;
+    }
+    // Un fichier de l'app n'a pas pu être chargé (réseau faible) : on recharge une fois tout seul, puis on propose de réessayer.
+    let tries = 0; try { tries = +sessionStorage.getItem("ipp-reload") || 0; } catch (e) { /* rien */ }
+    if (tries < 1 && navigator.onLine !== false) { try { sessionStorage.setItem("ipp-reload", String(tries + 1)); } catch (e) { /* rien */ } location.reload(); return; }
+    gate.append($("p", "fr", "L'app n'a pas pu se charger complètement : le réseau est sans doute trop faible. Vérifie ta connexion, puis réessaie."));
+    const b = $("button", "primary", "Réessayer"); b.type = "button"; b.onclick = () => { try { sessionStorage.removeItem("ipp-reload"); } catch (e) { /* rien */ } location.reload(); };
+    gate.append(b);
     return;
   }
+  try { sessionStorage.removeItem("ipp-reload"); } catch (e) { /* rien */ }
   const BASE = CFG.supabaseUrl.replace(/\/+$/, "");
   const FN = BASE + "/functions/v1/api";
   // Lien « réinitialiser le mot de passe » : lu avant que la connexion n'efface l'adresse.
