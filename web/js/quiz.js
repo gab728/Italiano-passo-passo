@@ -228,3 +228,82 @@
   });
   Object.keys(R).forEach((k) => { if (k === "m" || k === "f") return; const f = R[k]; R[k] = function () { try { if (cur) prime(M[cur.mi]); } catch (e) { /* rien */ } return f.apply(this, arguments); }; });
 })();
+
+/* ---------- Sommaire de la leçon : reprendre où l'on veut ----------
+   Cours, vocabulaire, exercices, dialogue, questions, conversation orale : chaque partie s'ouvre d'un toucher,
+   depuis la barre de la leçon, depuis l'écran de fin, et quand on rouvre une leçon déjà terminée. */
+(function () {
+  "use strict";
+  if (typeof go !== "function" || typeof show !== "function") return;
+  const NAMES = { l: "Le cours", v: "Vocabulaire", x: "Exercices", d: "Dialogue", dq: "Questions sur le dialogue", r: "Deuxième chance" };
+  const EXO = new Set(["m", "f", "o", "p"]);
+  // Les parties d'une leçon, d'après la suite de ses écrans.
+  function parts(q) {
+    const out = []; let seenD = false;
+    q.forEach((s, i) => {
+      const k = s.retry ? "r" : s.t === "l" ? "l" : s.t === "v" ? "v" : s.t === "d" ? "d" : EXO.has(s.t) ? (seenD ? "dq" : "x") : "x";
+      if (s.t === "d") seenD = true;
+      const last = out[out.length - 1];
+      if (last && last.k === k) { last.n++; last.end = i; } else out.push({ k, name: NAMES[k], at: i, end: i, n: 1 });
+    });
+    return out;
+  }
+  const count = (p) => p.k === "l" ? p.n + (p.n > 1 ? " écrans" : " écran") : p.k === "v" ? "Les mots de la leçon" : p.k === "d" ? "Lire et écouter" : p.n + (p.n > 1 ? " questions" : " question");
+  const ICONS = {
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  };
+  function jump(i) { cur.i = Math.max(0, Math.min(i, cur.q.length - 1)); persist(); show(); }
+  function sheet(mi, mode) {
+    const m = M[mi]; if (!m) return;
+    const old = document.querySelector(".lmap"); if (old) old.remove();
+    const here = cur && cur.mi === mi && cur.i < cur.q.length ? cur.i : -1;
+    const ps = parts(cur && cur.mi === mi ? cur.q : screens(m));
+    const sh = el("div", "wsheet lmap"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Sommaire de la leçon");
+    const close = () => { sh.classList.remove("in"); setTimeout(() => sh.remove(), 180); document.removeEventListener("pointerdown", outside, true); };
+    const outside = (e) => { if (!sh.contains(e.target)) close(); };
+    const top = el("div", "ws-top"), t = el("b", "ws-word"); t.textContent = mode === "done" ? "Par où reprendre ?" : "Sommaire";
+    const x = el("button", "icon-btn ws-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = ICONS.x; x.onclick = close;
+    top.append(t, x); sh.append(top);
+    const sub = el("p", "ws-lem"); sub.textContent = m.st; sh.append(sub);
+    const list = el("div", "lmap-list");
+    const row = (name, small, cur_, fn) => {
+      const b = el("button", "lmap-row" + (cur_ ? " here" : "")); b.type = "button";
+      const s1 = el("b"); s1.textContent = name; const s2 = el("small"); s2.textContent = small; b.append(s1, s2);
+      b.onclick = () => { close(); fn(); }; list.append(b);
+    };
+    ps.forEach((p) => row(p.name, (here >= p.at && here <= p.end ? "Tu es ici · " : "") + count(p), here >= p.at && here <= p.end, () => {
+      if (cur && cur.mi === mi && cur.i <= cur.q.length) jump(p.at); else { baseGo(mi); jump(p.at); }
+    }));
+    if (AI && m.scenario) row("Conversation orale", "Mettre la leçon en pratique à l'oral", false, () => conv(mi));
+    if (mode === "done") row("Tout refaire depuis le début", "La leçon complète", false, () => { baseGo(mi); jump(0); });
+    sh.append(list); document.body.append(sh);
+    requestAnimationFrame(() => sh.classList.add("in"));
+    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+    const f = list.querySelector(".here") || list.querySelector(".lmap-row"); if (f) f.focus({ preventScroll: true });
+  }
+  // Une leçon déjà terminée : on choisit la partie au lieu de tout recommencer.
+  const baseGo = go;
+  go = function (mi) {
+    const m = M[mi], st = (m && S[m.id]) || {};
+    if (st.done && !st.i) return sheet(mi, "done");
+    return baseGo.apply(this, arguments);
+  };
+  window.go = go;
+  // Bouton « Sommaire » dans la barre de la leçon, et « Revoir une partie » à la fin.
+  const baseShow = show;
+  show = function () {
+    baseShow.apply(this, arguments);
+    try {
+      const sub = root.querySelector(".bar .sub"), mi = cur && cur.mi;
+      if (sub && mi != null) {
+        const b = el("button", "linkbtn icon-btn lmap-btn"); b.type = "button"; b.innerHTML = ICONS.list;
+        b.setAttribute("aria-label", "Sommaire de la leçon"); b.title = "Sommaire"; b.onclick = () => sheet(mi);
+        const c = sub.querySelector(".count"); sub.insertBefore(b, c || null);
+      }
+      const e = body && body.querySelector(".end .rowb");
+      if (e && mi != null) { const r = btn("Revoir une partie de la leçon"); r.onclick = () => sheet(mi); const last = e.lastElementChild; e.insertBefore(r, last); }
+    } catch (err) { /* rien */ }
+  };
+  window.LMAP = { open: sheet, parts };
+})();

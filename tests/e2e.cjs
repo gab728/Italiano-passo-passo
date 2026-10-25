@@ -343,6 +343,19 @@ const MOCKS = `
   ok(await a.evaluate(() => document.querySelector(".dlg .ln").classList.contains("playing") && document.querySelector(".dlg-bar button").getAttribute("aria-pressed") === "false"), "« Écouter » rejoue une seule réplique");
   await a.evaluate(() => home()); await a.waitForTimeout(300);
   ok(await a.evaluate(() => !TTS.speaking()), "la lecture s'arrête en quittant la leçon");
+  {
+    const mi = await a.evaluate(() => { const mi = M.findIndex((m) => m.scenario && m.dlg && m.dlg.length); const id = M[mi].id; window.__keep = JSON.stringify(S[id] || null); S[id] = Object.assign({}, S[id], { done: true, i: 0, best: 80 }); go(mi); return mi; });
+    await a.waitForSelector(".lmap.in", { timeout: 3000 });
+    const rows = await a.$$eval(".lmap .lmap-row b", (l) => l.map((x) => x.textContent));
+    ok(["Le cours", "Vocabulaire", "Exercices", "Dialogue", "Conversation orale", "Tout refaire depuis le début"].every((r) => rows.includes(r)), "leçon terminée : on choisit par où reprendre (" + rows.join(", ") + ")");
+    await a.click(".lmap .lmap-row:has-text('Exercices')"); await a.waitForTimeout(300);
+    ok(await a.evaluate(() => view === "course" && cur.i === cur.q.findIndex((x) => ["m", "f", "o", "p"].includes(x.t))), "« Exercices » ouvre directement le premier exercice");
+    await a.click(".lmap-btn"); await a.waitForSelector(".lmap.in");
+    ok(await a.evaluate(() => /Tu es ici/.test(document.querySelector(".lmap .lmap-row.here").textContent) && document.querySelector(".lmap .lmap-row.here b").textContent === "Exercices"), "bouton Sommaire dans la leçon, partie en cours signalée");
+    await a.click(".lmap .lmap-row:has-text('Dialogue')"); await a.waitForTimeout(300);
+    ok(await a.evaluate(() => cur.q[cur.i].t === "d" && S[M[cur.mi].id].done === true && S[M[cur.mi].id].best === 80), "saut au dialogue, progression et meilleur score gardés");
+    await a.evaluate((k) => { TTS.stop(); const id = M[k].id; const v = JSON.parse(window.__keep); if (v) S[id] = v; else delete S[id]; home(); }, mi);
+  }
   const fr = await a.evaluate(async () => {
     const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh2-" + M[mi].id);
     go(mi); const k = cur.q.findIndex((x) => x.t === "f" && /___ \(/.test(x.d[1])); cur.i = k; show();

@@ -598,3 +598,13 @@ button.who { border: 0; background: none; padding: 0; margin: 0; text-align: lef
 .dlg-bar { display: flex; margin: 4px 0 14px; }
 .dlg .ln { padding: 6px 10px; margin: 0 -10px; border-radius: 12px; transition: background .2s; }
 .dlg .ln.playing { background: var(--chip); }
+/* Sommaire de la leçon */
+.lmap-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; max-height: 60vh; overflow-y: auto; }
+.lmap-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--chip); color: var(--ink); font: inherit; }
+.lmap-row b { font-weight: 600; font-size: 15.5px; }
+.lmap-row small { color: var(--muted); font-size: 13px; }
+.lmap-row.here { background: var(--azzurro); color: var(--azzurro-ink); }
+.lmap-row.here small { color: inherit; opacity: .8; }
+.lesson-bar .sub { flex-wrap: nowrap !important; }
+.lesson-bar .sub .where { max-width: none; flex: 1 1 auto; min-width: 0; }
+.lesson-bar .sub .icon-btn { flex: none; }
