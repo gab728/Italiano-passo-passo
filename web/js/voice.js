@@ -120,7 +120,8 @@ const VO = (() => {
     st.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
     return st.stream;
   }
-  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; } }
+  // Moment où le micro a été rendu : sur iPhone, le son met un instant à revenir sur le haut-parleur.
+  function release() { if (st.stream) { st.stream.getTracks().forEach((t) => t.stop()); st.stream = null; st.offAt = performance.now(); } }
   function listenServer(o) {
     return new Promise(async (res, rej) => { try {
       let stream; try { stream = await micStream(); } catch (e) { return rej({ code: "denied" }); }
@@ -251,12 +252,13 @@ const VO = (() => {
     if (/^(ripeti|ripeta|ripetere|ancora|puoi ripetere|repete|repetes|come|cosa)$/.test(s) || /^(ripeti|puoi ripetere|ancora una volta)/.test(s)) return "repeat";
     if (/^(avanti|salta|passa|prossimo|prossima|dopo|suivant|next)$/.test(s)) return "skip";
     if (/^(basta|stop|fine|pausa|finito|ferma|fermati|arrivederci|ciao ciao)$/.test(s)) return "stop";
-    if (/^(non lo so|non so|boh|aiuto|je sais pas|je ne sais pas)$/.test(s)) return "dunno";
+    if (/^(non lo so|non so|non lo ricordo|non (me )?lo ricordo|non ricordo|non mi ricordo|boh|aiuto|mi arrendo|je sais pas|je ne sais pas|j sais pas|sais pas|chais pas|je (ne )?sais plus|aucune idee|j ai oublie|je l ai oublie|jsp|gene se pa|je ne se pa)$/.test(s)) return "dunno";
     if (/^(piu piano|piu lentamente|lentamente|piano)$/.test(s)) return "slower";
     return null;
   }
 
-  return { available, native, server, standalone, isIOS, listen, stop, cancel, release, say, deviceSay, IT, beep, tick, chimeOk, chimeKo, judge, command, failText, toks, watchVoice, ctx: audioCtx };
+  const micOffAt = () => st.offAt || 0;
+  return { available, native, server, standalone, isIOS, listen, stop, cancel, release, micOffAt, say, deviceSay, IT, beep, tick, chimeOk, chimeKo, judge, command, failText, toks, watchVoice, ctx: audioCtx };
 })();
 
 /* ---------- Petites aides d'écran ---------- */
@@ -329,7 +331,8 @@ function carSteps(src) {
   } else {
     const V = vstat(), list = shuffle(V.due.length ? V.due : V.nb).slice(0, 30);
     out.push({ parts: [fr(list.length + " mots de ton carnet. Je dis le mot en français : après le bip, dis-le en " + LN() + ".")] });
-    list.forEach((w) => out.push({ parts: [fr(w.fr)], ask: ask([w.it], "translate", { answer: w.it, key: w.key }) }));
+    // Le mot français dans une petite phrase : la voix sait que c'est du français et le prononce en entier.
+    list.forEach((w) => out.push({ parts: [fr("Comment dit-on « " + w.fr + " » ?")], show: w.fr, ask: ask([w.it], "translate", { answer: w.it, key: w.key }) }));
   }
   return out;
 }
@@ -356,12 +359,13 @@ async function carAsk(a, token, repeatOnly) {
   for (let tries = 0; tries < 2; tries++) {
     if (!VCAR || VCAR.token !== token) return "stop";
     await VO.beep();
-    VCAR.heard = ""; VCAR.listening = true; carRender();
+    VCAR.heard = ""; VCAR.listening = true; VCAR.dunno = false; carRender();
     let r;
     // Réponses courtes : une seconde de silence suffit pour conclure, la transcription part aussitôt.
     try { r = await VO.listen({ lang: VO.IT(), startMs: a.wait + 2000, maxMs: a.wait + 12000, endMs: 1100, onPartial: (t) => { if (VCAR) { VCAR.heard = t; vLive(".car-heard", "« " + t + " »", carRender); } } }); }
     catch (e) { if (VCAR) { VCAR.listening = false; VCAR.err = VO.failText(e); carRender(); } return "error"; }
     if (!VCAR || VCAR.token !== token) return "stop";
+    if (VCAR.dunno) { VCAR.listening = false; VCAR.dunno = false; return "dunno"; }
     VCAR.listening = false; VCAR.heard = r.text; carRender();
     if (!r.text) { if (tries === 0) { await VO.say("Je n'ai rien entendu. Encore une fois.", "fr-FR", 1); continue; } return "silent"; }
     // La réponse attendue passe avant les commandes : « ancora », « dopo » ou « basta » peuvent être la bonne réponse.
@@ -370,7 +374,7 @@ async function carAsk(a, token, repeatOnly) {
       const cmd = VO.command(r.text);
       if (cmd === "repeat" || cmd === "skip" || cmd === "stop") return cmd;
       if (cmd === "slower") { VCAR.rate = Math.max(0.6, VCAR.rate - 0.1); return "repeat"; }
-      if (cmd === "dunno") return "ko";
+      if (cmd === "dunno") return "dunno";
     }
     VCAR.last = { said: r.text, ok: j.ok, exp: j.exp }; carRender();
     return j.ok ? "ok" : j.close && !repeatOnly ? "close" : "ko";
@@ -398,12 +402,16 @@ async function carPlay() {
           if (s.ask.kind !== "repeat") await VO.say(cheer(), VO.IT(), 1);
           if (s.ask.key) { srs(s.ask.key, true); }
         } else {
-          await VO.chimeKo();
-          if (s.ask.kind === "repeat") { if (r !== "silent") await VO.say("Écoute bien.", "fr-FR", 1); await VO.say(s.ask.exps[0], VO.IT(), VCAR.rate * 0.9); }
+          const want = s.ask.answer || s.ask.exps[0];
+          // La réponse attendue reste affichée en grand pendant qu'elle est dite.
+          if (!alive()) return;
+          VCAR.last = { said: r === "dunno" || r === "silent" ? "" : VCAR.heard, ok: false, exp: want }; carRender();
+          if (r !== "dunno") await VO.chimeKo();
+          if (s.ask.kind === "repeat") { if (r !== "silent") await VO.say("Écoute bien.", "fr-FR", 1); await VO.say(s.ask.exps[0], VO.IT(), (VCAR ? VCAR.rate : 1) * 0.9); }
           else {
-            await VO.say(r === "close" ? "Presque ! On dit :" : r === "silent" ? "La réponse :" : "Pas tout à fait. On dit :", "fr-FR", 1);
-            await VO.say(s.ask.answer || s.ask.exps[0], VO.IT(), VCAR.rate * 0.9);
-            if (VCAR.src.kind === "lesson") logErr(M[VCAR.src.mi].id, "oral : " + (s.ask.answer || s.ask.exps[0]), VCAR.heard || "(rien)");
+            await VO.say(r === "close" ? "Presque ! On dit :" : r === "silent" || r === "dunno" ? "La réponse :" : "Pas tout à fait. On dit :", "fr-FR", 1);
+            await VO.say(s.ask.answer || s.ask.exps[0], VO.IT(), (VCAR ? VCAR.rate : 1) * 0.9);
+            if (VCAR && VCAR.src.kind === "lesson") logErr(M[VCAR.src.mi].id, "oral : " + (s.ask.answer || s.ask.exps[0]), VCAR.heard || "(rien)");
             if (alive()) { await VO.say("Répète.", "fr-FR", 1); const again = await carAsk(Object.assign({}, s.ask, { wait: 4000 }), token, true); if (again === "ok") await VO.chimeOk(); }
           }
         }
@@ -428,9 +436,19 @@ function carRender() {
   const big = el("div", "aud-state" + (A.listening ? " listening" : ""));
   big.textContent = end ? "Séance terminée" : A.listening ? "À toi, je t'écoute" : A.playing ? "Écoute" : "En pause"; body.append(big);
   if (A.listening) { const w = el("div", "vu"); w.innerHTML = micSvg(); body.append(w); }
-  if (A.say && !end) { const p = el("p", "fr car-say"); p.textContent = A.say; body.append(p); }
+  const shown = !end && A.steps[A.i] && A.steps[A.i].show;
+  if (shown) { const p = el("p", "car-word"); p.textContent = shown; body.append(p); }
+  else if (A.say && !end) { const p = el("p", "fr car-say"); p.textContent = A.say; body.append(p); }
   if (A.heard) { const p = el("p", "car-heard"); p.textContent = "« " + A.heard + " »"; body.append(p); }
-  if (A.last && !A.listening) { const p = el("p", A.last.ok ? "car-verdict ok" : "car-verdict ko"); p.textContent = A.last.ok ? "Juste" : "Attendu : " + A.last.exp; body.append(p); }
+  if (A.last && (!A.listening || !A.last.ok)) {
+    if (A.last.ok) { const p = el("p", "car-verdict ok"); p.textContent = "Juste"; body.append(p); }
+    else { const p = el("p", "car-verdict ko"); p.textContent = "La réponse :"; const w = el("p", "car-answer"); w.textContent = A.last.exp; body.append(p, w); }
+  }
+  // Pendant l'écoute : on peut demander la réponse d'un toucher (ou en disant « je ne sais pas »).
+  const stp = !end && A.steps[A.i];
+  if (A.listening && stp && stp.ask && stp.ask.kind !== "repeat") {
+    const d = btn("Je ne sais pas : voir la réponse", "car-dunno"); d.onclick = () => { if (!VCAR) return; VCAR.dunno = true; VO.cancel(); }; body.append(d);
+  }
   if (A.err) { const p = el("p", "tip"); p.textContent = A.err; body.append(p); }
   if (A.n) body.append(el("p", "count", A.ok + " juste" + (A.ok > 1 ? "s" : "") + " sur " + A.n));
   const main = btn(end ? "Recommencer" : A.playing ? "Pause" : "Reprendre", "primary aud-main");

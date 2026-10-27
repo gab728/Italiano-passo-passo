@@ -192,6 +192,20 @@ const MOCKS = `
 
   const cmdFirst = await b.evaluate(() => { const j = VO.judge(["ancora"], ["ancora"]); return j.ok; });
   ok(cmdFirst === true, "« ancora » attendu comme réponse est jugé juste (et non pris pour une commande)");
+  ok(await b.evaluate(() => ["je ne sais pas", "Je sais pas.", "non lo so", "aucune idée"].every((x) => VO.command(x) === "dunno")), "« je ne sais pas » reconnu, en français comme en italien");
+  const nbOk = await b.evaluate(() => { if (vstat().nb.length < 3) words().slice(0, 4).forEach((w) => setV(w.key, 2)); return vstat().nb.length >= 3; });
+  if (nbOk) {
+    await b.evaluate(() => { window.__said = ["je ne sais pas"]; VCAR = { src: { kind: "words" }, steps: carSteps({ kind: "words" }), i: 1, rate: 1, ok: 0, n: 0, token: 0, playing: false }; view = "carmic"; carPlay(); });
+    await b.waitForSelector(".car-answer", { timeout: 15000 });
+    const dk = await b.evaluate(() => ({ shown: document.querySelector(".car-answer").textContent, want: VCAR.steps[1].ask.answer, prompt: VCAR.steps[1].parts[0].t, word: (document.querySelector(".car-word") || {}).textContent }));
+    ok(dk.shown === dk.want && /^Comment dit-on « .+ » \?$/.test(dk.prompt) && dk.word, "carnet en voiture : le mot est affiché, et « je ne sais pas » montre la réponse (" + dk.prompt + " → " + dk.shown + ")");
+    await b.evaluate(() => { carPause(); window.__said = []; VCAR.i = 2; VCAR.last = null; carPlay(); });
+    await b.waitForSelector(".car-dunno", { timeout: 15000 });
+    await b.click(".car-dunno");
+    await b.waitForSelector(".car-answer", { timeout: 15000 });
+    ok(await b.evaluate(() => document.querySelector(".car-answer").textContent === VCAR.steps[2].ask.answer), "bouton « Je ne sais pas » : la réponse s'affiche et se dit");
+    await b.evaluate(() => { carPause(); VCAR = null; home(); });
+  } else ok(false, "carnet vide : test du mode voiture sur le carnet impossible");
 
   console.log("7. Plafond quotidien");
   const uidB = (await st()).users.find((u) => u.email === "luca@example.com").id;

@@ -45,3 +45,6 @@ pre.invite { white-space: pre-wrap; overflow-wrap: anywhere; font: 15px/1.45 var
 .m-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
 input.lim { width: 96px; font: inherit; padding: 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
 #import-text { width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+.car-word { font-family: var(--serif, Georgia, serif); font-size: 30px; line-height: 1.2; margin: 6px 0; }
+.car-answer { font-family: var(--serif, Georgia, serif); font-size: 34px; line-height: 1.2; font-weight: 600; margin: 2px 0 10px; color: var(--ink); }
+.btn.car-dunno { margin: 8px 0; }

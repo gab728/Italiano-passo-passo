@@ -88,7 +88,16 @@ const TTS = (() => {
   ["pointerdown", "touchend", "keydown"].forEach((t) => document.addEventListener(t, unlock, { capture: true, passive: true }));
 
   let cur = null, gen = 0;
-  function playBlob(blob) {
+  // Juste après l'écoute, l'iPhone remet le son sur le haut-parleur : on attend un court instant pour ne pas perdre le début.
+  async function settle() {
+    try { const off = window.VO && VO.micOffAt ? VO.micOffAt() : 0, gap = off ? 450 - (performance.now() - off) : 0; if (gap > 0) await new Promise((r) => setTimeout(r, gap)); } catch (e) { /* rien */ }
+  }
+  async function playBlob(blob) {
+    await settle();
+    try { return await playOnce(blob); }
+    catch (e) { if (e && e.code === "play") { await new Promise((r) => setTimeout(r, 250)); return await playOnce(blob); } throw e; }
+  }
+  function playOnce(blob) {
     return new Promise((res, rej) => {
       const url = URL.createObjectURL(blob);
       let done = false;
