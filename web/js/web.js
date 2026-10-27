@@ -222,7 +222,7 @@
         go.disabled = true; res.innerHTML = ""; res.append(el("li", null, "Vérification…"));
         try {
           const r = await W.admin("health"); res.innerHTML = "";
-          [["claude", "Claude"], ["voice", "Voix naturelles"], ["dictee", "Dictée (micro)"], ["cache", "Cache des voix"]].forEach(([k, label]) => {
+          [["claude", "Claude"], ["voice", "Voix naturelles"], ["voix_it", "Voix italiennes"], ["dictee", "Dictée (micro)"], ["cache", "Cache des voix"]].forEach(([k, label]) => {
             const x = r[k]; if (!x) return; const li = el("li", x.ok ? "ok" : "ko"); li.append(el("b", null, (x.ok ? "✓ " : "✕ ") + label + (x.ok && x.from ? " · " + x.from : ""))); if (!x.ok && x.why) li.append(el("span", null, x.why)); res.append(li);
           });
         } catch (e) { res.innerHTML = ""; res.append(el("li", "ko", e.message || aiFail(e))); }

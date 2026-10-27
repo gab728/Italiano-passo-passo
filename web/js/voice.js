@@ -333,6 +333,19 @@ function carSteps(src) {
   }
   return out;
 }
+// Les voix des étapes suivantes et les phrases de retour sont demandées à l'avance : pas d'attente entre deux phrases.
+const CAR_FIXED = ["Je n'ai rien entendu. Encore une fois.", "Écoute bien.", "Presque ! On dit :", "La réponse :", "Pas tout à fait. On dit :", "Répète."];
+function carPrefetch(first) {
+  if (!VCAR || !window.TTS || !TTS.on()) return;
+  const pf = (t, l, rate) => TTS.prefetch(t, l, { who: "narrator", cache: true, rate });
+  if (first) { CAR_FIXED.forEach((t) => pf(t, "fr-FR", 1)); try { (C().cheers || []).forEach((t) => pf(t, VO.IT(), 1)); } catch (e) { /* rien */ } }
+  for (let k = VCAR.i; k < Math.min(VCAR.steps.length, VCAR.i + 3); k++) {
+    const s = VCAR.steps[k];
+    s.parts.forEach((p) => { if (p.p == null) pf(p.t, p.l, p.l.startsWith("fr") ? 1 : VCAR.rate); });
+    if (s.ask && s.ask.kind !== "repeat") pf(s.ask.answer || s.ask.exps[0], VO.IT(), VCAR.rate * 0.9);
+    if (s.ask && s.ask.kind === "repeat") pf(s.ask.exps[0], VO.IT(), VCAR.rate * 0.9);
+  }
+}
 async function carPart(p) {
   if (!VCAR) return;
   if (p.p != null) { await new Promise((r) => { VCAR.timer = setTimeout(r, p.p * 1000); }); return; }
@@ -345,7 +358,8 @@ async function carAsk(a, token, repeatOnly) {
     await VO.beep();
     VCAR.heard = ""; VCAR.listening = true; carRender();
     let r;
-    try { r = await VO.listen({ lang: VO.IT(), startMs: a.wait + 2000, maxMs: a.wait + 12000, onPartial: (t) => { if (VCAR) { VCAR.heard = t; vLive(".car-heard", "« " + t + " »", carRender); } } }); }
+    // Réponses courtes : une seconde de silence suffit pour conclure, la transcription part aussitôt.
+    try { r = await VO.listen({ lang: VO.IT(), startMs: a.wait + 2000, maxMs: a.wait + 12000, endMs: 1100, onPartial: (t) => { if (VCAR) { VCAR.heard = t; vLive(".car-heard", "« " + t + " »", carRender); } } }); }
     catch (e) { if (VCAR) { VCAR.listening = false; VCAR.err = VO.failText(e); carRender(); } return "error"; }
     if (!VCAR || VCAR.token !== token) return "stop";
     VCAR.listening = false; VCAR.heard = r.text; carRender();
@@ -367,8 +381,9 @@ async function carPlay() {
   if (!VCAR) return;
   const token = VCAR.token = Date.now() + Math.random(); VCAR.playing = true; VCAR.err = ""; carRender(); vWake(true);
   const alive = () => VCAR && VCAR.token === token && view === "carmic";
+  carPrefetch(true);
   while (VCAR && VCAR.i < VCAR.steps.length) {
-    const s = VCAR.steps[VCAR.i]; VCAR.last = null;
+    const s = VCAR.steps[VCAR.i]; VCAR.last = null; carPrefetch();
     for (const p of s.parts) { if (!alive()) return; await carPart(p); }
     if (!alive()) return;
     if (s.ask) {
@@ -462,7 +477,7 @@ audioSetup = function () {
     if (pick.kind === "talk") return vchatTopics(true);
     if (pick.kind === "role") return vchatScenario(pick.mi, true);
     if (!mic) { S.au = { pace: 1 }; save(); AUD = { src: pick, steps: audioSteps(pick), i: 0, pace: 1, rate: 0.85, token: 0, playing: false, wl: null }; wakeOn(); audioPlay(); return; }
-    VCAR = { src: pick, steps: carSteps(pick), i: 0, rate: 0.9, ok: 0, n: 0, token: 0, playing: false };
+    VCAR = { src: pick, steps: carSteps(pick), i: 0, rate: 1, ok: 0, n: 0, token: 0, playing: false };
     view = "carmic"; VBAR_KEY = ""; carPlay();
   };
   body.append(go1); if (opts.length) choose(opts[0], sg.firstChild);

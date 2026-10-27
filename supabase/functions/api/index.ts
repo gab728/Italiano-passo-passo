@@ -291,7 +291,7 @@ async function admin(req: Request, u: User): Promise<Response> {
 
   if (act === "me") {
     const lim = await limitsFor(u), used = await usageToday(u.id);
-    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!ttsKey() });
+    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!(ttsKey() || elOn()), tts_engine: elOn() ? "elevenlabs" : "openai" });
   }
   if (act === "rename") {
     const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
@@ -369,6 +369,15 @@ async function admin(req: Request, u: User): Promise<Response> {
         : st >= 400 && st < 500 && !/quota|credit|limit/i.test(body) ? { ok: true, from: "ElevenLabs" }
         : { ok: false, why: "ElevenLabs a répondu " + st + (/quota|credit|limit/i.test(body) ? " : crédits épuisés." : ".") + (sttKey() ? " OpenAI prend le relais." : "") };
     } else out.dictee = sttKey() ? { ok: true, from: "OpenAI" } : { ok: false, why: "Aucune clé de transcription : ajoute ELEVENLABS_API_KEY ou OPENAI_API_KEY." };
+    if (elOn()) {
+      const m = await elVoices(), n = new Set(Object.values(m)).size;
+      if (!n) out.voix_it = { ok: false, why: "Aucune voix italienne trouvée sur ElevenLabs (bibliothèque réservée aux comptes payants). Les voix OpenAI prennent le relais." };
+      else {
+        const r = await elSpeak("Ciao!", "marin", 1, "it", false);
+        if (r.res) { await r.res.body?.cancel(); out.voix_it = { ok: true, from: "ElevenLabs, " + n + " voix italiennes" }; }
+        else out.voix_it = { ok: false, why: /quota|credit|limit/i.test(r.why) ? "Crédits ElevenLabs épuisés : les voix OpenAI prennent le relais." : /free/i.test(r.why) ? "Les voix de la bibliothèque ElevenLabs demandent un abonnement payant. Les voix OpenAI prennent le relais." : "ElevenLabs refuse la voix (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
+      }
+    }
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
     out.owner = { ok: true };
@@ -421,6 +430,7 @@ async function stt(req: Request, u: User): Promise<Response> {
   const lang = (new URL(req.url).searchParams.get("lang") || "it").slice(0, 2).toLowerCase();
   const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
   const file = () => new Blob([buf], { type });
+  const t0 = Date.now();
   // ElevenLabs Scribe d'abord (si sa clé est là) : transcription fidèle, langue imposée, sans balises d'ambiance.
   const viaEleven = async (): Promise<string | null> => {
     const ask = async (model: string) => {
@@ -430,6 +440,7 @@ async function stt(req: Request, u: User): Promise<Response> {
       if (/^[a-z]{2}$/.test(lang)) form.append("language_code", lang);
       form.append("tag_audio_events", "false");
       form.append("diarize", "false");
+      form.append("timestamps_granularity", "none");
       return await fetch("https://api.elevenlabs.io/v1/speech-to-text", { method: "POST", headers: { "xi-api-key": eleven }, body: form, signal: AbortSignal.timeout(30000) });
     };
     try {
@@ -475,7 +486,8 @@ async function stt(req: Request, u: User): Promise<Response> {
   }
   if (text === null) return fail(req, 502, "unavailable", "La transcription a échoué. Réessaie.");
   await addUsage(u.id, 0, 0, 0, secs);
-  return json(req, { text, model: used2 });
+  console.log("stt", JSON.stringify({ model: used2, ms: Date.now() - t0, secs, bytes: buf.byteLength }));
+  return json(req, { text, model: used2, ms: Date.now() - t0 });
 }
 // Formules que les modèles inventent sur du silence, et phrases manifestement en anglais.
 const HALLU = /^(sottotitoli|sottotitolato|grazie (per|a tutti)( la visione| l'attenzione)?\.?$|amara\.org|thank you\.?$|thanks for watching)/i;
@@ -501,9 +513,95 @@ async function sha256(s: string): Promise<string> {
   return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 const audioHeaders = (req: Request, extra: Record<string, string> = {}) => ({ ...cors(req), "content-type": "audio/mpeg", "cache-control": "private, max-age=31536000", ...extra });
+// ElevenLabs : voix italiennes natives. Chaque voix de l'app (nom OpenAI) correspond à une voix italienne de la bibliothèque
+// ElevenLabs, trouvée une fois puis gardée (stockage « tts/el-voices-v1.json »). ELEVENLABS_VOICE_<NOM> force un choix.
+const EL = "https://api.elevenlabs.io/v1";
+const EL_ROLE: Record<string, { g: "female" | "male"; old?: boolean; k: number }> = {
+  marin: { g: "female", k: 0 }, coral: { g: "female", k: 1 }, shimmer: { g: "female", k: 2 }, nova: { g: "female", k: 3 }, alloy: { g: "female", k: 3 },
+  sage: { g: "female", old: true, k: 0 },
+  cedar: { g: "male", k: 0 }, ash: { g: "male", k: 1 }, verse: { g: "male", k: 2 }, echo: { g: "male", k: 3 }, ballad: { g: "male", k: 3 }, fable: { g: "male", k: 2 },
+  onyx: { g: "male", old: true, k: 0 },
+};
+const elKey = () => env("ELEVENLABS_API_KEY");
+const elOn = () => !!elKey() && env("TTS_PROVIDER", "elevenlabs").toLowerCase() !== "openai";
+let elMap: Record<string, string> | null = null, elMapAt = 0;
+const EL_MAP_FILE = "tts/el-voices-v1.json";
+async function elVoices(force = false): Promise<Record<string, string>> {
+  if (elMap && !force && Date.now() - elMapAt < 6 * 3600e3) return elMap;
+  if (!force) {
+    try { const r = await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { headers: svcHeaders() }); if (r.ok) { const j = await r.json(); if (j && j.marin && j.cedar) { elMap = j; elMapAt = Date.now(); return j; } } } catch { /* on cherche */ }
+  }
+  const h = { "xi-api-key": elKey() };
+  type V = { id: string; g: string; age: string; score: number; name: string };
+  const pool: V[] = [];
+  // 1. Les voix italiennes déjà dans le compte.
+  try {
+    const r = await fetch(EL + "/voices", { headers: h, signal: AbortSignal.timeout(10000) });
+    if (r.ok) for (const v of ((await r.json()).voices || [])) {
+      const l = v.labels || {}, langs = (v.verified_languages || []).map((x: any) => x.language);
+      if (l.language === "it" || /ital|roman|milan|napol|sicil|tuscan/i.test(String(l.accent || "")) || langs.includes("it")) pool.push({ id: v.voice_id, g: String(l.gender || ""), age: String(l.age || ""), score: 1e12, name: v.name });
+    }
+  } catch { /* rien */ }
+  // 2. La bibliothèque : les voix italiennes les plus utilisées, sans tarif majoré.
+  for (const g of ["female", "male"]) {
+    try {
+      const q = new URLSearchParams({ language: "it", gender: g, page_size: "60", sort: "usage_character_count_1y" });
+      const r = await fetch(EL + "/shared-voices?" + q, { headers: h, signal: AbortSignal.timeout(10000) });
+      if (!r.ok) { console.error("el shared", r.status, (await r.text()).slice(0, 200)); continue; }
+      for (const v of ((await r.json()).voices || [])) {
+        if (v.rate || v.fiat_rate || v.live_moderation_enabled) continue;
+        if (/character|meditat|asmr|game/i.test(String(v.use_case || "") + " " + String(v.descriptive || ""))) continue;
+        const bonus = /conversational|informative|educational|narrat/i.test(String(v.use_case || "")) ? 1.5 : 1;
+        pool.push({ id: v.voice_id, g, age: String(v.age || ""), score: Number(v.usage_character_count_1y || 0) * bonus, name: v.name });
+      }
+    } catch (e) { console.error("el shared", String(e).slice(0, 120)); }
+  }
+  const map: Record<string, string> = {}, used = new Set<string>();
+  const pick = (g: string, old: boolean) => {
+    const c = pool.filter((v) => v.g === g && !used.has(v.id)).sort((a, b) => b.score - a.score);
+    const v = (old ? c.find((x) => /old/.test(x.age)) : c.find((x) => !/old/.test(x.age))) || c[0];
+    if (v) used.add(v.id); return v ? v.id : "";
+  };
+  for (const name of ["marin", "cedar", "coral", "ash", "sage", "onyx", "shimmer", "verse", "nova", "echo"]) { const r = EL_ROLE[name]; const id = pick(r.g, !!r.old); if (id) map[name] = id; }
+  map.alloy = map.nova || map.coral; map.ballad = map.echo || map.ash; map.fable = map.verse || map.cedar;
+  if (!map.marin || !map.cedar) { console.error("el voices: aucune voix italienne trouvée", pool.length); return elMap || {}; }
+  elMap = map; elMapAt = Date.now();
+  try { await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
+  return map;
+}
+async function elVoiceId(voice: string): Promise<string> {
+  const forced = env("ELEVENLABS_VOICE_" + voice.toUpperCase()); if (forced) return forced;
+  const m = await elVoices(); return m[voice] || m[EL_ROLE[voice]?.g === "male" ? "cedar" : "marin"] || "";
+}
+// Une voix de la bibliothèque doit parfois être ajoutée au compte avant d'être utilisée par l'API.
+async function elAdd(id: string): Promise<boolean> {
+  try {
+    const q = new URLSearchParams({ voice_id: id, page_size: "1" });
+    const r = await fetch(EL + "/shared-voices?" + q, { headers: { "xi-api-key": elKey() } }); if (!r.ok) return false;
+    const v = ((await r.json()).voices || [])[0]; if (!v) return false;
+    const a = await fetch(EL + "/voices/add/" + v.public_owner_id + "/" + id, { method: "POST", headers: { "xi-api-key": elKey(), "content-type": "application/json" }, body: JSON.stringify({ new_name: "IPP " + v.name }) });
+    if (!a.ok) console.error("el add", a.status, (await a.text()).slice(0, 200));
+    return a.ok;
+  } catch { return false; }
+}
+async function elSpeak(text: string, voice: string, speed: number, lang: string, cache: boolean): Promise<{ res: Response | null; why: string; model: string; id: string }> {
+  const id = await elVoiceId(voice); if (!id) return { res: null, why: "no_voice", model: "", id: "" };
+  // Phrases gardées en cache (leçons, dialogues, mode voiture) : le modèle le plus naturel. Conversation : le plus rapide.
+  const model = cache ? env("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2") : env("ELEVENLABS_TTS_MODEL_LIVE", "eleven_flash_v2_5");
+  const body = JSON.stringify({ text, model_id: model, ...(/v2_5|v3/.test(model) && /^[a-z]{2}$/.test(lang) ? { language_code: lang } : {}),
+    voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: Math.min(Math.max(speed, 0.7), 1.2) } });
+  const go = () => fetch(EL + "/text-to-speech/" + id + "?output_format=mp3_44100_128", { method: "POST", headers: { "xi-api-key": elKey(), "content-type": "application/json", accept: "audio/mpeg" }, body, signal: AbortSignal.timeout(25000) });
+  try {
+    let r = await go();
+    if (!r.ok && (r.status === 404 || r.status === 400)) { const t = await r.text(); if (/voice/i.test(t) && await elAdd(id)) r = await go(); else return { res: null, why: r.status + " " + t.slice(0, 200), model, id }; }
+    if (!r.ok || !r.body) return { res: null, why: r.status + " " + (await r.text().catch(() => "")).slice(0, 200), model, id };
+    return { res: r, why: "", model, id };
+  } catch (e) { return { res: null, why: String(e).slice(0, 120), model, id }; }
+}
+
 async function tts(req: Request, u: User): Promise<Response> {
   const key = ttsKey();
-  if (!key) return fail(req, 503, "not_configured", "Les voix naturelles ne sont pas configurées.");
+  if (!key && !elOn()) return fail(req, 503, "not_configured", "Les voix naturelles ne sont pas configurées.");
   let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
   const text = String(b && b.text || "").replace(/[\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim();
   if (!text) return fail(req, 400, "input", "Texte vide.");
@@ -511,10 +609,12 @@ async function tts(req: Request, u: User): Promise<Response> {
   const voice = TTS_VOICES.has(String(b.voice)) ? String(b.voice) : "coral";
   const instructions = String(b.instructions || "").replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, 400);
   const speed = Math.min(Math.max(Number(b.speed) || 1, 0.7), 1.25);
+  const lang = String(b.lang || (/^Tu es|^Lis /.test(instructions) ? "fr" : "it")).slice(0, 2).toLowerCase();
   const model = env("TTS_MODEL", "gpt-4o-mini-tts");
   // Phrases des leçons : même texte, même voix, même fichier pour tout le monde. Une phrase déjà produite ne coûte plus rien.
   const cache = !!b.cache;
-  const name = cache ? "tts/" + (await sha256([model, voice, speed, instructions, text].join("\u0001"))) + ".mp3" : "";
+  const useEl = elOn();
+  const name = cache ? "tts/" + (await sha256((useEl ? ["el1", voice, speed, lang, text] : [model, voice, speed, instructions, text]).join("\u0001"))) + ".mp3" : "";
   if (cache) {
     try {
       const hit = await fetch(SB + "/storage/v1/object/" + name, { headers: svcHeaders() });
@@ -525,22 +625,33 @@ async function tts(req: Request, u: User): Promise<Response> {
   const max = isOwner(u) ? int("OWNER_TTS_DAILY_CHARS", 100000) : int("TTS_DAILY_CHARS", 25000);
   const okT = await restJSON("rpc/take_tts", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_chars: text.length, p_max: max }) });
   if (okT !== true || lim.calls === 0) return fail(req, 429, "rate_limited", "Plafond de voix du jour atteint : la voix du téléphone prend le relais.");
-  let up: Response;
-  try {
-    up = await fetch(env("TTS_URL", "https://api.openai.com/v1/audio/speech"), {
-      method: "POST", headers: { authorization: "Bearer " + key, "content-type": "application/json" },
-      body: JSON.stringify({ model, voice, input: text, response_format: "mp3", speed, ...(instructions ? { instructions } : {}) }),
-    });
-  } catch { return fail(req, 502, "unavailable", "Service de voix injoignable."); }
-  if (!up.ok || !up.body) {
-    console.error("tts", up.status, (await up.text().catch(() => "")).slice(0, 300));
-    return fail(req, up.status === 429 ? 429 : 502, up.status === 429 ? "rate_limited" : "unavailable", "Voix indisponible pour l'instant.");
+  let up: Response | null = null, engine = "openai";
+  if (useEl) {
+    const r = await elSpeak(text, voice, speed, lang, cache);
+    if (r.res) { up = r.res; engine = "elevenlabs"; }
+    else console.error("tts elevenlabs", voice, r.model, r.why);
   }
-  if (!cache) return new Response(up.body, { headers: audioHeaders(req) });
+  if (!up) {
+    if (!key) return fail(req, 502, "unavailable", "Voix indisponible pour l'instant.");
+    try {
+      up = await fetch(env("TTS_URL", "https://api.openai.com/v1/audio/speech"), {
+        method: "POST", headers: { authorization: "Bearer " + key, "content-type": "application/json" },
+        body: JSON.stringify({ model, voice, input: text, response_format: "mp3", speed, ...(instructions ? { instructions } : {}) }),
+      });
+    } catch { return fail(req, 502, "unavailable", "Service de voix injoignable."); }
+    if (!up.ok || !up.body) {
+      console.error("tts", up.status, (await up.text().catch(() => "")).slice(0, 300));
+      return fail(req, up.status === 429 ? 429 : 502, up.status === 429 ? "rate_limited" : "unavailable", "Voix indisponible pour l'instant.");
+    }
+  }
+  if (!cache) return new Response(up.body, { headers: audioHeaders(req, { "x-engine": engine }) });
   const buf = new Uint8Array(await up.arrayBuffer());
-  try { await fetch(SB + "/storage/v1/object/" + name, { method: "POST", headers: svcHeaders({ "content-type": "audio/mpeg", "x-upsert": "true" }), body: buf }); }
-  catch (e) { console.error("tts cache", e); }
-  return new Response(buf, { headers: audioHeaders(req, { "x-cache": "miss" }) });
+  // La voix de secours (OpenAI) n'est pas gardée sous le nom ElevenLabs : la prochaine fois, ElevenLabs est réessayé.
+  if (engine === "elevenlabs" || !useEl) {
+    try { await fetch(SB + "/storage/v1/object/" + name, { method: "POST", headers: svcHeaders({ "content-type": "audio/mpeg", "x-upsert": "true" }), body: buf }); }
+    catch (e) { console.error("tts cache", e); }
+  }
+  return new Response(buf, { headers: audioHeaders(req, { "x-cache": "miss", "x-engine": engine }) });
 }
 
 // ---------- /news : dépêches ANSA par thème ----------

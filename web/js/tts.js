@@ -31,13 +31,15 @@ const TTS = (() => {
     let speed = o.rate ? 0.55 + 0.45 * o.rate : 1;
     if (slow && !fr) speed *= 0.92;
     speed = Math.round(Math.min(Math.max(speed, 0.7), 1.25) * 100) / 100;
-    return { text: String(text || "").replace(/ \/ /g, ", ").replace(/\s+/g, " ").trim(), voice: w.voice, instructions: instr, speed, cache: !!o.cache };
+    return { text: String(text || "").replace(/ \/ /g, ", ").replace(/\s+/g, " ").trim(), voice: w.voice, instructions: instr, speed, cache: !!o.cache, lang: fr ? "fr" : String(lang || "it").slice(0, 2).toLowerCase() };
   }
-  const keyOf = (p) => [p.voice, p.speed, p.instructions, p.text].join("|");
+  // Le moteur (ElevenLabs ou OpenAI) fait partie de la clé : en changer ne rejoue pas l'ancienne voix gardée sur l'appareil.
+  const engine = () => (window.WEBAUTH && WEBAUTH.me && WEBAUTH.me.tts_engine) || "";
+  const keyOf = (p) => [engine(), p.voice, p.speed, p.lang, p.instructions, p.text].join("|");
 
   /* --- Récupération : mémoire, puis cache de l'appareil, puis serveur --- */
   const mem = new Map();
-  const CACHE = "ipp-tts-1";
+  const CACHE = "ipp-tts-2";
   async function hashKey(k) {
     try { const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(k)); return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join(""); }
     catch (e) { return encodeURIComponent(k).slice(0, 900); }
@@ -209,7 +211,7 @@ const DLG = (() => {
       while ((k = re.exec(t))) { const v = k[1].toLowerCase(); if (/^(la|una|le|di|in|a|qui|qua|io)$/.test(v)) continue; if (/[^i]a$/.test(v)) f++; else if (/o$/.test(v)) m++; } });
     return f > m ? "f" : m > f ? "m" : null;
   }
-  const POOL = { f: ["coral", "sage", "shimmer", "marin"], m: ["ash", "cedar", "verse", "onyx"] };
+  const POOL = { f: ["coral", "shimmer", "marin", "nova"], m: ["ash", "cedar", "verse", "echo"] };
   const BASE = "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.";
   // Distribution des voix : chaque personnage garde la sienne pendant tout le dialogue, deux personnages n'ont jamais la même.
   function cast(dlg) {

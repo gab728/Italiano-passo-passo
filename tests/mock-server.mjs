@@ -14,7 +14,7 @@ const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
 export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map() };
 
 // ---------- Environnement de la fonction ----------
-const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test", ELEVENLABS_API_KEY: process.env.NO_STT ? "" : "el-test" };
+const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test", ELEVENLABS_API_KEY: process.env.NO_STT ? "" : "el-test", TTS_PROVIDER: "openai" };
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 
 // Claude et la transcription simulés : on intercepte fetch vers ces services.
@@ -42,6 +42,22 @@ globalThis.fetch = async (url, init) => {
     state.stt++; const m = init.body.get("model_id"); state.sttModels = (state.sttModels || []).concat(m);
     state.sttLast = { provider: "elevenlabs", model: m, language: init.body.get("language_code"), tags: init.body.get("tag_audio_events"), key: (init.headers || {})["xi-api-key"] };
     return new Response(JSON.stringify({ text: state.sttEnglish ? "I don't know." : "Ciao, come stai? (risate)", language_code: "ita" }), { headers: { "content-type": "application/json" } });
+  }
+  if (u.startsWith("https://api.elevenlabs.io/v1/voices") && !/\/voices\/add\//.test(u)) return new Response(JSON.stringify({ voices: [{ voice_id: "mine-en", name: "Rachel", labels: { accent: "american", gender: "female" } }] }), { headers: { "content-type": "application/json" } });
+  if (u.startsWith("https://api.elevenlabs.io/v1/voices/add/")) { state.elAdded = (state.elAdded || []).concat(u.split("/").pop()); return new Response(JSON.stringify({ voice_id: u.split("/").pop() }), { headers: { "content-type": "application/json" } }); }
+  if (u.startsWith("https://api.elevenlabs.io/v1/shared-voices")) {
+    const q = new URL(u).searchParams, g = q.get("gender");
+    if (q.get("voice_id")) return new Response(JSON.stringify({ voices: [{ voice_id: q.get("voice_id"), public_owner_id: "owner1", name: "X" }] }), { headers: { "content-type": "application/json" } });
+    const mk = (id, age, use, n, extra) => Object.assign({ voice_id: id, public_owner_id: "o-" + id, name: id, gender: g, age, use_case: use, descriptive: "calm", usage_character_count_1y: n, language: "it" }, extra || {});
+    const voices = g === "female" ? [mk("it-f-pricey", "young", "conversational", 9e9, { fiat_rate: 2 }), mk("it-f1", "young", "conversational", 5e8), mk("it-f2", "middle_aged", "narrative_story", 4e8), mk("it-f3", "young", "social_media", 3e8), mk("it-f4", "young", "informative_educational", 1e8), mk("it-f-old", "old", "narrative_story", 5e7), mk("it-f-game", "young", "characters_animation", 9e8)]
+      : [mk("it-m1", "middle_aged", "conversational", 6e8), mk("it-m2", "young", "narrative_story", 4e8), mk("it-m3", "young", "conversational", 2e8), mk("it-m4", "middle_aged", "advertisement", 1e8), mk("it-m-old", "old", "narrative_story", 4e7)];
+    return new Response(JSON.stringify({ voices }), { headers: { "content-type": "application/json" } });
+  }
+  if (u.startsWith("https://api.elevenlabs.io/v1/text-to-speech/")) {
+    const b = JSON.parse(init.body), id = u.split("/text-to-speech/")[1].split("?")[0];
+    state.tts.push({ engine: "el", id, input: b.text, model: b.model_id, lang: b.language_code || "", speed: b.voice_settings && b.voice_settings.speed });
+    if (id === "it-f2" && !(state.elAdded || []).includes("it-f2")) return new Response(JSON.stringify({ detail: { status: "voice_not_found", message: "A voice with the voice_id it-f2 was not found." } }), { status: 404 });
+    return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }
   if (u.startsWith("https://api.elevenlabs.io/v1/user")) return new Response(JSON.stringify({ subscription: {} }), { headers: { "content-type": "application/json" } });
   if (u.startsWith("https://api.openai.com/v1/audio/transcriptions") && state.sttEnglish) {
@@ -149,7 +165,8 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, elAdded: state.elAdded || [], storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__ttsProvider") { ENV.TTS_PROVIDER = new URL(req.url, ORIGIN).searchParams.get("v") || "openai"; return send(res, 200, {}); }
     if (p === "/__sttEnglish") { state.sttEnglish = 1; state.sttModels = []; return send(res, 200, {}); }
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
     if (p === "/__seed") { const b = JSON.parse((await readBody(req)).toString() || "{}"); const u = addUser(b.email); if (b.password) u.password = b.password; if (b.unconfirmed) u.unconfirmed = true; return send(res, 200, u); }

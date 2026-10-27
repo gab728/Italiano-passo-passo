@@ -323,6 +323,19 @@ const MOCKS = `
   await b.waitForTimeout(800);
   ok((await st()).tts.length === t0 + 1, "le cache du serveur sert aussi aux autres membres");
   ok((await a.evaluate(() => window.__spoken)).length === 0, "lecture des leçons par la voix naturelle");
+  await fetch(O + "/__ttsProvider?v=elevenlabs", { method: "POST" });
+  t0 = (await st()).tts.length;
+  await a.evaluate(() => { stopSpeech(); speak("Andiamo al mare domani mattina."); }); await a.waitForTimeout(900);
+  let el = (await st()).tts.slice(t0);
+  ok(el.length === 1 && el[0].engine === "el" && el[0].id === "it-f1" && el[0].model === "eleven_multilingual_v2", "leçon lue par une voix italienne ElevenLabs, modèle le plus naturel : " + JSON.stringify(el));
+  ok((await st()).storage.includes("tts/el-voices-v1.json"), "voix italiennes choisies une fois et gardées");
+  t0 = (await st()).tts.length;
+  await a.evaluate(async () => { await TTS.say("Ciao, come va?", "it-IT", { who: "marco" }); await TTS.say("Ciao bella!", "it-IT", { who: "sofia" }); await TTS.say("Vieni a mangiare!", "it-IT", { who: "rosa" }); });
+  el = (await st()).tts.slice(t0);
+  const ids = el.map((x) => x.id + ":" + x.model.replace("eleven_", "") + ":" + x.lang);
+  ok(el[0].id === "it-m1" && el[0].model === "eleven_flash_v2_5" && el[0].lang === "it" && el.some((x) => x.id === "it-f2") && el[el.length - 1].id === "it-f-old" && (await st()).elAdded.includes("it-f2") && !ids.some((x) => /pricey|game/.test(x)),
+    "conversation : voix rapide, homme pour Marco, voix âgée pour Nonna Rosa, voix ajoutée au compte si besoin, pas de voix à tarif majoré : " + ids.join(" | "));
+  await fetch(O + "/__ttsProvider?v=openai", { method: "POST" });
   ok(await a.evaluate(() => QZ.hint(["tranquilla", "tranquillo", "tranquille", "tranquilli"]) === "tranquillo" && QZ.hint(["dal", "al", "nel", "sul"]) === "" && QZ.hint(["grandi", "grande"]) === "grande"), "exercice d'accord : le mot à accorder est indiqué");
   const alt = await a.evaluate(async () => [await QZ.alt("Abito in una strada ___.", "tranquilla", "luminosa", "Strada est féminin singulier."), await QZ.alt("Abito in una strada ___.", "tranquilla", "luminoso", "Strada est féminin singulier.")]);
   ok(alt[0] && alt[0].ok === true && alt[1] && alt[1].ok === false, "un autre adjectif bien accordé est accepté, un mauvais accord reste faux");
