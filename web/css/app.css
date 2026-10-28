@@ -2,7 +2,7 @@
    Fond clair, police fine (Instrument Sans), italien en serif italique (Instrument Serif), pilules,
    deux accents : Spritz (action, série) et Azzurro (parole, réponses). Mode sombre automatique. */
 :root {
-  --bg: #F6F6F9; --surface: #FFFFFF; --ink: #121218; --muted: #6B6B78; --line: #E8E8EF; --chip: #F0F0F5;
+  --bg: #FAF7F2; --surface: #FFFFFF; --ink: #17140F; --muted: #6F6862; --line: #EAE3DA; --chip: #F2EDE6;
   --spritz: #FF5B2E; --spritz-ink: #121218; --spritz-soft: #FFF1EC; --spritz-text: #B33A14;
   --azzurro: #3B5BFF; --azzurro-ink: #FFFFFF; --azzurro-soft: #EEF1FF; --azzurro-text: #2A44D6;
   --cta: #121218; --cta-ink: #FFFFFF; --dark: #121218; --dark-ink: #FFFFFF; --dark-muted: #B9B9C6; --dark-field: #2A2A33;
