@@ -809,3 +809,5 @@ button.who { border: 0; background: none; padding: 0; margin: 0; text-align: lef
 .theme-tag { background: rgba(255, 255, 255, .92); color: var(--ink); font-weight: 800; }
 .daily-r { display: flex; align-items: flex-end; gap: 6px; }
 .daily-lino { margin-bottom: -4px; }
+.daily-h > .daily-r { flex-direction: row; align-items: center; }
+.daily-h > .daily-r .daily-lino { margin: -10px 0 -6px; }
