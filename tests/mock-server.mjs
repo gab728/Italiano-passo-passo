@@ -43,20 +43,21 @@ globalThis.fetch = async (url, init) => {
     state.sttLast = { provider: "elevenlabs", model: m, language: init.body.get("language_code"), tags: init.body.get("tag_audio_events"), key: (init.headers || {})["xi-api-key"] };
     return new Response(JSON.stringify({ text: state.sttEnglish ? "I don't know." : "Ciao, come stai? (risate)", language_code: "ita" }), { headers: { "content-type": "application/json" } });
   }
-  if (u.startsWith("https://api.elevenlabs.io/v1/voices") && !/\/voices\/add\//.test(u)) return new Response(JSON.stringify({ voices: [{ voice_id: "mine-en", name: "Rachel", labels: { accent: "american", gender: "female" } }] }), { headers: { "content-type": "application/json" } });
+  if (u.startsWith("https://api.elevenlabs.io/v1/voices") && !/\/voices\/add\//.test(u)) return new Response(JSON.stringify({ voices: [{ voice_id: "mine-en", name: "Rachel", category: "premade", labels: { accent: "american", gender: "female" }, verified_languages: [{ language: "it" }, { language: "fr" }] }] }), { headers: { "content-type": "application/json" } });
   if (u.startsWith("https://api.elevenlabs.io/v1/voices/add/")) { state.elAdded = (state.elAdded || []).concat(u.split("/").pop()); return new Response(JSON.stringify({ voice_id: u.split("/").pop() }), { headers: { "content-type": "application/json" } }); }
   if (u.startsWith("https://api.elevenlabs.io/v1/shared-voices")) {
     const q = new URL(u).searchParams, g = q.get("gender");
     if (q.get("voice_id")) return new Response(JSON.stringify({ voices: [{ voice_id: q.get("voice_id"), public_owner_id: "owner1", name: "X" }] }), { headers: { "content-type": "application/json" } });
     const mk = (id, age, use, n, extra) => Object.assign({ voice_id: id, public_owner_id: "o-" + id, name: id, gender: g, age, use_case: use, descriptive: "calm", usage_character_count_1y: n, language: "it" }, extra || {});
-    const voices = g === "female" ? [mk("it-f-pricey", "young", "conversational", 9e9, { fiat_rate: 2 }), mk("it-f1", "young", "conversational", 5e8), mk("it-f2", "middle_aged", "narrative_story", 4e8), mk("it-f3", "young", "social_media", 3e8), mk("it-f4", "young", "informative_educational", 1e8), mk("it-f-old", "old", "narrative_story", 5e7), mk("it-f-game", "young", "characters_animation", 9e8)]
+    if (q.get("language") === "fr") return new Response(JSON.stringify({ voices: g === "female" ? [mk("fr-f1", "middle_aged", "narrative_story", 7e8), mk("fr-f2", "young", "conversational", 3e8)] : [mk("fr-m1", "middle_aged", "narrative_story", 6e8)] }), { headers: { "content-type": "application/json" } });
+    const voices = g === "female" ? [mk("it-f-pricey", "young", "conversational", 9e9, { fiat_rate: 2 }), mk("it-f-rate1", "young", "conversational", 8e8, { rate: 1 }), mk("it-f1", "young", "conversational", 5e8), mk("it-f2", "middle_aged", "narrative_story", 4e8), mk("it-f3", "young", "social_media", 3e8), mk("it-f4", "young", "informative_educational", 1e8), mk("it-f-old", "old", "narrative_story", 5e7), mk("it-f-game", "young", "characters_animation", 9e8)]
       : [mk("it-m1", "middle_aged", "conversational", 6e8), mk("it-m2", "young", "narrative_story", 4e8), mk("it-m3", "young", "conversational", 2e8), mk("it-m4", "middle_aged", "advertisement", 1e8), mk("it-m-old", "old", "narrative_story", 4e7)];
     return new Response(JSON.stringify({ voices }), { headers: { "content-type": "application/json" } });
   }
   if (u.startsWith("https://api.elevenlabs.io/v1/text-to-speech/")) {
     const b = JSON.parse(init.body), id = u.split("/text-to-speech/")[1].split("?")[0];
     state.tts.push({ engine: "el", id, input: b.text, model: b.model_id, lang: b.language_code || "", speed: b.voice_settings && b.voice_settings.speed });
-    if (id === "it-f2" && !(state.elAdded || []).includes("it-f2")) return new Response(JSON.stringify({ detail: { status: "voice_not_found", message: "A voice with the voice_id it-f2 was not found." } }), { status: 404 });
+    if (id === "it-f1" && !(state.elAdded || []).includes("it-f1")) return new Response(JSON.stringify({ detail: { status: "voice_not_found", message: "A voice with the voice_id it-f2 was not found." } }), { status: 404 });
     return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }
   if (u.startsWith("https://api.elevenlabs.io/v1/user")) return new Response(JSON.stringify({ subscription: {} }), { headers: { "content-type": "application/json" } });

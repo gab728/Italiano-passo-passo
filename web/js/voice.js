@@ -38,7 +38,7 @@ const VO = (() => {
 
   /* --- Lecture à voix haute, une phrase après l'autre : voix naturelle si possible, sinon celle du téléphone --- */
   function say(text, lang, rate, who) {
-    if (window.TTS && TTS.on()) return TTS.say(text, lang, { who: who || "narrator", cache: !who || who === "narrator", rate, fallback: deviceSay });
+    if (typeof TTS !== "undefined" && TTS.on()) return TTS.say(text, lang, { who: who || "narrator", cache: !who || who === "narrator", rate, fallback: deviceSay });
     return deviceSay(text, lang, rate);
   }
   function deviceSay(text, lang, rate) {
@@ -172,7 +172,7 @@ const VO = (() => {
     audioCtx(); // à appeler pendant le toucher : sur iPhone, le son ne se débloque qu'à ce moment-là
     if (st.cur) st.cur.cancel();
     try { if (speechSynthesis.speaking) speechSynthesis.cancel(); } catch (e) { /* rien */ }
-    if (window.TTS) TTS.stop();
+    if (typeof TTS !== "undefined") TTS.stop();
     // Sur iPhone, la reconnaissance d'Apple se bloque souvent après une lecture à voix haute et n'existe pas dans l'app installée :
     // la transcription par le serveur, si elle est configurée, est plus fiable.
     if (native() && !(isIOS() && server())) {
@@ -339,7 +339,7 @@ function carSteps(src) {
 // Les voix des étapes suivantes et les phrases de retour sont demandées à l'avance : pas d'attente entre deux phrases.
 const CAR_FIXED = ["Je n'ai rien entendu. Encore une fois.", "Écoute bien.", "Presque ! On dit :", "La réponse :", "Pas tout à fait. On dit :", "Répète."];
 function carPrefetch(first) {
-  if (!VCAR || !window.TTS || !TTS.on()) return;
+  if (!VCAR || typeof TTS === "undefined" || !TTS.on()) return;
   const pf = (t, l, rate) => TTS.prefetch(t, l, { who: "narrator", cache: true, rate });
   if (first) { CAR_FIXED.forEach((t) => pf(t, "fr-FR", 1)); try { (C().cheers || []).forEach((t) => pf(t, VO.IT(), 1)); } catch (e) { /* rien */ } }
   for (let k = VCAR.i; k < Math.min(VCAR.steps.length, VCAR.i + 3); k++) {
@@ -591,7 +591,7 @@ function vcRender() {
 function vcSet(state) { if (!VC) return; VC.state = state; vcRender(); }
 function vcPause() { if (!VC) return; VC.token = 0; VO.cancel(); stopSpeech(); if (VC.abort) VC.abort.abort(); VC.state = "idle"; vcRender(); }
 function vcStop() { if (!VC) return; VC.token = 0; VO.cancel(); stopSpeech(); if (VC.abort) VC.abort.abort(); VO.release(); vWake(false); }
-async function vcSpeakAgain() { if (!VC || !VC.lastAI) return; const t = VC.token = Date.now(); vcSet("speak"); for (const l of VC.lastAI) { if (!VC || VC.token !== t) return; await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate); } if (VC && VC.token === t) { VC.state = "idle"; if (VC.hands) vcLoop(true); else vcRender(); } }
+async function vcSpeakAgain() { if (!VC || !VC.lastAI) return; const t = VC.token = Date.now(); vcSet("speak"); for (const l of VC.lastAI) { if (!VC || VC.token !== t) return; await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate, "giulia"); } if (VC && VC.token === t) { VC.state = "idle"; if (VC.hands) vcLoop(true); else vcRender(); } }
 async function vcAsk(token) {
   const A = VC; A.state = "think"; A.live = "…"; vcRender();
   const msgs = A.turns.length ? A.turns.slice(-30) : [{ role: "user", content: "(L'élève vient de lancer la conversation. Commence : salue-le et pose ta première question.)" }];
@@ -603,7 +603,7 @@ async function vcAsk(token) {
     const parsed = vParse(complete.join("\n"));
     for (; spoken < parsed.length; spoken++) {
       const l = parsed[spoken]; queue.push(l);
-      speaking = speaking.then(async () => { if (!VC || VC.token !== token) return; if (VC.state !== "speak") { VC.state = "speak"; vcRender(); } await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate); });
+      speaking = speaking.then(async () => { if (!VC || VC.token !== token) return; if (VC.state !== "speak") { VC.state = "speak"; vcRender(); } await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate, "giulia"); });
     }
   };
   let r;

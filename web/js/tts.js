@@ -73,14 +73,18 @@ const TTS = (() => {
   /* --- Lecture : un seul lecteur audio, débloqué au premier toucher (exigence de l'iPhone) --- */
   const audio = new Audio(); audio.preload = "auto"; audio.setAttribute("playsinline", "");
   let unlocked = false;
-  function silentWav() {
-    const n = 800, b = new ArrayBuffer(44 + n), v = new DataView(b), w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  function silentWav(n) {
+    n = n || 800; b = new ArrayBuffer(44 + n), v = new DataView(b), w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
     w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
     v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, "data"); v.setUint32(40, n, true);
     for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
     let s = ""; new Uint8Array(b).forEach((x) => { s += String.fromCharCode(x); }); return "data:audio/wav;base64," + btoa(s);
   }
   const SILENT = silentWav();
+  // Un demi-silence joué avant de parler quand le son s'est arrêté un moment : l'iPhone (après le micro) et
+  // les autoradios en Bluetooth mettent un instant à ouvrir la sortie, et mangeaient le premier mot.
+  const WARM = silentWav(4000);
+  let lastEnd = 0;
   function unlock() {
     if (unlocked || cur) return;
     try { audio.src = SILENT; const p = audio.play(); if (p && p.then) p.then(() => { unlocked = true; }).catch(() => {}); else unlocked = true; } catch (e) { /* rien */ }
@@ -90,10 +94,18 @@ const TTS = (() => {
   let cur = null, gen = 0;
   // Juste après l'écoute, l'iPhone remet le son sur le haut-parleur : on attend un court instant pour ne pas perdre le début.
   async function settle() {
-    try { const off = window.VO && VO.micOffAt ? VO.micOffAt() : 0, gap = off ? 450 - (performance.now() - off) : 0; if (gap > 0) await new Promise((r) => setTimeout(r, gap)); } catch (e) { /* rien */ }
+    try { const off = typeof VO !== "undefined" && VO.micOffAt ? VO.micOffAt() : 0, gap = off ? 600 - (performance.now() - off) : 0; if (gap > 0) await new Promise((r) => setTimeout(r, gap)); } catch (e) { /* rien */ }
+  }
+  function warm() {
+    return new Promise((res) => {
+      let done = false; const fin = () => { if (done) return; done = true; if (cur && cur.warm) cur = null; audio.onended = audio.onerror = null; res(); };
+      cur = { warm: true, stop: () => { try { audio.pause(); } catch (e) { /* rien */ } fin(); } };
+      try { audio.onended = fin; audio.onerror = fin; audio.src = WARM; const p = audio.play(); if (p && p.catch) p.catch(fin); setTimeout(fin, 900); } catch (e) { fin(); }
+    });
   }
   async function playBlob(blob) {
     await settle();
+    if (performance.now() - lastEnd > 1500) { const g = gen; await warm(); if (g !== gen) return; }
     try { return await playOnce(blob); }
     catch (e) { if (e && e.code === "play") { await new Promise((r) => setTimeout(r, 250)); return await playOnce(blob); } throw e; }
   }
@@ -102,7 +114,7 @@ const TTS = (() => {
       const url = URL.createObjectURL(blob);
       let done = false;
       const fin = (err) => {
-        if (done) return; done = true; cur = null; clearTimeout(guard);
+        if (done) return; done = true; cur = null; clearTimeout(guard); lastEnd = performance.now();
         audio.onended = audio.onerror = null; URL.revokeObjectURL(url);
         if (err) rej(err); else res();
       };
@@ -120,7 +132,7 @@ const TTS = (() => {
   function noteFail(e) {
     const c = e && e.code;
     if (c === "daily_limit" || c === "rate_limited" || c === "not_configured") { down = true; if (c !== "not_configured") speakNote("Plafond de voix du jour atteint : la voix du téléphone prend le relais."); return; }
-    if (++fails >= 3) down = true;
+    if (++fails >= 3) { down = true; fails = 0; setTimeout(() => { down = false; }, 60000); }
   }
 
   /* Une phrase. Se termine quand elle a été dite (ou coupée). */
@@ -172,16 +184,21 @@ const TTS = (() => {
   function stop() { gen++; if (cur) cur.stop(); }
   const speaking = () => !!cur;
 
-  return { on, say, queue, stop, speaking, prefetch, WHO, get audio() { return audio; } };
+  return { on, say, queue, stop, speaking, prefetch, WHO, spec, get audio() { return audio; } };
 })();
 
 /* ---------- Branchements : les lectures de l'app passent par les voix naturelles ---------- */
 (function () {
   const devSpeak = speak, devStop = stopSpeech, devPart = sayPart;
+  // Les boutons « Écouter » lisent surtout de l'italien, parfois une explication en français : on choisit la voix selon le texte.
+  const FRW = /\b(le|les|des|est|une|du|au|aux|pour|avec|dans|vous|nous|pas|ce|cette|qui|que|sur|mais|ou|donc|être|avoir|c'est|il y a)\b/gi;
+  const ITW = /\b(il|lo|gli|è|una|per|con|nel|della|del|non|sono|che|di|ho|hai|ha|siamo|questo|questa|anche|perché|molto)\b/gi;
+  const looksFr = (t) => { const s = String(t || ""); if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
   speak = function (t, rate) {
     if (!TTS.on()) return devSpeak(t, rate);
     devStop(); TTS.stop();
-    TTS.say(t, C().speech || "it-IT", { who: "narrator", cache: true, rate: rate || 0.9, fallback: () => devSpeak(t, rate) });
+    const fr = looksFr(t);
+    TTS.say(t, fr ? "fr-FR" : (C().speech || "it-IT"), { who: "narrator", cache: true, rate: fr ? 1 : rate || 0.9, fallback: () => devSpeak(t, rate) });
   };
   stopSpeech = function () { devStop(); TTS.stop(); };
   // Mode voiture des leçons : chaque phrase est mise en cache, et les suivantes sont préparées pendant la lecture.

@@ -370,11 +370,11 @@ async function admin(req: Request, u: User): Promise<Response> {
         : { ok: false, why: "ElevenLabs a répondu " + st + (/quota|credit|limit/i.test(body) ? " : crédits épuisés." : ".") + (sttKey() ? " OpenAI prend le relais." : "") };
     } else out.dictee = sttKey() ? { ok: true, from: "OpenAI" } : { ok: false, why: "Aucune clé de transcription : ajoute ELEVENLABS_API_KEY ou OPENAI_API_KEY." };
     if (elOn()) {
-      const m = await elVoices(), n = new Set(Object.values(m)).size;
-      if (!n) out.voix_it = { ok: false, why: "Aucune voix italienne trouvée sur ElevenLabs (bibliothèque réservée aux comptes payants). Les voix OpenAI prennent le relais." };
+      const m = await elVoices(true), n = new Set(Object.values(m)).size;
+      if (!n) out.voix_it = { ok: false, why: "Aucune voix italienne trouvée sur ElevenLabs (" + (elWhy || "raison inconnue") + "). Les voix OpenAI prennent le relais." };
       else {
         const r = await elSpeak("Ciao!", "marin", 1, "it", false);
-        if (r.res) { await r.res.body?.cancel(); out.voix_it = { ok: true, from: "ElevenLabs, " + n + " voix italiennes" }; }
+        if (r.res) { await r.res.body?.cancel(); out.voix_it = { ok: true, from: "ElevenLabs, " + new Set(Object.entries(m).filter(([k]) => !k.startsWith("fr_")).map(([, v]) => v)).size + " voix italiennes" + (m.fr_female ? " et des voix françaises" : "") }; }
         else out.voix_it = { ok: false, why: /quota|credit|limit/i.test(r.why) ? "Crédits ElevenLabs épuisés : les voix OpenAI prennent le relais." : /free/i.test(r.why) ? "Les voix de la bibliothèque ElevenLabs demandent un abonnement payant. Les voix OpenAI prennent le relais." : "ElevenLabs refuse la voix (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
       }
     }
@@ -524,54 +524,67 @@ const EL_ROLE: Record<string, { g: "female" | "male"; old?: boolean; k: number }
 };
 const elKey = () => env("ELEVENLABS_API_KEY");
 const elOn = () => !!elKey() && env("TTS_PROVIDER", "elevenlabs").toLowerCase() !== "openai";
-let elMap: Record<string, string> | null = null, elMapAt = 0;
-const EL_MAP_FILE = "tts/el-voices-v1.json";
+let elMap: Record<string, string> | null = null, elMapAt = 0, elFailAt = 0, elWhy = "";
+const EL_MAP_FILE = "tts/el-voices-v2.json";
+// Voix de la bibliothèque ElevenLabs pour une langue : les plus utilisées, sans tarif majoré ni voix de personnage.
+type ElV = { id: string; g: string; age: string; score: number; name: string; lang: string };
+async function elShared(lang: string, g: string): Promise<ElV[]> {
+  const out: ElV[] = [];
+  try {
+    const q = new URLSearchParams({ language: lang, gender: g, page_size: "100", sort: "usage_character_count_1y" });
+    const r = await fetch(EL + "/shared-voices?" + q, { headers: { "xi-api-key": elKey() }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) { elWhy = "bibliothèque " + r.status + " " + (await r.text()).slice(0, 160); console.error("el shared", lang, g, elWhy); return out; }
+    const vs = (await r.json()).voices || [];
+    let dropped = 0;
+    for (const v of vs) {
+      const costly = (Number(v.rate) || 0) > 1 || (Number(v.fiat_rate) || 0) > 0;
+      if (costly || /character|meditat|asmr|game|cartoon/i.test(String(v.use_case || "") + " " + String(v.descriptive || ""))) { dropped++; continue; }
+      const bonus = /conversational|informative|educational|narrat/i.test(String(v.use_case || "")) ? 1.5 : 1;
+      out.push({ id: v.voice_id, g, age: String(v.age || ""), score: (Number(v.usage_character_count_1y) || Number(v.cloned_by_count) || 1) * bonus, name: v.name, lang });
+    }
+    console.log("el shared", lang, g, JSON.stringify({ found: vs.length, kept: out.length, dropped }));
+  } catch (e) { elWhy = "bibliothèque injoignable"; console.error("el shared", lang, g, String(e).slice(0, 120)); }
+  return out;
+}
 async function elVoices(force = false): Promise<Record<string, string>> {
   if (elMap && !force && Date.now() - elMapAt < 6 * 3600e3) return elMap;
+  if (!force && !elMap && Date.now() - elFailAt < 10 * 60e3) return {};
   if (!force) {
     try { const r = await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { headers: svcHeaders() }); if (r.ok) { const j = await r.json(); if (j && j.marin && j.cedar) { elMap = j; elMapAt = Date.now(); return j; } } } catch { /* on cherche */ }
   }
-  const h = { "xi-api-key": elKey() };
-  type V = { id: string; g: string; age: string; score: number; name: string };
-  const pool: V[] = [];
-  // 1. Les voix italiennes déjà dans le compte.
+  const pool: ElV[] = [];
+  // 1. Les voix italiennes ou françaises déjà dans le compte (étiquetées comme telles, pas les voix anglaises multilingues).
   try {
-    const r = await fetch(EL + "/voices", { headers: h, signal: AbortSignal.timeout(10000) });
+    const r = await fetch(EL + "/voices", { headers: { "xi-api-key": elKey() }, signal: AbortSignal.timeout(10000) });
     if (r.ok) for (const v of ((await r.json()).voices || [])) {
-      const l = v.labels || {}, langs = (v.verified_languages || []).map((x: any) => x.language);
-      if (l.language === "it" || /ital|roman|milan|napol|sicil|tuscan/i.test(String(l.accent || "")) || langs.includes("it")) pool.push({ id: v.voice_id, g: String(l.gender || ""), age: String(l.age || ""), score: 1e12, name: v.name });
-    }
+      const l = v.labels || {}, acc = String(l.accent || ""), lg = String(l.language || "");
+      const lang = lg === "it" || /ital|roman|milan|napol|sicil|tuscan|venet/i.test(acc) ? "it" : lg === "fr" || /fran|french|parisi/i.test(acc) ? "fr" : "";
+      if (lang && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang });
+    } else console.error("el voices", r.status);
   } catch { /* rien */ }
-  // 2. La bibliothèque : les voix italiennes les plus utilisées, sans tarif majoré.
-  for (const g of ["female", "male"]) {
-    try {
-      const q = new URLSearchParams({ language: "it", gender: g, page_size: "60", sort: "usage_character_count_1y" });
-      const r = await fetch(EL + "/shared-voices?" + q, { headers: h, signal: AbortSignal.timeout(10000) });
-      if (!r.ok) { console.error("el shared", r.status, (await r.text()).slice(0, 200)); continue; }
-      for (const v of ((await r.json()).voices || [])) {
-        if (v.rate || v.fiat_rate || v.live_moderation_enabled) continue;
-        if (/character|meditat|asmr|game/i.test(String(v.use_case || "") + " " + String(v.descriptive || ""))) continue;
-        const bonus = /conversational|informative|educational|narrat/i.test(String(v.use_case || "")) ? 1.5 : 1;
-        pool.push({ id: v.voice_id, g, age: String(v.age || ""), score: Number(v.usage_character_count_1y || 0) * bonus, name: v.name });
-      }
-    } catch (e) { console.error("el shared", String(e).slice(0, 120)); }
-  }
+  // 2. La bibliothèque : italien pour les personnages, français pour les explications.
+  for (const [lang, g] of [["it", "female"], ["it", "male"], ["fr", "female"], ["fr", "male"]]) pool.push(...await elShared(lang, g));
   const map: Record<string, string> = {}, used = new Set<string>();
-  const pick = (g: string, old: boolean) => {
-    const c = pool.filter((v) => v.g === g && !used.has(v.id)).sort((a, b) => b.score - a.score);
+  const pick = (lang: string, g: string, old: boolean) => {
+    const c = pool.filter((v) => v.lang === lang && v.g === g && !used.has(v.id)).sort((a, b) => b.score - a.score);
     const v = (old ? c.find((x) => /old/.test(x.age)) : c.find((x) => !/old/.test(x.age))) || c[0];
     if (v) used.add(v.id); return v ? v.id : "";
   };
-  for (const name of ["marin", "cedar", "coral", "ash", "sage", "onyx", "shimmer", "verse", "nova", "echo"]) { const r = EL_ROLE[name]; const id = pick(r.g, !!r.old); if (id) map[name] = id; }
+  for (const name of ["marin", "cedar", "coral", "ash", "sage", "onyx", "shimmer", "verse", "nova", "echo"]) { const r = EL_ROLE[name]; const id = pick("it", r.g, !!r.old); if (id) map[name] = id; }
   map.alloy = map.nova || map.coral; map.ballad = map.echo || map.ash; map.fable = map.verse || map.cedar;
-  if (!map.marin || !map.cedar) { console.error("el voices: aucune voix italienne trouvée", pool.length); return elMap || {}; }
-  elMap = map; elMapAt = Date.now();
+  const ff = pick("fr", "female", false), fm = pick("fr", "male", false); if (ff) map.fr_female = ff; if (fm) map.fr_male = fm;
+  console.log("el voices", JSON.stringify({ pool: pool.length, it: pool.filter((v) => v.lang === "it").length, fr: pool.filter((v) => v.lang === "fr").length, mapped: Object.keys(map).length }));
+  if (!map.marin || !map.cedar) { elFailAt = Date.now(); if (!elWhy) elWhy = "aucune voix italienne dans la bibliothèque (" + pool.length + " voix vues)"; console.error("el voices: échec", elWhy); return elMap || {}; }
+  elMap = map; elMapAt = Date.now(); elWhy = "";
   try { await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
   return map;
 }
-async function elVoiceId(voice: string): Promise<string> {
+async function elVoiceId(voice: string, lang = "it"): Promise<string> {
+  const g = EL_ROLE[voice]?.g === "male" ? "male" : "female";
+  // Le français est dit par une voix française native (même sexe que le personnage), l'italien par une voix italienne.
+  if (lang === "fr") { const f = env("ELEVENLABS_VOICE_FR_" + g.toUpperCase()); if (f) return f; const m = await elVoices(); if (m["fr_" + g]) return m["fr_" + g]; }
   const forced = env("ELEVENLABS_VOICE_" + voice.toUpperCase()); if (forced) return forced;
-  const m = await elVoices(); return m[voice] || m[EL_ROLE[voice]?.g === "male" ? "cedar" : "marin"] || "";
+  const m = await elVoices(); return m[voice] || m[g === "male" ? "cedar" : "marin"] || "";
 }
 // Une voix de la bibliothèque doit parfois être ajoutée au compte avant d'être utilisée par l'API.
 async function elAdd(id: string): Promise<boolean> {
@@ -585,7 +598,7 @@ async function elAdd(id: string): Promise<boolean> {
   } catch { return false; }
 }
 async function elSpeak(text: string, voice: string, speed: number, lang: string, cache: boolean): Promise<{ res: Response | null; why: string; model: string; id: string }> {
-  const id = await elVoiceId(voice); if (!id) return { res: null, why: "no_voice", model: "", id: "" };
+  const id = await elVoiceId(voice, lang); if (!id) return { res: null, why: "no_voice " + elWhy, model: "", id: "" };
   // Phrases gardées en cache (leçons, dialogues, mode voiture) : le modèle le plus naturel. Conversation : le plus rapide.
   const model = cache ? env("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2") : env("ELEVENLABS_TTS_MODEL_LIVE", "eleven_flash_v2_5");
   const body = JSON.stringify({ text, model_id: model, ...(/v2_5|v3/.test(model) && /^[a-z]{2}$/.test(lang) ? { language_code: lang } : {}),
@@ -614,7 +627,7 @@ async function tts(req: Request, u: User): Promise<Response> {
   // Phrases des leçons : même texte, même voix, même fichier pour tout le monde. Une phrase déjà produite ne coûte plus rien.
   const cache = !!b.cache;
   const useEl = elOn();
-  const name = cache ? "tts/" + (await sha256((useEl ? ["el1", voice, speed, lang, text] : [model, voice, speed, instructions, text]).join("\u0001"))) + ".mp3" : "";
+  const name = cache ? "tts/" + (await sha256((useEl ? ["el2", voice, speed, lang, text] : [model, voice, speed, instructions, text]).join("\u0001"))) + ".mp3" : "";
   if (cache) {
     try {
       const hit = await fetch(SB + "/storage/v1/object/" + name, { headers: svcHeaders() });
