@@ -93,7 +93,7 @@ const html = `<!doctype html>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${fonts}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Nunito:wght@600;700;800;900&family=DM+Mono:wght@500&display=swap">
 <style>${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">

@@ -197,6 +197,141 @@
     });
     root.append(sg);
   }
+  /* ---------- Lino, le petit citron de l'app ----------
+     Humeurs : wave (coucou), joy (fête), hang (suspendu à la guirlande), think (encourage). Animé en CSS, immobile si l'appareil réduit les animations. */
+  function lino(mood, size) {
+    const s = size || 64, arms = {
+      wave: '<path d="M22 62 C14 70 12 78 16 84" class="ln-arm"/><path class="ln-wave ln-arm" d="M78 58 C88 52 92 44 90 34"/>',
+      joy: '<path class="ln-cheerL ln-arm" d="M22 56 C12 48 10 38 14 28"/><path class="ln-cheerR ln-arm" d="M78 56 C88 48 90 38 86 28"/>',
+      hang: '<path d="M30 50 C24 36 28 20 36 6" class="ln-arm"/><path d="M70 50 C76 36 72 20 64 6" class="ln-arm"/>',
+      think: '<path d="M22 62 C14 68 14 76 20 80" class="ln-arm"/><path d="M78 62 C70 66 64 62 62 56" class="ln-arm"/>',
+    }[mood] || "";
+    const eyes = mood === "joy" ? '<path d="M37 58 q4 -5 8 0" class="ln-line"/><path d="M55 58 q4 -5 8 0" class="ln-line"/>'
+      : '<ellipse class="ln-blink" cx="41" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/><ellipse class="ln-blink" cx="59" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/>';
+    const mouth = mood === "joy" ? '<path d="M42 66 Q50 78 58 66 Z" fill="#1E1B2E"/>' : mood === "think" ? '<ellipse cx="50" cy="70" rx="3" ry="2.6" fill="#1E1B2E"/>' : '<path d="M44 68 Q50 74 56 68" class="ln-line"/>';
+    return node('<svg class="lino lino-' + mood + '" width="' + s + '" height="' + s + '" viewBox="0 0 100 100" aria-hidden="true">'
+      + '<path d="M50 30 C52 18 62 12 72 14 C68 24 60 30 50 30 Z" fill="#3DBE8B"/>' + arms
+      + '<circle cx="17" cy="58" r="5" fill="#FFD84A"/><circle cx="83" cy="58" r="5" fill="#FFD84A"/>'
+      + '<path d="M20 58 C20 38 34 28 50 28 C66 28 80 38 80 58 C80 78 66 88 50 88 C34 88 20 78 20 58 Z" fill="#FFD84A"/>'
+      + '<ellipse cx="38" cy="44" rx="9" ry="5" fill="#FFE98C" transform="rotate(-20 38 44)"/>' + eyes
+      + '<circle cx="33" cy="67" r="4.5" fill="#FFA98A" opacity=".8"/><circle cx="67" cy="67" r="4.5" fill="#FFA98A" opacity=".8"/>' + mouth
+      + (mood === "hang" ? "" : '<ellipse cx="42" cy="89" rx="6" ry="3" fill="#F2B90F"/><ellipse cx="58" cy="89" rx="6" ry="3" fill="#F2B90F"/>') + "</svg>");
+  }
+  window.LINO = lino;
+
+  /* ---------- Le voyage : guirlande de l'unité, billet de la leçon, billets suivants ---------- */
+  let VU = null; // unité affichée : "li:ui"
+  const STRIPS = [["#EEE8FF", "#3A2E86"], ["#E3F6EC", "#1E5A40"], ["#FFF1C9", "#6B5310"], ["#FFE3D1", "#8A3412"]];
+  function garland(ux, cu, w) {
+    const n = ux.length, P = [[-10, 14], [w * 0.25, 82], [w * 0.75, -38], [w + 10, 32]];
+    const at = (t) => { const c = [(1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3]; return [0, 1].map((k) => c.reduce((a, v, i) => a + v * P[i][k], 0)); };
+    let g = '<svg class="vy-garland" width="' + w + '" height="96" viewBox="0 0 ' + w + ' 96" role="img" aria-label="' + ux.filter(isDone).length + " leçon(s) faite(s) sur " + n + '">'
+      + '<path d="M' + P[0] + " C" + P[1] + " " + P[2] + " " + P[3] + '" fill="none" stroke="currentColor" stroke-width="2"/>';
+    ux.forEach((x, k) => {
+      const [bx, by] = at(n === 1 ? 0.5 : 0.1 + 0.7 * k / (n - 1)), done = isDone(x), now = cu && x.n === cu.n, cy = by + 14;
+      if (done) g += '<circle class="vy-tw" style="animation-delay:' + (k * 0.4).toFixed(1) + 's" cx="' + bx + '" cy="' + cy + '" r="15" fill="#FFE9A8"/>';
+      if (now) g += '<circle class="vy-glow" cx="' + bx + '" cy="' + cy + '" r="17" fill="#FFC2A3"/>';
+      g += '<rect x="' + (bx - 3) + '" y="' + by + '" width="6" height="6" rx="1" fill="currentColor"/><ellipse cx="' + bx + '" cy="' + cy + '" rx="7" ry="9" fill="' + (done ? "#FFD45C" : now ? "#FF8A4C" : "var(--vy-off)") + '"/>';
+    });
+    return { svg: node(g + "</svg>"), end: at(0.92) };
+  }
+  // Où en est la leçon : la partie en cours (cours, vocabulaire, exercices, dialogue…) d'après l'écran enregistré.
+  function partOf(m, i) {
+    try { const ps = LMAP.parts(screens(m)); const p = ps.find((q) => i >= q.at && i <= q.end) || ps[0]; return { name: p.name, k: ps.indexOf(p), n: ps.length }; } catch (e) { return { name: "", k: 0, n: 1 }; }
+  }
+  function voyage(ss, cu) {
+    const levels = (C().plan && C().plan.levels) || [];
+    const units = []; levels.forEach((lv, li) => (lv.units || []).forEach((u, ui) => { const ux = ss.filter((x) => x.li === li && x.ui === ui); if (ux.length) units.push({ lv, li, u, ui, ux, key: li + ":" + ui }); }));
+    if (!units.length) return false;
+    if (!VU || !units.some((x) => x.key === VU)) VU = cu ? cu.li + ":" + cu.ui : units[0].key;
+    const U = units.find((x) => x.key === VU), wrap = el("div", "vy");
+    // Les unités, d'un geste.
+    const chips = el("div", "vy-units"); chips.setAttribute("role", "tablist"); chips.setAttribute("aria-label", "Unités");
+    units.forEach((x) => {
+      const d = x.ux.every(isDone), here = cu && cu.li === x.li && cu.ui === x.ui, b = el("button", "vy-unit" + (d ? " done" : "") + (here ? " here" : ""));
+      b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(x.key === VU));
+      b.innerHTML = d ? IC.check : ""; b.append(txt("span", null, "Unité " + x.ux[0].un + (here ? " · en cours" : "")));
+      b.onclick = () => { VU = x.key; lessonsTab(); }; chips.append(b);
+    });
+    wrap.append(chips);
+    // La guirlande : une ampoule par leçon, Lino suspendu au bout quand c'est l'unité en cours.
+    const ux = U.ux, doneN = ux.filter(isDone).length, mine_ = cu && cu.li === U.li && cu.ui === U.ui;
+    const gw = Math.min(Math.max((root.clientWidth || 390) - 32, 280), 560), gl = garland(ux, cu, gw), gbox = el("div", "vy-gbox");
+    gbox.append(gl.svg);
+    if (mine_) { const l = el("div", "vy-hang"); l.style.left = Math.round(gl.end[0] - 22) + "px"; l.style.top = Math.round(gl.end[1] - 6) + "px"; l.append(lino("hang", 48)); gbox.append(l); }
+    wrap.append(gbox);
+    const hd = el("div", "vy-head");
+    hd.append(txt("span", "vy-eyebrow", (U.li === 0 ? "Bases" : "Niveau") + " " + U.lv.cecr + " · Unité " + ux[0].un + " · " + doneN + (doneN > 1 ? " lumières" : " lumière") + " sur " + ux.length), txt("h2", "vy-title", U.u.t));
+    if (isS(U.u.goal)) hd.append(txt("p", "vy-goal", U.u.goal));
+    wrap.append(hd);
+    // Le billet : la leçon en cours de l'unité (ou la première à faire).
+    const focus = (mine_ && ux.find((x) => x.n === cu.n)) || ux.find((x) => !isDone(x));
+    if (focus) wrap.append(ticket(focus, ux.indexOf(focus) + 1, mine_ && focus.n === cu.n));
+    else {
+      const best = ux.map((x) => (S[x.key] || {}).best).filter((v) => v != null), avg = best.length ? Math.round(best.reduce((a, b) => a + b, 0) / best.length) : null;
+      const c = el("div", "vy-ticket vy-done-all"); const t = el("div", "vy-t-top"); t.append(txt("span", "vy-mono", "VOYAGE TERMINÉ"), txt("b", "vy-t-title", "Unité " + ux[0].un + " validée"));
+      if (avg != null) t.append(txt("span", "vy-t-sub", avg + " % de réussite en moyenne"));
+      c.append(t); const ix = units.indexOf(U), nx = units[ix + 1];
+      if (nx) { const b = el("button", "vy-go"); b.type = "button"; b.textContent = "Unité suivante : " + nx.u.t; b.onclick = () => { VU = nx.key; lessonsTab(); }; const bot = el("div", "vy-t-bot"); bot.append(b); c.append(bot); }
+      wrap.append(c);
+    }
+    // Les billets suivants, empilés, puis les billets validés.
+    const next = ux.filter((x) => x !== focus && !isDone(x));
+    if (next.length) {
+      wrap.append(txt("h3", "vy-sec", "Prochains billets"));
+      const st = el("div", "vy-stack");
+      next.forEach((x, k) => {
+        const [bg, fg] = STRIPS[k % STRIPS.length], b = el("button", "vy-strip"); b.type = "button"; b.style.background = bg; b.style.color = fg; b.style.zIndex = String(10 - k);
+        const z = slotState(x); b.append(txt("span", "vy-mono", String(ux.indexOf(x) + 1)), txt("b", null, x.l.t), txt("small", null, z.cls === "todo" ? (AI ? "À préparer" : "Bientôt") : "Prête"));
+        b.onclick = () => openSlot(x); st.append(b);
+      });
+      wrap.append(st);
+    }
+    const done = ux.filter(isDone);
+    if (done.length) {
+      wrap.append(txt("h3", "vy-sec", done.length > 1 ? done.length + " billets validés" : "1 billet validé"));
+      const l = el("div", "vy-done");
+      done.forEach((x) => {
+        const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
+        b.append(txt("span", "vy-stamp", "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
+        b.onclick = () => openSlot(x); l.append(b);
+      });
+      wrap.append(l);
+    }
+    root.append(wrap);
+    requestAnimationFrame(() => { const on = chips.querySelector('[aria-selected="true"]'); if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center" }); });
+    return true;
+  }
+  function ticket(x, k, isCur) {
+    const m = x.mi >= 0 ? M[x.mi] : null, stt = S[x.key] || {}, n = m ? screens(m).length : 0, i = stt.i || 0, started = !!(m && i);
+    const c = el("article", "vy-ticket" + (isCur ? " cur" : ""));
+    if (isCur) { const l = el("div", "vy-sit"); l.append(lino("wave", 60)); c.append(l); }
+    const top = el("div", "vy-t-top");
+    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", "BIGLIETTO · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
+    top.append(row, txt("h3", "vy-t-title", x.l.t));
+    if (isS(x.l.g)) top.append(txt("span", "vy-t-sub", x.l.g));
+    const p = m ? partOf(m, i) : null;
+    if (m) {
+      const route = el("div", "vy-route"); route.setAttribute("aria-hidden", "true");
+      const pos = started ? Math.max(0.04, Math.min(0.96, i / n)) : 0.02; route.append(txt("span", null, "Cours"), el("span", "vy-rail"), txt("span", null, m.scenario ? "Conversation" : "Dialogue"));
+      const dot = el("i", "vy-dot"); dot.style.left = "calc(" + (pos * 100).toFixed(1) + "% )"; route.querySelector(".vy-rail").append(dot); top.append(route);
+    }
+    c.append(top);
+    const mid = el("div", "vy-t-mid");
+    const cell = (a, b) => { const d = el("div"); d.append(txt("span", "vy-mono", a), txt("b", null, b)); mid.append(d); };
+    if (m) { cell("ÉTAPE", started ? p.name : "Le cours"); cell("ÉCRAN", started ? (i + 1) + " sur " + n : n + " écrans"); cell("ÉTAT", stt.done ? "Faite" : started ? Math.round(100 * i / n) + " %" : "Prête"); }
+    else { cell("ÉTAT", "À préparer"); cell("DURÉE", "2 à 3 min"); cell("PAR", "Claude"); }
+    c.append(mid, el("div", "vy-perf"));
+    const bot = el("div", "vy-t-bot");
+    bot.insertAdjacentHTML("beforeend", '<svg class="vy-code" width="64" height="30" viewBox="0 0 64 30" aria-hidden="true"><path d="M2 0v30M6 0v30M9 0v30M14 0v30M16 0v30M21 0v30M25 0v30M27 0v30M32 0v30M36 0v30M38 0v30M43 0v30M45 0v30M50 0v30M54 0v30M57 0v30M61 0v30" stroke="currentColor" stroke-width="1.6"/></svg>');
+    const go = el("button", "vy-go"); go.type = "button";
+    go.textContent = !m ? (AI ? "Préparer la leçon" : "Préparer avec le réseau") : started ? "Reprendre" : "Commencer";
+    go.onclick = () => openSlot(x); bot.append(go);
+    if (m && typeof LMAP !== "undefined") { const sm = el("button", "vy-map"); sm.type = "button"; sm.setAttribute("aria-label", "Sommaire de la leçon"); sm.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>'; sm.onclick = () => LMAP.open(x.mi); bot.append(sm); }
+    c.append(bot);
+    return c;
+  }
+
   /* ---------- Actu ---------- */
   let NEDIT = false;
   function newsTab() {
@@ -214,6 +349,7 @@
     const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : "Tout ce que tu as fait")); root.append(h);
     segs();
     if (LSEG === "hist" && typeof HIST !== "undefined") { const host = el("div", "seg-body hist"); root.append(host); HIST.renderInto(host); sync(); return; }
+    if (voyage(ss, cu)) { root.append(customCard()); sync(); return; }
     const levels = (C().plan && C().plan.levels) || [];
     if (LV == null) LV = cu ? cu.li : 0;
     const chips = el("div", "chips");
@@ -409,15 +545,44 @@
     const fb = root.querySelector(".fb"); if (!fb || fb === lastFb) return; lastFb = fb;
     try { if (navigator.vibrate) navigator.vibrate(fb.classList.contains("ok") ? 12 : [24, 40, 24]); } catch (e) { /* rien */ }
     const ab = root.querySelector(":scope > .actionbar"); if (ab) ab.innerHTML = "";
+    { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
     if (fb.classList.contains("ko")) { const s = fb.querySelector("strong"); if (s && cur && cur.q[cur.i] && !cur.q[cur.i].retry) s.after(txt("span", "fb-tag", "Reviendra en fin de leçon")); }
     const why = fb.querySelector(".why > .btn"); if (why) why.textContent = "Pourquoi ? Demander à Giulia";
     const sec = el("div", "fb-acts"); fb.querySelectorAll(":scope > .say, :scope > .btn:not(.primary)").forEach((b) => sec.append(b)); const prim = fb.querySelector(":scope > .btn.primary"); if (sec.children.length) fb.insertBefore(sec, prim);
   }
   const posted = new Set();
+  // Fin de leçon : confettis, Lino qui fait la fête, étoiles selon le score, quelques chiffres et l'avancée de l'unité.
+  function endFx(e, m, pct) {
+    if (e.dataset.fx) return; e.dataset.fx = "1"; e.classList.add("end-fx");
+    const stars = !Number.isFinite(pct) ? 1 : pct >= 85 ? 3 : pct >= 65 ? 2 : 1;
+    const conf = el("div", "conf-box"); conf.setAttribute("aria-hidden", "true");
+    const cols = ["#FF6B35", "#5B6CF0", "#3DBE8B", "#FFC93C", "#E2557A"];
+    for (let k = 0; k < 14; k++) { const c = el("i", "conf" + (k % 3 === 1 ? " round" : "")); c.style.left = (4 + k * 6.8) + "%"; c.style.background = cols[k % cols.length]; c.style.animationDelay = ((k * 0.37) % 3).toFixed(2) + "s"; conf.append(c); }
+    const hero = el("div", "end-hero"); const halo = el("span", "end-halo"); const l = lino("joy", 132); l.classList.add("end-lino"); hero.append(conf, halo, l);
+    const st = el("div", "end-stars"); st.setAttribute("aria-label", stars + (stars > 1 ? " étoiles" : " étoile") + " sur 3");
+    for (let k = 0; k < 3; k++) st.insertAdjacentHTML("beforeend", '<svg class="star s' + (k + 1) + (k < stars ? " on" : "") + '" width="' + (k === 1 ? 52 : 40) + '" height="' + (k === 1 ? 52 : 40) + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z"/></svg>');
+    e.insertBefore(st, e.firstChild); e.insertBefore(hero, e.firstChild);
+    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !"); h2.before(b); }
+    const tiles = el("div", "end-tiles rise");
+    const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
+    if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
+    if (m.vocab && m.vocab.length) tile("+" + m.vocab.length, "mots", "t-blue");
+    const sk = streak(); tile(String(sk), sk > 1 ? "jours d'affilée" : "jour d'affilée", "t-sun");
+    const sc = e.querySelector(".score"); (sc || h2).after(tiles);
+    // L'unité : un segment par leçon.
+    const x = slots().find((y) => y.mi === cur.mi);
+    if (x) {
+      const ux = slots().filter((y) => y.li === x.li && y.ui === x.ui), d = ux.filter(isDone).length;
+      const u = el("div", "end-unit rise"); u.append(txt("b", null, "Unité " + x.un + " · " + d + (d > 1 ? " leçons" : " leçon") + " sur " + ux.length));
+      const bar = el("div", "end-seg"); ux.forEach((y) => bar.append(el("i", isDone(y) ? (y.n === x.n ? "on now" : "on") : ""))); u.append(bar);
+      tiles.after(u);
+    }
+  }
   function lessonDone() {
     const e = root.querySelector(".end"); if (!e || !cur || cur.mi == null || !M[cur.mi]) return;
-    const m = M[cur.mi], key = m.id + ":" + day(); if (posted.has(key)) return; posted.add(key);
-    const pct = parseInt((e.querySelector(".score") || {}).textContent, 10);
+    const m = M[cur.mi], pct = parseInt((e.querySelector(".score") || {}).textContent, 10);
+    try { endFx(e, m, pct); } catch (x) { /* rien */ }
+    const key = m.id + ":" + day(); if (posted.has(key)) return; posted.add(key);
     SOC.post("lesson", { t: m.st, pct: Number.isFinite(pct) ? pct : null }); SOC.pushWeekly(true);
     if (typeof HIST !== "undefined") { HIST.add({ id: "lesson:" + m.id, k: "lesson", ref: m.id, title: m.st, sc: Number.isFinite(pct) ? pct : null }); save(); }
   }
