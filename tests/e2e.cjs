@@ -87,6 +87,8 @@ const MOCKS = `
   ok(await a.isVisible(".tabbar"), "barre d'onglets affichée");
   ok((await a.$$eval(".stories .story", (d) => d.length)) === 5, "stories : révision et quatre personnages");
   ok((await a.$$eval(".carousel .theme", (d) => d.length)) >= 5, "thèmes de conversation en images");
+  ok(await a.evaluate(() => { const t = document.querySelector(".home-trip .vy-ticket.cur"); return !!t && /LEÇON [1-9]/.test(t.textContent) && t.querySelector(".vy-t-title").textContent === current().l.t && !!t.querySelector(".lino"); }), "accueil : billet de la leçon du jour, avec son numéro et Lino");
+  ok(await a.evaluate(() => !!document.querySelector(".card.wotd .lino")), "accueil : Lino présente le mot du jour");
   await a.click(".tabbar [data-tab=lessons]");
   const nUnits = await a.$$eval(".vy-unit", (d) => d.length);
   ok(nUnits >= 5, "le voyage : toutes les unités en pastilles (" + nUnits + ")");
@@ -573,7 +575,7 @@ const MOCKS = `
   await a.waitForSelector(".nw-card button:has-text('Choisir mes thèmes')");
   ok(true, "carte « La notizia del giorno » sur l'accueil");
   await a.click(".nw-card button:has-text('Choisir mes thèmes')");
-  await a.click(".chip-t:has-text('Économie')"); await a.click(".chip-t:has-text('Voyages')");
+  await a.click(".theme-t:has-text('Économie')"); await a.click(".theme-t:has-text('Voyages')");
   ok(await a.evaluate(() => S.nth.join() === "economie,voyages"), "thèmes choisis dans l'app et enregistrés");
   await a.click("button:has-text('Voir les nouvelles')"); await a.waitForSelector(".nw-row");
   const rows = await a.$$eval(".nw-row b", (l) => l.map((x) => x.textContent));

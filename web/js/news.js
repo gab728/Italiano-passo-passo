@@ -8,6 +8,20 @@ const NEWS = (() => {
     ["culture", "Culture"], ["cinema", "Cinéma"], ["voyages", "Voyages"], ["gastronomie", "Gastronomie"], ["sport", "Sport"], ["calcio", "Calcio"],
     ["sante", "Santé"], ["lifestyle", "Lifestyle"], ["moteurs", "Auto-moto"], ["rome", "Rome"], ["milan", "Milan"], ["naples", "Naples"], ["toscane", "Toscane"]];
   const NAME = Object.fromEntries(THEMES);
+  // Une icône et une teinte par thème.
+  const IP = {
+    une: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/>', monde: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
+    politique: '<path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>', economie: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    tech: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>', sciences: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>',
+    culture: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/>', cinema: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 7l3-4M9 7l3-4M15 7l3-4"/>',
+    voyages: '<path d="M10.5 13.5L3 11l1.5-1.5 8 1 4-4c1-1 2.5-1.5 3.5-.5s.5 2.5-.5 3.5l-4 4 1 8L15 23l-2.5-7.5"/>', gastronomie: '<path d="M7 2v20M4 2v6a3 3 0 0 0 6 0V2M17 2c-2 2-3 5-3 8h3v12"/>',
+    sport: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c4 2 8.8 2 12.8 0M5.6 18.4c4-2 8.8-2 12.8 0"/>', calcio: '<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/>',
+    sante: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', lifestyle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>',
+    moteurs: '<path d="M5 16.5V12l2-5.5h10l2 5.5v4.5"/><path d="M3.5 12h17"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/>',
+  };
+  const pin = '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>';
+  const icon = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IP[k] || pin) + "</svg>";
+  const tint = (k) => "tint-" + (Math.max(0, THEMES.findIndex((t) => t[0] === k)) % 5);
   const DIFF = [["facile", "Facile", "Mots, phrases à remettre en ordre, phrases courtes à traduire"], ["moyen", "Moyen", "Traductions, dictée, phrases à transformer, une réponse rédigée"], ["difficile", "Difficile", "Longues traductions, dictée, transformations, résumé et avis rédigés"]];
   const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
   const themes = () => (Array.isArray(S.nth) ? S.nth.filter((t) => NAME[t]) : []);
@@ -97,7 +111,7 @@ const NEWS = (() => {
   function themePicker(host, onChange) {
     const wrap = el("div", "nw-themes"); wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", "Mes thèmes");
     THEMES.forEach(([k, n]) => {
-      const b = el("button", "chip-t"); b.type = "button"; b.textContent = n; b.setAttribute("aria-pressed", String(themes().includes(k)));
+      const b = el("button", "theme-t " + tint(k)); b.type = "button"; b.innerHTML = '<span class="theme-ic">' + icon(k) + "</span>"; b.append(txt("span", "theme-n", n)); b.setAttribute("aria-pressed", String(themes().includes(k)));
       b.onclick = () => { const cur = themes(); S.nth = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k).slice(-8); save(); b.setAttribute("aria-pressed", String(S.nth.includes(k))); onChange && onChange(); };
       wrap.append(b);
     });
@@ -107,7 +121,9 @@ const NEWS = (() => {
   async function listInto(host, editThemes, again) {
     const th = themes();
     if (!th.length || editThemes) {
-      host.append(txt("p", "fr", "Choisis les sujets qui t'intéressent (8 au plus). Chaque dépêche devient une petite leçon à ton niveau : article, traduction, mots-clés et exercices d'écriture."));
+      const intro = el("div", "nw-intro"); if (window.LINO) intro.append(LINO("wave", 64));
+      intro.append(txt("p", null, "Choisis les sujets qui t'intéressent (8 au plus). Chaque dépêche devient une petite leçon à ton niveau : article, traduction, mots-clés et exercices d'écriture."));
+      host.append(intro);
       themePicker(host);
       const ok = btn("Voir les nouvelles", "primary"); ok.onclick = () => (themes().length ? again(false) : speakNote("Choisis au moins un thème.")); host.append(ok);
       return;
@@ -127,6 +143,7 @@ const NEWS = (() => {
   function row(it) {
     const done = (S.nw || {})[it.id];
     const b = el("button", "nw-row" + (done ? " done" : "")); b.type = "button";
+    const ic = el("span", "row-ic " + tint(it.theme)); ic.innerHTML = icon(it.theme); b.append(ic);
     const t = el("span", "nw-row-t"); t.append(txt("small", null, (NAME[it.theme] || it.theme) + " · " + ago(it.date)), txt("b", null, it.title));
     if (done) t.append(txt("small", "nw-done", "Lue · " + done.sc + " % aux exercices"));
     b.append(t); b.insertAdjacentHTML("beforeend", '<svg class="nw-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');

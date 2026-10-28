@@ -102,7 +102,10 @@
     const hd = el("header", "feed-hd");
     const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", "Mon profil"); who.onclick = () => goTab("profile"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || "Ciao !")); who.append(nm);
     const st = node('<span class="streak' + (sk ? " on" : "") + '">' + IC.flame + "<b></b></span>"); st.querySelector("b").textContent = sk; st.setAttribute("aria-label", "Série : " + sk + (sk > 1 ? " jours" : " jour") + " d'affilée"); st.title = st.getAttribute("aria-label");
-    hd.append(who, st); root.append(hd);
+    const td = (S.d || {})[day()] || 0, gl = el("span", "goal-chip");
+    gl.innerHTML = ring(td, GOAL, 28, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--ok-fill)");
+    const sw = el("div", "hd-chips"); sw.append(st, gl);
+    hd.append(who, sw); root.append(hd);
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
     if (!firstName()) root.append(nameCard());
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
@@ -116,7 +119,7 @@
     // Mot du jour
     const wd = wordOfDay();
     if (wd) {
-      const c = card("post"); c.append(postHead(PERSONAS.giulia, "Giulia", "prof, Bologne", "Le mot du jour"));
+      const c = card("post wotd"); const lw = el("span", "wotd-lino"); lw.append(lino("wave", 64)); c.append(lw); c.append(postHead(PERSONAS.giulia, "Giulia", "prof, Bologne", "Le mot du jour"));
       c.append(txt("p", "big-it", wd.w.it), txt("p", "muted", wd.w.fr));
       if (wd.ex) { const q = el("div", "quote"); q.append(txt("p", "it", "« " + wd.ex[1] + " »"), txt("p", "muted small", wd.ex[2])); c.append(q); }
       const acts = el("div", "acts");
@@ -128,7 +131,7 @@
     // Défi vocal du jour
     if (AI) {
       const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id];
-      const c = card("post"); c.append(postHead(p, p.name, p.sub.charAt(0).toLowerCase() + p.sub.slice(1), "Défi du jour · 2 min"));
+      const c = card("post defi defi-" + id); c.append(postHead(p, p.name, p.sub.charAt(0).toLowerCase() + p.sub.slice(1), "Défi du jour · 2 min"));
       c.append(txt("p", "it-line", "« " + p.open + " »"), txt("p", "muted", p.mission));
       c.append(pillBtn(VO.available() ? "Répondre en vocal" : "Répondre", "blue wide", () => openPersona(id), VO.available() ? IC.talk : "")); root.append(c);
     }
@@ -139,6 +142,18 @@
   };
   /* Carte de la leçon du jour, en tête de l'accueil : où j'en suis dans l'unité, l'objectif du jour, un grand bouton. */
   function lessonHero(cu, ss, doneN) {
+    // Le billet de la leçon du jour, comme dans l'onglet Leçons.
+    if (cu) {
+      const c = el("section", "home-trip"), ux = ss.filter((x) => x.li === cu.li && x.ui === cu.ui), d = ux.filter(isDone).length, stt = S[cu.key] || {};
+      const first = doneN === 0 && !stt.i;
+      c.append(txt("h2", "feed-sec", first ? "Commence ici" : stt.i ? "Ta leçon en cours" : "Ta leçon du jour"));
+      c.append(txt("p", "home-trip-u", (cu.li === 0 ? "Bases" : "Niveau") + " " + cu.lv.cecr + " · Unité " + cu.un + " · " + cu.u.t + " · " + d + "/" + ux.length));
+      const t = ticket(cu, ux.findIndex((x) => x.n === cu.n) + 1, true);
+      if (first) { const g = t.querySelector(".vy-go"); if (g && g.textContent === "Commencer") g.textContent = "Commencer ma première leçon"; }
+      c.append(t);
+      const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le voyage (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); c.append(all);
+      return c;
+    }
     const c = el("section", "lhero");
     if (!cu) {
       c.classList.add("over");
@@ -414,10 +429,11 @@
     const r = el("button", "today-c"); r.type = "button"; const t = el("span", "today-t");
     t.append(txt("small", null, "Révision espacée"), txt("b", null, V.due.length ? V.due.length + (V.due.length > 1 ? " mots à revoir aujourd'hui" : " mot à revoir aujourd'hui") : "Rien à revoir aujourd'hui"));
     t.append(txt("small", "today-note", V.due.length ? "Chaque mot revient au bon moment." : "Lance un quiz pour t'entraîner quand même."));
-    const p = el("span", "today-go"); p.innerHTML = IC.play; r.append(t, p);
+    const p = el("span", "today-go"); p.innerHTML = IC.play; const lr = el("span", "today-lino"); lr.append(lino(V.due.length ? "wave" : "joy", 70)); r.append(lr, t, p);
     r.onclick = () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : quizSetup(); root.append(r);
     const list = card("list");
-    const row = (icon, title, sub, fn) => { const b = el("button", "row"); b.type = "button"; const i = el("span", "row-ic"); i.innerHTML = icon; const tt = el("span", "row-t"); tt.append(txt("b", null, title), txt("small", null, sub)); b.append(i, tt); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = fn; list.append(b); };
+    let rk = 0;
+    const row = (icon, title, sub, fn) => { const b = el("button", "row"); b.type = "button"; const i = el("span", "row-ic tint-" + (rk++ % 5)); i.innerHTML = icon; const tt = el("span", "row-t"); tt.append(txt("b", null, title), txt("small", null, sub)); b.append(i, tt); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = fn; list.append(b); };
     row(IC.book, "Mon carnet", "Tes mots, à relire et à compléter", () => carnet());
     row(IC.quiz, "Quiz de vocabulaire", "Du français vers l'italien, ou l'inverse", () => quizSetup());
     if (canSpeak) row(IC.dictee, "Dictée", "Écoute une phrase, écris-la", () => dictee());
