@@ -78,11 +78,11 @@
     TOPICS.forEach(([t, d, img]) => add("img/themes/" + img + ".svg", t, "Avec Giulia, à ton niveau", "Libre", () => openTopic(t, d)));
     return row;
   }
-  function personaStories(wrap) {
+  function personaStories(wrap, noRip) {
     const row = el("div", "stories"); const V = vstat();
     const story = (label, inner, fresh, fn) => { const b = el("button", "story" + (fresh ? " fresh" : "")); b.type = "button"; const r = el("span", "story-ring"); r.append(inner); b.append(r, txt("span", "story-l", label)); b.onclick = fn; row.append(b); };
     const rip = el("span", "av dark"); rip.innerHTML = "<b></b><small>mots</small>"; rip.querySelector("b").textContent = V.due.length || V.nb.length;
-    story("Ripasso", rip, V.due.length > 0, () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
+    if (!noRip) story("Ripasso", rip, V.due.length > 0, () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
     Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id]; story(p.name, personaAvatar(p), !((S.pc || {})[id] === day()), () => openPersona(id)); });
     wrap.append(row);
   }
@@ -109,37 +109,88 @@
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
     if (!firstName()) root.append(nameCard());
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
-    const doneN = ss.filter(isDone).length, beginner = doneN < 3;
+    const doneN = ss.filter(isDone).length;
     root.append(lessonHero(cu, ss, doneN));
-    if (typeof NEWS !== "undefined" && AI) root.append(NEWS.homeCard());
-    if (!beginner) { root.append(txt("h2", "feed-sec talk-h", "Pratiquer à l'oral")); personaStories(root); }
-    // Thèmes
-    if (AI) { const h = el("div", "sec-h"); h.append(txt("h2", null, beginner ? "Ensuite, parle de…" : "Parler de…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h, themeCarousel(8)); }
-    if (beginner) { root.append(txt("h2", "feed-sec talk-h", "Bavarder avec eux")); personaStories(root); }
-    // Mot du jour
-    const wd = wordOfDay();
-    if (wd) {
-      const c = card("post wotd"); const lw = el("span", "wotd-lino"); lw.append(lino("wave", 64)); c.append(lw); c.append(postHead(PERSONAS.giulia, "Giulia", "prof, Bologne", "Le mot du jour"));
-      c.append(txt("p", "big-it", wd.w.it), txt("p", "muted", wd.w.fr));
-      if (wd.ex) { const q = el("div", "quote"); q.append(txt("p", "it", "« " + wd.ex[1] + " »"), txt("p", "muted small", wd.ex[2])); c.append(q); }
-      const acts = el("div", "acts");
-      if (canSpeak) acts.append(pillBtn("Écouter", "soft", () => speak(wd.ex ? wd.ex[1] : wd.w.it), IC.listen));
-      const inNb = (S.nb || {})[wd.w.key] != null;
-      const sv = pillBtn(inNb ? "Dans ton carnet" : "Au carnet", "soft", () => { setV(wd.w.key, 2); save(); sv.disabled = true; sv.querySelector("span").textContent = "Dans ton carnet"; }, IC.save); sv.disabled = inNb;
-      acts.append(sv); c.append(acts); root.append(c);
-    }
-    // Défi vocal du jour
+    // Ta journée : quatre petites choses à faire, dans une seule carte.
+    root.append(dailyPlan());
+    // Parler : les personnages, puis les sujets et jeux de rôle.
     if (AI) {
-      const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id];
-      const c = card("post defi defi-" + id); c.append(postHead(p, p.name, p.sub.charAt(0).toLowerCase() + p.sub.slice(1), "Défi du jour · 2 min"));
-      c.append(txt("p", "it-line", "« " + p.open + " »"), txt("p", "muted", p.mission));
-      c.append(pillBtn(VO.available() ? "Répondre en vocal" : "Répondre", "blue wide", () => openPersona(id), VO.available() ? IC.talk : "")); root.append(c);
+      const h = el("div", "sec-h"); h.append(txt("h2", null, "Parler avec…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h);
+      personaStories(root, true); root.append(themeCarousel(8));
     }
     // Activité des amis
     const fr = el("div", "friends-feed"); root.append(fr); SOC.renderFeed(fr);
     SOC.pushWeekly();
     sync();
   };
+  /* ---------- Ta journée : révision, mot du jour, défi oral, actu ---------- */
+  const ICD = {
+    rev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15"/><path d="M4 20v-5h5"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/></svg>',
+    news: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>',
+  };
+  function dailyPlan() {
+    const sec = el("section", "daily"), V = vstat();
+    const head = el("div", "daily-h"); const ht = el("div"); ht.append(txt("h2", "feed-sec", "Ta journée"), txt("small", "muted", new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })));
+    const cnt = el("span", "daily-n"), lw = el("span", "daily-lino"); const right = el("div", "daily-r"); right.append(lw, cnt); head.append(ht, right); sec.append(head);
+    const box = el("div", "daily-box"); sec.append(box);
+    const items = [];
+    const row = (icon, tint, eyebrow, title, sub, done, fn) => {
+      const b = el("button", "daily-row" + (done ? " done" : "")); b.type = "button";
+      const i = el("span", "row-ic tint-" + tint); i.innerHTML = icon;
+      const t = el("span", "daily-t"); t.append(txt("small", null, eyebrow), txt("b", null, title)); if (sub) t.append(txt("span", "daily-sub", sub));
+      const st = el("span", "daily-st"); st.innerHTML = done ? IC.check : IC.chev;
+      b.append(i, t, st); b.onclick = fn; box.append(b); items.push(b); return b;
+    };
+    let mood = "";
+    const count = () => {
+      const d = items.filter((b) => b.classList.contains("done")).length, all = items.length && d === items.length;
+      cnt.textContent = d + "/" + items.length; cnt.classList.toggle("all", !!all);
+      const m = all ? "joy" : "wave"; if (m !== mood) { mood = m; lw.innerHTML = ""; lw.append(lino(m, 44)); }
+    };
+    // 1. Révision espacée
+    if (V.nb.length) row(ICD.rev, 0, "Révision", V.due.length ? V.due.length + (V.due.length > 1 ? " mots à revoir" : " mot à revoir") : "Carnet à jour", V.due.length ? "2 minutes, au bon moment pour les retenir" : "Rien à revoir aujourd'hui", !V.due.length,
+      () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
+    // 2. Le mot du jour : un toucher le dit et déplie l'exemple.
+    const wd = wordOfDay();
+    if (wd) {
+      const inNb = () => (S.nb || {})[wd.w.key] != null;
+      const r = row(ICD.sun, 3, "Le mot du jour", wd.w.it, wd.w.fr, inNb(), () => {
+        if (canSpeak) speak(wd.w.it);
+        if (more.hidden) { more.hidden = false; r.setAttribute("aria-expanded", "true"); } else { more.hidden = true; r.setAttribute("aria-expanded", "false"); }
+      });
+      r.querySelector(".daily-t b").classList.add("it"); r.setAttribute("aria-expanded", "false");
+      const more = el("div", "daily-more"); more.hidden = true;
+      if (wd.ex) { const q = el("div", "quote"); q.append(txt("p", "it", "« " + wd.ex[1] + " »"), txt("p", "muted small", wd.ex[2])); more.append(q); }
+      const acts = el("div", "acts");
+      if (canSpeak && wd.ex) acts.append(pillBtn("Écouter l'exemple", "soft", () => speak(wd.ex[1]), IC.listen));
+      const sv = pillBtn(inNb() ? "Dans ton carnet" : "Au carnet", "soft", () => { setV(wd.w.key, 2); save(); sv.disabled = true; sv.querySelector("span").textContent = "Dans ton carnet"; r.classList.add("done"); r.querySelector(".daily-st").innerHTML = IC.check; count(); }, IC.save); sv.disabled = inNb();
+      acts.append(sv); more.append(acts); r.after(more);
+    }
+    // 3. Le défi oral avec un personnage
+    if (AI) {
+      const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id], tints = { marco: 0, sofia: 4, rosa: 2 };
+      const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[id] === day(), () => openPersona(id));
+      const ic = r.querySelector(".row-ic"); ic.innerHTML = ""; ic.classList.add("daily-av"); ic.append(personaAvatar(p, 42));
+    }
+    // 4. L'actu du jour, à ton niveau
+    if (typeof NEWS !== "undefined" && AI) {
+      if (!NEWS.themes().length) row(ICD.news, 1, "Actu", "Choisis tes sujets d'actu", "Chaque dépêche devient une petite leçon à ton niveau", false, () => NEWS.hub(true));
+      else {
+        const r = row(ICD.news, 1, "Actu", "Chargement…", "", false, () => NEWS.hub());
+        NEWS.top().then((it) => {
+          if (!it || !r.isConnected) { if (r.isConnected) r.querySelector(".daily-t b").textContent = "Pas de nouvelle pour l'instant"; return; }
+          const ic = r.querySelector(".row-ic"); ic.className = "row-ic " + NEWS.tint(it.theme); ic.innerHTML = NEWS.icon(it.theme);
+          r.querySelector(".daily-t small").textContent = "Actu · " + (NEWS.NAME[it.theme] || "") + " · " + NEWS.ago(it.date);
+          r.querySelector(".daily-t b").textContent = it.title;
+          const done = !!(S.nw || {})[it.id]; r.classList.toggle("done", done); r.querySelector(".daily-st").innerHTML = done ? IC.check : IC.chev; count();
+          r.onclick = () => NEWS.open(it);
+        }).catch(() => { if (r.isConnected) r.querySelector(".daily-t b").textContent = "Les nouvelles s'afficheront avec du réseau"; });
+      }
+    }
+    count();
+    return sec;
+  }
   /* Carte de la leçon du jour, en tête de l'accueil : où j'en suis dans l'unité, l'objectif du jour, un grand bouton. */
   function lessonHero(cu, ss, doneN) {
     // Le billet de la leçon du jour, comme dans l'onglet Leçons.

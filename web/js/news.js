@@ -111,7 +111,7 @@ const NEWS = (() => {
   function themePicker(host, onChange) {
     const wrap = el("div", "nw-themes"); wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", "Mes thèmes");
     THEMES.forEach(([k, n]) => {
-      const b = el("button", "theme-t " + tint(k)); b.type = "button"; b.innerHTML = '<span class="theme-ic">' + icon(k) + "</span>"; b.append(txt("span", "theme-n", n)); b.setAttribute("aria-pressed", String(themes().includes(k)));
+      const b = el("button", "nwt " + tint(k)); b.type = "button"; b.innerHTML = '<span class="theme-ic">' + icon(k) + "</span>"; b.append(txt("span", "theme-n", n)); b.setAttribute("aria-pressed", String(themes().includes(k)));
       b.onclick = () => { const cur = themes(); S.nth = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k).slice(-8); save(); b.setAttribute("aria-pressed", String(S.nth.includes(k))); onChange && onChange(); };
       wrap.append(b);
     });
@@ -377,7 +377,9 @@ const NEWS = (() => {
     }).catch((e) => { bodyC.innerHTML = ""; bodyC.append(txt("p", "muted", aiFail(e))); });
     return c;
   }
-  return { hub, open, listInto, homeCard, THEMES, items, tidy, plan, judge, stage, STAGES, NAME };
+  // Pour l'accueil : la prochaine dépêche non lue, son icône et sa teinte.
+  const top = async () => { if (!themes().length) return null; const its = await items(); return its.find((x) => !(S.nw || {})[x.id]) || its[0] || null; };
+  return { hub, open, listInto, homeCard, THEMES, items, tidy, plan, judge, stage, STAGES, NAME, top, ago, icon, tint, themes };
 })();
 // L'accueil s'affiche avant le chargement de ce module : on le redessine pour y ajouter la notizia du jour.
 if (typeof view !== "undefined" && view === "home" && typeof home === "function") home();
