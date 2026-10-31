@@ -859,3 +859,14 @@ html[data-course="he"] .lhero.start { box-shadow: 0 0 0 2px var(--spritz), 0 14p
 .lh-from .link { font-size: 13.5px; padding: 0; }
 .dm-snd { background: var(--chip) !important; }
 .dm-snd.off { color: var(--muted) !important; }
+
+/* Prononciation de l'hébreu, sous le texte (attribut data-tl rempli par ui.js) */
+html.show-tl [data-tl]::after { content: attr(data-tl); display: block; margin-top: 3px; font: italic 400 13.5px/1.35 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); direction: ltr; unicode-bidi: isolate; text-align: inherit; white-space: normal; }
+html.show-tl .lesson em[data-tl]::after { display: inline; margin-inline-start: .35em; font-size: .62em; }
+html.show-tl :is(.word, .flash .it, .q)[data-tl]::after { font-size: 15px; }
+html.show-tl :is(.opt, .chip)[data-tl]::after { font-size: 12px; margin-top: 1px; }
+html.show-tl .bub[data-tl]::after { color: inherit; opacity: .72; }
+html.show-tl .vy-t-top [data-tl]::after, html.show-tl .daily-t [data-tl]::after { color: inherit; opacity: .7; }
+/* Répliques du dialogue : chaque mot est un bouton ; en hébreu, la ligne entière va de droite à gauche. */
+html[data-course="he"] .dlg .ln .it { display: block; direction: rtl; text-align: right; }
+html[data-course="he"] .dlg .ln .tr { display: block; }

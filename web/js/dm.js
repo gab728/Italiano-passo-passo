@@ -107,7 +107,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && typ
 function heRules() {
   if (C().id !== "he") return "";
   const g = S.ob && S.ob.g, lv = vLevel();
-  return "\nHébreu : " + (lv.base ? "écris TOUJOURS avec le niqqud complet (toutes les voyelles), " : "mets le niqqud sur les mots difficiles, ") + "en hébreu israélien de tous les jours." +
+  return "\nHébreu : écris TOUJOURS avec le niqqud complet (toutes les voyelles, sur chaque mot) : l'élève lit aussi la prononciation, calculée à partir des voyelles. Hébreu israélien de tous les jours." +
     (g === "f" ? " L'élève est une femme : adresse-toi à elle au féminin (אַתְּ, verbes et adjectifs au féminin)." : g === "m" ? " L'élève est un homme : adresse-toi à lui au masculin (אַתָּה)." : " Tu ne connais pas le genre de l'élève : évite les formes genrées tant qu'il ne s'est pas présenté, puis accorde-toi avec ce qu'il dit.");
 }
 function dmSystem(cfg) {

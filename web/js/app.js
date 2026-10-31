@@ -777,6 +777,38 @@ function heForms(s){s=String(s);if(!HEB.test(s))return[s];const cl=[];
     add(c.l==="י"&&!first&&!last&&(V.test(c.m)||/\u05BC/.test(c.m))?["י","יי"]:[c.l]);
     if(/[\u05B9\u05BB]/.test(c.m)&&!(n&&n.l==="ו"))add(["","ו"]);else if(/\u05B4/.test(c.m)&&!(n&&n.l==="י"))add(["","י"])});
   return [...new Set(out)]}
+/* Prononciation de l'hébreu vocalisé (niqqud), à l'israélienne : « שָׁלוֹם » → « shalom ». Un mot sans voyelles n'est pas transcrit (illisible sans elles). */
+const HE_C={"א":"","ב":"v","ג":"g","ד":"d","ה":"h","ו":"v","ז":"z","ח":"kh","ט":"t","י":"y","כ":"kh","ך":"kh","ל":"l","מ":"m","ם":"m","נ":"n","ן":"n","ס":"s","ע":"","פ":"f","ף":"f","צ":"ts","ץ":"ts","ק":"k","ר":"r","ש":"sh","ת":"t"};
+const HE_V={"ְ":"","ֱ":"e","ֲ":"a","ֳ":"o","ִ":"i","ֵ":"e","ֶ":"e","ַ":"a","ָ":"a","ֹ":"o","ֺ":"o","ֻ":"u","ׇ":"o"};
+function heWord(w){const cl=[];for(const ch of w.normalize("NFD")){if(/[א-ת]/.test(ch))cl.push({l:ch,m:"",g:false});else if(/[׳']/.test(ch)&&cl.length)cl[cl.length-1].g=true;else if(/[֑-ׇ]/.test(ch)&&cl.length)cl[cl.length-1].m+=ch}
+  if(!cl.length)return w;let o="";const vow=c=>{for(const k in HE_V)if(c&&c.m.includes(k)&&k!=="ְ")return HE_V[k];return null},sh=c=>c&&c.m.includes("ְ"),dg=c=>c&&c.m.includes("ּ");
+  if(/^כָּל$/.test(w.normalize("NFC"))||/^כָּל־?$/.test(w))return "kol";
+  for(let i=0;i<cl.length;i++){const c=cl[i],p=cl[i-1],n=cl[i+1],last=i===cl.length-1;let v=vow(c);
+    if(c.l==="ו"){if(c.m.includes("ֹ")&&(!p||vow(p)===null)){o+=(p||i===0)?"o":"o";continue}
+      if(dg(c)&&v===null&&(!p||vow(p)===null)){o+="u";continue}
+      if(!last&&v===null&&!sh(c)&&!dg(c)&&p&&vow(p)!==null){continue} // ו muet rare
+      o+="v";}
+    else if(c.l==="י"){if(v===null&&!sh(c)&&!dg(c)&&p){const pv=(o.match(/[aeiou]$/)||[""])[0];if(pv==="i")continue;if(pv==="e"){o+="i";continue}
+        if(pv==="a"&&n&&n.l==="ו"&&!n.m&&i+1===cl.length-1){o+="v";i++;continue}if(last&&(pv==="a"||pv==="u")){o+="i";continue}}o+="y";}
+    else if(c.l==="ה"&&last&&v===null){continue}
+    else if(c.l==="א"||c.l==="ע"){if(last&&v==="a"){o+="a";continue}
+      if(p&&/[aeiou]$/.test(o)&&(v!==null||(n&&n.l==="ו"&&(n.m.includes("\u05B9")||n.m.includes("\u05BC")))))o+="'";}
+    else{let k=HE_C[c.l];if(dg(c)){if(c.l==="ב")k="b";else if(c.l==="כ"||c.l==="ך")k="k";else if(c.l==="פ"||c.l==="ף")k="p"}
+      if(c.l==="ש"&&c.m.includes("ׂ"))k="s";
+      if(c.g){if(c.l==="ג")k="dj";else if(c.l==="ז")k="j";else if(c.l==="צ"||c.l==="ץ")k="tch"}
+      if(last&&v==="a"&&(c.l==="ח"||c.l==="ע")){o+="a"+k;continue} // patah furtif
+      o+=k}
+    if(v==="a"&&c.m.includes("ָ")&&n&&(n.m.includes("ֳ")||(c.l==="כ"&&n.l==="ל"&&i+1===cl.length-1)))v="o";
+    if(v!==null){o+=v;continue}
+    // shva : prononcé « e » en début de mot (sonantes, gutturales, préfixes ב ו), ou après un autre shva
+    if(sh(c)&&!last){const gut=n&&/[אהחע]/.test(n.l),start=i===0||(i===1&&p.l==="ו"&&dg(p)&&vow(p)===null);
+      if(start){if(/[אהחעילמנרבו]/.test(c.l)||gut)o+="e"}else if((p&&sh(p)&&i>1)||(n&&n.l===c.l&&!(p&&p.l==="א"))||(i===1&&p.l==="ה"&&dg(c))||(gut&&p&&p.l==="ה"&&i===1))o+="e"}}
+  return o}
+function heTl(text){if(!HEB.test(text))return "";const toks=String(text).replace(/\([^)]*\)/g," ").split(/\s+/).filter(Boolean),out=[];
+  for(const t of toks){if(/___/.test(t)){out.push("___");continue}if(!HEB.test(t)){if(/^[.,!?;:…«»"–-]+$/.test(t))out.push(t);continue}
+    if(!/[ְ-ׇּ]/.test(t))return ""; // un mot sans voyelles : pas de transcription approximative
+    out.push(t.split(/(־|-)/).map(x=>x==="־"||x==="-"?"-":x.replace(/[֐-׿יִ-ﭏ']+/g,m=>heWord(m))).join(""))}
+  return out.join(" ").replace(/\s+([.,!?;:])/g,"$1").trim()}
 const fmt=q=>q.replace(/___/g,'<span class="blank"></span>').replace(/\(([^)]*)\)/g,"<small>($1)</small>");
 const canSpeak="speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 /* Synthèse vocale. Points délicats : une voix « réseau » (Google, par ex.) ne parle pas hors connexion ; Safari ignore un speak() lancé

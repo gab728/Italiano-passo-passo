@@ -53,6 +53,9 @@ const MOCKS = `
   await p.screenshot({ path: "tests/shot-he-lesson.png" });
   const lr = await p.evaluate(() => { const e = document.querySelector(".lesson em"); return { txt: document.querySelector(".lesson").textContent.slice(0, 60), bidi: e && getComputedStyle(e).unicodeBidi, font: e && getComputedStyle(e).fontFamily }; });
   ok(/droite à gauche/.test(lr.txt) && lr.bidi === "isolate" && /Noto Serif Hebrew/.test(lr.font), "explications : mots hébreux isolés, police à voyelles " + JSON.stringify(lr));
+  await p.waitForTimeout(300);
+  const tl1 = await p.evaluate(() => [...document.querySelectorAll(".lesson em[data-tl]")].map((e) => e.textContent + "=" + e.dataset.tl));
+  ok(tl1.some((x) => /^שָׁלוֹם=shalom$/.test(x)), "prononciation affichée sous l'hébreu des explications : " + tl1.slice(0, 3).join(" | "));
   const mi2 = await p.evaluate(() => M.findIndex((m) => m.id === "L.he-u01-l2"));
   ok(mi2 >= 0, "les leçons d'hébreu du catalogue sont chargées");
   const nHe = await p.evaluate(() => ({ m: M.filter((m) => m.course === "he").length, s: slots().filter((x) => x.mi < 0).map((x) => x.l.id) }));
@@ -74,6 +77,16 @@ const MOCKS = `
   await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "o"); show(); }, mi2);
   await p.waitForSelector(".tray");
   ok(await p.evaluate(() => getComputedStyle(document.querySelector(".tray")).direction === "rtl"), "phrase à remettre en ordre : elle se construit de droite à gauche");
+  await p.waitForTimeout(300);
+  const tlo = await p.evaluate(() => [...document.querySelectorAll(".pool .chip, .tray .chip")].map((e) => e.dataset.tl || ""));
+  ok(tlo.length && tlo.every(Boolean), "phrase à remettre en ordre : chaque mot a sa prononciation (" + tlo.join(" ") + ")");
+  const mi1 = await p.evaluate(() => M.findIndex((m) => m.id === "L.he-u01-l1"));
+  await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "f" && /Comment se lit/.test(x.d[1])); show(); }, mi1); await p.waitForSelector(".field input"); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => !document.querySelector(".q").dataset.tl), "« Comment se lit… ? » : pas de prononciation, ce serait la réponse");
+  await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "d"); show(); }, mi2); await p.waitForSelector(".dlg .ln .it"); await p.waitForTimeout(300);
+  const tld = await p.evaluate(() => [...document.querySelectorAll(".dlg .ln .it")].map((e) => e.dataset.tl || ""));
+  ok(tld.length >= 6 && tld.every(Boolean) && /shabbat shalom|shabat shalom/.test(tld[0]), "dialogue : la prononciation sous chaque réplique (" + tld[0] + ")");
+  await p.screenshot({ path: "tests/shot-he-dialogue.png" });
 
   console.log("3. Quiz, mode voiture, conversations");
   await p.evaluate(() => quizRun({ dir: "fr-it", src: "all", n: 2 })); await p.waitForSelector(".word");
@@ -113,6 +126,7 @@ const MOCKS = `
   await p.waitForFunction(() => document.querySelectorAll(".msg.ai .bub").length >= 2 && !DM.busy, null, { timeout: 15000 });
   let rep = []; for (let k = 0; k < 30 && !rep.length; k++) { await p.waitForTimeout(150); rep = (await st()).tts.slice(t1); }
   ok(rep.length > 0, "conversation : la réponse écrite est lue à voix haute pendant qu'elle s'écrit (" + rep.length + " phrase(s))");
+  ok(await p.evaluate(() => [...document.querySelectorAll(".bub.it")].every((b) => !/[\u05B0-\u05BC]/.test(b.textContent) || b.dataset.tl)), "conversation : la prononciation s'affiche sous les répliques vocalisées");
   await p.waitForFunction(() => !DM.busy && !DM.speaking, null, { timeout: 10000 }).catch(() => null);
   await p.click(".dm-snd"); t1 = (await st()).tts.length;
   await p.fill("#dm-input", "תּוֹדָה"); await p.press("#dm-input", "Enter");

@@ -610,6 +610,11 @@
         const fl = el("div", "chips"); START[C().id].forEach(([v, l]) => { const x = el("button", "chip" + (curFrom === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String(curFrom === v)); x.onclick = () => { S.from = Object.assign({}, S.from || {}, { [C().id]: v }); save(); profileTab(); }; fl.append(x); });
         fc.append(fl); root.append(fc);
       }
+      if (C().rtl) {
+        const tc = card("goal-c"), tlOn = !(S.vx && S.vx.notl); tc.append(txt("b", null, "Prononciation"), txt("small", "muted", "En lettres latines, sous chaque mot et chaque phrase en hébreu"));
+        const tg = el("div", "chips"); [[true, "Affichée"], [false, "Masquée"]].forEach(([v, l]) => { const x = el("button", "chip" + (tlOn === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String(tlOn === v)); x.onclick = () => { S.vx = Object.assign({}, S.vx || {}, { notl: !v }); save(); profileTab(); }; tg.append(x); });
+        tc.append(tg); root.append(tc);
+      }
       if (C().id === "he") {
         const gc = card("goal-c"); gc.append(txt("b", null, "En hébreu, on te dit"), txt("small", "muted", "Les personnages s'adressent à toi au masculin ou au féminin"));
         const gg = el("div", "chips"); [["m", "אַתָּה · masculin"], ["f", "אַתְּ · féminin"]].forEach(([v, l]) => { const x = el("button", "chip" + ((S.ob || {}).g === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String((S.ob || {}).g === v)); x.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { g: v }); save(); profileTab(); }; gg.append(x); });
@@ -747,9 +752,40 @@
     SOC.post("lesson", { t: m.st, pct: Number.isFinite(pct) ? pct : null }); SOC.pushWeekly(true);
     if (typeof HIST !== "undefined") { HIST.add({ id: "lesson:" + m.id, k: "lesson", ref: m.id, title: m.st, sc: Number.isFinite(pct) ? pct : null }); save(); }
   }
+  /* ---------- Prononciation sous l'hébreu ----------
+     Chaque texte hébreu vocalisé reçoit sa prononciation en lettres latines (attribut data-tl, affiché par le CSS : le texte
+     lui-même ne change pas, les exercices qui le comparent restent justes). Celle écrite dans la leçon passe avant la transcription
+     automatique. Pas de prononciation quand l'exercice demande justement de lire (« Comment se lit… ? »). */
+  const TL_SEL = ".q, .opt, .word, .flash .it, .dlg .ln .it, .bub.it, .tray .chip, .pool .chip, .fb p, .nw-p .it, .nw-title, .nw-card-t, .quote .it, .daily-t b.it, .wt-it, .wt-li-t .it, .car-heard, .it-line, .lesson em, .nw-kw-t .it, .nb .it, .miss b, .ws-word";
+  function authTl(t) {
+    const k = norm(t).replace(/[.,!?]/g, "").trim(); if (!k) return "";
+    const m = typeof cur !== "undefined" && cur && cur.mi != null ? M[cur.mi] : null;
+    const pairs = (m ? m.vocab.concat(m.dlg.map((l) => [l[1], l[2]]), ...(m.ex || []).filter((x) => x[0] === "p").map((x) => x[1])) : []);
+    for (const pr of pairs) if (norm(pr[0]).replace(/[.,!?]/g, "").trim() === k && tl(pr[1])) return tl(pr[1]);
+    const w = words().find((o) => norm(o.it).replace(/[.,!?]/g, "").trim() === k); return w && tl(w.fr) ? tl(w.fr) : "";
+  }
+  function tlScan() {
+    const on = !!C().rtl && !(S.vx && S.vx.notl);
+    document.documentElement.classList.toggle("show-tl", on); if (!on) return;
+    const s = typeof cur !== "undefined" && cur && cur.q ? cur.q[cur.i] : null;
+    const reading = !!(s && s.d && ((s.t === "f" && !HEB.test(String(s.d[2]).split("|")[0])) || (s.t === "m" && Array.isArray(s.d[2]) && !s.d[2].some((x) => HEB.test(x)))));
+    document.querySelectorAll(TL_SEL).forEach((e) => {
+      const t = e.textContent || ""; if (e.dataset.tlFor === t) return; e.dataset.tlFor = t;
+      let v = "";
+      if (HEB.test(t)) {
+        const near = (e.parentElement && e.parentElement.textContent) || "";
+        const skip = (reading && (e.matches(".q") || e.closest(".fb"))) || (e.matches(".opt") && t.replace(/[^\u05D0-\u05EA]/g, "").length <= 2) ||
+          (e.matches(".lesson em, .fb p, .nb .it, .miss b") && /\[[^\]]+\]/.test(near)) || (e.closest("td") && /Pronon|Son|Lecture|Translit/i.test((e.closest("table").querySelector("tr") || {}).textContent || ""));
+        if (!skip) v = (e.matches(".flash .it, .dlg .ln .it, .tray .chip, .pool .chip, .ws-word, .opt, .word") && authTl(t)) || heTl(t);
+        if (e.matches(".dlg .ln .it")) { const tr = e.parentElement.querySelector(".tr"); if (tr && tl(tr.textContent)) v = tl(tr.textContent); }
+      }
+      if (v) e.dataset.tl = v; else delete e.dataset.tl;
+    });
+  }
   const IMMERSIVE = new Set(["course", "carmic", "vchat", "audio", "vbilan", "dm"]);
   function sync() {
     if (S.ob && [8, 12, 20, 30].includes(S.ob.goal) && GOAL !== S.ob.goal) GOAL = S.ob.goal;
+    try { tlScan(); } catch (e) { /* la prononciation est un plus */ }
     const imm = IMMERSIVE.has(view) || !!root.querySelector(".bar .prog");
     document.body.dataset.view = view;
     if (imm) delete document.body.dataset.tabs; else document.body.dataset.tabs = "1";

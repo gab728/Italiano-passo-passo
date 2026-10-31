@@ -66,7 +66,7 @@ const NEWS = (() => {
   }
   const lvl = () => stage().id;
   // Hébreu : voyelles selon le niveau, translittération des mots-clés.
-  const heNews = () => C().id !== "he" ? "" : "Hébreu israélien moderne. " + (["h1", "h2"].includes(lvl()) ? "Écris tout le texte AVEC le niqqud complet (voyelles). " : "Écris le texte sans niqqud, mais mets le niqqud sur les mots-clés et les mots difficiles. ") +
+  const heNews = () => C().id !== "he" ? "" : "Hébreu israélien moderne. " + "Écris TOUT l'hébreu (titre, texte, mots-clés, exemples, exercices) AVEC le niqqud complet, sur chaque mot : la prononciation est calculée à partir des voyelles. " +
     "Dans les mots-clés, ajoute la prononciation entre crochets à la fin de la traduction : « gouvernement [memshala] ». Les consignes en français ; les phrases en hébreu.\n";
   const ago = (iso) => { if (!iso) return ""; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? "il y a " + Math.max(m, 1) + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* plein */ } } };
