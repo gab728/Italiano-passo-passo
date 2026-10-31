@@ -83,7 +83,7 @@
     const story = (label, inner, fresh, fn) => { const b = el("button", "story" + (fresh ? " fresh" : "")); b.type = "button"; const r = el("span", "story-ring"); r.append(inner); b.append(r, txt("span", "story-l", label)); b.onclick = fn; row.append(b); };
     const rip = el("span", "av dark"); rip.innerHTML = "<b></b><small>mots</small>"; rip.querySelector("b").textContent = V.due.length || V.nb.length;
     if (!noRip) story("Ripasso", rip, V.due.length > 0, () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
-    Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id]; story(p.name, personaAvatar(p), !((S.pc || {})[id] === day()), () => openPersona(id)); });
+    Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id]; story(p.name, personaAvatar(p), !((S.pc || {})[pcKey(id)] === day()), () => openPersona(id)); });
     wrap.append(row);
   }
 
@@ -136,7 +136,7 @@
   }
   // Premier passage sur une langue : par où commencer, et (hébreu) masculin ou féminin.
   function pickCourse(id, after) {
-    const go = () => { closeSheet(); setCourse(id); if (after) after(); else goTab(TAB === "profile" ? "feed" : TAB); };
+    const go = () => { closeSheet(); flashCourse(id); setCourse(id); if (after) after(); else goTab(TAB === "profile" ? "feed" : TAB); };
     const started = (S.from && id in S.from) || slots(COURSES[id]).some(isDone);
     if (started || !START[id]) return go();
     const list = sheetBox("Par où commencer ?");
@@ -145,6 +145,15 @@
       if (id === "he" && !(S.ob && S.ob.g)) return askGender(go);
       go();
     }));
+  }
+  // Changement de langue bien visible : un écran d'une seconde avec le drapeau, le nom de la langue et où tu en es dans CE parcours.
+  function flashCourse(id) {
+    const c = COURSES[id]; if (!c) return; const old = document.querySelector(".course-flash"); if (old) old.remove();
+    const ss = slots(c), dn = ss.filter(isDone).length, o = el("div", "course-flash"); o.setAttribute("role", "status");
+    o.innerHTML = '<i class="flag flag-' + id + '" aria-hidden="true"></i>';
+    const nat = txt("span", "cf-nat", (LX[id] || {}).native || c.title); if (id === "he") nat.dir = "rtl";
+    o.append(txt("b", null, cap(c.name)), nat, txt("small", null, dn ? "Ton parcours : " + dn + " leçon" + (dn > 1 ? "s" : "") + " sur " + ss.length : "Nouveau parcours : " + ss.length + " leçons"));
+    document.body.append(o); setTimeout(() => o.classList.add("out"), 750); setTimeout(() => o.remove(), 1100);
   }
   function askGender(then) {
     const list = sheetBox("En hébreu, on te dit…");
@@ -158,7 +167,7 @@
     const hd = el("header", "feed-hd");
     const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", "Mon profil"); who.onclick = () => goTab("profile"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || LXC().hi)); who.append(nm);
     const st = node('<span class="streak' + (sk ? " on" : "") + '">' + IC.flame + "<b></b></span>"); st.querySelector("b").textContent = sk; st.setAttribute("aria-label", "Série : " + sk + (sk > 1 ? " jours" : " jour") + " d'affilée"); st.title = st.getAttribute("aria-label");
-    const td = (S.d || {})[day()] || 0, gl = el("span", "goal-chip");
+    const td = dayN(day()), gl = el("span", "goal-chip");
     gl.innerHTML = ring(td, GOAL, 28, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--ok-fill)");
     const sw = el("div", "hd-chips"); if (Object.keys(COURSES).length > 1) sw.append(langChip()); sw.append(st, gl);
     hd.append(who, sw); root.append(hd);
@@ -226,8 +235,8 @@
     // 3. Le défi oral avec un personnage
     if (AI) {
       const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id], tints = { marco: 0, sofia: 4, rosa: 2 };
-      const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[id] === day(), () => openPersona(id));
-      { const b = r.querySelector(".daily-t b"); if (b) { b.textContent = p.name + " : « "; const q = el("bdi"); q.textContent = p.open; b.append(q, document.createTextNode(" »")); } }
+      const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[pcKey(id)] === day(), () => openPersona(id));
+      { const b = r.querySelector(".daily-t b"); if (b) { b.textContent = p.name + " : « "; const q = el("bdi"); q.textContent = p.open; b.append(q, document.createTextNode(" »")); if (C().rtl) { b.textContent = p.name + " · " + p.sub; } } }
       const ic = r.querySelector(".row-ic"); ic.innerHTML = ""; ic.classList.add("daily-av"); ic.append(personaAvatar(p, 42));
     }
     // 4. L'actu du jour, à ton niveau
@@ -274,7 +283,7 @@
     if (first) c.classList.add("start");
     const top = el("div", "lh-top");
     top.append(txt("span", "lh-eyebrow", first ? "Commence ici" : pct ? "Ta leçon en cours" : "Ta leçon du jour"));
-    const td = (S.d || {})[day()] || 0, gl = el("span", "lh-goal");
+    const td = dayN(day()), gl = el("span", "lh-goal");
     gl.innerHTML = ring(td, GOAL, 34, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--spritz)");
     gl.append(txt("small", null, Math.min(td, GOAL) + "/" + GOAL));
     top.append(gl); c.append(top);
@@ -567,7 +576,7 @@
     const sk = streak(); stat(sk, sk > 1 ? "jours de série" : "jour de série", true); stat(V.seen.length, "mots vus"); stat(S.dmn || 0, (S.dmn || 0) > 1 ? "conversations" : "conversation"); root.append(stats);
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
     const wk = card("week"); wk.append(txt("b", null, "Ta semaine")); const bars = el("div", "bars"), labels = el("div", "bars-l"); const t = day(), mon = t - ((new Date().getDay() + 6) % 7);
-    const vals = [0, 1, 2, 3, 4, 5, 6].map((i) => (S.d || {})[mon + i] || 0), max = Math.max(GOAL, ...vals);
+    const vals = [0, 1, 2, 3, 4, 5, 6].map((i) => dayN(mon + i)), max = Math.max(GOAL, ...vals);
     vals.forEach((v, i) => { const b = el("span", mon + i === t ? "now" : ""); b.style.height = Math.max(6, Math.round(100 * v / max)) + "%"; bars.append(b); labels.append(txt("span", mon + i === t ? "now" : "", "LMMJVSD"[i])); });
     bars.setAttribute("role", "img"); bars.setAttribute("aria-label", "Réponses par jour cette semaine : " + vals.join(", ")); wk.append(bars, labels); root.append(wk);
     const acts = el("div", "acts two");

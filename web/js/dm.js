@@ -60,6 +60,8 @@ function personaAvatar(p, size) {
 /* ---------- Mémoire des conversations ----------
    Chaque personnage se souvient de vos échanges (résumé, piste pour la prochaine fois), et tous partagent
    ce qu'ils ont appris de toi (ville, travail, goûts, projets…). La mémoire est mise à jour en fin de conversation. */
+// Clés propres à chaque langue (Giulia et Noa sont la même « place », pas la même personne).
+const pcKey = (id) => (C().id === "it" ? "" : C().id + ":") + id;
 const memKey = (cfg) => (C().id === "it" ? "" : C().id + ":") + String(cfg.id || "giulia");
 function memOf(cfg) { return ((S.mem || {})[memKey(cfg)]) || null; }
 function dmMemory(cfg) {
@@ -300,7 +302,7 @@ async function dmSend(text, voice) {
   if (cmd === "stop" && A.hands) { dmHands(false); return; }
   A.ui.inp.value = ""; A.fromVoice = false; A.ui.setAct();
   dmMine(text, voice); A.turns.push({ role: "user", content: text }); A.n++; bump();
-  S.pc = S.pc || {}; S.pc[A.id] = day(); S.dmn = (S.dmn || 0) + (A.n === 1 ? 1 : 0); if (A.n % 3 === 1) save();
+  S.pc = S.pc || {}; S.pc[pcKey(A.id)] = day(); S.dmn = (S.dmn || 0) + (A.n === 1 ? 1 : 0); if (A.n % 3 === 1) save();
   A.ui.end.disabled = A.n < 2;
   const lines = await dmAsk(false, voice || A.hands);
   if (!lines || DM !== A) return;

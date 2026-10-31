@@ -843,3 +843,15 @@ html[data-course="he"] .lesson td em { font-size: 1.45em; }
 html[data-course="he"] :is(.flash .it, .word) { font-size: 1.15em; line-height: 1.5; }
 html[data-course="he"] .keys { direction: rtl; gap: 4px; }
 html[data-course="he"] .keys button { min-width: 34px; min-height: 40px; padding: 0 2px; font: 400 20px/1 "Noto Sans Hebrew", var(--body); }
+
+/* Chaque langue a sa couleur : orange pour l'italien, bleu pour l'hébreu. */
+html[data-course="he"] { --spritz: #2F5BEA; --spritz-ink: #FFFFFF; --spritz-soft: #E9EFFF; --spritz-text: #1C3FAE; }
+html[data-course="he"] .lhero.start { box-shadow: 0 0 0 2px var(--spritz), 0 14px 34px -16px rgba(47, 91, 234, .55); }
+.course-flash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--bg); text-align: center; animation: cf-in .22s ease-out; transition: opacity .3s ease; }
+.course-flash.out { opacity: 0; pointer-events: none; }
+.course-flash .flag { width: 72px; height: 72px; margin-bottom: 8px; box-shadow: inset 0 0 0 1px rgba(23, 20, 15, .12), 0 10px 30px -12px rgba(23, 20, 15, .35); }
+.course-flash b { font: 900 32px/1.1 var(--display); color: var(--ink); }
+.cf-nat { font: 400 28px/1.2 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; color: var(--spritz-text); }
+.course-flash small { color: var(--muted); font-size: 14px; margin-top: 6px; }
+@keyframes cf-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .course-flash { animation: none; transition: none; } }

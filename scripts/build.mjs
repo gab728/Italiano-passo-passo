@@ -57,6 +57,16 @@ for (const c of readdirSync(join(ROOT, "content"))) {
 }
 mkdirSync(join(WEB, "content"), { recursive: true });
 const catJSON = JSON.stringify(catalog);
+// Les cours autres que l'italien (et leurs leçons écrites) sont aussi recopiés dans app.js : au démarrage, l'app ouvre
+// directement la langue choisie, sans afficher l'italien le temps que le catalogue arrive.
+{
+  const start = "try{applyBase(JSON.parse(localStorage.getItem(BKEY)))}catch(e){}";
+  const emb = { courses: Object.entries(catalog.courses).filter(([id]) => id !== "it").map(([id, c]) => Object.assign({}, c, { id })),
+    lessons: Object.entries(catalog.lessons).filter(([, d]) => d.course !== "it").map(([id, d]) => ({ id, d })) };
+  if (js.split(start).length !== 2) throw new Error("accroche de démarrage introuvable");
+  js = js.replace(start, () => "{const EMB=" + JSON.stringify(emb).replace(/<\//g, "<\\/") + ";let cb=null;try{cb=JSON.parse(localStorage.getItem(BKEY))}catch(e){}cb=cb&&typeof cb===\"object\"?cb:{};cb.courses=Array.isArray(cb.courses)?cb.courses:[];cb.lessons=Array.isArray(cb.lessons)?cb.lessons:[];" +
+    "EMB.courses.forEach(c=>{if(!cb.courses.some(x=>x&&x.id===c.id))cb.courses.push(c)});EMB.lessons.forEach(l=>{if(!cb.lessons.some(x=>x&&x.id===l.id))cb.lessons.push(l)});try{applyBase(cb)}catch(e){}}");
+}
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 

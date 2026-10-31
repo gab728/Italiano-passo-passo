@@ -422,11 +422,11 @@ if (typeof view !== "undefined" && view === "home" && typeof home === "function"
 /* ---------- Historique : leçons, actualités et conversations, du plus récent au plus ancien ---------- */
 const HIST = (() => {
   const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
-  function add(e) { S.hist = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.id !== e.id); S.hist.unshift(Object.assign({ t: Date.now() }, e)); S.hist = S.hist.slice(0, 150); }
+  function add(e) { S.hist = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.id !== e.id); S.hist.unshift(Object.assign({ t: Date.now(), c: C().id }, e)); S.hist = S.hist.slice(0, 150); }
   const label = (t) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0); const n = Math.round((d0 - d) / 864e5); return n === 0 ? "Aujourd'hui" : n === 1 ? "Hier" : d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
   const KIND = { news: "Actu", lesson: "Leçon", conv: "Conversation" };
   function renderInto(host) {
-    const list = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.k);
+    const list = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.k && (x.c || "it") === C().id);
     if (!list.length) { host.append(txt("p", "fr", "Rien pour l'instant. Tes leçons terminées, les actualités que tu lis (avec tes réponses aux exercices) et tes conversations s'afficheront ici.")); return; }
     let cur = "";
     list.forEach((e) => {

@@ -869,9 +869,9 @@ const C=()=>COURSES[S.course]||COURSES.it,LN=()=>C().name,cap=t=>t.charAt(0).toU
 const cheer=()=>{const g=C().cheers;return g[Math.floor(Math.random()*g.length)]};
 /* Ce qui change d'une langue à l'autre en dehors des leçons : salutations, pays, petits mots de l'oral, professeure. */
 const LX={
-  it:{hi:"Ciao !",hello:["Buonanotte","Buongiorno","Buon pomeriggio","Buonasera"],land:"l'Italie",inLand:"en Italie",adj:"italienne",app:"Italiano passo passo",
+  it:{native:"Italiano",hi:"Ciao !",hello:["Buonanotte","Buongiorno","Buon pomeriggio","Buonasera"],land:"l'Italie",inLand:"en Italie",adj:"italienne",app:"Italiano passo passo",
     fill:"allora, dai, beh, eh sì, ah, ecco",tutor:"Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne",fix:"vorrei un caffè",form:"infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle",frx:""},
-  he:{hi:"שָׁלוֹם!",hello:["לַיְלָה טוֹב","בֹּקֶר טוֹב","צָהֳרַיִם טוֹבִים","עֶרֶב טוֹב"],land:"Israël",inLand:"en Israël",adj:"israélienne",app:"Ivrit passo passo",
+  he:{native:"עִבְרִית",hi:"שָׁלוֹם!",hello:["לַיְלָה טוֹב","בֹּקֶר טוֹב","צָהֳרַיִם טוֹבִים","עֶרֶב טוֹב"],land:"Israël",inLand:"en Israël",adj:"israélienne",app:"Ivrit passo passo",
     fill:"נוּ, אָז, יַאלְלָה, וָואלָה, טוֹב, אֵה",tutor:"Noa, professeure d'hébreu chaleureuse, patiente et drôle, de Tel Aviv",fix:"אֲנִי רוֹצֶה קָפֶה",form:"avec le niqqud complet ; infinitif pour un verbe, nom au singulier sans article, adjectif au masculin singulier, expression telle quelle",frx:", suivie de sa prononciation entre crochets, comme « livre [sefer] »"}};
 const LXC=()=>LX[C().id]||LX.it;
 const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -947,7 +947,7 @@ function slotState(x){const m=x.mi>=0?M[x.mi]:null,st=S[x.key]||{};
   if(m)return{cls:"",txt:"Prête · environ 25 min"};
   return{cls:"todo",txt:AI?"À préparer · 2 à 3 minutes":"À préparer avec l'assistant"}}
 
-function logErr(l,q,a){S.err=(S.err||[]).concat([{t:day(),l,q:String(q).slice(0,260),a:String(a).slice(0,160)}]).slice(-40)}
+function logErr(l,q,a){S.err=(S.err||[]).concat([{t:day(),c:C().id,l,q:String(q).slice(0,260),a:String(a).slice(0,160)}]).slice(-40)}
 /* Sauvegarde dans le compte : un document privé par personne (data/users/<id>/progress), le navigateur ne sert que de copie de secours. */
 let cloud=null,syncState="load",dirty=false,writing=false,who="",view="home";
 const SYNC={load:"Chargement de ta progression…",ok:"Progression enregistrée dans ton compte Claude",saving:"Enregistrement…",
@@ -1031,7 +1031,7 @@ let cur=null, body=null;
 
 /* Accueil */
 function home(){cur=null;view="home";if(pendingBase){applyBase(pendingBase);pendingBase=null}root.innerHTML="";window.scrollTo(0,0);
-  const ss=slots(),doneN=ss.filter(isDone).length,cu=current(),sk=streak(),td=(S.d||{})[day()]||0,V=vstat();
+  const ss=slots(),doneN=ss.filter(isDone).length,cu=current(),sk=streak(),td=dayN(day()),V=vstat();
   const b=el("header","board");
   b.innerHTML='<div class="row"><span></span><b></b></div><h1></h1><p></p><div class="bar2"><i></i></div><div class="row"><span></span><b></b></div>';
   const rows=b.querySelectorAll(".row");
@@ -1145,7 +1145,10 @@ function end(){const m=M[cur.mi],T=tally(),pct=T.n?Math.round(100*T.ok/T.n):100,
 /* ---------- Série, objectif du jour, révision espacée ---------- */
 const GOAL=20,INT=[1,3,7,14,30];
 const day=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*6e4)/864e5)};
-function bump(){S.d=S.d||{};const k=day();S.d[k]=(S.d[k]||0)+1;for(const x in S.d)if(+x<k-120)delete S.d[x]}
+function bump(){S.d=S.d||{};const k=day();S.d[k]=(S.d[k]||0)+1;for(const x in S.d)if(+x<k-120)delete S.d[x];
+  const c=C().id;if(c!=="it"){S.dl=S.dl||{};const o=S.dl[c]=S.dl[c]||{};o[k]=(o[k]||0)+1;for(const x in o)if(+x<k-120)delete o[x]}}
+/* Réponses du jour dans la langue en cours (S.d compte toutes les langues : la série de jours reste commune). */
+const dayN=k=>{const o=S.dl||{};if(C().id!=="it")return (o[C().id]||{})[k]||0;let n=(S.d||{})[k]||0;for(const c in o)if(c!=="it")n-=(o[c]||{})[k]||0;return Math.max(0,n)};
 function streak(){const d=S.d||{},t=day();let n=0,k=d[t]?t:t-1;while(d[k]){n++;k--}return n}
 function srs(key,good){S.sr=S.sr||{};const c=Object.assign({b:0,due:0},S.sr[key]),t=day();
   if(good){c.b=Math.min(c.b+1,INT.length);c.due=t+INT[c.b-1]}else{c.b=0;c.due=t+1}S.sr[key]=c}
@@ -1302,7 +1305,7 @@ function ctx(job){const c=C(),x=job.slot;
     s+="\nDéjà vu dans les leçons précédentes :\n"+(seenList(x)||"rien : c'est la toute première leçon.")+"\n\nRègle d'or : n'emploie que des structures déjà vues ou celle du jour, et avance lentement, avec beaucoup de réemploi.\n"}
   else{const cu=current();s+="\nDemande de l'apprenant : «"+job.text+"»\n";
     if(cu)s+="Il en est à : "+cu.lv.t+" ("+cu.lv.cecr+"), unité « "+cu.u.t+" ». En dehors du point demandé, n'emploie que des structures qu'il connaît déjà :\n"+(seenList(cu)||"les toutes premières bases.")+"\n"}
-  const errs=(S.err||[]).slice(-8).map(e=>"- "+e.q+" → il a répondu : "+e.a).join("\n");if(errs)s+="\nSes erreurs récentes, à réemployer si le sujet s'y prête :\n"+errs+"\n";
+  const errs=(S.err||[]).filter(e=>(e.c||"it")===C().id).slice(-8).map(e=>"- "+e.q+" → il a répondu : "+e.a).join("\n");if(errs)s+="\nSes erreurs récentes, à réemployer si le sujet s'y prête :\n"+errs+"\n";
   if(c.guide)s+="\nParticularités de ce cours, à respecter partout : "+c.guide+"\n";
   return s+"\nLa langue cible doit être irréprochable : au moindre doute sur une forme, choisis une autre phrase. Pas de paroles de chansons ni de marques.\n"}
 const P_CORE=job=>ctx(job)+`

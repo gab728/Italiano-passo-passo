@@ -108,16 +108,25 @@ const MOCKS = `
   await p.evaluate(() => { S.from = Object.assign({}, S.from, { he: "" }); delete S.nthc; save(); });
 
   console.log("6. Passer de l'hébreu à l'italien et revenir");
-  await p.evaluate(() => { S["L.he-u01-l1"] = { done: true, best: 90 }; save(); UI.go("feed"); });
+  await p.evaluate(() => { S["L.he-u01-l1"] = { done: true, best: 90 }; HIST.add({ id: "lesson:L.he-u01-l1", k: "lesson", ref: "L.he-u01-l1", title: "Shalom ! Le sens de lecture", sc: 90 }); logErr("L.he-u01-l2", "« Maman » en hébreu", "אבא"); save(); UI.go("feed"); });
+  const heDay = await p.evaluate(() => ({ n: dayN(day()), color: getComputedStyle(document.documentElement).getPropertyValue("--spritz").trim() }));
   await p.click(".lang-chip"); await p.waitForSelector(".lsheet.in");
   await p.screenshot({ path: "tests/shot-he-switch.png" });
   await p.click(".lsheet .lmap-row:has-text('Italien')");
+  ok(await p.isVisible(".course-flash") && /Italien/.test(await p.textContent(".course-flash")), "changement de langue bien visible : écran « Italien »");
   await p.waitForFunction(() => C().id === "it");
+  const itSide = await p.evaluate(() => { const box = document.createElement("div"); HIST.renderInto(box); return { hist: box.textContent, n: dayN(day()), all: (S.d || {})[day()] || 0, color: getComputedStyle(document.documentElement).getPropertyValue("--spritz").trim(), ctx: ctx({ text: "les nombres" }), sk: streak() }; });
+  ok(heDay.n > 0 && itSide.n === 0 && itSide.all >= heDay.n && itSide.sk >= 1, "objectif du jour compté par langue (hébreu " + heDay.n + ", italien " + itSide.n + "), la série de jours reste commune");
+  ok(!/Shalom/.test(itSide.hist), "historique : rien de l'hébreu côté italien");
+  ok(!/אבא/.test(itSide.ctx), "erreurs récentes : celles de l'hébreu ne servent pas aux leçons d'italien");
+  ok(heDay.color !== itSide.color, "chaque langue a sa couleur (" + heDay.color + " / " + itSide.color + ")");
   const s6 = await p.evaluate(() => ({ attr: document.documentElement.dataset.course, giulia: PERSONAS.giulia.name, cur: current() && current().l.id, he: !!(S["L.he-u01-l1"] || {}).done, speech: C().speech }));
   ok(s6.attr === "it" && s6.giulia === "Giulia" && /^it-/.test(s6.cur || "") && s6.speech === "it-IT", "italien : programme, personnages et voix italiens " + JSON.stringify(s6));
   ok(s6.he, "la progression en hébreu est gardée");
-  await p.click(".lang-chip"); await p.click(".lsheet .lmap-row:has-text('Hébreu')");
-  await p.waitForFunction(() => C().id === "he");
+  await p.click(".lang-chip"); await p.click(".lsheet .lmap-row:has-text('Hébreu')"); await new Promise((r) => setTimeout(r, 250));
+  await p.screenshot({ path: "tests/shot-he-flash.png" });
+  await p.waitForFunction(() => C().id === "he"); await new Promise((r) => setTimeout(r, 1200)); await p.screenshot({ path: "tests/shot-he-home2.png" });
+  ok(await p.evaluate(() => { const box = document.createElement("div"); HIST.renderInto(box); return /Shalom/.test(box.textContent); }), "historique de l'hébreu retrouvé");
   ok(await p.evaluate(() => current().l.id === "he-u01-l2" && !/Par où/.test((document.querySelector(".lsheet") || {}).textContent || "")), "retour à l'hébreu : on reprend à la leçon suivante, sans redemander le niveau");
   // Un membre qui n'a jamais fait d'hébreu : on lui demande par où commencer.
   await p.evaluate(() => { delete S.from.he; S["L.he-u01-l1"] = null; delete S["L.he-u01-l1"]; setCourse("it"); UI.go("profile"); });
@@ -134,6 +143,14 @@ const MOCKS = `
   await p.evaluate(() => UI.go("talk")); await new Promise((r) => setTimeout(r, 300));
   ok(/Savta Rivka/.test(await p.textContent("#app")) && !/Giulia|Nonna Rosa/.test(await p.textContent("#app")), "onglet Parler : Noa, Avi, Maya, Savta Rivka");
   await p.screenshot({ path: "tests/shot-he-talk.png" });
+  console.log("7. Au démarrage, la langue choisie s'ouvre directement");
+  await p.evaluate(() => { setCourse("he"); const b = JSON.parse(localStorage.getItem(BKEY) || "{}"); b.courses = (b.courses || []).filter((c) => c.id !== "he"); b.lessons = (b.lessons || []).filter((l) => l.d && l.d.course !== "he"); localStorage.setItem(BKEY, JSON.stringify(b)); });
+  await new Promise((r) => setTimeout(r, 800));
+  await p.route("**/content/catalog.json*", async (r) => { await new Promise((x) => setTimeout(x, 4000)); await r.continue(); });
+  await p.reload(); await p.waitForSelector(".feed-hd", { timeout: 10000 });
+  const boot = await p.evaluate(() => ({ id: C().id, attr: document.documentElement.dataset.course, hero: (document.querySelector(".home-trip, .lhero") || {}).textContent || "", mi: current() && current().mi }));
+  ok(boot.id === "he" && boot.attr === "he" && !/Essere|italien/i.test(boot.hero) && boot.mi >= 0, "rechargement en hébreu, catalogue pas encore arrivé : l'hébreu s'affiche tout de suite, jamais l'italien " + JSON.stringify(boot).slice(0, 160));
+  await p.unroute("**/content/catalog.json*");
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await br.close();
   console.log("\n" + passes + " vérifications réussies, " + fails + " échec(s)");
