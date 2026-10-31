@@ -79,7 +79,8 @@ function fakeClaude(b) {
   state.claude.push({ model: b.model, system: b.system || "", messages: b.messages, max_tokens: b.max_tokens, thinking: b.thinking, temperature: b.temperature, ask: String(b.messages[b.messages.length - 1].content).slice(0, 700) });
   const last = b.messages[b.messages.length - 1].content, sys = b.system || "";
   let text;
-  if (/^Tu prépares une leçon d'italien à partir d'une dépêche/.test(last)) text = JSON.stringify({ title: "Roma, un nuovo tram per il centro", title_fr: "Rome, un nouveau tram pour le centre",
+  if (/^Traduis en français ces titres de presse/.test(last)) { const n = (String(last).match(/^\d+\. /gm) || []).length; text = JSON.stringify(Array.from({ length: n }, (_, i) => "Rome : un nouveau tram pour le centre (" + (i + 1) + ")")); }
+  else if (/^Tu prépares une leçon d'italien à partir d'une dépêche/.test(last)) text = JSON.stringify({ title: "Roma, un nuovo tram per il centro", title_fr: "Rome, un nouveau tram pour le centre",
     text: ["Il Comune di Roma ha presentato una nuova linea del tram.", "Il tram collega la stazione Termini con il centro storico.", "I lavori cominciano a gennaio."],
     text_fr: ["La mairie de Rome a présenté une nouvelle ligne de tram.", "Le tram relie la gare Termini au centre historique.", "Les travaux commencent en janvier."],
     keywords: [["il Comune", "la mairie", "nom masculin"], ["la linea", "la ligne", ""], ["collegare", "relier", "verbe en -are"], ["il centro storico", "le centre historique", ""], ["i lavori", "les travaux", "pluriel"], ["cominciare", "commencer", ""], ["la stazione", "la gare", ""], ["nuovo", "nouveau", "adjectif"]],

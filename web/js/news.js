@@ -53,8 +53,8 @@ const NEWS = (() => {
   ];
   const MILESTONES_HE = ["he-u03-l4", "he-u08-l1", "he-u09-l1", "he-u11-l1"];
   const SRC = {
-    it: { themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
-    he: { themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
+    it: { mast: "Il tuo giornale", themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
+    he: { mast: "הָעִתּוֹן שֶׁלִּי", themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
   };
   let STAGES = STAGES_IT, MILESTONES = MILESTONES_IT, SR = SRC.it;
   function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; }
@@ -165,16 +165,79 @@ const NEWS = (() => {
       const ok = btn("Voir les nouvelles", "primary"); ok.onclick = () => (themes().length ? again(false) : speakNote("Choisis au moins un thème.")); host.append(ok);
       return;
     }
-    const top = el("div", "nw-top"); top.append(txt("span", "muted", th.map((t) => NAME[t]).join(" · ")));
+    // La page façon journal : titre du journal, rubriques, l'article à la une, deux brèves, puis « Le fil ».
+    const top = el("div", "nwj-top"); top.append(txt("span", "nwj-label", "Actu"));
     const ed = el("button", "link"); ed.type = "button"; ed.textContent = "Mes thèmes"; ed.onclick = () => again(true); top.append(ed); host.append(top);
-    host.append(txt("p", "nw-stage", "Écrites pour ce que tu as appris : " + stage().name + "."));
-    const list = el("div", "nw-list"); list.append(txt("p", "muted", "Chargement des nouvelles…")); host.append(list);
+    const mast = el("div", "nwj-mast"), mt = txt("h1", "nwj-title", SR.mast); if (C().rtl) mt.dir = "rtl";
+    mast.append(mt, txt("p", "nwj-sub", cap(new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })) + " · Écrit pour ton niveau : " + stage().name));
+    host.append(mast);
+    const tabs = el("div", "nwj-tabs"); tabs.setAttribute("role", "tablist"); host.append(tabs);
+    const list = el("div", "nw-list nwj"); list.append(txt("p", "muted", "Chargement des nouvelles…")); host.append(list);
     let its = [];
     try { its = await items(); } catch (e) { list.innerHTML = ""; list.append(txt("p", "fr", aiFail(e))); return; }
     if (!list.isConnected) return;
-    list.innerHTML = "";
-    if (!its.length) { list.append(txt("p", "fr", "Aucune nouvelle pour ces thèmes en ce moment. Réessaie plus tard ou ajoute un thème.")); return; }
-    its.forEach((it) => list.append(row(it)));
+    if (!its.length) { list.innerHTML = ""; list.append(txt("p", "fr", "Aucune nouvelle pour ces thèmes en ce moment. Réessaie plus tard ou ajoute un thème.")); return; }
+    const have = th.filter((t) => its.some((x) => x.theme === t));
+    const draw = () => {
+      tabs.innerHTML = "";
+      [["", "Tout"]].concat(have.map((t) => [t, NAME[t]])).forEach(([k, n]) => { const b = el("button", "nwj-tab"); b.type = "button"; b.textContent = n; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(FILT === k)); b.onclick = () => { FILT = k; draw(); }; tabs.append(b); });
+      list.innerHTML = "";
+      const sel = its.filter((x) => !FILT || x.theme === FILT), lead = sel.find((x) => !(S.nw || {})[x.id]) || sel[0];
+      if (!lead) return;
+      const rest = sel.filter((x) => x !== lead), briefs = rest.slice(0, 2), fil = rest.slice(2);
+      list.append(leadCard(lead));
+      if (briefs.length) { const g = el("div", "nwj-briefs"); briefs.forEach((x) => g.append(brief(x))); list.append(g); }
+      if (fil.length) {
+        const hd = el("div", "nwj-filh"); hd.append(txt("h3", null, "Le fil"));
+        const last = its.map((x) => Date.parse(x.date || "") || 0).reduce((a, b) => Math.max(a, b), 0);
+        if (last) hd.append(txt("span", null, "mis à jour à " + new Date(last).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", " h ")));
+        list.append(hd); fil.forEach((x) => list.append(filRow(x)));
+      }
+      translate(sel, list);
+    };
+    draw();
+  }
+  let FILT = "";
+  window.addEventListener("ipp-course", () => { FILT = ""; });
+  const mins = () => Math.max(2, Math.round(stage().words / 30));
+  const kick = (it) => txt("span", "nwj-kick", ((NAME[it.theme] || it.theme) + " · " + ago(it.date)).toUpperCase());
+  const doneTxt = (d) => txt("span", "nwj-done", "Lue · " + d.sc + " %");
+  const hed = (cls, t) => { const h = txt("span", cls, t); if (HEB.test(t)) h.dir = "auto"; return h; };
+  const frLine = (cls, it) => { const p = txt("span", cls, (TR()[it.id] || "")); p.dataset.trid = it.id; return p; };
+  function leadCard(it) {
+    const done = (S.nw || {})[it.id], a = el("button", "nw-row nwj-lead" + (done ? " done" : "")); a.type = "button";
+    a.append(kick(it), hed("nwj-h1", it.title), frLine("nwj-fr", it),
+      txt("span", "nwj-dek", "Ton article : environ " + stage().words + " mots écrits pour ton niveau, 8 mots-clés, une structure de phrase, puis des exercices d'écriture."));
+    const foot = el("span", "nwj-foot"); foot.append(done ? doneTxt(done) : txt("span", "nwj-meta", mins() + " min · " + vLevel().cecr), txt("span", "nwj-cta", done ? "Revoir" : "Lire et s'entraîner"));
+    a.append(foot); a.onclick = () => open(it); return a;
+  }
+  function brief(it) {
+    const done = (S.nw || {})[it.id], a = el("button", "nw-row nwj-brief" + (done ? " done" : "")); a.type = "button";
+    a.append(txt("span", "nwj-kick", (NAME[it.theme] || it.theme).toUpperCase()), hed("nwj-h3", it.title), frLine("nwj-frs", it), done ? doneTxt(done) : txt("span", "nwj-meta", mins() + " min · " + ago(it.date)));
+    a.onclick = () => open(it); return a;
+  }
+  function filRow(it) {
+    const done = (S.nw || {})[it.id], a = el("button", "nw-row nwj-fil" + (done ? " done" : "")); a.type = "button";
+    const d = it.date ? new Date(it.date) : null, today = d && d.toDateString() === new Date().toDateString();
+    a.append(txt("span", "nwj-time", d ? (today ? d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })) : ""));
+    const t = el("span", "nwj-filt"); t.append(txt("span", "nwj-kick", (NAME[it.theme] || it.theme).toUpperCase()), hed("nwj-h4", it.title), frLine("nwj-frs", it)); if (done) t.append(doneTxt(done));
+    a.append(t); a.onclick = () => open(it); return a;
+  }
+  /* Titres traduits en français : demandés une fois pour toute la liste, gardés sur l'appareil. */
+  const TR = () => ls.get("ipp-news-tr") || {};
+  let trBusy = false;
+  async function translate(list, host) {
+    const have = TR(), todo = list.filter((x) => !have[x.id]).slice(0, 30);
+    if (!todo.length || trBusy || !AI) return; trBusy = true;
+    try {
+      const r = await AI("Traduis en français ces titres de presse en " + LN() + ", naturellement et brièvement (12 mots au plus chacun), sans guillemets autour :\n" + todo.map((x, i) => (i + 1) + ". " + x.title).join("\n") + "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre.", { modelTier: "quick", cache: true, maxTokens: 60 + 40 * todo.length });
+      const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));
+      if (Array.isArray(arr) && arr.length === todo.length) {
+        const m = TR(); todo.forEach((x, i) => { if (typeof arr[i] === "string") m[x.id] = arr[i].trim().slice(0, 160); });
+        const ks = Object.keys(m); ks.slice(0, Math.max(0, ks.length - 300)).forEach((k) => delete m[k]); ls.set("ipp-news-tr", m);
+        host.querySelectorAll("[data-trid]").forEach((e) => { if (m[e.dataset.trid]) e.textContent = m[e.dataset.trid]; });
+      }
+    } catch (e) { /* sans traduction : les titres restent lisibles */ } finally { trBusy = false; }
   }
   function hub(editThemes) { if (window.UI && UI.news) return UI.news(!!editThemes); }
   function row(it) {
@@ -193,7 +256,7 @@ const NEWS = (() => {
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + stage().name), txt("h2", null, it.title));
     const st = el("ul", "req"), mk = (t) => { const li = el("li"), a = txt("span", null, t), b = txt("span", "count", "à venir"); li.append(a, b); st.append(li); return b; };
     const s1 = mk("Lecture de la dépêche"), s2 = mk("Écriture de ton article et des exercices"), s3 = mk("Partage avec les autres membres");
-    const note = txt("p", "fr", "Un article déjà préparée s'ouvre tout de suite ; sinon Claude l'écrit en une minute environ."); note.setAttribute("role", "status");
+    const note = txt("p", "fr", "Un article déjà prêt s'ouvre tout de suite ; sinon Claude l'écrit en une minute environ."); note.setAttribute("role", "status");
     body.append(st, note); s1.textContent = "en cours…";
     if (WEB && WEB.keepAwake) WEB.keepAwake();
     let d;
@@ -393,25 +456,27 @@ const NEWS = (() => {
   }
 
   /* --- Carte de l'accueil : la notizia du jour --- */
+  /* --- Carte de l'accueil, façon kiosque : le titre du journal, l'article à la une, deux autres titres --- */
   function homeCard() {
-    const c = el("section", "card nw-card");
-    const h = el("div", "post-h"); const ic = txt("span", "nw-badge", SR.badge); const t = el("div", "post-ht"); t.append(txt("b", null, SR.daily), txt("small", null, themes().length ? themes().map((x) => NAME[x]).join(" · ") : "Choisis tes thèmes"));
-    h.append(ic, t); c.append(h);
-    const bodyC = el("div", "nw-card-b"); c.append(bodyC);
+    const c = el("section", "card nwe"); c.setAttribute("aria-label", "Le journal du jour");
+    const h = el("div", "nwe-h"), t = txt("b", "nwe-title", SR.mast); if (C().rtl) t.dir = "rtl";
+    h.append(t, el("span", "nwe-rule"), txt("span", "nwe-date", new Date().toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }))); c.append(h);
     if (!themes().length) {
-      bodyC.append(txt("p", "muted", "Lis l'actualité " + LXC().adj + " à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
-      const b = el("button", "pill-btn blue wide"); b.type = "button"; b.textContent = "Choisir mes thèmes"; b.onclick = () => hub(true); bodyC.append(b);
-      return c;
+      c.append(txt("p", "nwe-empty", "L'actualité " + LXC().adj + " réécrite à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
+      const b = btn("Choisir mes sujets", "primary nwe-pick"); b.onclick = () => hub(true); c.append(b); return c;
     }
-    bodyC.append(txt("p", "muted", "Chargement…"));
+    const bd = el("div", "nwe-b"); bd.append(txt("p", "nwe-empty", "Chargement des nouvelles…")); c.append(bd);
     items().then((its) => {
-      bodyC.innerHTML = "";
-      const it = its.find((x) => !(S.nw || {})[x.id]) || its[0];
-      if (!it) { bodyC.append(txt("p", "muted", "Pas de nouvelle pour l'instant.")); return; }
-      bodyC.append(txt("p", "nw-card-t", it.title), txt("small", "muted", (NAME[it.theme] || "") + " · " + ago(it.date)));
-      const r = el("div", "acts"); const go = el("button", "pill-btn blue"); go.type = "button"; go.textContent = "Lire et s'entraîner"; go.onclick = () => open(it);
-      const more = el("button", "pill-btn"); more.type = "button"; more.textContent = "Toutes les nouvelles"; more.onclick = () => hub(); r.append(go, more); bodyC.append(r);
-    }).catch((e) => { bodyC.innerHTML = ""; bodyC.append(txt("p", "muted", aiFail(e))); });
+      bd.innerHTML = ""; if (!its.length) { bd.append(txt("p", "nwe-empty", "Pas de nouvelle pour l'instant.")); return; }
+      const lead = its.find((x) => !(S.nw || {})[x.id]) || its[0], rest = its.filter((x) => x !== lead && x.theme !== lead.theme).concat(its.filter((x) => x !== lead && x.theme === lead.theme)).slice(0, 2);
+      const done = (S.nw || {})[lead.id], a = el("button", "nwe-lead" + (done ? " done" : "")); a.type = "button";
+      const tx = el("span", "nwe-lt"); tx.append(txt("span", "nwj-kick", ((NAME[lead.theme] || "") + " · " + (done ? "lue · " + done.sc + " %" : mins() + " min")).toUpperCase()), hed("nwe-h1", lead.title), frLine("nwj-frs", lead));
+      const go = el("span", "nwe-go"); go.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      a.append(tx, go); a.onclick = () => open(lead); bd.append(a);
+      rest.forEach((x) => { const l = el("button", "nwe-line"); l.type = "button"; l.append(txt("span", "nwe-k", (NAME[x.theme] || "").toUpperCase()), hed("nwe-t", x.title)); l.onclick = () => open(x); bd.append(l); });
+      const all = el("button", "link nwe-all"); all.type = "button"; all.textContent = "Tout le journal"; all.onclick = () => hub(); bd.append(all);
+      translate([lead], c);
+    }).catch((e) => { bd.innerHTML = ""; bd.append(txt("p", "nwe-empty", aiFail(e))); });
     return c;
   }
   // Pour l'accueil : la prochaine dépêche non lue, son icône et sa teinte.

@@ -870,3 +870,64 @@ html.show-tl .vy-t-top [data-tl]::after, html.show-tl .daily-t [data-tl]::after 
 /* Répliques du dialogue : chaque mot est un bouton ; en hébreu, la ligne entière va de droite à gauche. */
 html[data-course="he"] .dlg .ln .it { display: block; direction: rtl; text-align: right; }
 html[data-course="he"] .dlg .ln .tr { display: block; }
+
+/* ---------- Actu façon journal (proposition A) ---------- */
+.nwj-top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; padding-top: 6px; }
+.nwj-label { font-size: 13px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.nwj-top .link { font-size: 14px; font-weight: 800; color: var(--spritz-text); }
+.nwj-mast { border-top: 3px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 10px 0 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.nwj-title { margin: 0; font: 400 44px/1 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif !important; letter-spacing: -.01em; }
+.nwj-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.nwj-tabs { display: flex; gap: 18px; padding: 12px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.nwj-tabs::-webkit-scrollbar { display: none; }
+.nwj-tab { flex: none; border: 0; background: none; padding: 0 0 9px; min-height: 36px; font: 700 14px/1 var(--body); color: var(--muted); border-bottom: 2px solid transparent; }
+.nwj-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.nw-list.nwj { gap: 0; }
+.nwj .nw-row { background: none; border-radius: 0; box-shadow: none; padding: 0; text-align: left; color: var(--ink); font: inherit; width: 100%; }
+.nwj-lead { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 10px !important; padding: 18px 0 20px !important; border-bottom: 1px solid var(--ink) !important; }
+.nwj-kick { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; color: var(--spritz-text); }
+.nwj-h1 { font: 400 32px/1.06 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwj-fr { font: italic 400 16px/1.35 "Instrument Serif", Georgia, serif; color: var(--muted); }
+.nwj-fr:empty, .nwj-frs:empty { display: none; }
+.nwj-dek { font-size: 15px; line-height: 1.5; color: #3A342D; }
+.nwj-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 6px; }
+.nwj-meta { font-size: 13px; font-weight: 700; color: var(--muted); }
+.nwj-cta { display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; border-radius: 999px; background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: 15px; }
+.nwj-done { font-size: 12.5px; font-weight: 800; color: #1E6B45; }
+.nwj-briefs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; padding: 14px 0 18px; border-bottom: 3px double var(--ink); }
+.nwj-briefs > :only-child { grid-column: 1 / -1; }
+.nwj-brief { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px !important; }
+.nwj-brief:first-child:not(:only-child) { border-right: 1px solid var(--line) !important; padding-right: 12px !important; }
+.nwj-h3 { font: 400 20px/1.12 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwj-frs { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.nwj-filh { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 6px; }
+.nwj-filh h3 { margin: 0; font: 400 26px/1 "Instrument Serif", Georgia, serif; }
+.nwj-filh span { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.nwj-fil { display: grid !important; grid-template-columns: 52px minmax(0, 1fr); gap: 12px !important; padding: 14px 0 !important; border-bottom: 1px solid var(--line) !important; align-items: start !important; }
+.nwj-time { font-size: 13px; font-weight: 800; color: var(--muted); padding-top: 3px; }
+.nwj-filt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nwj-h4 { font: 400 19px/1.15 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwj .nw-row.done :is(.nwj-h1, .nwj-h3, .nwj-h4) { color: #3A342D; }
+html[data-course="he"] :is(.nwj-h1, .nwj-h3, .nwj-h4) { unicode-bidi: plaintext; }
+/* Carte « journal » de l'accueil (kiosque) */
+.nwe { padding: 16px 18px 8px !important; display: flex; flex-direction: column; }
+.nwe-h { display: flex; align-items: center; gap: 10px; }
+.nwe-title { font: 400 19px/1 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; white-space: nowrap; }
+.nwe-rule { flex: 1; height: 1px; background: var(--line); }
+.nwe-date { font-size: 12px; font-weight: 700; color: var(--muted); }
+.nwe-empty { margin: 12px 0 8px; font-size: 14px; color: var(--muted); line-height: 1.45; }
+.nwe-pick { align-self: flex-start; margin-bottom: 10px; }
+.nwe-lead { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; align-items: end; padding: 14px 0; border: 0; background: none; text-align: left; color: var(--ink); font: inherit; }
+.nwe-lt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.nwe-h1 { font: 400 21px/1.12 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwe-go { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #FFFFFF; display: grid; place-items: center; }
+.nwe-line { display: flex; gap: 10px; align-items: baseline; padding: 11px 0; border: 0; border-top: 1px solid var(--chip); background: none; text-align: left; color: var(--ink); font: inherit; min-width: 0; white-space: nowrap; overflow: hidden; }
+.nwe-k { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--muted); }
+.nwe-t { font-size: 14.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nwe-all { align-self: center; min-height: 44px; font-weight: 800; color: var(--spritz-text); }
+html[data-course="he"] :is(.nwe-h1, .nwe-t) { unicode-bidi: plaintext; }
+.nwe .nwe-b { display: flex; flex-direction: column; min-width: 0; }
+.nwe .nwe-line { width: 100%; box-sizing: border-box; }
+.nwe .nwe-t { flex: 1 1 auto; display: block; }
+.nwe .nwe-lead { width: 100%; }
+.nwe .nwe-all { align-self: stretch; text-align: center; width: 100%; }

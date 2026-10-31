@@ -178,6 +178,8 @@
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
     const doneN = ss.filter(isDone).length;
     root.append(lessonHero(cu, ss, doneN));
+    // Le journal du jour, juste sous la leçon (sauf en hébreu tant que l'alef-bet n'est pas fini).
+    if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) root.append(NEWS.homeCard());
     // Ta journée : quatre petites choses à faire, dans une seule carte.
     root.append(dailyPlan());
     // Parler : les personnages, puis les sujets et jeux de rôle.
@@ -240,21 +242,6 @@
       const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[pcKey(id)] === day(), () => openPersona(id));
       { const b = r.querySelector(".daily-t b"); if (b) { b.textContent = p.name + " : « "; const q = el("bdi"); q.textContent = p.open; b.append(q, document.createTextNode(" »")); if (C().rtl) { b.textContent = p.name + " · " + p.sub; } } }
       const ic = r.querySelector(".row-ic"); ic.innerHTML = ""; ic.classList.add("daily-av"); ic.append(personaAvatar(p, 42));
-    }
-    // 4. L'actu du jour, à ton niveau
-    if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) {
-      if (!NEWS.themes().length) row(ICD.news, 1, "Actu", "Choisis tes sujets d'actu", "Chaque dépêche devient une petite leçon à ton niveau", false, () => NEWS.hub(true));
-      else {
-        const r = row(ICD.news, 1, "Actu", "Chargement…", "", false, () => NEWS.hub());
-        NEWS.top().then((it) => {
-          if (!it || !r.isConnected) { if (r.isConnected) r.querySelector(".daily-t b").textContent = "Pas de nouvelle pour l'instant"; return; }
-          const ic = r.querySelector(".row-ic"); ic.className = "row-ic " + NEWS.tint(it.theme); ic.innerHTML = NEWS.icon(it.theme);
-          r.querySelector(".daily-t small").textContent = "Actu · " + (NEWS.NAME[it.theme] || "") + " · " + NEWS.ago(it.date);
-          r.querySelector(".daily-t b").textContent = it.title;
-          const done = !!(S.nw || {})[it.id]; r.classList.toggle("done", done); r.querySelector(".daily-st").innerHTML = done ? IC.check : IC.chev; count();
-          r.onclick = () => NEWS.open(it);
-        }).catch(() => { if (r.isConnected) r.querySelector(".daily-t b").textContent = "Les nouvelles s'afficheront avec du réseau"; });
-      }
     }
     count();
     return sec;
@@ -478,9 +465,8 @@
   let NEDIT = false;
   function newsTab() {
     screen("news");
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Actu"), txt("span", "muted", "L'actualité " + LXC().adj + " à ton niveau")); root.append(h);
     if (typeof NEWS === "undefined") { root.append(txt("p", "fr", "Chargement…")); return; }
-    const host = el("div", "seg-body"); root.append(host);
+    const host = el("div", "seg-body nwj-page"); root.append(host);
     NEWS.listInto(host, NEDIT, (edit) => news(edit)); NEDIT = false; sync();
   }
   function news(edit) { NEDIT = !!edit; goTab("news"); }
