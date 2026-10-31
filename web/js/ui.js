@@ -115,7 +115,7 @@
     const sh = el("div", "wsheet lmap lsheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", title);
     const top = el("div", "ws-top"), t = el("b", "ws-word"); t.textContent = title;
     const x = el("button", "icon-btn ws-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = IC.close; x.onclick = closeSheet; top.append(t, x); sh.append(top);
-    const list = el("div", "lmap-list"); sh.append(list); document.body.append(sh); requestAnimationFrame(() => sh.classList.add("in"));
+    const list = el("div", "lmap-list"); list.dataset.at = String(Date.now()); sh.append(list); document.body.append(sh); requestAnimationFrame(() => sh.classList.add("in"));
     const outside = (e) => { if (!sh.isConnected) return document.removeEventListener("pointerdown", outside, true); if (!sh.contains(e.target)) { document.removeEventListener("pointerdown", outside, true); closeSheet(); } };
     setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
     return list;
@@ -123,7 +123,9 @@
   function sheetRow(list, name, small, here, fn, flag) {
     const b = el("button", "lmap-row" + (here ? " here" : "")); b.type = "button";
     if (flag) b.insertAdjacentHTML("afterbegin", '<i class="flag flag-' + flag + '" aria-hidden="true"></i>');
-    const tx = el("span", "lr-t"), s1 = el("b"), s2 = el("small"); s1.textContent = name; s2.textContent = small; tx.append(s1, s2); b.append(tx); b.onclick = fn; list.append(b); return b;
+    const tx = el("span", "lr-t"), s1 = el("b"), s2 = el("small"); s1.textContent = name; s2.textContent = small; tx.append(s1, s2); b.append(tx);
+    // Un toucher qui arrive moins d'une demi-seconde après l'ouverture vient du choix précédent : on l'ignore.
+    b.onclick = () => { if (Date.now() - Number(list.dataset.at || 0) < 500) return; fn(); }; list.append(b); return b;
   }
   function langSheet() {
     const list = sheetBox("Quelle langue ?");
@@ -268,6 +270,13 @@
       const t = ticket(cu, ux.findIndex((x) => x.n === cu.n) + 1, true);
       if (first) { const g = t.querySelector(".vy-go"); if (g && g.textContent === "Commencer") g.textContent = "Commencer ma première leçon"; }
       c.append(t);
+      // Départ choisi plus loin que le début (hébreu) : on le dit, et on propose de reprendre au tout début tant que rien d'avant n'est fait.
+      const k0 = fromN(ss);
+      if (k0 > 0 && !ss.slice(0, k0).some(isDone)) {
+        const n = el("p", "lh-from"); n.append(document.createTextNode("Tu as choisi de commencer ici (" + ss[k0].lv.t + "). "));
+        const b = el("button", "link"); b.type = "button"; b.textContent = "Commencer plutôt par le début"; b.onclick = () => { S.from = Object.assign({}, S.from || {}, { [C().id]: "" }); save(); home(); };
+        n.append(b); c.append(n);
+      }
       const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le voyage (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); c.append(all);
       return c;
     }
@@ -595,6 +604,12 @@
       const lc = card("goal-c"); lc.append(txt("b", null, "Langue apprise"), txt("small", "muted", "Chaque langue garde sa progression"));
       const cl = el("div", "chips"); Object.values(COURSES).forEach((c) => { const x = el("button", "chip" + (c.id === C().id ? " sel" : "")); x.type = "button"; x.innerHTML = '<i class="flag flag-' + c.id + '" aria-hidden="true"></i>'; x.append(document.createTextNode(cap(c.name))); x.setAttribute("aria-pressed", String(c.id === C().id)); x.onclick = () => pickCourse(c.id, () => profileTab()); cl.append(x); });
       lc.append(cl); root.append(lc);
+      if (START[C().id]) {
+        const fc = card("goal-c"), curFrom = (S.from || {})[C().id] || "";
+        fc.append(txt("b", null, "Point de départ"), txt("small", "muted", "Où commence ton parcours. Les leçons d'avant restent ouvertes."));
+        const fl = el("div", "chips"); START[C().id].forEach(([v, l]) => { const x = el("button", "chip" + (curFrom === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String(curFrom === v)); x.onclick = () => { S.from = Object.assign({}, S.from || {}, { [C().id]: v }); save(); profileTab(); }; fl.append(x); });
+        fc.append(fl); root.append(fc);
+      }
       if (C().id === "he") {
         const gc = card("goal-c"); gc.append(txt("b", null, "En hébreu, on te dit"), txt("small", "muted", "Les personnages s'adressent à toi au masculin ou au féminin"));
         const gg = el("div", "chips"); [["m", "אַתָּה · masculin"], ["f", "אַתְּ · féminin"]].forEach(([v, l]) => { const x = el("button", "chip" + ((S.ob || {}).g === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String((S.ob || {}).g === v)); x.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { g: v }); save(); profileTab(); }; gg.append(x); });

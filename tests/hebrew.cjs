@@ -112,7 +112,7 @@ const MOCKS = `
   const heDay = await p.evaluate(() => ({ n: dayN(day()), color: getComputedStyle(document.documentElement).getPropertyValue("--spritz").trim() }));
   await p.click(".lang-chip"); await p.waitForSelector(".lsheet.in");
   await p.screenshot({ path: "tests/shot-he-switch.png" });
-  await p.click(".lsheet .lmap-row:has-text('Italien')");
+  await p.waitForTimeout(550); await p.click(".lsheet .lmap-row:has-text('Italien')");
   ok(await p.isVisible(".course-flash") && /Italien/.test(await p.textContent(".course-flash")), "changement de langue bien visible : écran « Italien »");
   await p.waitForFunction(() => C().id === "it");
   const itSide = await p.evaluate(() => { const box = document.createElement("div"); HIST.renderInto(box); return { hist: box.textContent, n: dayN(day()), all: (S.d || {})[day()] || 0, color: getComputedStyle(document.documentElement).getPropertyValue("--spritz").trim(), ctx: ctx({ text: "les nombres" }), sk: streak() }; });
@@ -123,7 +123,7 @@ const MOCKS = `
   const s6 = await p.evaluate(() => ({ attr: document.documentElement.dataset.course, giulia: PERSONAS.giulia.name, cur: current() && current().l.id, he: !!(S["L.he-u01-l1"] || {}).done, speech: C().speech }));
   ok(s6.attr === "it" && s6.giulia === "Giulia" && /^it-/.test(s6.cur || "") && s6.speech === "it-IT", "italien : programme, personnages et voix italiens " + JSON.stringify(s6));
   ok(s6.he, "la progression en hébreu est gardée");
-  await p.click(".lang-chip"); await p.click(".lsheet .lmap-row:has-text('Hébreu')"); await new Promise((r) => setTimeout(r, 250));
+  await p.click(".lang-chip"); await p.waitForTimeout(550); await p.click(".lsheet .lmap-row:has-text('Hébreu')"); await new Promise((r) => setTimeout(r, 250));
   await p.screenshot({ path: "tests/shot-he-flash.png" });
   await p.waitForFunction(() => C().id === "he"); await new Promise((r) => setTimeout(r, 1200)); await p.screenshot({ path: "tests/shot-he-home2.png" });
   ok(await p.evaluate(() => { const box = document.createElement("div"); HIST.renderInto(box); return /Shalom/.test(box.textContent); }), "historique de l'hébreu retrouvé");
@@ -133,8 +133,16 @@ const MOCKS = `
   await p.click(".goal-c .chip:has-text('Hébreu')"); await p.waitForSelector(".lsheet.in");
   ok(/Par où commencer/.test(await p.textContent(".lsheet")), "première fois en hébreu : par où commencer ?");
   await p.click(".lsheet .lmap-row:has-text('quelques mots')");
+  ok(await p.evaluate(() => C().id === "it" && !(S.from && "he" in S.from)), "un toucher juste après l'ouverture du choix est ignoré (il vient du choix précédent)");
+  await p.waitForTimeout(550); await p.click(".lsheet .lmap-row:has-text('quelques mots')");
   await p.waitForFunction(() => C().id === "he");
   ok(await p.evaluate(() => current().l.id === "he-u04-l1"), "on commence au niveau A1, l'alef-bet reste ouvert");
+  await p.evaluate(() => UI.go("feed")); await p.waitForSelector(".lh-from");
+  ok(/commencer ici/.test(await p.textContent(".lh-from")), "l'accueil dit qu'on a choisi de commencer plus loin");
+  await p.click(".lh-from .link");
+  ok(await p.evaluate(() => current().l.id === "he-u01-l1"), "« Commencer plutôt par le début » ramène à l'alef-bet");
+  await p.evaluate(() => UI.go("profile")); await p.click(".goal-c .chip:has-text('Je lis un peu')");
+  ok(await p.evaluate(() => current().l.id === "he-u03-l1"), "point de départ modifiable dans le profil");
   await p.screenshot({ path: "tests/shot-he-profile.png" });
 
   await p.evaluate(() => { S.from.he = ""; save(); UI.go("lessons"); }); await p.waitForSelector(".vy-ticket, .tab-hd"); await new Promise((r) => setTimeout(r, 400));
