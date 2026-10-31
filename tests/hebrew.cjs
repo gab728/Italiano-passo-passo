@@ -139,7 +139,9 @@ const MOCKS = `
   await p.evaluate(() => UI.go("news")); await p.waitForSelector(".nw-intro");
   ok(/s'ouvrent quand tu sais lire/.test(await p.textContent(".nw-intro")), "l'onglet Actu explique pourquoi");
   const its = await p.evaluate(async () => { S.from = Object.assign({}, S.from, { he: "he-u04-l1" }); const lk = NEWS.locked(); S.nthc = { he: ["une"] }; const r = await (await WEBAUTH.call("news", { themes: ["une"], lang: "he" })).json(); return { lk, n: r.items.length, t: r.items[0] && r.items[0].title }; });
-  ok(!its.lk && its.n === 1 && /רכבת/.test(its.t), "après l'alef-bet : brèves ynet en hébreu (" + its.t + ")");
+  ok(!its.lk && its.n === 2 && /רכבת/.test(its.t), "après l'alef-bet : brèves ynet en hébreu (" + its.t + ")");
+  const dup = await p.evaluate(async () => { S.from = Object.assign({}, S.from, { he: "he-u04-l1" }); S.nthc = { he: ["une", "actu", "sport"] }; const r = await (await WEBAUTH.call("news", { themes: ["une", "actu", "sport"], lang: "he" })).json(); const l = await NEWS.items(true); return { server: r.items.length, app: l.length, titles: l.map((x) => x.title) }; });
+  ok(dup.server === 4 && dup.app === 4 && dup.titles.filter((t) => /גֶּשֶׁם/.test(t)).length === 1, "une brève présente dans plusieurs rubriques n'apparaît qu'une fois (" + dup.app + " brèves)");
   await p.evaluate(() => { S.from = Object.assign({}, S.from, { he: "" }); delete S.nthc; save(); });
 
   console.log("6. Passer de l'hébreu à l'italien et revenir");

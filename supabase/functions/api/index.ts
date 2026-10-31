@@ -755,7 +755,10 @@ async function news(req: Request): Promise<Response> {
   const themes = (Array.isArray(b && b.themes) ? b.themes : []).map(String).filter((t: string) => feeds[t]).slice(0, 8);
   if (!themes.length) return json(req, { items: [] });
   const lists = await Promise.all(themes.map((t: string) => feed(t, lang)));
-  return json(req, { items: lists.flat(), themes });
+  // Une même dépêche paraît dans plusieurs flux : on ne la garde qu'une fois (même adresse ou même titre).
+  const seen = new Set<string>(), key = (t: string) => t.toLowerCase().normalize("NFD").replace(/[^a-z0-9\u05d0-\u05ea]+/g, "").slice(0, 80);
+  const items = lists.flat().filter((x: any) => { const k = key(x.title); if (seen.has(x.link) || seen.has(k)) return false; seen.add(x.link); seen.add(k); return true; });
+  return json(req, { items, themes });
 }
 
 // ---------- Routage ----------

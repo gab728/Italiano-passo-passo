@@ -74,14 +74,16 @@ const NEWS = (() => {
   /* --- Dépêches, gardées 30 minutes --- */
   async function items(force) {
     const th = themes(); if (!th.length) return [];
-    const FK = "ipp-news-feed" + (C().id === "it" ? "" : "-" + C().id), c = ls.get(FK);
+    const FK = "ipp-news-feed2" + (C().id === "it" ? "" : "-" + C().id), c = ls.get(FK);
     if (!force && c && c.k === th.join(",") && Date.now() - c.t < 30 * 60000) return c.items;
     try {
       const r = await (await W.call("news", { themes: th, lang: C().id })).json();
-      const seen = new Set(), list = (r.items || []).filter((x) => !seen.has(x.id) && seen.add(x.id));
+      // Une même dépêche paraît dans plusieurs rubriques (À la une, Politique…), parfois sous une autre adresse : on la garde une fois.
+      const seen = new Set(), tk = (x) => "t:" + String(x.title || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9\u05d0-\u05ea]+/g, "").slice(0, 80);
+      const list = (r.items || []).filter((x) => { if (seen.has(x.id) || seen.has(tk(x)) || (x.link && seen.has(x.link))) return false; seen.add(x.id); seen.add(tk(x)); if (x.link) seen.add(x.link); return true; });
       // Les thèmes s'alternent ; dans chaque thème, la plus récente d'abord.
       const by = th.map((t) => list.filter((x) => x.theme === t).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
-      const out = []; for (let i = 0; i < 12; i++) by.forEach((l) => { if (l[i]) out.push(l[i]); });
+      const out = []; for (let i = 0; i < 12; i++) by.forEach((l) => { if (l[i]) out.push(l[i]); }); out.splice(40);
       ls.set(FK, { k: th.join(","), t: Date.now(), items: out });
       return out;
     } catch (e) { if (c && c.items) return c.items; throw e; }

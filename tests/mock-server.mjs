@@ -30,7 +30,7 @@ globalThis.fetch = async (url, init) => {
   }
   if (u.startsWith("https://www.ynet.co.il/")) {
     state.ynet = (state.ynet || 0) + 1; const th = u.split("StoryRss").pop().replace(".xml", "");
-    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss><channel><item><title><![CDATA[קו רכבת קלה חדש בתל אביב ${th}]]></title><link>https://www.ynet.co.il/news/article/${th}</link><description><![CDATA[<div><img src="x.jpg"/>העירייה פותחת היום קו חדש של הרכבת הקלה.</div>]]></description><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss><channel><item><title><![CDATA[קו רכבת קלה חדש בתל אביב ${th}]]></title><link>https://www.ynet.co.il/news/article/${th}</link><description><![CDATA[<div><img src="x.jpg"/>העירייה פותחת היום קו חדש של הרכבת הקלה.</div>]]></description><pubDate>${new Date().toUTCString()}</pubDate></item><item><title><![CDATA[מֶזֶג הָאֲוִיר: גֶּשֶׁם בַּצָּפוֹן]]></title><link>https://www.ynet.co.il/${th}/weather</link><description>גשם</description><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`;
     return new Response(xml, { headers: { "content-type": "application/rss+xml" } });
   }
   if (u.startsWith("https://www.ansa.it/")) {
