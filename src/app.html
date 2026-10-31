@@ -910,8 +910,9 @@ async function loadBase(db){try{const [cs,ls]=await Promise.all([db.collection("
     let old={};try{old=JSON.parse(localStorage.getItem(BKEY))||{}}catch(e){}
     for(const x of (old.lessons||[]).filter(x=>x&&x.local&&!b.lessons.some(y=>y.id===x.id))){   // leçons créées ici mais pas encore enregistrées dans la base
       try{await db.collection("lessons").doc(x.id).set(x.d);b.lessons.push({id:x.id,d:x.d})}catch(e){b.lessons.push(x)}}
-    try{localStorage.setItem(BKEY,JSON.stringify(b))}catch(e){}
+    try{localStorage.setItem(BKEY,JSON.stringify(b))}catch(e){}BASE_OK=true;
     if(view==="home"){applyBase(b);home()}else pendingBase=b}catch(e){}}
+let BASE_OK=false;
 
 /* Programme : niveaux > unités > leçons. La version de la base (courses/<id>, champ plan) l'emporte sur cette copie embarquée.
    Une leçon du programme pointe vers une leçon existante (use) ou vers la leçon de la base qui porte son identifiant. */
@@ -935,7 +936,9 @@ let COURSE_ON="";
 function courseNow(){const id=C().id;try{document.documentElement.dataset.course=id;document.documentElement.classList.toggle("rtl-course",!!C().rtl)}catch(e){}
   if(id!==COURSE_ON){COURSE_ON=id;try{window.dispatchEvent(new CustomEvent("ipp-course",{detail:id}))}catch(e){}}}
 function setCourse(id){if(!COURSES[id])return;S.course=id;save();courseNow();home()}
-function openSlot(x){if(x.mi>=0)return go(x.mi);if(AI)return creer({slot:x});
+function openSlot(x){if(x.mi>=0)return go(x.mi);
+  // Le catalogue n'est pas encore arrivé : la leçon existe peut-être déjà, on ne la fait pas réécrire.
+  if(!BASE_OK&&window.WEBAUTH)return speakNote("Le cours se charge, un instant…");if(AI)return creer({slot:x});
   speakNote("Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, indisponible ici : ouvre la page dans l'app Claude, avec du réseau.")}
 function stopRow(x,cls,label,stateText,pct,fn){const li=el("li"),s=el("button","stop "+cls);s.type="button";
   s.innerHTML='<span class="time"></span><span class="rail"><span class="dot"></span></span><span class="card"><h2></h2><span class="topic"></span><span class="state"></span>'+(pct?'<span class="meter"><i style="width:'+pct+'%"></i></span>':"")+"</span>";

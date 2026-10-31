@@ -157,7 +157,9 @@ const MOCKS = `
   await p.route("**/content/catalog.json*", async (r) => { await new Promise((x) => setTimeout(x, 4000)); await r.continue(); });
   await p.reload(); await p.waitForSelector(".feed-hd", { timeout: 10000 });
   const boot = await p.evaluate(() => ({ id: C().id, attr: document.documentElement.dataset.course, hero: (document.querySelector(".home-trip, .lhero") || {}).textContent || "", mi: current() && current().mi }));
-  ok(boot.id === "he" && boot.attr === "he" && !/Essere|italien/i.test(boot.hero) && boot.mi >= 0, "rechargement en hébreu, catalogue pas encore arrivé : l'hébreu s'affiche tout de suite, jamais l'italien " + JSON.stringify(boot).slice(0, 160));
+  ok(boot.id === "he" && boot.attr === "he" && !/Essere|italien/i.test(boot.hero), "rechargement en hébreu, catalogue pas encore arrivé : l'hébreu s'affiche tout de suite, jamais l'italien " + JSON.stringify(boot).slice(0, 160));
+  if (boot.mi < 0) { const n0 = (await st()).claude.length; await p.evaluate(() => openSlot(current())); await new Promise((r) => setTimeout(r, 900)); ok((await st()).claude.length === n0, "leçon touchée avant l'arrivée du catalogue : pas réécrite par Claude"); }
+  await p.waitForFunction(() => current() && current().mi >= 0, null, { timeout: 15000 }); ok(true, "le catalogue arrive : la leçon écrite est là");
   await p.unroute("**/content/catalog.json*");
   ok(errors.length === 0, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 5).join(" | ") : ""));
   await br.close();
