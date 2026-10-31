@@ -23,7 +23,8 @@ const patches = [
   ["if(AI)tool(\"Conversation\",convList);root.append(tools);", "if(AI)tool(\"Conversation\",convList);if(window.WEB)WEB.tools(tool);root.append(tools);"],
   ["w.append(inp,keys,ok);", "w.append(inp,keys,ok);if(window.WEB)WEB.mic(w,inp);", 2],
   ["end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);", "end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);if(window.WEB)WEB.convExtra(row,k);"],
-  ["const current=()=>slots().find(x=>!isDone(x))||null;", "const current=()=>{const ss=slots(),lo=S.ob?Math.floor(S.ob.lv||0):0;return ss.find(x=>!isDone(x)&&x.li>=lo)||ss.find(x=>!isDone(x))||null};"],
+  // Niveau choisi à l'inscription (italien) : on commence au niveau correspondant. L'hébreu a son propre point de départ (S.from).
+  ["const current=()=>{const ss=slots(),k=fromN(ss);return ss.find(x=>x.n>=k&&!isDone(x))||ss.find(x=>!isDone(x))||null};", "const current=()=>{const ss=slots(),k=fromN(ss),lo=S.ob&&C().id===\"it\"?Math.floor(S.ob.lv||0):0;return ss.find(x=>x.n>=k&&x.li>=lo&&!isDone(x))||ss.find(x=>!isDone(x))||null};"],
   ["async function creer(job,st){cur=null;st=st||{};", "async function creer(job,st){cur=null;st=st||{};if(window.WEB&&WEB.keepAwake)WEB.keepAwake();"],
   ["const fail=(step,e,lead,btns)=>{if(!here())return;", "const fail=(step,e,lead,btns)=>{if(!here())return;if(window.WEB&&WEB.resume&&WEB.resume(e,st,()=>creer(job,st),note,step))return;"],
   // Fusion de la progression : garde aussi les réglages propres à la web app (accueil, voix, dates d'ajout au carnet…).
@@ -93,7 +94,7 @@ const html = `<!doctype html>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${fonts}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&family=Noto+Serif+Hebrew:wght@400;700&family=Noto+Sans+Hebrew:wght@400;600&display=swap">
 <style>${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">

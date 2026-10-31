@@ -28,6 +28,11 @@ globalThis.fetch = async (url, init) => {
     if (/sonnet-5-5/.test(b.model) && b.thinking && b.thinking.type === "disabled") { state.thinkRefused = (state.thinkRefused || 0) + 1; return new Response(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: 'To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}.' } }), { status: 400 }); }
     return fakeClaude(b);
   }
+  if (u.startsWith("https://www.ynet.co.il/")) {
+    state.ynet = (state.ynet || 0) + 1; const th = u.split("StoryRss").pop().replace(".xml", "");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss><channel><item><title><![CDATA[קו רכבת קלה חדש בתל אביב ${th}]]></title><link>https://www.ynet.co.il/news/article/${th}</link><description><![CDATA[<div><img src="x.jpg"/>העירייה פותחת היום קו חדש של הרכבת הקלה.</div>]]></description><pubDate>${new Date().toUTCString()}</pubDate></item></channel></rss>`;
+    return new Response(xml, { headers: { "content-type": "application/rss+xml" } });
+  }
   if (u.startsWith("https://www.ansa.it/")) {
     state.ansa = (state.ansa || 0) + 1; const th = u.split("/").pop().replace("_rss.xml", "");
     const item = (k, d) => `<item><title><![CDATA[${th} : Roma, nuova linea del tram n.${k} &amp; altro]]></title><link>https://www.ansa.it/${th}/${k}.html</link><description>&lt;p&gt;Il Comune di Roma ha presentato una nuova linea del tram per il centro (${th} ${k}).&lt;/p&gt;</description><pubDate>${new Date(Date.now() - d * 3600e3).toUTCString()}</pubDate></item>`;
@@ -49,6 +54,7 @@ globalThis.fetch = async (url, init) => {
     const q = new URL(u).searchParams, g = q.get("gender");
     if (q.get("voice_id")) return new Response(JSON.stringify({ voices: [{ voice_id: q.get("voice_id"), public_owner_id: "owner1", name: "X" }] }), { headers: { "content-type": "application/json" } });
     const mk = (id, age, use, n, extra) => Object.assign({ voice_id: id, public_owner_id: "o-" + id, name: id, gender: g, age, use_case: use, descriptive: "calm", usage_character_count_1y: n, language: "it" }, extra || {});
+    if (q.get("language") === "he") return new Response(JSON.stringify({ voices: g === "female" ? [mk("he-f1", "young", "conversational", 3e8, { language: "he" }), mk("he-f2", "old", "narrative_story", 1e8, { language: "he" })] : [mk("he-m1", "middle_aged", "conversational", 2e8, { language: "he" })] }), { headers: { "content-type": "application/json" } });
     if (q.get("language") === "fr") return new Response(JSON.stringify({ voices: g === "female" ? [mk("fr-f1", "middle_aged", "narrative_story", 7e8), mk("fr-f2", "young", "conversational", 3e8)] : [mk("fr-m1", "middle_aged", "narrative_story", 6e8)] }), { headers: { "content-type": "application/json" } });
     const voices = g === "female" ? [mk("it-f-pricey", "young", "conversational", 9e9, { fiat_rate: 2 }), mk("it-f-rate1", "young", "conversational", 8e8, { rate: 1 }), mk("it-f1", "young", "conversational", 5e8), mk("it-f2", "middle_aged", "narrative_story", 4e8), mk("it-f3", "young", "social_media", 3e8), mk("it-f4", "young", "informative_educational", 1e8), mk("it-f-old", "old", "narrative_story", 5e7), mk("it-f-game", "young", "characters_animation", 9e8)]
       : [mk("it-m1", "middle_aged", "conversational", 6e8), mk("it-m2", "young", "narrative_story", 4e8), mk("it-m3", "young", "conversational", 2e8), mk("it-m4", "middle_aged", "advertisement", 1e8), mk("it-m-old", "old", "narrative_story", 4e7)];
@@ -56,7 +62,7 @@ globalThis.fetch = async (url, init) => {
   }
   if (u.startsWith("https://api.elevenlabs.io/v1/text-to-speech/")) {
     const b = JSON.parse(init.body), id = u.split("/text-to-speech/")[1].split("?")[0];
-    state.tts.push({ engine: "el", id, input: b.text, model: b.model_id, lang: b.language_code || "", speed: b.voice_settings && b.voice_settings.speed });
+    state.tts.push({ engine: "el", id, input: b.text, model: b.model_id, lang: b.language_code || "", speed: b.voice_settings && b.voice_settings.speed, stability: b.voice_settings && b.voice_settings.stability });
     if (id === "it-f1" && !(state.elAdded || []).includes("it-f1")) return new Response(JSON.stringify({ detail: { status: "voice_not_found", message: "A voice with the voice_id it-f2 was not found." } }), { status: 404 });
     return new Response(readFileSync(join(ROOT, "tests/fixtures/voice.mp3")), { headers: { "content-type": "audio/mpeg" } });
   }

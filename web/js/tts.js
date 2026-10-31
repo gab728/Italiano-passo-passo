@@ -5,8 +5,9 @@
    Les phrases des leçons sont gardées en cache (sur le serveur, pour tout le monde, et sur l'appareil).
    Sans réseau, sans configuration ou au-delà du plafond du jour, la voix du téléphone prend le relais. */
 const TTS = (() => {
-  // Voix et façon de parler de chaque personnage. Les consignes sont en italien : elles règlent l'accent et le ton.
-  const WHO = {
+  // Voix et façon de parler de chaque personnage, par langue. Les consignes sont dans la langue du cours : elles règlent l'accent et le ton
+  // (elles servent à la voix de secours ; avec ElevenLabs, c'est le choix de la voix qui compte).
+  const WHO_IT = {
     giulia: { voice: "marin", it: "Sei Giulia, insegnante di italiano di Bologna, 35 anni. Voce calda e sorridente, tono naturale da conversazione vera, pronuncia chiara, ritmo tranquillo.",
       fr: "Tu es Giulia, prof d'italien de Bologne qui parle très bien français avec un léger accent italien. Voix chaleureuse et naturelle, ton complice." },
     marco: { voice: "cedar", it: "Sei Marco, barista romano simpatico e chiacchierone. Tono vivace e alla mano, leggero accento romano, ritmo naturale ma chiaro." },
@@ -17,6 +18,21 @@ const TTS = (() => {
     woman: { voice: "coral", it: "Parli italiano da madrelingua, con tono naturale e cordiale, come in una vera conversazione, pronuncia chiara." },
     man: { voice: "ash", it: "Parli italiano da madrelingua, con tono naturale e cordiale, come in una vera conversazione, pronuncia chiara." },
   };
+  const HE = "Speak native modern Israeli Hebrew with a natural Israeli accent. ";
+  const WHO_HE = {
+    giulia: { voice: "marin", it: HE + "You are Noa, a 35-year-old Hebrew teacher from Tel Aviv. Warm, smiling voice, natural conversational tone, clear pronunciation, calm pace.",
+      fr: "Tu es Noa, prof d'hébreu de Tel Aviv qui parle très bien français avec un léger accent israélien. Voix chaleureuse et naturelle, ton complice." },
+    marco: { voice: "cedar", it: HE + "You are Avi, a friendly, chatty waiter in a Jerusalem café. Lively, casual tone, natural but clear pace." },
+    sofia: { voice: "coral", it: HE + "You are Maya, a 28-year-old woman from Haifa. Friendly, young and spontaneous tone, smiling, natural pace." },
+    rosa: { voice: "sage", it: HE + "You are Savta Rivka, an affectionate, slightly theatrical grandmother from Jerusalem. Mature, warm voice, slow pace." },
+    narrator: { voice: "marin", it: HE + "Read like a native teacher for a beginner: standard Hebrew, clear and natural pronunciation, slightly slow, warm tone.",
+      fr: "Lis comme une prof bienveillante, en français, avec une voix naturelle et posée." },
+    woman: { voice: "coral", it: HE + "Natural, friendly tone, like in a real conversation, clear pronunciation." },
+    man: { voice: "ash", it: HE + "Natural, friendly tone, like in a real conversation, clear pronunciation." },
+  };
+  const WHO = {};
+  const setWho = () => { const src = typeof C === "function" && C().id === "he" ? WHO_HE : WHO_IT; Object.keys(WHO).forEach((k) => delete WHO[k]); Object.assign(WHO, src); };
+  setWho(); window.addEventListener("ipp-course", setWho);
   const pref = () => (typeof S !== "undefined" && S.vx) || {};
   let down = false, fails = 0;
   const on = () => !!(window.WEBAUTH && WEBAUTH.me && WEBAUTH.me.tts) && !pref().off && !down && navigator.onLine !== false;
@@ -27,7 +43,7 @@ const TTS = (() => {
     const fr = /^fr/i.test(lang || "");
     const slow = !!pref().slow;
     let instr = fr ? (w.fr || WHO.narrator.fr) : w.it;
-    if (slow && !fr) instr += " Parla un po' più lentamente del normale, scandendo bene.";
+    if (slow && !fr) instr += /^Speak/.test(instr) ? " Speak a little slower than usual, articulating clearly." : " Parla un po' più lentamente del normale, scandendo bene.";
     let speed = o.rate ? 0.55 + 0.45 * o.rate : 1;
     if (slow && !fr) speed *= 0.92;
     speed = Math.round(Math.min(Math.max(speed, 0.7), 1.25) * 100) / 100;
@@ -193,7 +209,7 @@ const TTS = (() => {
   // Les boutons « Écouter » lisent surtout de l'italien, parfois une explication en français : on choisit la voix selon le texte.
   const FRW = /\b(le|les|des|est|une|du|au|aux|pour|avec|dans|vous|nous|pas|ce|cette|qui|que|sur|mais|ou|donc|être|avoir|c'est|il y a)\b/gi;
   const ITW = /\b(il|lo|gli|è|una|per|con|nel|della|del|non|sono|che|di|ho|hai|ha|siamo|questo|questa|anche|perché|molto)\b/gi;
-  const looksFr = (t) => { const s = String(t || ""); if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
+  const looksFr = (t) => { const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s); if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
   speak = function (t, rate) {
     if (!TTS.on()) return devSpeak(t, rate);
     devStop(); TTS.stop();
@@ -220,12 +236,13 @@ const TTS = (() => {
 const DLG = (() => {
   const bareN = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
   const set = (s) => new Set(s.split(" "));
-  const F = set("nonna mamma madre zia sorella figlia ragazza bambina donna signora signorina dottoressa professoressa maestra infermiera impiegata commessa cameriera cassiera segretaria amica vicina padrona proprietaria cuoca poliziotta moglie fidanzata studentessa direttrice attrice"
+  const F = set("nonna mamma madre zia sorella figlia ragazza bambina donna signora signorina dottoressa professoressa maestra infermiera impiegata commessa cameriera cassiera segretaria amica vicina padrona proprietaria cuoca poliziotta moglie fidanzata studentessa direttrice attrice "
+    + "savta ima rut ruth tamar shira michal yael ronit sara rivka orly hila "
     + "beatrice alice irene adele agnese rachele nicole marie sophie claire camille chloe manon julie ines louise zoe celine aurelie isabelle nathalie catherine helene mathilde charlotte pauline juliette cecile elise lucie noemi noemie margot elisabeth carmen miriam ester ruth gabrielle aude maud oceane amelie emilie stephanie sandrine valerie caroline delphine virginie laure clemence eloise heloise anais rachel agathe berenice");
   const Mm = set("nonno papa babbo padre zio fratello figlio ragazzo bambino uomo signore signor dottore professore maestro infermiere impiegato commesso cameriere cassiere segretario amico vicino padrone proprietario cuoco poliziotto vigile ferroviere controllore marito fidanzato studente direttore attore "
-    + "andrea luca nicola mattia elia tobia enea battista gianluca joshua");
+    + "andrea luca nicola mattia elia tobia enea battista gianluca joshua aba abba saba avi ilan itai itay dan david yossi moshe eyal amit omer yoni ari ron ido uri");
   const AMBI = set("cliente turista nipote barista collega farmacista giornalista guida tassista receptionist cantante insegnante paziente viaggiatore ospite passeggero utente");
-  const OLD = set("nonna nonno");
+  const OLD = set("nonna nonno savta saba");
   function guess(name, lines) {
     const w = bareN(name).split(/[\s,.]+/), first = w[0], last = w[w.length - 1];
     for (const x of [first, last]) { if (F.has(x)) return "f"; if (Mm.has(x)) return "m"; }
@@ -238,7 +255,8 @@ const DLG = (() => {
     return f > m ? "f" : m > f ? "m" : null;
   }
   const POOL = { f: ["coral", "shimmer", "marin", "nova"], m: ["ash", "cedar", "verse", "echo"] };
-  const BASE = "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.";
+  const BASE_IT = "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.";
+  const BASE_HE = "Speak native modern Israeli Hebrew in an everyday dialogue: natural, spontaneous tone, like a real conversation, clear pronunciation.";
   // Distribution des voix : chaque personnage garde la sienne pendant tout le dialogue, deux personnages n'ont jamais la même.
   function cast(dlg) {
     const names = [], lines = {};
@@ -251,7 +269,7 @@ const DLG = (() => {
       let v = old && k === "f" && !taken.has("sage") ? "sage" : old && k === "m" && !taken.has("onyx") ? "onyx" : null;
       while (!v || (taken.has(v) && used[k] < 8)) v = POOL[k][used[k]++ % POOL[k].length];
       taken.add(v);
-      who[n] = { voice: v, it: BASE + (old ? " Voce matura e calda, ritmo un po' più lento." : "") }; });
+      const he = C().id === "he"; who[n] = { voice: v, it: (he ? BASE_HE : BASE_IT) + (old ? (he ? " Mature, warm voice, a little slower." : " Voce matura e calda, ritmo un po' più lento.") : "") }; });
     return who;
   }
   const lang = () => (typeof C === "function" && C().speech) || "it-IT";

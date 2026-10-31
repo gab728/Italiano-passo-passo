@@ -226,7 +226,7 @@ const VO = (() => {
 
   /* --- Comparer ce qui a été dit à la réponse attendue --- */
   const NUM = { zero: 0, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7, otto: 8, nove: 9, dieci: 10, undici: 11, dodici: 12, tredici: 13, quattordici: 14, quindici: 15, sedici: 16, diciassette: 17, diciotto: 18, diciannove: 19, venti: 20, trenta: 30, quaranta: 40, cinquanta: 50, sessanta: 60, settanta: 70, ottanta: 80, novanta: 90, cento: 100, mille: 1000 };
-  const toks = (s) => bare(String(s || "")).replace(/['’]/g, " ").replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean).map((w) => (NUM[w] != null ? String(NUM[w]) : w));
+  const toks = (s) => bare(String(s || "")).replace(/['’]/g, " ").replace(/[^a-z0-9 \u05d0-\u05ea]+/g, " ").split(/\s+/).filter(Boolean).map((w) => (NUM[w] != null ? String(NUM[w]) : w));
   function lev(a, b) {
     const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
     let p = Array.from({ length: n + 1 }, (_, j) => j);
@@ -254,6 +254,12 @@ const VO = (() => {
     if (/^(basta|stop|fine|pausa|finito|ferma|fermati|arrivederci|ciao ciao)$/.test(s)) return "stop";
     if (/^(non lo so|non so|non lo ricordo|non (me )?lo ricordo|non ricordo|non mi ricordo|boh|aiuto|mi arrendo|je sais pas|je ne sais pas|j sais pas|sais pas|chais pas|je (ne )?sais plus|aucune idee|j ai oublie|je l ai oublie|jsp|gene se pa|je ne se pa)$/.test(s)) return "dunno";
     if (/^(piu piano|piu lentamente|lentamente|piano)$/.test(s)) return "slower";
+    // Hébreu (formes sans voyelles, lettres finales ramenées à la forme normale par bare)
+    if (/^(שוב|עוד פעמ|עוד פעמ אחת|תחזור|תחזרי|מה|סליחה מה)$/.test(s)) return "repeat";
+    if (/^(הבא|הבאה|דלג|תמשיכ|תמשיכי|הלאה)$/.test(s)) return "skip";
+    if (/^(די|עצור|עצרי|סטופ|מספיק|ביי|להתראות|יאללה ביי)$/.test(s)) return "stop";
+    if (/^(לא יודע|לא יודעת|אינ לי מושג|שכחתי|אני לא יודע|אני לא יודעת|לא זוכר|לא זוכרת)$/.test(s)) return "dunno";
+    if (/^(לאט|יותר לאט|לאט יותר|לאט לאט)$/.test(s)) return "slower";
     return null;
   }
 
@@ -314,25 +320,25 @@ function carSteps(src) {
   const ask = (exps, kind, extra) => Object.assign({ exps: exps.filter(Boolean), kind, wait: think(exps[0] || "") }, extra || {});
   if (src.kind === "lesson") {
     const m = M[src.mi];
-    out.push({ parts: [fr("Leçon : " + m.st + ". Après le bip, réponds à voix haute : je te dis si c'est juste. Dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause.")] });
+    out.push({ parts: [fr("Leçon : " + m.st + ". Après le bip, réponds à voix haute : je te dis si c'est juste. " + (C().id === "he" ? "Dis « shouv » pour réentendre, « haba » pour passer, « dai » pour faire une pause." : "Dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause."))] });
     if (m.vocab.length) out.push({ parts: [fr("D'abord, le vocabulaire. Répète chaque mot après le bip.")] });
-    m.vocab.forEach((v) => out.push({ parts: [it(v[0]), gap(0.5), fr(v[1]), gap(0.3), it(v[0])], ask: ask([v[0]], "repeat") }));
+    m.vocab.forEach((v) => out.push({ parts: [it(v[0]), gap(0.5), fr(frOnly(v[1])), gap(0.3), it(v[0])], ask: ask([v[0]], "repeat") }));
     out.push({ parts: [fr("Maintenant, à toi de construire les phrases.")] });
     m.ex.forEach((x) => {
       if (x[0] === "o") { const vs = String(x[2]).split("|"); out.push({ parts: [fr("Comment dit-on : " + decode(x[1]))], ask: ask(vs, "translate", { answer: vs[0] }) }); }
-      else if (x[0] === "f") {
+      else if (x[0] === "f" && !(C().rtl && !(HEB.test(String(x[1]).replace(/\([^)]*\)/g, "")) && HEB.test(String(x[2]).split("|")[0])))) {
         const q = decode(x[1]), vs = String(x[2]).split("|"), hint = (q.match(/\(([^)]*)\)/) || [])[1], blank = q.replace(/\s*\([^)]*\)/g, "").replace(/___/g, "…");
         const full = vs.map((a) => filled(q, a));
         out.push({ parts: [fr("Complète la phrase" + (hint ? ", avec : " + hint : "") + "."), it(blank)], ask: ask(full, "translate", { answer: full[0] }) });
       }
     });
     if (m.dlg.length) out.push({ parts: [fr("Pour finir, le dialogue. Répète chaque réplique après le bip.")] });
-    m.dlg.forEach((l) => out.push({ parts: [it(l[1]), gap(0.3), fr(l[2])], ask: ask([l[1]], "repeat") }));
+    m.dlg.forEach((l) => out.push({ parts: [it(l[1]), gap(0.3), fr(frOnly(l[2]))], ask: ask([l[1]], "repeat") }));
   } else {
     const V = vstat(), list = shuffle(V.due.length ? V.due : V.nb).slice(0, 30);
     out.push({ parts: [fr(list.length + " mots de ton carnet. Je dis le mot en français : après le bip, dis-le en " + LN() + ".")] });
     // Le mot français dans une petite phrase : la voix sait que c'est du français et le prononce en entier.
-    list.forEach((w) => out.push({ parts: [fr("Comment dit-on « " + w.fr + " » ?")], show: w.fr, ask: ask([w.it], "translate", { answer: w.it, key: w.key }) }));
+    list.forEach((w) => out.push({ parts: [fr("Comment dit-on « " + frOnly(w.fr) + " » ?")], show: frOnly(w.fr), ask: ask([w.it], "translate", { answer: w.it, key: w.key }) }));
   }
   return out;
 }
@@ -470,7 +476,7 @@ audioSetup = function () {
   body.append(el("h2", null, "En voiture, mains libres"));
   if (!canSpeak) { body.append(el("p", "fr", "Ce navigateur ne sait pas lire le texte à voix haute : le mode voiture ne peut pas fonctionner ici.")); return; }
   const mic = VO.available();
-  body.append(el("p", "fr", mic ? "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher : dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause." : "Ce navigateur ne peut pas écouter : l'app laisse des silences pour répondre à voix haute, sans vérifier ta réponse."));
+  body.append(el("p", "fr", mic ? "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher : " + (C().id === "he" ? "dis « שׁוּב » (shouv) pour réentendre, « הַבָּא » (haba) pour passer, « דַּי » (dai) pour faire une pause." : "dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause.") : "Ce navigateur ne peut pas écouter : l'app laisse des silences pour répondre à voix haute, sans vérifier ta réponse."));
   const ss = slots(), cu = current(), ready = mine().filter((i) => M[i].vocab && M[i].vocab.length), V = vstat();
   let pick = null; const opts = [];
   if (AI && mic) opts.push({ kind: "talk", label: "Parler librement avec Claude" });
@@ -507,19 +513,19 @@ function vLevel() {
   const cu = current(), done = slots().filter(isDone);
   const lv = cu ? cu.lv : (done.length ? done[done.length - 1].lv : null);
   const g = done.slice(-4).map((x) => x.l.g).filter(Boolean).join(" ; ");
-  return { cecr: lv ? lv.cecr : (C().level || "A2"), base: !lv || lv.id === "base", grammar: (cu && cu.l.g) || g || "le présent des verbes courants", recent: g };
+  return { cecr: lv ? lv.cecr : (C().level || "A2"), base: !lv || lv.id === "base" || /^a[01]$/.test(lv.id), grammar: (cu && cu.l.g) || g || "le présent des verbes courants", recent: g };
 }
 function vWords() { const V = vstat(); return shuffle(V.nb).slice(0, 15).map((w) => w.it).join(", "); }
-const V_FORMAT = "Format strict : écris chaque phrase sur sa propre ligne, qui commence par « IT: » (phrase en " + "italien" + ") ou « FR: » (phrase en français). Aucune autre ligne, pas de markdown, pas d'emoji, pas d'indication de mise en scène.";
+const V_FORMAT = "Format strict : écris chaque phrase sur sa propre ligne, qui commence par « IT: » (phrase dans la langue étudiée) ou « FR: » (phrase en français). Aucune autre ligne, pas de markdown, pas d'emoji, pas d'indication de mise en scène.";
 function vchatTopics(car) {
   cur = null; qbar(null, null, "Parler", "← Accueil", home); view = "vtopics";
   body.append(el("div", "kind", "Conversation à voix haute"));
   body.append(el("h2", null, "Parler avec Claude"));
   if (!AI) { body.append(el("p", "fr", "La conversation passe par Claude, indisponible pour l'instant. Vérifie le réseau.")); return; }
   if (!VO.available()) { body.append(el("p", "fr", VO.failText({ code: "unsupported" }))); return; }
-  body.append(el("p", "fr", "Claude te parle en " + LN() + " à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis « ripeti » pour réentendre, « più piano » pour ralentir, « basta » pour terminer."));
+  body.append(el("p", "fr", "Claude te parle en " + LN() + " à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis « " + (C().id === "he" ? "שׁוּב" : "ripeti") + " » pour réentendre, « " + (C().id === "he" ? "לְאַט" : "più piano") + " » pour ralentir, « " + (C().id === "he" ? "דַּי" : "basta") + " » pour terminer."));
   const lvl = vLevel();
-  const topics = [["Ce que j'apprends", "la leçon en cours (" + lvl.grammar + ") : fais-le pratiquer ce point dans une conversation naturelle"], ["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui"], ["Voyager en Italie", "préparer un voyage en Italie : villes, transports, hôtel, restaurants"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis"], ["Le travail", "son travail, ses collègues, ses projets"], ["Culture", "cuisine, cinéma, musique, art et histoire italiens"]];
+  const topics = [["Ce que j'apprends", "la leçon en cours (" + lvl.grammar + ") : fais-le pratiquer ce point dans une conversation naturelle"], ["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui"], ["Voyager " + LXC().inLand, "préparer un voyage " + LXC().inLand + " : villes, transports, hôtel, restaurants"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis"], ["Le travail", "son travail, ses collègues, ses projets"], ["Culture", "cuisine, cinéma, musique, art et histoire (" + LXC().land + ")"]];
   const g = el("div", "opts");
   topics.forEach(([t, d]) => { const b = el("button", "opt"); b.type = "button"; b.textContent = t; b.onclick = () => { VO.beep(); vchatFree(t, d, car); }; g.append(b); });
   body.append(g);
@@ -535,18 +541,18 @@ function vchatTopics(car) {
 }
 function vchatFree(title, topic, car) {
   const lvl = vLevel(), words = vWords();
-  const system = "Tu es Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne. Tu as une conversation à voix haute avec un élève francophone (niveau " + lvl.cecr + "), qui ne regarde pas l'écran : il conduit ou marche. Ce qu'il dit t'arrive par une reconnaissance vocale réglée sur l'italien : des mots peuvent être mal transcrits. Ne commente jamais l'orthographe ni la ponctuation ; si une phrase est incompréhensible, demande-lui gentiment de répéter.\n" +
+  const system = "Tu es " + LXC().tutor + ". Tu as une conversation à voix haute avec un élève francophone (niveau " + lvl.cecr + "), qui ne regarde pas l'écran : il conduit ou marche. Ce qu'il dit t'arrive par une reconnaissance vocale réglée sur l'" + LN() + " : des mots peuvent être mal transcrits. Ne commente jamais l'orthographe ni la ponctuation ; si une phrase est incompréhensible, demande-lui gentiment de répéter.\n" +
     "Thème : " + topic + ".\nPoints qu'il étudie en ce moment : " + lvl.grammar + "." + (lvl.base ? " Il est encore dans les bases : reste au présent et aux structures simples, sauf s'il utilise lui-même un autre temps." : "") +
     (words ? "\nMots de son carnet à réutiliser quand c'est naturel : " + words + "." : "") +
-    "\nObjectif : le faire parler le plus possible. À chaque tour : une ou deux phrases courtes en italien simple, puis une seule question ouverte. Parle comme à l'oral, avec des mots fréquents.\n" +
-    "Corrections : si sa dernière phrase contient une vraie erreur (grammaire, mot faux, mot français), commence ton tour par une ligne FR très courte qui donne la bonne forme (par exemple : « FR: On dit : sono andato. »). Au plus une correction par tour, et laisse passer les petites fautes.\n" +
-    "S'il parle français ou demande comment dire quelque chose, donne la phrase en italien et invite-le à la répéter.\n" + V_FORMAT;
+    "\nObjectif : le faire parler le plus possible. À chaque tour : une ou deux phrases courtes en " + LN() + " simple, puis une seule question ouverte. Parle comme à l'oral, avec des mots fréquents.\n" +
+    "Corrections : si sa dernière phrase contient une vraie erreur (grammaire, mot faux, mot français), commence ton tour par une ligne FR très courte qui donne la bonne forme (par exemple : « FR: On dit : " + LXC().fix + ". »). Au plus une correction par tour, et laisse passer les petites fautes.\n" +
+    "S'il parle français ou demande comment dire quelque chose, donne la phrase en " + LN() + " et invite-le à la répéter." + (typeof heRules === "function" ? heRules() : "") + "\n" + V_FORMAT;
   vchat({ kind: "free", title, topic, system, car, open: null, focus: lvl.grammar, goal: "Parler de : " + title });
 }
 function vchatScenario(k, car) {
   const sc = M[k].scenario;
-  const system = "Jeu de rôle à voix haute pour un francophone qui apprend l'" + LN() + " (niveau " + (C().level || "A2 vers B1") + "). Tu joues : " + sc.role + ". Tu as ouvert la conversation avec : «" + sc.open + "». Ce que dit l'élève t'arrive par une reconnaissance vocale réglée sur l'italien : des mots peuvent être mal transcrits ; ne commente jamais l'orthographe et, si une phrase est incompréhensible, demande-lui de répéter, dans ton personnage.\n" +
-    "Règles : réponds uniquement en " + LN() + ", en une ou deux phrases courtes et naturelles, avec un vocabulaire de niveau A2-B1. Reste dans ton personnage. Termine le plus souvent par une question ou une relance pour faire parler l'élève. Ne corrige pas ses erreurs, ne traduis rien. Si l'élève parle français, réponds quand même en " + LN() + ", simplement.\n" + V_FORMAT;
+  const system = "Jeu de rôle à voix haute pour un francophone qui apprend l'" + LN() + " (niveau " + (C().level || "A2 vers B1") + "). Tu joues : " + sc.role + ". Tu as ouvert la conversation avec : «" + sc.open + "». Ce que dit l'élève t'arrive par une reconnaissance vocale réglée sur l'" + LN() + " : des mots peuvent être mal transcrits ; ne commente jamais l'orthographe et, si une phrase est incompréhensible, demande-lui de répéter, dans ton personnage.\n" +
+    "Règles : réponds uniquement en " + LN() + ", en une ou deux phrases courtes et naturelles, avec un vocabulaire de niveau A2-B1. Reste dans ton personnage. Termine le plus souvent par une question ou une relance pour faire parler l'élève. Ne corrige pas ses erreurs, ne traduis rien. Si l'élève parle français, réponds quand même en " + LN() + ", simplement." + (typeof heRules === "function" ? heRules() : "") + "\n" + V_FORMAT;
   vchat({ kind: "role", k, title: sc.title, system, car, open: sc.open, goal: sc.goal, focus: sc.focus, mission: sc.goal });
 }
 function vParse(text) {

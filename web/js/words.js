@@ -11,8 +11,8 @@ const WT = (() => {
     const pr = (async () => {
       const r = await AI("Mot ou expression tapé par un francophone qui apprend l'" + LN() + " : « " + q + " »\n" +
         "S'il est en français, traduis-le en " + LN() + " ; s'il est en " + LN() + ", traduis-le en français. Corrige une faute de frappe évidente.\n" +
-        "Réponds uniquement par un objet JSON, sans texte autour : {\"it\": la forme en " + LN() + " à mettre dans un carnet (infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle), " +
-        "\"fr\": la traduction française courte, \"note\": une précision utile en français (genre, irrégularité, faux ami…), 12 mots au plus, ou une chaîne vide, " +
+        "Réponds uniquement par un objet JSON, sans texte autour : {\"it\": la forme en " + LN() + " à mettre dans un carnet (" + LXC().form + "), " +
+        "\"fr\": la traduction française courte" + LXC().frx + ", \"note\": une précision utile en français (genre, irrégularité, faux ami…), 12 mots au plus, ou une chaîne vide, " +
         "\"ex\": [une phrase d'exemple courte et naturelle en " + LN() + " qui emploie le mot, sa traduction française]}", { modelTier: "quick", cache: true, maxTokens: 300 });
       const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
       const it = String(j.it || "").trim().slice(0, 80), fr = String(j.fr || "").trim().slice(0, 80);

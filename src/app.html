@@ -867,6 +867,13 @@ const COURSES={it:{id:"it",title:"Italiano",name:"italien",speech:"it-IT",keys:"
 M.forEach((m,i)=>{m.id=i;m.course="it"});
 const C=()=>COURSES[S.course]||COURSES.it,LN=()=>C().name,cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
 const cheer=()=>{const g=C().cheers;return g[Math.floor(Math.random()*g.length)]};
+/* Ce qui change d'une langue à l'autre en dehors des leçons : salutations, pays, petits mots de l'oral, professeure. */
+const LX={
+  it:{hi:"Ciao !",hello:["Buonanotte","Buongiorno","Buon pomeriggio","Buonasera"],land:"l'Italie",inLand:"en Italie",adj:"italienne",app:"Italiano passo passo",
+    fill:"allora, dai, beh, eh sì, ah, ecco",tutor:"Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne",fix:"vorrei un caffè",form:"infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle",frx:""},
+  he:{hi:"שָׁלוֹם!",hello:["לַיְלָה טוֹב","בֹּקֶר טוֹב","צָהֳרַיִם טוֹבִים","עֶרֶב טוֹב"],land:"Israël",inLand:"en Israël",adj:"israélienne",app:"Ivrit passo passo",
+    fill:"נוּ, אָז, יַאלְלָה, וָואלָה, טוֹב, אֵה",tutor:"Noa, professeure d'hébreu chaleureuse, patiente et drôle, de Tel Aviv",fix:"אֲנִי רוֹצֶה קָפֶה",form:"avec le niqqud complet ; infinitif pour un verbe, nom au singulier sans article, adjectif au masculin singulier, expression telle quelle",frx:", suivie de sa prononciation entre crochets, comme « livre [sefer] »"}};
+const LXC=()=>LX[C().id]||LX.it;
 const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const OKTAG=/^(H2|H3|P|EM|B|STRONG|I|SUP|BR|DIV|SPAN|TABLE|TBODY|THEAD|TR|TH|TD|UL|OL|LI)$/,OKCLASS=/^(scroll|ex|tip)$/;
 function clean(html){const t=document.createElement("template");t.innerHTML=String(html);
@@ -895,9 +902,9 @@ function applyBase(b){if(!b)return;M.splice(BUILTIN);
   (b.courses||[]).forEach(c=>{if(!c||!isS(c.id))return;let plan=null;try{plan=typeof c.plan==="string"?JSON.parse(c.plan):c.plan}catch(e){}
     if(!plan||!Array.isArray(plan.levels))plan=null;if(c.id==="it"){if(plan)COURSES.it.plan=plan;return}
     if(isS(c.name))COURSES[c.id]={plan,id:c.id,title:isS(c.title)?c.title:c.id,name:c.name,speech:isS(c.speech)?c.speech:"",
-    keys:typeof c.keys==="string"?c.keys.slice(0,16):"",level:isS(c.level)?c.level:"",desc:isS(c.desc)?c.desc:"",route:"",
+    keys:typeof c.keys==="string"?c.keys.slice(0,40):"",level:isS(c.level)?c.level:"",desc:isS(c.desc)?c.desc:"",route:"",guide:isS(c.guide)?c.guide.slice(0,4000):"",rtl:c.rtl===true,
     cheers:Array.isArray(c.cheers)&&c.cheers.length&&c.cheers.every(isS)?c.cheers.slice(0,8):["Bravo !","Exact !","Parfait !"]}});
-  (b.lessons||[]).map(x=>toLesson(x.id,x.d)).filter(m=>m&&COURSES[m.course]).sort((x,y)=>x.order-y.order).forEach(m=>M.push(m));bindPlan()}
+  (b.lessons||[]).map(x=>toLesson(x.id,x.d)).filter(m=>m&&COURSES[m.course]).sort((x,y)=>x.order-y.order).forEach(m=>M.push(m));bindPlan();courseNow()}
 async function loadBase(db){try{const [cs,ls]=await Promise.all([db.collection("courses").limit(100).get(),db.collection("lessons").limit(500).get()]);
     const b={courses:cs.docs.map(d=>Object.assign({},d.data(),{id:d.id})),lessons:ls.docs.map(d=>({id:d.id,d:d.data()})).filter(x=>x.d&&x.d.status!=="draft")};
     let old={};try{old=JSON.parse(localStorage.getItem(BKEY))||{}}catch(e){}
@@ -918,7 +925,16 @@ const mine=()=>{const ss=slots(),keys=new Set(ss.map(x=>x.key)),inPlan=ss.filter
   const extra=M.map((m,i)=>i).filter(i=>M[i].course===C().id&&!keys.has(String(M[i].id))&&(M[i].custom||!ss.length));
   return inPlan.concat(extra.sort((a,b)=>(M[a].order||0)-(M[b].order||0)))};
 const isDone=x=>!!(S[x.key]&&S[x.key].done);
-const current=()=>slots().find(x=>!isDone(x))||null;
+/* Point de départ choisi à l'inscription (S.from[cours] = identifiant de leçon) : les leçons d'avant restent ouvertes mais ne sont plus proposées. */
+const fromN=ss=>{const id=(S.from||{})[C().id];if(!id)return 0;const k=ss.findIndex(x=>x.l.id===id);return k<0?0:k};
+const current=()=>{const ss=slots(),k=fromN(ss);return ss.find(x=>x.n>=k&&!isDone(x))||ss.find(x=>!isDone(x))||null};
+/* Traductions des cours dans une autre écriture : la prononciation est notée entre crochets (« bonjour [shalom] »). */
+const tl=s=>{const m=String(s||"").match(/\[([^\]]+)\]\s*$/);return m?m[1].trim():""},frOnly=s=>String(s||"").replace(/\s*\[[^\]]*\]\s*$/,"").trim();
+/* Changer de langue : chaque cours garde sa progression ; on revient à l'accueil du cours choisi. */
+let COURSE_ON="";
+function courseNow(){const id=C().id;try{document.documentElement.dataset.course=id;document.documentElement.classList.toggle("rtl-course",!!C().rtl)}catch(e){}
+  if(id!==COURSE_ON){COURSE_ON=id;try{window.dispatchEvent(new CustomEvent("ipp-course",{detail:id}))}catch(e){}}}
+function setCourse(id){if(!COURSES[id])return;S.course=id;save();courseNow();home()}
 function openSlot(x){if(x.mi>=0)return go(x.mi);if(AI)return creer({slot:x});
   speakNote("Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, indisponible ici : ouvre la page dans l'app Claude, avec du réseau.")}
 function stopRow(x,cls,label,stateText,pct,fn){const li=el("li"),s=el("button","stop "+cls);s.type="button";
@@ -968,8 +984,12 @@ async function connect(){try{
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
 const btn=(txt,c)=>{const b=el("button","btn"+(c?" "+c:""));b.type="button";b.textContent=txt;return b};
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const norm=s=>s.toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
-const bare=s=>norm(s).replace(/([aeiou])'(?=\s|$|[.,!?])/g,"$1").normalize("NFD").replace(/[̀-ͯ]/g,"");
+/* Hébreu : les voyelles (niqqud) et les signes de cantillation ne comptent pas dans la comparaison ; le maqaf vaut un trait d'union.
+   bare() confond en plus les lettres finales avec leur forme normale (ך/כ…), une faute « légère » comme un accent oublié. */
+const HEB=/[\u0590-\u05FF\uFB1D-\uFB4F]/,unpoint=s=>s.normalize("NFD").replace(/[\u0591-\u05C7]/g,m=>m==="\u05BE"?"-":"").replace(/\u05F3/g,"'").replace(/\u05F4/g,'"');
+const norm=s=>(HEB.test(s)?unpoint(s):s).toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
+const FIN={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+const bare=s=>norm(s).replace(/([aeiou])'(?=\s|$|[.,!?])/g,"$1").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[ךםןףץ]/g,c=>FIN[c]);
 const fmt=q=>q.replace(/___/g,'<span class="blank"></span>').replace(/\(([^)]*)\)/g,"<small>($1)</small>");
 const canSpeak="speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 /* Synthèse vocale. Points délicats : une voix « réseau » (Google, par ex.) ne parle pas hors connexion ; Safari ignore un speak() lancé
@@ -1025,7 +1045,7 @@ function home(){cur=null;view="home";if(pendingBase){applyBase(pendingBase);pend
   root.append(b,syncEl());
   if(Object.keys(COURSES).length>1){const g=el("div","grp");g.append(el("div","count","Cours"));const sg=el("div","seg");
     Object.values(COURSES).forEach(c=>{const x=el("button","chip");x.type="button";x.textContent=c.title+(c.level?" · "+c.level:"");x.setAttribute("aria-pressed",String(c.id===C().id));
-      x.onclick=()=>{S.course=c.id;save();home()};sg.append(x)});g.append(sg);root.append(g)}
+      x.onclick=()=>setCourse(c.id);sg.append(x)});g.append(sg);root.append(g)}
   /* Aujourd'hui : réviser, avancer, parler */
   const today=el("section","today");today.append(el("h2",null,"Aujourd’hui"));const steps=el("ol","steps");
   const step=(t,sub,label,fn,primary)=>{const li=el("li"),d=el("div"),bb=el("b"),sp=el("span");bb.textContent=t;sp.textContent=sub;d.append(bb,sp);const x=btn(label,primary?"primary":"");x.onclick=fn;li.append(d,x);steps.append(li)};
@@ -1283,6 +1303,7 @@ function ctx(job){const c=C(),x=job.slot;
   else{const cu=current();s+="\nDemande de l'apprenant : «"+job.text+"»\n";
     if(cu)s+="Il en est à : "+cu.lv.t+" ("+cu.lv.cecr+"), unité « "+cu.u.t+" ». En dehors du point demandé, n'emploie que des structures qu'il connaît déjà :\n"+(seenList(cu)||"les toutes premières bases.")+"\n"}
   const errs=(S.err||[]).slice(-8).map(e=>"- "+e.q+" → il a répondu : "+e.a).join("\n");if(errs)s+="\nSes erreurs récentes, à réemployer si le sujet s'y prête :\n"+errs+"\n";
+  if(c.guide)s+="\nParticularités de ce cours, à respecter partout : "+c.guide+"\n";
   return s+"\nLa langue cible doit être irréprochable : au moindre doute sur une forme, choisis une autre phrase. Pas de paroles de chansons ni de marques.\n"}
 const P_CORE=job=>ctx(job)+`
 Écris maintenant la PREMIÈRE PARTIE de la leçon : les explications et le vocabulaire. Réponds uniquement avec un objet JSON :
@@ -1806,7 +1827,7 @@ f(s){const d=s.d,answers=d[2].split("|");if(d[4])body.append(el("p","fr",d[4]));
   const check=async()=>{if(done||!inp.value.trim())return;done=true;inp.readOnly=true;ok.disabled=true;keys.hidden=true;
     const u=blankOf(d[1],inp.value),exact=answers.some(a=>norm(a)===norm(u)),loose=answers.some(a=>bare(a)===bare(u));
     if(!loose&&window.QZ&&QZ.alt){const v=await QZ.alt(d[1],answers[0],u,d[3]);if(v&&v.ok){fb(true,s,"Juste aussi ! "+esc(v.why)+" Réponse prévue : <b>"+answers[0]+"</b>.",filled(d[1],u),inp.value);return}}
-    let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?"Attention à l'accent. ":"")+msg;
+    let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?(HEB.test(u)?"Attention aux lettres finales. ":"Attention à l'accent. "):"")+msg;
     fb(loose,s,msg,filled(d[1],answers[0]),u)};
   ok.onclick=check;inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();check()}})},
 o(s){const d=s.d,target=d[2].replace(/[.,!?]/g,""),words=target.split(" ");
@@ -1839,5 +1860,6 @@ d(){const m=M[cur.mi];body.append(el("p","fr","Lis le dialogue. Touche un mot po
   n.onclick=next;row.append(t,n);body.append(row)}
 };
 try{applyBase(JSON.parse(localStorage.getItem(BKEY)))}catch(e){}
+courseNow();
 bindPlan();home();connect();
 </script>

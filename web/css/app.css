@@ -9,7 +9,7 @@
   --note: #FFF4D6; --note-ink: #4A3A00;
   --ok: #11804A; --ok-fill: #19B26B; --ok-bg: #E6F7EE; --ko: #C21D3E; --ko-fill: #FF3B5C; --ko-bg: #FFEDF0;
   --brand: #3B5BFF; --brand-ink: #FFFFFF; --brand-soft: #EEF1FF; --brand-deep: #2A44D6;
-  --display: "Nunito", "Instrument Sans", system-ui, -apple-system, sans-serif; --body: "Nunito", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --display: "Nunito", "Instrument Sans", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif; --body: "Nunito", "Instrument Sans", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif;
   --it: "Instrument Serif", Georgia, serif; --tab-h: 84px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
@@ -811,3 +811,35 @@ button.who { border: 0; background: none; padding: 0; margin: 0; text-align: lef
 .daily-lino { margin-bottom: -4px; }
 .daily-h > .daily-r { flex-direction: row; align-items: center; }
 .daily-h > .daily-r .daily-lino { margin: -10px 0 -6px; }
+
+/* ---------- Langues : choix de la langue, hébreu (de droite à gauche, voyelles) ---------- */
+.lang-chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 8px 0 6px; border-radius: 999px; border: 0; background: var(--chip); color: var(--ink); font: 700 13.5px/1 var(--body); }
+.lang-chip svg { width: 14px; height: 14px; opacity: .55; transform: rotate(90deg); }
+.flag { flex: none; display: inline-block; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(23, 20, 15, .12); }
+.flag-it { background: linear-gradient(90deg, #1F9D55 0 33.3%, #fff 33.3% 66.6%, #D7383F 66.6%); }
+.flag-he { background: linear-gradient(#fff 0 18%, #2457D6 18% 30%, #fff 30% 70%, #2457D6 70% 82%, #fff 82%); }
+.chip .flag { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+.tab-hd-l { display: flex; flex-direction: column; gap: 2px; }
+.tab-hd-l .muted { padding-bottom: 0; }
+.tab-hd .lang-chip { margin-bottom: 4px; }
+.lsheet .lmap-row { flex-direction: row; align-items: center; gap: 12px; }
+.lsheet .lmap-row .flag { width: 30px; height: 30px; }
+.lr-t { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.lsheet .ws-lem { margin: 0 0 4px; }
+.g-he { font-family: "Noto Serif Hebrew", var(--it); font-style: normal; display: inline-block; }
+.g-h2 { font-size: 18px; margin: 18px 0 8px; }
+.g-choices.g-two { flex-direction: row; } .g-choices.g-two .g-choice { flex: 1; }
+.g-choices.g-langs .g-choice { min-height: 72px; }
+.g-choices.g-langs .g-choice b { font-size: 19px; font-weight: 700; }
+
+/* Hébreu : la police à voyelles prend le relais pour les lettres hébraïques ; pas d'italique simulé ;
+   chaque texte hébreu prend son sens de lecture (droite à gauche) sans renverser les phrases françaises. */
+html[data-course="he"] { --it: "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+html[data-course="he"] body { font-synthesis: weight; }
+html[data-course="he"] :is(.it, .word, .opt, .q, .bub, .ws-word, .wt-it, .nw-title, .nw-card-t, .car-heard, .dict, .it-line, .big-it, .q-it, .quote .it, .corr .better, .lesson .ex, .daily-t b, .fb p, .miss b, .lmap-row b, input, textarea, .chip) { unicode-bidi: plaintext; }
+html[data-course="he"] :is(.tray, .pool) { direction: rtl; }
+html[data-course="he"] .lesson em { font-style: normal; font-family: var(--it); font-size: 1.2em; unicode-bidi: isolate; }
+html[data-course="he"] .lesson td em { font-size: 1.45em; }
+html[data-course="he"] :is(.flash .it, .word) { font-size: 1.15em; line-height: 1.5; }
+html[data-course="he"] .keys { direction: rtl; gap: 4px; }
+html[data-course="he"] .keys button { min-width: 34px; min-height: 40px; padding: 0 2px; font: 400 20px/1 "Noto Sans Hebrew", var(--body); }

@@ -299,6 +299,9 @@ const MOCKS = `
   const ctxD = await br.newContext({ viewport: { width: 390, height: 844 } }); await ctxD.addInitScript(MOCKS);
   const d = await newPage(ctxD);
   await d.goto(O + "/"); await d.click("button:has-text('Commencer')");
+  ok(await d.isDisabled("button:has-text('Continuer')"), "il faut d'abord choisir une langue");
+  ok(await d.isVisible(".g-choice:has-text('Italien')") && await d.isVisible(".g-choice:has-text('Hébreu')"), "choix de la langue : italien ou hébreu");
+  await d.click(".g-choice:has-text('Italien')"); await d.click("button:has-text('Continuer')");
   ok(await d.isDisabled("button:has-text('Continuer')"), "il faut choisir au moins une raison");
   await d.click(".g-choice:has-text('Voyager en Italie')"); await d.click(".g-choice:has-text('Pour le travail')"); await d.click("button:has-text('Continuer')");
   await d.click(".g-choice:has-text('Je me débrouille')"); await d.click("button:has-text('Continuer')");
@@ -310,6 +313,7 @@ const MOCKS = `
   await d.waitForFunction(() => /existe déjà/.test(document.querySelector(".g-msg").textContent));
   ok(true, "adresse déjà utilisée signalée");
   await d.waitForSelector("#gate-pass", { timeout: 5000 }); await d.click(".g-back"); await d.click("button:has-text('Commencer')");
+  ok(await d.isVisible(".g-choice[aria-pressed=true]:has-text('Italien')"), "langue gardée après le détour par la connexion"); await d.click("button:has-text('Continuer')");
   ok(await d.isVisible(".g-choice[aria-pressed=true]:has-text('Pour le travail')"), "réponses gardées après le détour par la connexion");
   await d.click("button:has-text('Continuer')"); await d.click(".g-choice:has-text('Je me débrouille')"); await d.click("button:has-text('Continuer')");
   await d.click(".g-choice:has-text('10 minutes')"); await d.click("button:has-text('Continuer')"); await d.fill("#g-name", "Chiara"); await d.click("button:has-text('Continuer')");

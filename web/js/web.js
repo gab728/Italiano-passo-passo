@@ -157,7 +157,7 @@
     pz.append(pr, el("p", "fr small", "Hors mains libres, le micro écoute jusqu'à ce que tu touches ■, même si tu fais des pauses, puis envoie ta phrase.")); vx.append(pz);
     if (canSpeak || hasTts) {
       const tv = el("div", "voice-test"); tv.append(el("b", null, "Écouter les personnages"));
-      const SAMPLES = [["giulia", "Giulia", "Ciao! Allora, come è andata la giornata? Raccontami un po'."], ["marco", "Marco", "Buongiorno! Un caffè al volo o ti siedi un attimo?"], ["sofia", "Sofia", "Dai, sabato andiamo a quella mostra in centro? Poi un aperitivo!"], ["rosa", "Nonna Rosa", "Tesoro mio, hai mangiato? Vieni qua, assaggia questo ragù."]];
+      const SAMPLES = C().id === "he" ? [["giulia", "Noa", "שָׁלוֹם! מָה נִשְׁמָע? סַפֵּר לִי קְצָת עַל הַיּוֹם שֶׁלְּךָ."], ["marco", "Avi", "בֹּקֶר טוֹב! קָפֶה הָפוּךְ אוֹ אֶסְפְּרֶסּוֹ?"], ["sofia", "Maya", "יַאלְלָה, בְּשַׁבָּת הוֹלְכִים לַיָּם? אַחַר כָּךְ פָלָאפֶל!"], ["rosa", "Savta Rivka", "מוֹתֶק, אָכַלְתָּ? בּוֹא, תִּטְעַם אֶת הַשַּׁקְשׁוּקָה."]] : [["giulia", "Giulia", "Ciao! Allora, come è andata la giornata? Raccontami un po'."], ["marco", "Marco", "Buongiorno! Un caffè al volo o ti siedi un attimo?"], ["sofia", "Sofia", "Dai, sabato andiamo a quella mostra in centro? Poi un aperitivo!"], ["rosa", "Nonna Rosa", "Tesoro mio, hai mangiato? Vieni qua, assaggia questo ragù."]];
       const row = el("div", "rowb");
       SAMPLES.forEach(([who, name, line]) => { const b = btn(name); b.onclick = () => { stopSpeech(); VO.say(line, VO.IT(), 0.95, who); }; row.append(b); });
       tv.append(row); vx.append(tv);
@@ -167,11 +167,11 @@
     // Mémoire des conversations
     const mm = el("section", "panel mem"); mm.append(el("h2", null, "Ce que les personnages savent de toi"));
     const memFacts = (S.mem && S.mem._me && S.mem._me.facts) || [], memWho = Object.keys(S.mem || {}).filter((k) => k !== "_me" && S.mem[k] && S.mem[k].n);
-    if (!memFacts.length && !memWho.length) mm.append(el("p", "fr", "Rien pour l'instant. Après chaque conversation, Giulia, Marco, Sofia et Nonna Rosa retiennent ce que tu leur as raconté, pour reprendre la discussion là où vous l'aviez laissée."));
+    if (!memFacts.length && !memWho.length) mm.append(el("p", "fr", "Rien pour l'instant. Après chaque conversation, " + Object.values(window.PERSONAS || {}).map((p) => p.name).join(", ").replace(/, ([^,]*)$/, " et $1") + " retiennent ce que tu leur as raconté, pour reprendre la discussion là où vous l'aviez laissée."));
     else {
       mm.append(el("p", "fr", "Retenu au fil de tes conversations, pour que chacun reprenne le fil et aille plus loin. Ça reste dans ton compte."));
       if (memFacts.length) { const ul = el("ul", "mem-list"); memFacts.forEach((f) => { const li = el("li"); li.textContent = f; ul.append(li); }); mm.append(ul); }
-      if (memWho.length) mm.append(el("p", "small", "Conversations retenues : " + memWho.map((k) => ((window.PERSONAS || {})[k] || {}).name || (k.startsWith("role-") ? "jeux de rôle" : k)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + "."));
+      if (memWho.length) mm.append(el("p", "small", "Conversations retenues : " + memWho.map((k) => ((window.PERSONAS || {})[k.replace(/^[a-z]{2}:/, "")] || {}).name || (k.startsWith("role-") ? "jeux de rôle" : k)).filter((v, i, a) => a.indexOf(v) === i).join(", ") + "."));
       const clr = el("button", "linkbtn", "Effacer la mémoire"); clr.type = "button";
       clr.onclick = () => { if (!clr.dataset.sure) { clr.dataset.sure = 1; clr.textContent = "Confirmer : tout oublier"; return; } S.mem = {}; save(); account(); };
       mm.append(clr);
@@ -222,7 +222,7 @@
         go.disabled = true; res.innerHTML = ""; res.append(el("li", null, "Vérification…"));
         try {
           const r = await W.admin("health"); res.innerHTML = "";
-          [["claude", "Claude"], ["voice", "Voix naturelles"], ["voix_it", "Voix italiennes"], ["dictee", "Dictée (micro)"], ["cache", "Cache des voix"]].forEach(([k, label]) => {
+          [["claude", "Claude"], ["voice", "Voix naturelles"], ["voix_it", "Voix italiennes"], ["voix_he", "Voix hébraïques"], ["dictee", "Dictée (micro)"], ["cache", "Cache des voix"]].forEach(([k, label]) => {
             const x = r[k]; if (!x) return; const li = el("li", x.ok ? "ok" : "ko"); li.append(el("b", null, (x.ok ? "✓ " : "✕ ") + label + (x.ok && x.from ? " · " + x.from : ""))); if (!x.ok && x.why) li.append(el("span", null, x.why)); res.append(li);
           });
         } catch (e) { res.innerHTML = ""; res.append(el("li", "ko", e.message || aiFail(e))); }

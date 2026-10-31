@@ -8,4 +8,13 @@ t("Tu ___ a Parigi?", "abiti", "abiti");
 t("Abito ___ Parigi, ___ Francia.", "Abito a Parigi, in Francia.", "a / in");
 t("Io ___ (venire) da Parigi.", "io vengo da Parigi", "vengo");
 t("Tu ___ a Parigi?", "Tu abiti Parigi", "Tu abiti Parigi");
+// Hébreu : voyelles ignorées, lettres finales confondues seulement par bare(), translittération lue entre crochets.
+const line = (n) => src.match(new RegExp("^const " + n + "=.*$", "m"))[0].replace(/^const /, "var ");
+eval([line("HEB"), line("norm"), line("FIN"), line("bare"), line("tl")].join(";\n"));
+const h = (ok, m) => { if (!ok) bad++; console.log((ok ? "ok  " : "FAIL ") + m); };
+h(norm("שָׁלוֹם") === "שלום", "hébreu : voyelles ignorées");
+h(norm("שלומ") !== norm("שלום") && bare("שלומ") === bare("שָׁלוֹם"), "hébreu : lettre finale oubliée, faute légère seulement");
+h(norm("רַב־קַו") === "רב-קו", "hébreu : maqaf lu comme un trait d'union");
+h(norm("Città") === "città" && bare("Città") === "citta", "italien inchangé");
+h(tl("bonjour, au revoir [shalom]") === "shalom" && frOnly("bonjour [shalom]") === "bonjour", "prononciation entre crochets");
 process.exit(bad ? 1 : 0);

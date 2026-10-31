@@ -39,7 +39,7 @@
     const wait = el("p", "fr qz-wait", "Ce n'est pas la réponse prévue : je vérifie si la tienne marche aussi…"); body.append(wait);
     try {
       const r = await Promise.race([
-        AI("Exercice à trous d'italien pour un francophone.\nPhrase : " + sentence + "\nRéponse prévue : " + expected + "\nCe que l'exercice fait travailler : " + String(rule || "").replace(/<[^>]+>/g, "") + "\nRéponse de l'élève : " + given + "\n\n" +
+        AI("Exercice à trous d'" + LN() + " pour un francophone.\nPhrase : " + sentence + "\nRéponse prévue : " + expected + "\nCe que l'exercice fait travailler : " + String(rule || "").replace(/<[^>]+>/g, "") + "\nRéponse de l'élève : " + given + "\n\n" +
           "Mise dans le trou, sa réponse donne-t-elle une phrase correcte et naturelle, qui respecte aussi le point travaillé (même accord, même temps, même personne) ? Un autre mot que celui prévu est accepté s'il convient. Ignore majuscules et ponctuation.\n" +
           "Réponds uniquement par un objet JSON : {\"ok\": true ou false, \"explication\": \"en français, une phrase courte : pourquoi c'est juste, ou ce qui ne va pas\"}",
           { modelTier: "quick", cache: true, maxTokens: 250 }),
@@ -77,7 +77,7 @@
     setTimeout(() => { try { tb.inp.focus({ preventScroll: true }); } catch (e) { /* rien */ } }, 50);
     return wrap;
   }
-  const verdict = (r, answer) => r.how === "exact" ? null : r.how === "accent" ? "Attention à l'accent : " + answer + "." : r.how === "typo" ? "Presque, attention à l'orthographe : " + answer + "." : null;
+  const verdict = (r, answer) => r.how === "exact" ? null : r.how === "accent" ? (HEB.test(answer) ? "Attention aux lettres finales : " : "Attention à l'accent : ") + answer + "." : r.how === "typo" ? "Presque, attention à l'orthographe : " + answer + "." : null;
 
   /* Exercices à choix des leçons : réponse libre si la réponse attendue est courte et la phrase à trous. */
   const baseM = R.m;
@@ -112,7 +112,8 @@
     const V = vstat(), toIt = cfg.dir === "fr-it";
     if (cfg.src === "due" && !V.due.length) return home();
     let pool = shuffle(V[cfg.src] && V[cfg.src].length ? V[cfg.src] : V.all); if (cfg.n) pool = pool.slice(0, cfg.n);
-    const A = (w) => (toIt ? w.it : w.fr), Q = (w) => (toIt ? w.fr : w.it);
+    // La prononciation notée entre crochets (« bonjour [shalom] ») ne s'affiche pas dans la question, mais elle est acceptée comme réponse.
+    const A = (w) => (toIt ? w.it : frOnly(w.fr)), Q = (w) => (toIt ? frOnly(w.fr) : w.it);
     let i = 0, ok = 0; const miss = [];
     function ask() {
       if (i >= pool.length) return fin();
@@ -126,7 +127,7 @@
       const add = (o) => { if (ds.length < 3 && !ds.some((x) => A(x) === A(o))) ds.push(o); };
       shuffle(others.filter((o) => o.mi === w.mi)).slice(0, 2).forEach(add); shuffle(others).forEach(add);
       const options = shuffle([w].concat(ds)).map((o) => ({ t: A(o), good: o === w }));
-      body.append(answerBox({ answers: [A(w)], options, onDone: (r) => {
+      body.append(answerBox({ answers: toIt && tl(w.fr) ? [A(w), tl(w.fr)] : [A(w)], options, onDone: (r) => {
         const good = r.how !== "no";
         // Trouvé seul : le mot est su. Avec les propositions ou raté : il va (ou reste) au carnet.
         if (good) ok++;
@@ -168,7 +169,9 @@
   const load = (id) => { try { return JSON.parse(localStorage.getItem(KEY(id)) || "{}") || {}; } catch (e) { return {}; } };
   const store = (id, v) => { try { localStorage.setItem(KEY(id), JSON.stringify(v)); } catch (e) { /* rien */ } };
   const answerOf = (x) => Array.isArray(x[2]) ? String(x[2][0]) : String(x[2]).split("|")[0];
-  const holes = (m) => (m.ex || []).concat(m.dq || []).filter((x) => Array.isArray(x) && typeof x[1] === "string" && /___/.test(x[1]) && x[2] != null);
+  // Hébreu : seulement les phrases hébraïques dont la réponse est en hébreu (pas les questions de lecture « Comment se lit… ? »).
+  const holes = (m) => (m.ex || []).concat(m.dq || []).filter((x) => Array.isArray(x) && typeof x[1] === "string" && /___/.test(x[1]) && x[2] != null &&
+    (m.course !== "he" || (HEB.test(x[1].replace(/\([^)]*\)/g, "")) && HEB.test(answerOf(x)))));
   const pending = {};
   async function prime(m) {
     if (!m || m.id == null || typeof AI !== "function" || pending[m.id]) return;
@@ -177,8 +180,8 @@
     pending[m.id] = true;
     try {
       const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  " + answerOf(x)).join("\n");
-      const r = await AI("Pour chaque phrase d'exercice d'italien ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot italien et le mette à la bonne forme.\n" +
-        "Règles : jamais le mot italien attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
+      const r = await AI("Pour chaque phrase d'exercice d'" + LN() + " ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot " + (C().id === "he" ? "hébreu" : "italien") + " et le mette à la bonne forme.\n" +
+        "Règles : jamais le mot " + (C().id === "he" ? "hébreu" : "italien") + " attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
         "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre, sans parenthèses.",
         { modelTier: "quick", cache: true, maxTokens: 120 + 40 * todo.length });
       const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));

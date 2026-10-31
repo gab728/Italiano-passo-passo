@@ -4,10 +4,12 @@
    puis des exercices d'écriture en trois niveaux. Une notizia écrite une fois sert à tous les membres. */
 const NEWS = (() => {
   const W = window.WEBAUTH;
-  const THEMES = [["une", "À la une"], ["monde", "Monde"], ["politique", "Politique"], ["economie", "Économie"], ["tech", "Tech"], ["sciences", "Sciences"],
+  const THEMES_IT = [["une", "À la une"], ["monde", "Monde"], ["politique", "Politique"], ["economie", "Économie"], ["tech", "Tech"], ["sciences", "Sciences"],
     ["culture", "Culture"], ["cinema", "Cinéma"], ["voyages", "Voyages"], ["gastronomie", "Gastronomie"], ["sport", "Sport"], ["calcio", "Calcio"],
     ["sante", "Santé"], ["lifestyle", "Lifestyle"], ["moteurs", "Auto-moto"], ["rome", "Rome"], ["milan", "Milan"], ["naples", "Naples"], ["toscane", "Toscane"]];
-  const NAME = Object.fromEntries(THEMES);
+  // Hébreu : les rubriques du site ynet.
+  const THEMES_HE = [["une", "À la une"], ["actu", "Infos"], ["economie", "Économie"], ["tech", "Tech"], ["conso", "Consommation"], ["sante", "Santé"], ["sport", "Sport"], ["culture", "Culture"]];
+  let THEMES = THEMES_IT, NAME = Object.fromEntries(THEMES);
   // Une icône et une teinte par thème.
   const IP = {
     une: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/>', monde: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
@@ -18,16 +20,21 @@ const NEWS = (() => {
     sport: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6c4 2 8.8 2 12.8 0M5.6 18.4c4-2 8.8-2 12.8 0"/>', calcio: '<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/>',
     sante: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', lifestyle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/>',
     moteurs: '<path d="M5 16.5V12l2-5.5h10l2 5.5v4.5"/><path d="M3.5 12h17"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/>',
+    actu: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/>',
+    conso: '<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>',
   };
   const pin = '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>';
   const icon = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IP[k] || pin) + "</svg>";
   const tint = (k) => "tint-" + (Math.max(0, THEMES.findIndex((t) => t[0] === k)) % 5);
   const DIFF = [["facile", "Facile", "Mots, phrases à remettre en ordre, phrases courtes à traduire"], ["moyen", "Moyen", "Traductions, dictée, phrases à transformer, une réponse rédigée"], ["difficile", "Difficile", "Longues traductions, dictée, transformations, résumé et avis rédigés"]];
   const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
-  const themes = () => (Array.isArray(S.nth) ? S.nth.filter((t) => NAME[t]) : []);
+  // Thèmes choisis, par langue (l'italien garde S.nth, les autres langues S.nthc[langue]).
+  const nthGet = () => (C().id === "it" ? S.nth : (S.nthc || {})[C().id]);
+  const nthSet = (v) => { if (C().id === "it") S.nth = v; else S.nthc = Object.assign({}, S.nthc || {}, { [C().id]: v }); };
+  const themes = () => (Array.isArray(nthGet()) ? nthGet().filter((t) => NAME[t]) : []);
   /* Ce que l'élève a appris : l'étape dépend des leçons de grammaire terminées (passé composé, imparfait, futur…).
      L'article et les exercices n'emploient que ces temps ; une notizia est partagée entre membres de la même étape. */
-  const STAGES = [
+  const STAGES_IT = [
     { id: "s1", name: "présent", allow: "le présent de l'indicatif seulement (verbes réguliers et irréguliers courants), c'è / ci sono, les prépositions, les possessifs, piacere, stare + gérondif, le futur proche exprimé par le présent. AUCUN temps du passé, ni futur, ni conditionnel, ni subjonctif, ni impératif : raconte tout au présent (« Oggi il Comune presenta… », « Domani comincia… »)", words: 90, block: /pass[ée] compos|passato|imparfait|imperfetto|futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|g[ée]rondif pass|passif/i },
     { id: "s2", name: "présent et passé composé", allow: "le présent et le passato prossimo (avec avere et essere, participes irréguliers courants). PAS d'imparfait, de futur, de conditionnel, de subjonctif ni d'impératif", words: 110, block: /imparfait|imperfetto|futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|passif/i },
     { id: "s3", name: "présent, passé composé, imparfait", allow: "le présent, le passato prossimo et l'imparfait. PAS de futur, de conditionnel, de subjonctif ni d'impératif", words: 130, block: /futur|conditionnel|condizionale|subjonctif|congiuntivo|imp[ée]ratif|plus-que-parfait|passif/i },
@@ -35,28 +42,47 @@ const NEWS = (() => {
     { id: "s5", name: "jusqu'au subjonctif présent", allow: "tous les temps de l'indicatif courants, le conditionnel, le subjonctif présent, le si impersonnel et le gérondif. PAS de subjonctif imparfait ni de phrases hypothétiques au passé", words: 170, block: /subjonctif imparfait|congiuntivo imperfetto|hypoth[ée]tique|plus-que-parfait du subj|passif/i },
     { id: "s6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris les hypothèses, le conditionnel passé et le plus-que-parfait", words: 180, block: null },
   ];
-  const MILESTONES = ["it-u07-l1", "it-u08-l1", "it-u11-l1", "it-u15-l1", "it-u16-l1"];
+  const MILESTONES_IT = ["it-u07-l1", "it-u08-l1", "it-u11-l1", "it-u15-l1", "it-u16-l1"];
+  // Hébreu : fermé tant que l'alef-bet n'est pas fini (on ne lit pas encore), puis présent, passé, futur, tout.
+  const STAGES_HE = [
+    { id: "h0", name: "l'alef-bet", locked: true, allow: "", words: 0, block: null },
+    { id: "h1", name: "présent", allow: "le présent (quatre formes), les phrases sans verbe être, יֵשׁ / אֵין, l'infinitif après רוֹצֶה, אוֹהֵב, יָכוֹל, צָרִיךְ. AUCUN passé ni futur : raconte tout au présent (« הַיּוֹם הָעִירִיָּה פּוֹתַחַת… »)", words: 70, block: /pass[ée]|futur|conditionnel|imp[ée]ratif|pi'?el|hif'?il|hitpa'?el|passif|smikh/i },
+    { id: "h2", name: "présent et passé", allow: "le présent et le passé des verbes courants (surtout pa'al). PAS de futur, de conditionnel ni de passif", words: 90, block: /futur|conditionnel|imp[ée]ratif|passif|hitpa'?el/i },
+    { id: "h3", name: "présent, passé, futur", allow: "le présent, le passé et le futur des verbes courants, la smikhout. PAS de conditionnel ni de passif", words: 110, block: /conditionnel|passif/i },
+    { id: "h4", name: "tous les temps du niveau B1", allow: "les temps et les binyanim du niveau B1, y compris le conditionnel et le passif courant", words: 150, block: null },
+  ];
+  const MILESTONES_HE = ["he-u03-l4", "he-u08-l1", "he-u09-l1", "he-u11-l1"];
+  const SRC = {
+    it: { themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
+    he: { themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
+  };
+  let STAGES = STAGES_IT, MILESTONES = MILESTONES_IT, SR = SRC.it;
+  function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; }
+  setLang(); window.addEventListener("ipp-course", setLang);
   function stage() {
-    const ss = slots(), done = new Set(ss.filter(isDone).map((x) => String(x.l.id)));
+    const ss = slots(), k0 = fromN(ss), done = new Set(ss.filter((x) => isDone(x) || x.n < k0).map((x) => String(x.l.id)));
     let k = 0; while (k < MILESTONES.length && done.has(MILESTONES[k])) k++;
     return STAGES[k];
   }
   const lvl = () => stage().id;
+  // Hébreu : voyelles selon le niveau, translittération des mots-clés.
+  const heNews = () => C().id !== "he" ? "" : "Hébreu israélien moderne. " + (["h1", "h2"].includes(lvl()) ? "Écris tout le texte AVEC le niqqud complet (voyelles). " : "Écris le texte sans niqqud, mais mets le niqqud sur les mots-clés et les mots difficiles. ") +
+    "Dans les mots-clés, ajoute la prononciation entre crochets à la fin de la traduction : « gouvernement [memshala] ». Les consignes en français ; les phrases en hébreu.\n";
   const ago = (iso) => { if (!iso) return ""; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? "il y a " + Math.max(m, 1) + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* plein */ } } };
 
   /* --- Dépêches, gardées 30 minutes --- */
   async function items(force) {
     const th = themes(); if (!th.length) return [];
-    const c = ls.get("ipp-news-feed");
+    const FK = "ipp-news-feed" + (C().id === "it" ? "" : "-" + C().id), c = ls.get(FK);
     if (!force && c && c.k === th.join(",") && Date.now() - c.t < 30 * 60000) return c.items;
     try {
-      const r = await (await W.call("news", { themes: th })).json();
+      const r = await (await W.call("news", { themes: th, lang: C().id })).json();
       const seen = new Set(), list = (r.items || []).filter((x) => !seen.has(x.id) && seen.add(x.id));
       // Les thèmes s'alternent ; dans chaque thème, la plus récente d'abord.
       const by = th.map((t) => list.filter((x) => x.theme === t).sort((a, b) => (b.date || "").localeCompare(a.date || "")));
       const out = []; for (let i = 0; i < 12; i++) by.forEach((l) => { if (l[i]) out.push(l[i]); });
-      ls.set("ipp-news-feed", { k: th.join(","), t: Date.now(), items: out });
+      ls.set(FK, { k: th.join(","), t: Date.now(), items: out });
       return out;
     } catch (e) { if (c && c.items) return c.items; throw e; }
   }
@@ -70,18 +96,18 @@ const NEWS = (() => {
     if (!AI) throw { code: "offline" };
     onStep && onStep("write");
     const sg = STAGES.find((x) => x.id === lv) || stage();
-    const prompt = "Tu prépares une leçon d'italien à partir d'une dépêche de l'agence ANSA, pour un francophone adulte qui apprend l'italien.\n" +
+    const prompt = "Tu prépares une leçon d'" + LN() + " à partir d'" + SR.agency + ", pour un francophone adulte qui apprend l'" + LN() + ".\n" + heNews() +
       "Ce qu'il a déjà appris, et donc la seule grammaire permise dans l'article ET dans tous les exercices : " + sg.allow + ". Vocabulaire simple et fréquent ; phrases courtes. Les consignes de transformation ne portent que sur ce qu'il connaît (négation, pluriel, changer de personne, et les temps permis).\n" +
       "Dépêche (" + (NAME[it.theme] || it.theme) + ", " + (it.date || "") + ") :\nTitre : " + it.title + "\nRésumé : " + (it.summary || "") + "\n\n" +
-      "Écris ta propre courte notizia en italien sur ce sujet, à ce niveau : n'invente aucun fait au-delà de la dépêche (si le résumé est maigre, reste général), ne recopie pas de phrases entières de la dépêche. " + "Environ " + sg.words + " mots." + "\n" +
+      "Écris ta propre courte notizia en " + LN() + " sur ce sujet, à ce niveau : n'invente aucun fait au-delà de la dépêche (si le résumé est maigre, reste général), ne recopie pas de phrases entières de la dépêche. " + "Environ " + sg.words + " mots." + "\n" +
       "Réponds uniquement par un objet JSON, sans texte autour :\n" +
-      '{"title": "titre en italien, simple", "title_fr": "titre en français", "text": ["3 ou 4 paragraphes en italien"], "text_fr": ["leur traduction, paragraphe par paragraphe"], ' +
+      '{"title": "titre en ' + LN() + ', simple", "title_fr": "titre en français", "text": ["3 ou 4 paragraphes en ' + LN() + '"], "text_fr": ["leur traduction, paragraphe par paragraphe"], ' +
       '"keywords": [["mot ou expression du texte, les noms avec article", "traduction", "note courte en français ou chaîne vide"]] (8), ' +
-      '"structure": {"name": "une structure de phrase du texte, nommée en français", "explain": "explication en 2 ou 3 phrases, en français", "examples": [["exemple en italien", "traduction"]] (2)}, ' +
-      '"ex": {"order": ["phrase courte du texte, 5 à 8 mots"] (3), "translate_easy": [["phrase française courte", "traduction italienne|variante acceptée"]] (3), ' +
+      '"structure": {"name": "une structure de phrase du texte, nommée en français", "explain": "explication en 2 ou 3 phrases, en français", "examples": [["exemple en ' + LN() + '", "traduction"]] (2)}, ' +
+      '"ex": {"order": ["phrase courte du texte, 5 à 8 mots"] (3), "translate_easy": [["phrase française courte", "traduction en ' + LN() + '|variante acceptée"]] (3), ' +
       '"translate": [["phrase française de longueur moyenne, sur le sujet", "traduction|variante"]] (4), "translate_hard": [["phrase française longue, avec une subordonnée", "traduction|variante"]] (3), ' +
-      '"dictation": ["phrase du texte, de 6 à 14 mots"] (3), "transform": [["consigne en français (ex. : Mets au passé composé, Mets à la forme négative, Remplace par un pronom)", "phrase de départ en italien", "phrase attendue|variante"]] (4), ' +
-      '"questions": [["question en italien sur le texte", "sa traduction", "une réponse possible en italien"]] (2), "opinion": ["question en italien qui demande l\'avis de l\'élève", "sa traduction"]}}\n' +
+      '"dictation": ["phrase du texte, de 6 à 14 mots"] (3), "transform": [["consigne en français (ex. : Mets au passé composé, Mets à la forme négative, Remplace par un pronom)", "phrase de départ en ' + LN() + '", "phrase attendue|variante"]] (4), ' +
+      '"questions": [["question en ' + LN() + ' sur le texte", "sa traduction", "une réponse possible en ' + LN() + '"]] (2), "opinion": ["question en ' + LN() + ' qui demande l\'avis de l\'élève", "sa traduction"]}}\n' +
       "Les traductions attendues doivent être irréprochables ; les variantes séparées par | couvrent les autres façons correctes et courantes de le dire.";
     const r = await AI(prompt, { cache: false, maxTokens: 9000 });
     let d; try { d = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, "")); } catch (e) { throw { code: r.truncated ? "truncated" : "invalid_json" }; }
@@ -112,13 +138,22 @@ const NEWS = (() => {
     const wrap = el("div", "nw-themes"); wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", "Mes thèmes");
     THEMES.forEach(([k, n]) => {
       const b = el("button", "nwt " + tint(k)); b.type = "button"; b.innerHTML = '<span class="theme-ic">' + icon(k) + "</span>"; b.append(txt("span", "theme-n", n)); b.setAttribute("aria-pressed", String(themes().includes(k)));
-      b.onclick = () => { const cur = themes(); S.nth = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k).slice(-8); save(); b.setAttribute("aria-pressed", String(S.nth.includes(k))); onChange && onChange(); };
+      b.onclick = () => { const cur = themes(), nx = cur.includes(k) ? cur.filter((x) => x !== k) : cur.concat(k).slice(-8); nthSet(nx); save(); b.setAttribute("aria-pressed", String(nx.includes(k))); onChange && onChange(); };
       wrap.append(b);
     });
     host.append(wrap);
   }
   // Liste des nouvelles, affichée dans l'onglet Leçons (segment « Actualités »).
+  // Fermé (hébreu avant la fin de l'alef-bet) : on explique pourquoi et combien de leçons il reste.
+  function lockedInto(host) {
+    const ss = slots(), k = ss.findIndex((x) => x.l.id === MILESTONES[0]), left = k < 0 ? 0 : ss.slice(0, k + 1).filter((x) => !isDone(x) && x.n >= fromN(ss)).length;
+    const intro = el("div", "nw-intro"); if (window.LINO) intro.append(LINO("think", 64));
+    intro.append(txt("p", null, "Les actualités en " + LN() + " s'ouvrent quand tu sais lire : termine d'abord l'alef-bet" + (left ? " (encore " + left + (left > 1 ? " leçons)." : " leçon).") : ".")));
+    host.append(intro);
+    const go = btn("Continuer l'alef-bet", "primary"); go.onclick = () => (window.UI ? UI.go("lessons") : home()); host.append(go);
+  }
   async function listInto(host, editThemes, again) {
+    if (stage().locked) return lockedInto(host);
     const th = themes();
     if (!th.length || editThemes) {
       const intro = el("div", "nw-intro"); if (window.LINO) intro.append(LINO("wave", 64));
@@ -155,8 +190,8 @@ const NEWS = (() => {
     stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + stage().name), txt("h2", null, it.title));
     const st = el("ul", "req"), mk = (t) => { const li = el("li"), a = txt("span", null, t), b = txt("span", "count", "à venir"); li.append(a, b); st.append(li); return b; };
-    const s1 = mk("Lecture de la dépêche"), s2 = mk("Écriture de ta notizia et des exercices"), s3 = mk("Partage avec les autres membres");
-    const note = txt("p", "fr", "Une notizia déjà préparée s'ouvre tout de suite ; sinon Claude l'écrit en une minute environ."); note.setAttribute("role", "status");
+    const s1 = mk("Lecture de la dépêche"), s2 = mk("Écriture de ton article et des exercices"), s3 = mk("Partage avec les autres membres");
+    const note = txt("p", "fr", "Un article déjà préparée s'ouvre tout de suite ; sinon Claude l'écrit en une minute environ."); note.setAttribute("role", "status");
     body.append(st, note); s1.textContent = "en cours…";
     if (WEB && WEB.keepAwake) WEB.keepAwake();
     let d;
@@ -172,7 +207,7 @@ const NEWS = (() => {
     stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + ((STAGES.find((x) => x.id === d.level) || stage()).name)));
     body.append(txt("h2", "nw-title", d.title)); if (d.title_fr) body.append(txt("p", "muted nw-title-fr", d.title_fr));
-    const src = el("p", "nw-src"); src.append(txt("span", null, "D'après une dépêche ANSA" + (it.date ? " · " + new Date(it.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
+    const src = el("p", "nw-src"); src.append(txt("span", null, SR.from + (it.date ? " · " + new Date(it.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
     const a = el("a"); a.href = it.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = "lire l'original"; src.append(a); body.append(src);
     const tools = el("div", "nw-tools");
     const play = el("button", "pill-btn"); play.type = "button"; play.textContent = "Écouter l'article";
@@ -257,7 +292,7 @@ const NEWS = (() => {
   }
   // Correction par Claude quand la réponse ne correspond pas mot pour mot : synonymes et autres tournures correctes acceptés.
   async function correct(kind, consigne, expected, given) {
-    const r = await AI("Tu corriges un exercice d'italien d'un francophone (niveau " + vLevel().cecr + ").\nType : " + kind + "\nConsigne : " + consigne + "\n" + (expected ? "Une réponse correcte possible : " + expected + "\n" : "") + "Réponse de l'élève : " + given + "\nIl ne connaît que : " + stage().allow + ". Ne lui reproche pas de ne pas employer d'autres temps.\n\n" +
+    const r = await AI("Tu corriges un exercice d'" + LN() + " d'un francophone (niveau " + vLevel().cecr + ").\nType : " + kind + "\nConsigne : " + consigne + "\n" + (expected ? "Une réponse correcte possible : " + expected + "\n" : "") + "Réponse de l'élève : " + given + "\nIl ne connaît que : " + stage().allow + ". Ne lui reproche pas de ne pas employer d'autres temps.\n\n" +
       "Réponds uniquement par un objet JSON : {\"ok\": true si sa réponse est correcte et naturelle, même si elle diffère de la réponse proposée (ignore majuscules et ponctuation), \"presque\": true s'il n'y a qu'une petite faute (accent, accord, une lettre), \"corrige\": \"sa réponse corrigée, ou la meilleure version si elle est hors sujet\", \"explication\": \"en français, une ou deux phrases sur ses fautes et la règle, ou un encouragement précis si tout est juste\"}",
       { modelTier: "quick", cache: false, maxTokens: 500 });
     const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
@@ -304,8 +339,8 @@ const NEWS = (() => {
         catch (e) { done(false, "Réponse attendue. (" + aiFail(e) + ")", first); if (s.t === "word") missed.push(s.x); }
       };
       const head = (kind, q) => { curQ = { kind, q: q || (s.t === "dictation" ? s.x : s.t === "order" ? s.x : "") }; given = ""; body.append(txt("div", "kind", kind)); if (q) body.append(txt("p", "q", q)); };
-      if (s.t === "word") { head("Mot-clé · écris-le en italien", s.x[1]); box("En italien", (v) => check("traduire un mot", "Traduis en italien : " + s.x[1], s.x[0], v), { answer: s.x[0] }); }
-      else if (s.t === "translate") { head("Traduis en italien", s.x[0]); box("Ta traduction", (v) => check("traduction", "Traduis en italien : " + s.x[0], s.x[1], v), { long: s.x[0].length > 60, rows: 2, answer: s.x[1].split("|")[0] }); }
+      if (s.t === "word") { head("Mot-clé · écris-le en " + LN(), s.x[1]); box("En " + LN(), (v) => check("traduire un mot", "Traduis en " + LN() + " : " + s.x[1], s.x[0], v), { answer: s.x[0] }); }
+      else if (s.t === "translate") { head("Traduis en " + LN(), s.x[0]); box("Ta traduction", (v) => check("traduction", "Traduis en " + LN() + " : " + s.x[0], s.x[1], v), { long: s.x[0].length > 60, rows: 2, answer: s.x[1].split("|")[0] }); }
       else if (s.t === "transform") { head(s.x[0], s.x[1]); box("La phrase transformée", (v) => check("transformation", s.x[0] + " : " + s.x[1], s.x[2], v), { long: s.x[1].length > 60, rows: 2, answer: s.x[2].split("|")[0] }); }
       else if (s.t === "dictation") {
         head("Dictée · écoute et écris la phrase");
@@ -324,15 +359,15 @@ const NEWS = (() => {
         body.append(tray, pool, ok);
       }
       else if (s.t === "question") {
-        head("Réponds en italien, par une phrase complète", s.x[0]); if (s.x[1]) body.append(txt("p", "muted small", s.x[1]));
+        head("Réponds en " + LN() + ", par une phrase complète", s.x[0]); if (s.x[1]) body.append(txt("p", "muted small", s.x[1]));
         box("Ta réponse", async (v) => { try { const c = await correct("réponse à une question sur l'article", s.x[0] + " (article : " + d.text.join(" ").slice(0, 700) + ")", s.x[2] || "", v); done(c.ok ? true : c.near ? "near" : false, c.why, c.ok ? null : c.fix); } catch (e) { done(false, aiFail(e), s.x[2] || ""); } }, { long: true, rows: 2, answer: s.x[2] || "" });
       }
       else if (s.t === "summary") {
-        head("Résume l'article en italien, en 2 ou 3 phrases");
-        box("Ton résumé", async (v) => { try { const c = await correct("résumé de l'article en 2 ou 3 phrases", "Résume en italien cet article : " + d.text.join(" ").slice(0, 900), "", v); done(c.ok ? true : c.near ? "near" : false, c.why, c.fix); } catch (e) { done(false, aiFail(e), ""); } }, { long: true, rows: 4 });
+        head("Résume l'article en " + LN() + ", en 2 ou 3 phrases");
+        box("Ton résumé", async (v) => { try { const c = await correct("résumé de l'article en 2 ou 3 phrases", "Résume en " + LN() + " cet article : " + d.text.join(" ").slice(0, 900), "", v); done(c.ok ? true : c.near ? "near" : false, c.why, c.fix); } catch (e) { done(false, aiFail(e), ""); } }, { long: true, rows: 4 });
       }
       else if (s.t === "opinion") {
-        head("Donne ton avis en italien, en 3 ou 4 phrases", s.x[0]); if (s.x[1]) body.append(txt("p", "muted small", s.x[1]));
+        head("Donne ton avis en " + LN() + ", en 3 ou 4 phrases", s.x[0]); if (s.x[1]) body.append(txt("p", "muted small", s.x[1]));
         box("Ton avis", async (v) => { try { const c = await correct("avis personnel argumenté (le fond est libre : juge seulement la langue)", s.x[0], "", v); done(c.ok ? true : c.near ? "near" : false, c.why, c.fix); } catch (e) { done(false, aiFail(e), ""); } }, { long: true, rows: 4 });
       }
     };
@@ -358,11 +393,11 @@ const NEWS = (() => {
   /* --- Carte de l'accueil : la notizia du jour --- */
   function homeCard() {
     const c = el("section", "card nw-card");
-    const h = el("div", "post-h"); const ic = txt("span", "nw-badge", "ANSA"); const t = el("div", "post-ht"); t.append(txt("b", null, "La notizia del giorno"), txt("small", null, themes().length ? themes().map((x) => NAME[x]).join(" · ") : "Choisis tes thèmes"));
+    const h = el("div", "post-h"); const ic = txt("span", "nw-badge", SR.badge); const t = el("div", "post-ht"); t.append(txt("b", null, SR.daily), txt("small", null, themes().length ? themes().map((x) => NAME[x]).join(" · ") : "Choisis tes thèmes"));
     h.append(ic, t); c.append(h);
     const bodyC = el("div", "nw-card-b"); c.append(bodyC);
     if (!themes().length) {
-      bodyC.append(txt("p", "muted", "Lis l'actualité italienne à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
+      bodyC.append(txt("p", "muted", "Lis l'actualité " + LXC().adj + " à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
       const b = el("button", "pill-btn blue wide"); b.type = "button"; b.textContent = "Choisir mes thèmes"; b.onclick = () => hub(true); bodyC.append(b);
       return c;
     }
@@ -378,8 +413,8 @@ const NEWS = (() => {
     return c;
   }
   // Pour l'accueil : la prochaine dépêche non lue, son icône et sa teinte.
-  const top = async () => { if (!themes().length) return null; const its = await items(); return its.find((x) => !(S.nw || {})[x.id]) || its[0] || null; };
-  return { hub, open, listInto, homeCard, THEMES, items, tidy, plan, judge, stage, STAGES, NAME, top, ago, icon, tint, themes };
+  const top = async () => { if (stage().locked || !themes().length) return null; const its = await items(); return its.find((x) => !(S.nw || {})[x.id]) || its[0] || null; };
+  return { hub, open, listInto, homeCard, items, tidy, plan, judge, stage, top, ago, icon, tint, themes, get THEMES() { return THEMES; }, get STAGES() { return STAGES; }, get NAME() { return NAME; }, locked: () => !!stage().locked };
 })();
 // L'accueil s'affiche avant le chargement de ce module : on le redessine pour y ajouter la notizia du jour.
 if (typeof view !== "undefined" && view === "home" && typeof home === "function") home();

@@ -378,6 +378,12 @@ async function admin(req: Request, u: User): Promise<Response> {
         else out.voix_it = { ok: false, why: /quota|credit|limit/i.test(r.why) ? "Crédits ElevenLabs épuisés : les voix OpenAI prennent le relais." : /free/i.test(r.why) ? "Les voix de la bibliothèque ElevenLabs demandent un abonnement payant. Les voix OpenAI prennent le relais." : "ElevenLabs refuse la voix (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
       }
     }
+    if (elOn()) {
+      const h = await elVoicesHe(true), n = new Set(Object.values(h)).size;
+      const r = await elSpeak("שָׁלוֹם!", "marin", 1, "he", false);
+      if (r.res) { await r.res.body?.cancel(); out.voix_he = { ok: true, from: "ElevenLabs v3, " + (n ? n + " voix israéliennes" : "voix italiennes (aucune voix israélienne trouvée)") }; }
+      else out.voix_he = { ok: false, why: "ElevenLabs ne lit pas l'hébreu (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
+    }
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
     out.owner = { ok: true };
@@ -461,6 +467,7 @@ async function stt(req: Request, u: User): Promise<Response> {
     form.append("model", model);
     if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
     if (lang === "it" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Trascrizione fedele in italiano, parola per parola.");
+    else if (lang === "he" && /gpt-4o|whisper/.test(model)) form.append("prompt", "תמלול נאמן בעברית, מילה במילה.");
     form.append("temperature", "0");
     form.append("response_format", "json");
     try {
@@ -579,8 +586,44 @@ async function elVoices(force = false): Promise<Record<string, string>> {
   try { await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
   return map;
 }
+// Hébreu : voix israéliennes de la bibliothèque (seul le modèle eleven_v3 parle hébreu). Sans voix hébraïque, les voix italiennes servent.
+let heMap: Record<string, string> | null = null, heMapAt = 0, heFailAt = 0;
+const HE_MAP_FILE = "tts/el-voices-he-v1.json";
+async function elVoicesHe(force = false): Promise<Record<string, string>> {
+  if (heMap && !force && Date.now() - heMapAt < 6 * 3600e3) return heMap;
+  if (!force && !heMap && Date.now() - heFailAt < 10 * 60e3) return {};
+  if (!force) {
+    try { const r = await fetch(SB + "/storage/v1/object/" + HE_MAP_FILE, { headers: svcHeaders() }); if (r.ok) { const j = await r.json(); if (j && j.marin && j.cedar) { heMap = j; heMapAt = Date.now(); return j; } } } catch { /* on cherche */ }
+  }
+  const pool: ElV[] = [];
+  try {
+    const r = await fetch(EL + "/voices", { headers: { "xi-api-key": elKey() }, signal: AbortSignal.timeout(10000) });
+    if (r.ok) for (const v of ((await r.json()).voices || [])) {
+      const l = v.labels || {};
+      if ((l.language === "he" || /hebrew|israel/i.test(String(l.accent || ""))) && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang: "he" });
+    }
+  } catch { /* rien */ }
+  for (const g of ["female", "male"]) pool.push(...await elShared("he", g));
+  const map: Record<string, string> = {}, used = new Set<string>();
+  const pick = (g: string, old: boolean) => {
+    const c = pool.filter((v) => v.g === g && !used.has(v.id)).sort((a, b) => b.score - a.score);
+    const v = (old ? c.find((x) => /old/.test(x.age)) : c.find((x) => !/old/.test(x.age))) || c[0] || pool.filter((x) => x.g === g).sort((a, b) => b.score - a.score)[0];
+    if (v) used.add(v.id); return v ? v.id : "";
+  };
+  for (const name of ["marin", "cedar", "coral", "ash", "sage", "onyx", "shimmer", "verse", "nova", "echo"]) { const r = EL_ROLE[name]; const id = pick(r.g, !!r.old); if (id) map[name] = id; }
+  map.alloy = map.nova || map.coral; map.ballad = map.echo || map.ash; map.fable = map.verse || map.cedar;
+  console.log("el voices he", JSON.stringify({ pool: pool.length, mapped: Object.keys(map).length }));
+  if (!map.marin || !map.cedar) { heFailAt = Date.now(); return heMap || {}; }
+  heMap = map; heMapAt = Date.now();
+  try { await fetch(SB + "/storage/v1/object/" + HE_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
+  return map;
+}
 async function elVoiceId(voice: string, lang = "it"): Promise<string> {
   const g = EL_ROLE[voice]?.g === "male" ? "male" : "female";
+  if (lang === "he") {
+    const f = env("ELEVENLABS_VOICE_HE_" + voice.toUpperCase()); if (f) return f;
+    const h = await elVoicesHe(); const id = h[voice] || h[g === "male" ? "cedar" : "marin"]; if (id) return id;
+  }
   // Le français est dit par une voix française native (même sexe que le personnage), l'italien par une voix italienne.
   if (lang === "fr") { const f = env("ELEVENLABS_VOICE_FR_" + g.toUpperCase()); if (f) return f; const m = await elVoices(); if (m["fr_" + g]) return m["fr_" + g]; }
   const forced = env("ELEVENLABS_VOICE_" + voice.toUpperCase()); if (forced) return forced;
@@ -600,9 +643,11 @@ async function elAdd(id: string): Promise<boolean> {
 async function elSpeak(text: string, voice: string, speed: number, lang: string, cache: boolean): Promise<{ res: Response | null; why: string; model: string; id: string }> {
   const id = await elVoiceId(voice, lang); if (!id) return { res: null, why: "no_voice " + elWhy, model: "", id: "" };
   // Phrases gardées en cache (leçons, dialogues, mode voiture) : le modèle le plus naturel. Conversation : le plus rapide.
-  const model = cache ? env("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2") : env("ELEVENLABS_TTS_MODEL_LIVE", "eleven_flash_v2_5");
+  // L'hébreu n'existe que dans eleven_v3, qui n'accepte que trois valeurs de stabilité et pas de réglage de vitesse.
+  const model = lang === "he" ? env("ELEVENLABS_TTS_MODEL_HE", "eleven_v3") : cache ? env("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2") : env("ELEVENLABS_TTS_MODEL_LIVE", "eleven_flash_v2_5");
+  const v3 = /v3/.test(model);
   const body = JSON.stringify({ text, model_id: model, ...(/v2_5|v3/.test(model) && /^[a-z]{2}$/.test(lang) ? { language_code: lang } : {}),
-    voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: Math.min(Math.max(speed, 0.7), 1.2) } });
+    voice_settings: v3 ? { stability: 0.5, similarity_boost: 0.8 } : { stability: 0.45, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: Math.min(Math.max(speed, 0.7), 1.2) } });
   const go = () => fetch(EL + "/text-to-speech/" + id + "?output_format=mp3_44100_128", { method: "POST", headers: { "xi-api-key": elKey(), "content-type": "application/json", accept: "audio/mpeg" }, body, signal: AbortSignal.timeout(25000) });
   try {
     let r = await go();
@@ -677,15 +722,21 @@ export const NEWS_FEEDS: Record<string, string> = {
   sante: "canale_saluteebenessere/notizie/saluteebenessere_rss.xml", lifestyle: "canale_lifestyle/notizie/lifestyle_rss.xml", moteurs: "canale_motori/notizie/motori_rss.xml",
   rome: "lazio/notizie/lazio_rss.xml", milan: "lombardia/notizie/lombardia_rss.xml", naples: "campania/notizie/campania_rss.xml", toscane: "toscana/notizie/toscana_rss.xml",
 };
+// Hébreu : rubriques du site ynet (adresses complètes).
+export const NEWS_FEEDS_HE: Record<string, string> = {
+  une: "https://www.ynet.co.il/Integration/StoryRss1854.xml", actu: "https://www.ynet.co.il/Integration/StoryRss2.xml", economie: "https://www.ynet.co.il/Integration/StoryRss6.xml",
+  tech: "https://www.ynet.co.il/Integration/StoryRss544.xml", conso: "https://www.ynet.co.il/Integration/StoryRss5363.xml", sante: "https://www.ynet.co.il/Integration/StoryRss1208.xml",
+  sport: "https://www.ynet.co.il/Integration/StoryRss3.xml", culture: "https://www.ynet.co.il/Integration/StoryRss538.xml",
+};
 const unxml = (t: string) => t.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " ")
   .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
 const tag = (x: string, n: string) => { const m = x.match(new RegExp("<" + n + "[^>]*>([\\s\\S]*?)</" + n + ">", "i")); return m ? unxml(m[1]) : ""; };
-async function feed(theme: string) {
-  const path = NEWS_FEEDS[theme]; if (!path) return [];
+async function feed(theme: string, lang = "it") {
+  const path = lang === "he" ? NEWS_FEEDS_HE[theme] : NEWS_FEEDS[theme]; if (!path) return [];
   try {
-    const r = await fetch(ANSA + path, { headers: { "user-agent": "Mozilla/5.0 (compatible; ItalianoPassoPasso/1.0; +https://github.com/gab728/Italiano-passo-passo)", accept: "application/rss+xml, application/xml, text/xml" }, signal: AbortSignal.timeout(8000) });
-    if (!r.ok) { console.error("ansa", theme, r.status); return []; }
+    const r = await fetch(/^https:/.test(path) ? path : ANSA + path, { headers: { "user-agent": "Mozilla/5.0 (compatible; ItalianoPassoPasso/1.0; +https://github.com/gab728/Italiano-passo-passo)", accept: "application/rss+xml, application/xml, text/xml" }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) { console.error("news", lang, theme, r.status); return []; }
     const xml = await r.text();
     const items = xml.split(/<item[\s>]/i).slice(1).map((x) => x.split(/<\/item>/i)[0]);
     const out = [];
@@ -696,13 +747,14 @@ async function feed(theme: string) {
       out.push({ id: (await sha256(link)).slice(0, 16), theme, title, summary, link, date: Number.isFinite(d) ? new Date(d).toISOString() : null });
     }
     return out;
-  } catch (e) { console.error("ansa", theme, String(e).slice(0, 120)); return []; }
+  } catch (e) { console.error("news", lang, theme, String(e).slice(0, 120)); return []; }
 }
 async function news(req: Request): Promise<Response> {
   let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
-  const themes = (Array.isArray(b && b.themes) ? b.themes : []).map(String).filter((t: string) => NEWS_FEEDS[t]).slice(0, 8);
+  const lang = b && b.lang === "he" ? "he" : "it", feeds = lang === "he" ? NEWS_FEEDS_HE : NEWS_FEEDS;
+  const themes = (Array.isArray(b && b.themes) ? b.themes : []).map(String).filter((t: string) => feeds[t]).slice(0, 8);
   if (!themes.length) return json(req, { items: [] });
-  const lists = await Promise.all(themes.map(feed));
+  const lists = await Promise.all(themes.map((t: string) => feed(t, lang)));
   return json(req, { items: lists.flat(), themes });
 }
 

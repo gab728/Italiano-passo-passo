@@ -59,6 +59,18 @@ Entre membres, chacun voit le prénom des autres, leurs leçons terminées, leur
 
 Chacun a sa progression, son carnet et ses leçons à la carte, privés. Les leçons **du programme** sont partagées : quand l'une d'elles est préparée par quelqu'un, elle sert à tout le monde. Une fois enregistrée, une leçon partagée ne peut plus être modifiée depuis l'app ; pour en corriger ou en supprimer une, passe par Supabase (*Table Editor → lessons*), puis rouvre l'app : elle sera préparée à nouveau.
 
+## Deux langues : italien et hébreu
+À l'inscription, on choisit la langue (première question de l'accueil). Dans l'app, le bouton de langue en haut du Fil et de l'onglet Leçons (ou *Profil → Langue apprise*) permet de passer de l'une à l'autre : chaque langue garde sa progression, son carnet et ses thèmes d'actu.
+
+L'hébreu (`content/he/`) commence par **l'alef-bet** (niveau A0, trois unités) : sens de lecture, lettres et formes finales, voyelles (niqqud), puis lecture sans voyelles. Quelqu'un qui lit déjà peut commencer plus loin (question « Tu en es où ? », ou au premier passage sur l'hébreu). Ce qui change pour l'hébreu :
+- les textes s'affichent de droite à gauche, avec une police à voyelles ; un clavier hébreu (22 lettres et 5 finales) s'affiche sous les champs de réponse ;
+- les voyelles ne comptent pas dans la correction ; une lettre finale oubliée est « presque juste » ; la prononciation (notée entre crochets dans les traductions, « bonjour [shalom] ») est acceptée comme réponse ;
+- les personnages sont israéliens (Noa, prof à Tel Aviv ; Avi, café à Jérusalem ; Maya, amie à Haïfa ; Savta Rivka) et s'adressent à l'élève au masculin ou au féminin, selon ce qu'il a choisi ;
+- les voix viennent d'ElevenLabs avec le modèle `eleven_v3` (le seul qui parle hébreu) et des voix israéliennes de la bibliothèque ; à défaut, OpenAI prend le relais. La ligne « Voix hébraïques » du diagnostic le vérifie ;
+- les actualités (brèves du site ynet) s'ouvrent une fois l'alef-bet terminé ; les conjugaisons italiennes sont masquées.
+
+Les trois premières leçons sont écrites à la main ; les suivantes sont préparées par Claude à la demande, en suivant le guide du cours (champ `guide` de `content/he/course.json`) et les consignes de chaque leçon du programme.
+
 ## Les voix
 Avec une clé OpenAI, les personnages parlent avec des voix naturelles (modèle `gpt-4o-mini-tts`) : Giulia, Marco, Sofia et Nonna Rosa ont chacun leur voix, leur accent et leur ton ; les leçons et le mode voiture sont lus par la voix de Giulia. Pendant une conversation, chaque phrase est lue dès que Claude l'a écrite : la réponse commence à se faire entendre presque tout de suite. En mains libres, il suffit de parler pendant que le personnage parle pour lui couper la parole.
 

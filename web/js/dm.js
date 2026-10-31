@@ -2,22 +2,46 @@
    Un seul écran pour parler avec un personnage (Giulia, Marco, Sofia, Nonna Rosa) ou jouer le jeu de rôle d'une leçon :
    on écrit ou on dicte, la réponse arrive en direct, les corrections de Giulia s'affichent en petites notes.
    Le mode mains libres enchaîne écoute, réponse et lecture à voix haute, pour la voiture. */
-const PERSONAS = {
-  giulia: { name: "Giulia", sub: "Prof à Bologne", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
-    hello: "Conversation libre à ton niveau", mission: "" },
-  marco: { name: "Marco", sub: "Barista à Rome", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
-    open: "Buongiorno! Allora, cosa prendi stamattina?",
-    role: "Marco, barista simpatico e chiacchierone in un bar del centro di Roma, che ama il calcio, il caffè fatto bene e il suo quartiere",
-    mission: "Commande au bar, puis bavarde un peu avec Marco." },
-  sofia: { name: "Sofia", sub: "Amie à Milan", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
-    open: "Ciao! Allora, che fai questo weekend?",
-    role: "Sofia, un'amica milanese di 28 anni, designer, che ama uscire, i concerti, le mostre e i viaggi in treno",
-    mission: "Organise ton week-end avec Sofia." },
-  rosa: { name: "Nonna Rosa", sub: "Cuisine à Naples", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
-    open: "Tesoro mio! Hai mangiato? Vieni qua, oggi ti insegno a fare il ragù.",
-    role: "Nonna Rosa, una nonna napoletana affettuosa e un po' teatrale, che parla di cucina, di famiglia e di Napoli",
-    mission: "Apprends une recette avec Nonna Rosa." },
+/* Les quatre personnages gardent les mêmes clés d'une langue à l'autre (giulia = la prof, marco = le café, sofia = l'amie, rosa = la grand-mère) :
+   seul leur contenu change avec le cours. */
+const PERSONA_SETS = {
+  it: {
+    giulia: { name: "Giulia", sub: "Prof à Bologne", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
+      hello: "Conversation libre à ton niveau", mission: "" },
+    marco: { name: "Marco", sub: "Barista à Rome", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
+      open: "Buongiorno! Allora, cosa prendi stamattina?",
+      role: "Marco, barista simpatico e chiacchierone in un bar del centro di Roma, che ama il calcio, il caffè fatto bene e il suo quartiere",
+      mission: "Commande au bar, puis bavarde un peu avec Marco." },
+    sofia: { name: "Sofia", sub: "Amie à Milan", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
+      open: "Ciao! Allora, che fai questo weekend?",
+      role: "Sofia, un'amica milanese di 28 anni, designer, che ama uscire, i concerti, le mostre e i viaggi in treno",
+      mission: "Organise ton week-end avec Sofia." },
+    rosa: { name: "Nonna Rosa", sub: "Cuisine à Naples", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
+      open: "Tesoro mio! Hai mangiato? Vieni qua, oggi ti insegno a fare il ragù.",
+      role: "Nonna Rosa, una nonna napoletana affettuosa e un po' teatrale, che parla di cucina, di famiglia e di Napoli",
+      mission: "Apprends une recette avec Nonna Rosa." },
+  },
+  he: {
+    giulia: { name: "Noa", sub: "Prof à Tel Aviv", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
+      hello: "Conversation libre à ton niveau", mission: "" },
+    marco: { name: "Avi", sub: "Café à Jérusalem", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
+      open: "בֹּקֶר טוֹב! קָפֶה הַבֹּקֶר?",
+      role: "Avi, serveur sympathique et bavard d'un café du marché Mahané Yehouda à Jérusalem, qui adore le foot, le bon café et son quartier",
+      mission: "Commande au café, puis bavarde un peu avec Avi." },
+    sofia: { name: "Maya", sub: "Amie à Haïfa", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
+      open: "הַי! מָה הַתָּכְנִיּוֹת לְסוֹף הַשָּׁבוּעַ?",
+      role: "Maya, une amie de 28 ans de Haïfa, graphiste, qui adore sortir, la plage, les concerts et les randonnées sur le Carmel",
+      mission: "Organise ton week-end avec Maya." },
+    rosa: { name: "Savta Rivka", sub: "Cuisine à Jérusalem", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
+      open: "שָׁלוֹם, מוֹתֶק! הַיּוֹם נַעֲשֶׂה שַׁקְשׁוּקָה בְּיַחַד.",
+      role: "Savta Rivka, une grand-mère affectueuse et un peu théâtrale de Jérusalem, qui parle de cuisine, de famille et de ses souvenirs",
+      mission: "Apprends une recette avec Savta Rivka." },
+  },
 };
+const PERSONAS = {};
+function applyPersonas() { const set = PERSONA_SETS[(typeof C === "function" && C().id) || "it"] || PERSONA_SETS.it; Object.keys(set).forEach((k) => { PERSONAS[k] = Object.assign({}, set[k]); }); }
+applyPersonas();
+window.addEventListener("ipp-course", applyPersonas);
 const DM_SVG = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
   car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16.5V12l2-5.5h10l2 5.5v4.5"/><path d="M3.5 12h17"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>',
@@ -31,12 +55,12 @@ window.PERSONAS = PERSONAS;
 function personaAvatar(p, size) {
   const a = el("span", "av"); a.setAttribute("aria-hidden", "true");
   a.style.background = p.bg; a.style.color = p.fg; if (size) { a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * 0.55) + "px"; }
-  a.textContent = p.name.replace(/^Nonna\s+/, "").charAt(0); return a;
+  a.textContent = p.name.replace(/^(Nonna|Savta)\s+/, "").charAt(0); return a;
 }
 /* ---------- Mémoire des conversations ----------
    Chaque personnage se souvient de vos échanges (résumé, piste pour la prochaine fois), et tous partagent
    ce qu'ils ont appris de toi (ville, travail, goûts, projets…). La mémoire est mise à jour en fin de conversation. */
-const memKey = (cfg) => String(cfg.id || "giulia");
+const memKey = (cfg) => (C().id === "it" ? "" : C().id + ":") + String(cfg.id || "giulia");
 function memOf(cfg) { return ((S.mem || {})[memKey(cfg)]) || null; }
 function dmMemory(cfg) {
   const me = (S.mem && S.mem._me && S.mem._me.facts) || [], m = memOf(cfg);
@@ -73,20 +97,27 @@ async function dmRemember(A) {
 }
 document.addEventListener("visibilitychange", () => { if (document.hidden && typeof DM !== "undefined" && DM) dmRemember(DM); });
 
+/* Hébreu : voyelles pour les débutants, et l'élève est tutoyé au masculin ou au féminin selon ce qu'il a choisi. */
+function heRules() {
+  if (C().id !== "he") return "";
+  const g = S.ob && S.ob.g, lv = vLevel();
+  return "\nHébreu : " + (lv.base ? "écris TOUJOURS avec le niqqud complet (toutes les voyelles), " : "mets le niqqud sur les mots difficiles, ") + "en hébreu israélien de tous les jours." +
+    (g === "f" ? " L'élève est une femme : adresse-toi à elle au féminin (אַתְּ, verbes et adjectifs au féminin)." : g === "m" ? " L'élève est un homme : adresse-toi à lui au masculin (אַתָּה)." : " Tu ne connais pas le genre de l'élève : évite les formes genrées tant qu'il ne s'est pas présenté, puis accorde-toi avec ce qu'il dit.");
+}
 function dmSystem(cfg) {
   const lvl = vLevel(), words = vWords();
-  const heard = " Ce que dit l'élève t'arrive par écrit ou par une reconnaissance vocale réglée sur l'italien : des mots peuvent être mal transcrits. Ne commente jamais l'orthographe ni la ponctuation ; si une phrase est incompréhensible, demande-lui de répéter.";
+  const heard = " Ce que dit l'élève t'arrive par écrit ou par une reconnaissance vocale réglée sur l'" + LN() + " : des mots peuvent être mal transcrits. Ne commente jamais l'orthographe ni la ponctuation ; si une phrase est incompréhensible, demande-lui de répéter.";
   const level = dmMemory(cfg) + "\nNiveau de l'élève : " + lvl.cecr + ". Points qu'il étudie : " + lvl.grammar + "." + (lvl.base ? " Il est encore dans les bases : reste au présent et aux structures simples, sauf s'il utilise lui-même un autre temps." : "") + (words ? "\nMots de son carnet à réutiliser quand c'est naturel : " + words + "." : "");
-  const WHY = { voyage: "voyager en Italie", proches: "parler avec des amis ou de la famille", travail: "le travail", culture: "la culture (cinéma, musique, cuisine)", plaisir: "le plaisir d'apprendre" };
+  const WHY = { voyage: "voyager " + LXC().inLand, proches: "parler avec des amis ou de la famille", travail: "le travail", culture: "la culture (cinéma, musique, cuisine)", plaisir: "le plaisir d'apprendre" };
   const why = (typeof S !== "undefined" && S.ob && Array.isArray(S.ob.why) ? S.ob.why : []).map((k) => WHY[k]).filter(Boolean);
-  const motive = why.length ? "\nIl apprend l'italien pour : " + why.join(", ") + ". Quand le thème est libre, choisis des sujets qui s'en rapprochent." : "";
-  const oral = "\nTes phrases sont lues à voix haute par une voix de synthèse : écris comme on parle, avec des phrases courtes et quelques petites interjections naturelles (allora, dai, beh, eh sì, ah, ecco), sans en abuser. Pas d'abréviations, pas de listes, pas de parenthèses.";
-  const corr = motive + oral + "\nCorrections : si la dernière phrase de l'élève contient une vraie erreur (grammaire, mot faux, mot français), commence ton tour par une ligne FR très courte qui donne la bonne forme, comme le soufflerait sa prof Giulia (par exemple : « FR: Plus naturel : vorrei un caffè. »). Au plus une correction par tour ; laisse passer les petites fautes.";
+  const motive = why.length ? "\nIl apprend l'" + LN() + " pour : " + why.join(", ") + ". Quand le thème est libre, choisis des sujets qui s'en rapprochent." : "";
+  const oral = "\nTes phrases sont lues à voix haute par une voix de synthèse : écris comme on parle, avec des phrases courtes et quelques petites interjections naturelles (" + LXC().fill + "), sans en abuser. Pas d'abréviations, pas de listes, pas de parenthèses.";
+  const corr = heRules() + motive + oral + "\nCorrections : si la dernière phrase de l'élève contient une vraie erreur (grammaire, mot faux, mot français), commence ton tour par une ligne FR très courte qui donne la bonne forme, comme le soufflerait sa prof " + PERSONAS.giulia.name + " (par exemple : « FR: Plus naturel : " + LXC().fix + ". »). Au plus une correction par tour ; laisse passer les petites fautes.";
   if (cfg.kind === "role") return "Jeu de rôle pour un francophone qui apprend l'" + LN() + ". Tu joues : " + cfg.role + ". Tu as ouvert la conversation avec : «" + cfg.open + "»." + heard + level +
     "\nRègles : réponds en " + LN() + ", en une ou deux phrases courtes et naturelles. Reste dans ton personnage et relance par une question. Ne traduis rien. Si l'élève écrit en français, réponds quand même en " + LN() + ", simplement." + corr + "\n" + V_FORMAT;
-  if (cfg.tutor) return "Tu es Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne. Tu discutes avec un élève francophone, par écrit ou à voix haute." + heard + level +
+  if (cfg.tutor) return "Tu es " + LXC().tutor + ". Tu discutes avec un élève francophone, par écrit ou à voix haute." + heard + level +
     "\nThème : " + (cfg.topic || "ce dont l'élève a envie de parler ; propose un sujet du quotidien s'il n'en a pas") + "." +
-    "\nObjectif : le faire parler le plus possible. À chaque tour : une ou deux phrases courtes en italien simple, puis une seule question ouverte. S'il demande comment dire quelque chose, donne la phrase en italien et invite-le à l'utiliser." + corr + "\n" + V_FORMAT;
+    "\nObjectif : le faire parler le plus possible. À chaque tour : une ou deux phrases courtes en " + LN() + " simple, puis une seule question ouverte. S'il demande comment dire quelque chose, donne la phrase en " + LN() + " et invite-le à l'utiliser." + corr + "\n" + V_FORMAT;
   return "Tu joues " + cfg.role + ". Tu discutes avec un élève francophone qui apprend l'" + LN() + " : pour lui, tu es un personnage récurrent, chaleureux, avec ta vie, tes opinions et tes anecdotes." + heard + level +
     "\nRègles : réponds en " + LN() + ", en une à trois phrases courtes et naturelles, comme à l'oral. Raconte un détail de ta vie de temps en temps, et termine le plus souvent par une question pour le faire parler." + corr + "\n" + V_FORMAT;
 }
@@ -361,7 +392,7 @@ async function wordInfo(word, sentence) {
   const k = bare(word) + "|" + bare(sentence);
   if (WCACHE.has(k)) return WCACHE.get(k);
   const pr = (async () => {
-    const r = await AI("Mot ou expression en " + LN() + " : « " + word + " »\nPhrase : « " + sentence + " »\n\nRéponds uniquement par un objet JSON, sans texte autour : {\"it\": forme à mettre dans un carnet de vocabulaire (infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle), \"fr\": traduction française courte et naturelle, adaptée à cette phrase, \"note\": une précision utile en français, 12 mots maximum (par exemple « prendere, 2e personne du singulier au présent »), ou une chaîne vide}", { modelTier: "quick", cache: true, maxTokens: 200 });
+    const r = await AI("Mot ou expression en " + LN() + " : « " + word + " »\nPhrase : « " + sentence + " »\n\nRéponds uniquement par un objet JSON, sans texte autour : {\"it\": forme à mettre dans un carnet de vocabulaire (" + LXC().form + "), \"fr\": traduction française courte et naturelle, adaptée à cette phrase" + LXC().frx + ", \"note\": une précision utile en français, 12 mots maximum (par exemple « prendere, 2e personne du singulier au présent »), ou une chaîne vide}", { modelTier: "quick", cache: true, maxTokens: 200 });
     const j = JSON.parse(String(r.text).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
     return { it: String(j.it || word).trim().slice(0, 80), fr: String(j.fr || "").trim().slice(0, 80), note: String(j.note || "").trim().slice(0, 140) };
   })();

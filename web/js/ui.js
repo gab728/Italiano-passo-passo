@@ -45,7 +45,7 @@
 
   /* ---------- Petits éléments ---------- */
   const firstName = () => ((W.me && W.me.name) || "").split(/\s+/)[0];
-  const hello = () => { const h = new Date().getHours(); return h < 5 ? "Buonanotte" : h < 13 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera"; };
+  const hello = () => { const h = new Date().getHours(), g = LXC().hello; return h < 5 ? g[0] : h < 13 ? g[1] : h < 18 ? g[2] : g[3]; };
   function ring(value, max, size, label, color) {
     const r = (size - 6) / 2, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, max ? value / max : 0));
     return '<svg class="ring" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + " " + size + '" role="img" aria-label="' + label + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" class="ring-bg"/><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" class="ring-fg"' + (color ? ' style="stroke:' + color + '"' : "") + ' stroke-dasharray="' + c + '" stroke-dashoffset="' + c * (1 - f) + '" transform="rotate(-90 ' + size / 2 + " " + size / 2 + ')"/></svg>';
@@ -61,8 +61,8 @@
     [/train|treno|aereo|avion|opinion|débat/, "treno"], [/cuisine|cucina|recette|ricetta|nonna|manger/, "cucina"], [/voyage|viaggio|vacanz|hôtel|hotel|réserv/, "viaggio"],
     [/culture|cinéma|film|musique|art|livre/, "cultura"], [/week-end|weekend|ami|amic|présent|famille/, "amici"]];
   const themeImg = (s) => { const t = bare(s || ""); const hit = THEME_IMG.find(([re]) => re.test(t)); return "img/themes/" + (hit ? hit[1] : "generico") + ".svg"; };
-  const TOPICS = [["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui", "casa"], ["Voyager en Italie", "préparer un voyage en Italie : villes, transports, hôtel, restaurants", "viaggio"],
-    ["Le travail", "son travail, ses collègues, ses projets", "ufficio"], ["Culture", "cuisine, cinéma, musique, art et histoire italiens", "cultura"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis", "amici"]];
+  const TOPICS_ = () => [["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui", "casa"], ["Voyager " + LXC().inLand, "préparer un voyage " + LXC().inLand + " : villes, transports, hôtel, restaurants", "viaggio"],
+    ["Le travail", "son travail, ses collègues, ses projets", "ufficio"], ["Culture", "cuisine, cinéma, musique, art et histoire (" + LXC().land + ")", "cultura"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis", "amici"]];
   function themeCarousel(limit) {
     const row = el("div", "carousel"); row.setAttribute("role", "list");
     const add = (img, title, sub, tag, fn) => {
@@ -75,7 +75,7 @@
     const done = (i) => ss.some((x) => x.mi === i && isDone(x)) || (S[M[i].id] && S[M[i].id].done);
     sc.sort((a, b) => (done(b) ? 1 : 0) - (done(a) ? 1 : 0));
     sc.slice(0, limit || 99).forEach((i) => { const s = M[i].scenario; add(themeImg(s.title + " " + s.role), s.title, s.goal, done(i) ? "Jeu de rôle" : "Après « " + M[i].st + " »", () => openRole(i)); });
-    TOPICS.forEach(([t, d, img]) => add("img/themes/" + img + ".svg", t, "Avec Giulia, à ton niveau", "Libre", () => openTopic(t, d)));
+    TOPICS_().forEach(([t, d, img]) => add("img/themes/" + img + ".svg", t, "Avec " + PERSONAS.giulia.name + ", à ton niveau", "Libre", () => openTopic(t, d)));
     return row;
   }
   function personaStories(wrap, noRip) {
@@ -96,15 +96,71 @@
     let ex = null; M.some((m) => (m.dlg || []).some((l) => { if (bare(l[1]).includes(core)) { ex = l; return true; } return false; }));
     return { w, ex };
   }
+  // Nom court du niveau : « Bases A1 → A2 » en italien ; en hébreu, le nom du niveau (« L'alef-bet »).
+  const lvName = (x) => C().id === "it" ? (x.li === 0 ? "Bases" : "Niveau") + " " + x.lv.cecr : x.lv.t + " · " + x.lv.cecr;
+  /* ---------- Langue : petit bouton en haut des écrans, qui ouvre le choix ----------
+     Une langue jamais commencée demande d'abord par où commencer (l'hébreu peut se commencer après l'alphabet). */
+  const START = {
+    he: [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
+      ["he-u04-l1", "Je lis et je connais quelques mots", "On commence au niveau A1"], ["he-u08-l1", "Je me débrouille", "Je parle déjà au présent (A2)"]],
+  };
+  function langChip() {
+    const b = el("button", "lang-chip"); b.type = "button"; b.setAttribute("aria-label", "Langue apprise : " + C().name + ". Changer de langue");
+    b.innerHTML = '<i class="flag flag-' + C().id + '" aria-hidden="true"></i><span></span>' + IC.chev; b.querySelector("span").textContent = cap(C().name);
+    b.onclick = () => langSheet(); return b;
+  }
+  function closeSheet() { const o = document.querySelector(".lsheet"); if (o) { o.classList.remove("in"); setTimeout(() => o.remove(), 180); } }
+  function sheetBox(title) {
+    const old = document.querySelector(".lsheet"); if (old) old.remove();
+    const sh = el("div", "wsheet lmap lsheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", title);
+    const top = el("div", "ws-top"), t = el("b", "ws-word"); t.textContent = title;
+    const x = el("button", "icon-btn ws-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = IC.close; x.onclick = closeSheet; top.append(t, x); sh.append(top);
+    const list = el("div", "lmap-list"); sh.append(list); document.body.append(sh); requestAnimationFrame(() => sh.classList.add("in"));
+    const outside = (e) => { if (!sh.isConnected) return document.removeEventListener("pointerdown", outside, true); if (!sh.contains(e.target)) { document.removeEventListener("pointerdown", outside, true); closeSheet(); } };
+    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+    return list;
+  }
+  function sheetRow(list, name, small, here, fn, flag) {
+    const b = el("button", "lmap-row" + (here ? " here" : "")); b.type = "button";
+    if (flag) b.insertAdjacentHTML("afterbegin", '<i class="flag flag-' + flag + '" aria-hidden="true"></i>');
+    const tx = el("span", "lr-t"), s1 = el("b"), s2 = el("small"); s1.textContent = name; s2.textContent = small; tx.append(s1, s2); b.append(tx); b.onclick = fn; list.append(b); return b;
+  }
+  function langSheet() {
+    const list = sheetBox("Quelle langue ?");
+    Object.values(COURSES).forEach((c) => {
+      const ss = slots(c), dn = ss.filter(isDone).length;
+      sheetRow(list, cap(c.name) + " · " + c.title, c.id === C().id ? "Langue en cours · " + dn + " / " + ss.length + " leçons" : dn ? dn + " / " + ss.length + " leçons faites" : (c.desc || "Pas encore commencé"), c.id === C().id,
+        () => { if (c.id === C().id) return closeSheet(); pickCourse(c.id); }, c.id);
+    });
+    const f = list.querySelector(".here") || list.firstChild; if (f) f.focus({ preventScroll: true });
+  }
+  // Premier passage sur une langue : par où commencer, et (hébreu) masculin ou féminin.
+  function pickCourse(id, after) {
+    const go = () => { closeSheet(); setCourse(id); if (after) after(); else goTab(TAB === "profile" ? "feed" : TAB); };
+    const started = (S.from && id in S.from) || slots(COURSES[id]).some(isDone);
+    if (started || !START[id]) return go();
+    const list = sheetBox("Par où commencer ?");
+    START[id].forEach(([from, t, sub]) => sheetRow(list, t, sub, false, () => {
+      S.from = Object.assign({}, S.from || {}, { [id]: from }); save();
+      if (id === "he" && !(S.ob && S.ob.g)) return askGender(go);
+      go();
+    }));
+  }
+  function askGender(then) {
+    const list = sheetBox("En hébreu, on te dit…");
+    list.append(txt("p", "ws-lem", "L'hébreu tutoie différemment un homme et une femme. Les personnages s'adresseront à toi ainsi."));
+    [["m", "אַתָּה (ata)", "au masculin"], ["f", "אַתְּ (at)", "au féminin"]].forEach(([v, t, sub]) => sheetRow(list, t, sub, false, () => { S.ob = Object.assign({}, S.ob || {}, { g: v }); save(); then(); }));
+  }
+
   home = function () {
     screen("feed", "home"); if (pendingBase) { applyBase(pendingBase); pendingBase = null; }
     const ss = slots(), cu = current(), sk = streak();
     const hd = el("header", "feed-hd");
-    const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", "Mon profil"); who.onclick = () => goTab("profile"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || "Ciao !")); who.append(nm);
+    const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", "Mon profil"); who.onclick = () => goTab("profile"); who.append(meAvatar(38)); const nm = el("div", "who-t"); nm.append(txt("span", null, hello()), txt("b", null, firstName() || LXC().hi)); who.append(nm);
     const st = node('<span class="streak' + (sk ? " on" : "") + '">' + IC.flame + "<b></b></span>"); st.querySelector("b").textContent = sk; st.setAttribute("aria-label", "Série : " + sk + (sk > 1 ? " jours" : " jour") + " d'affilée"); st.title = st.getAttribute("aria-label");
     const td = (S.d || {})[day()] || 0, gl = el("span", "goal-chip");
     gl.innerHTML = ring(td, GOAL, 28, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--ok-fill)");
-    const sw = el("div", "hd-chips"); sw.append(st, gl);
+    const sw = el("div", "hd-chips"); if (Object.keys(COURSES).length > 1) sw.append(langChip()); sw.append(st, gl);
     hd.append(who, sw); root.append(hd);
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
     if (!firstName()) root.append(nameCard());
@@ -171,10 +227,11 @@
     if (AI) {
       const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id], tints = { marco: 0, sofia: 4, rosa: 2 };
       const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[id] === day(), () => openPersona(id));
+      { const b = r.querySelector(".daily-t b"); if (b) { b.textContent = p.name + " : « "; const q = el("bdi"); q.textContent = p.open; b.append(q, document.createTextNode(" »")); } }
       const ic = r.querySelector(".row-ic"); ic.innerHTML = ""; ic.classList.add("daily-av"); ic.append(personaAvatar(p, 42));
     }
     // 4. L'actu du jour, à ton niveau
-    if (typeof NEWS !== "undefined" && AI) {
+    if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) {
       if (!NEWS.themes().length) row(ICD.news, 1, "Actu", "Choisis tes sujets d'actu", "Chaque dépêche devient une petite leçon à ton niveau", false, () => NEWS.hub(true));
       else {
         const r = row(ICD.news, 1, "Actu", "Chargement…", "", false, () => NEWS.hub());
@@ -198,7 +255,7 @@
       const c = el("section", "home-trip"), ux = ss.filter((x) => x.li === cu.li && x.ui === cu.ui), d = ux.filter(isDone).length, stt = S[cu.key] || {};
       const first = doneN === 0 && !stt.i;
       c.append(txt("h2", "feed-sec", first ? "Commence ici" : stt.i ? "Ta leçon en cours" : "Ta leçon du jour"));
-      c.append(txt("p", "home-trip-u", (cu.li === 0 ? "Bases" : "Niveau") + " " + cu.lv.cecr + " · Unité " + cu.un + " · " + cu.u.t + " · " + d + "/" + ux.length));
+      c.append(txt("p", "home-trip-u", lvName(cu) + " · Unité " + cu.un + " · " + cu.u.t + " · " + d + "/" + ux.length));
       const t = ticket(cu, ux.findIndex((x) => x.n === cu.n) + 1, true);
       if (first) { const g = t.querySelector(".vy-go"); if (g && g.textContent === "Commencer") g.textContent = "Commencer ma première leçon"; }
       c.append(t);
@@ -222,7 +279,7 @@
     gl.append(txt("small", null, Math.min(td, GOAL) + "/" + GOAL));
     top.append(gl); c.append(top);
     const art = el("div", "lh-art"); const im = el("img"); im.src = themeImg(cu.u.t); im.alt = ""; im.width = 300; im.height = 220; art.append(im); c.append(art);
-    c.append(txt("small", "lh-meta", (cu.li === 0 ? "Bases" : "Niveau") + " " + cu.lv.cecr + " · Unité " + cu.un + " · " + cu.u.t));
+    c.append(txt("small", "lh-meta", lvName(cu) + " · Unité " + cu.un + " · " + cu.u.t));
     c.append(txt("h2", "lh-title", cu.l.t));
     if (isS(cu.l.g)) c.append(txt("p", "lh-sub", cu.l.g));
     // Le chemin de l'unité : leçons faites, celle du jour, les suivantes.
@@ -237,7 +294,7 @@
     go.querySelector("span").textContent = !m ? (AI ? "Préparer la leçon" : "Préparer quand le réseau revient") : pct ? "Reprendre · " + pct + " %" : first ? "Commencer ma première leçon" : "Commencer la leçon";
     go.onclick = () => openSlot(cu); c.append(go);
     c.append(txt("p", "lh-note", !m ? (AI ? "Claude l'écrit pour toi en deux à trois minutes." : "La leçon se prépare avec l'assistant, qui a besoin du réseau.")
-      : first ? "Explications, vocabulaire, exercices, puis un petit dialogue. Ensuite, tu pourras parler avec Giulia et les autres." : "Explications, exercices et dialogue, environ 20 minutes."));
+      : first ? "Explications, vocabulaire, exercices, puis un petit dialogue. Ensuite, tu pourras parler avec " + PERSONAS.giulia.name + " et les autres." : "Explications, exercices et dialogue, environ 20 minutes."));
     const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le parcours (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); c.append(all);
     return c;
   }
@@ -287,6 +344,7 @@
 
   /* ---------- Le voyage : guirlande de l'unité, billet de la leçon, billets suivants ---------- */
   let VU = null; // unité affichée : "li:ui"
+  window.addEventListener("ipp-course", () => { LV = null; VU = null; });
   const STRIPS = [["#EEE8FF", "#3A2E86"], ["#E3F6EC", "#1E5A40"], ["#FFF1C9", "#6B5310"], ["#FFE3D1", "#8A3412"]];
   function garland(ux, cu, w) {
     const n = ux.length, P = [[-10, 14], [w * 0.25, 82], [w * 0.75, -38], [w + 10, 32]];
@@ -327,7 +385,7 @@
     if (mine_) { const l = el("div", "vy-hang"); l.style.left = Math.round(gl.end[0] - 22) + "px"; l.style.top = Math.round(gl.end[1] - 6) + "px"; l.append(lino("hang", 48)); gbox.append(l); }
     wrap.append(gbox);
     const hd = el("div", "vy-head");
-    hd.append(txt("span", "vy-eyebrow", (U.li === 0 ? "Bases" : "Niveau") + " " + U.lv.cecr + " · Unité " + ux[0].un + " · " + doneN + (doneN > 1 ? " lumières" : " lumière") + " sur " + ux.length), txt("h2", "vy-title", U.u.t));
+    hd.append(txt("span", "vy-eyebrow", lvName(U) + " · Unité " + ux[0].un + " · " + doneN + (doneN > 1 ? " lumières" : " lumière") + " sur " + ux.length), txt("h2", "vy-title", U.u.t));
     if (isS(U.u.goal)) hd.append(txt("p", "vy-goal", U.u.goal));
     wrap.append(hd);
     // Le billet : la leçon en cours de l'unité (ou la première à faire).
@@ -359,7 +417,7 @@
       const l = el("div", "vy-done");
       done.forEach((x) => {
         const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
-        b.append(txt("span", "vy-stamp", "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
+        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
         b.onclick = () => openSlot(x); l.append(b);
       });
       wrap.append(l);
@@ -373,7 +431,7 @@
     const c = el("article", "vy-ticket" + (isCur ? " cur" : ""));
     if (isCur) { const l = el("div", "vy-sit"); l.append(lino("wave", 60)); c.append(l); }
     const top = el("div", "vy-t-top");
-    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", "BIGLIETTO · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
+    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", (C().id === "it" ? "BIGLIETTO" : "BILLET") + " · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
     top.append(row, txt("h3", "vy-t-title", x.l.t));
     if (isS(x.l.g)) top.append(txt("span", "vy-t-sub", x.l.g));
     const p = m ? partOf(m, i) : null;
@@ -402,7 +460,7 @@
   let NEDIT = false;
   function newsTab() {
     screen("news");
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Actu"), txt("span", "muted", "L'actualité italienne à ton niveau")); root.append(h);
+    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Actu"), txt("span", "muted", "L'actualité " + LXC().adj + " à ton niveau")); root.append(h);
     if (typeof NEWS === "undefined") { root.append(txt("p", "fr", "Chargement…")); return; }
     const host = el("div", "seg-body"); root.append(host);
     NEWS.listInto(host, NEDIT, (edit) => news(edit)); NEDIT = false; sync();
@@ -412,7 +470,9 @@
   function lessonsTab() {
     screen("lessons");
     const ss = slots(), cu = current(), doneN = ss.filter(isDone).length;
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Leçons"), txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : "Tout ce que tu as fait")); root.append(h);
+    const h = el("header", "tab-hd"), sub = txt("span", "muted", LSEG === "prog" ? doneN + " sur " + ss.length + " terminée" + (doneN > 1 ? "s" : "") : "Tout ce que tu as fait");
+    if (Object.keys(COURSES).length > 1) { const lt = el("div", "tab-hd-l"); lt.append(txt("h1", null, "Leçons"), sub); h.append(lt, langChip()); } else h.append(txt("h1", null, "Leçons"), sub);
+    root.append(h);
     segs();
     if (LSEG === "hist" && typeof HIST !== "undefined") { const host = el("div", "seg-body hist"); root.append(host); HIST.renderInto(host); sync(); return; }
     if (voyage(ss, cu)) { root.append(customCard()); sync(); return; }
@@ -463,7 +523,7 @@
     const sec = el("div", "sec-h"); sec.append(txt("h2", null, "Thèmes")); root.append(sec, themeCarousel());
     const sec2 = el("div", "sec-h"); sec2.append(txt("h2", null, "Tes personnages")); root.append(sec2);
     const list = card("list");
-    Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id], b = el("button", "row"); b.type = "button"; b.append(personaAvatar(p, 46)); const t = el("span", "row-t"); t.append(txt("b", null, p.name), txt("small", null, p.sub + (p.open ? " · « " + p.open.split(/[.!?]/)[0] + "… »" : " · " + p.hello))); b.append(t); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = () => openPersona(id); list.append(b); });
+    Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id], b = el("button", "row"); b.type = "button"; b.append(personaAvatar(p, 46)); const t = el("span", "row-t"); t.append(txt("b", null, p.name), txt("small", null, p.sub + (p.open && !C().rtl ? " · « " + p.open.split(/[.!?]/)[0] + "… »" : " · " + (p.open ? p.mission : p.hello)))); b.append(t); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = () => openPersona(id); list.append(b); });
     root.append(list);
     const more = card("list");
     if (canSpeak) { const b = el("button", "row"); b.type = "button"; const i = el("span", "row-ic"); i.innerHTML = IC.car; const t = el("span", "row-t"); t.append(txt("b", null, "Mode voiture"), txt("small", null, "La leçon du jour ou tes mots, à l'oral, sans regarder l'écran")); b.append(i, t); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = () => audioSetup(); more.append(b); }
@@ -486,9 +546,9 @@
     let rk = 0;
     const row = (icon, title, sub, fn) => { const b = el("button", "row"); b.type = "button"; const i = el("span", "row-ic tint-" + (rk++ % 5)); i.innerHTML = icon; const tt = el("span", "row-t"); tt.append(txt("b", null, title), txt("small", null, sub)); b.append(i, tt); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = fn; list.append(b); };
     row(IC.book, "Mon carnet", "Tes mots, à relire et à compléter", () => carnet());
-    row(IC.quiz, "Quiz de vocabulaire", "Du français vers l'italien, ou l'inverse", () => quizSetup());
+    row(IC.quiz, "Quiz de vocabulaire", "Du français vers l'" + LN() + ", ou l'inverse", () => quizSetup());
     if (canSpeak) row(IC.dictee, "Dictée", "Écoute une phrase, écris-la", () => dictee());
-    row(IC.table, "Conjugaisons", "Tous les verbes, à tous les temps", () => cjOpen());
+    if (C().id === "it") row(IC.table, "Conjugaisons", "Tous les verbes, à tous les temps", () => cjOpen());
     if (canSpeak) row(IC.car, "Mots à l'oral", "Révise ton carnet en parlant, mains libres", () => audioSetup());
     root.append(list);
     sync();
@@ -512,16 +572,26 @@
     bars.setAttribute("role", "img"); bars.setAttribute("aria-label", "Réponses par jour cette semaine : " + vals.join(", ")); wk.append(bars, labels); root.append(wk);
     const acts = el("div", "acts two");
     acts.append(pillBtn("Inviter un ami", "dark", () => {
-      const text = "Viens apprendre l'italien avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink();
+      const text = "Viens apprendre l'" + LN() + " avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink();
       if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié. Colle-le dans un message.")); else speakNote(text);
     }));
-    acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'italien d'affilée" : "J'apprends l'italien") + " sur Italiano passo passo. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
+    acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur Italiano passo passo. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
     root.append(acts);
     const goalC = card("goal-c"); goalC.append(txt("b", null, "Objectif du jour"), txt("small", "muted", "Nombre de réponses par jour"));
     const gl = el("div", "chips"); [[8, "5 min"], [12, "10 min"], [20, "20 min"], [30, "30 min"]].forEach(([g, l]) => {
       const c = el("button", "chip" + (GOAL === g ? " sel" : "")); c.type = "button"; c.textContent = l; c.setAttribute("aria-pressed", String(GOAL === g));
       c.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { goal: g }); GOAL = g; save(); profileTab(); }; gl.append(c);
     }); goalC.append(gl); root.append(goalC);
+    if (Object.keys(COURSES).length > 1) {
+      const lc = card("goal-c"); lc.append(txt("b", null, "Langue apprise"), txt("small", "muted", "Chaque langue garde sa progression"));
+      const cl = el("div", "chips"); Object.values(COURSES).forEach((c) => { const x = el("button", "chip" + (c.id === C().id ? " sel" : "")); x.type = "button"; x.innerHTML = '<i class="flag flag-' + c.id + '" aria-hidden="true"></i>'; x.append(document.createTextNode(cap(c.name))); x.setAttribute("aria-pressed", String(c.id === C().id)); x.onclick = () => pickCourse(c.id, () => profileTab()); cl.append(x); });
+      lc.append(cl); root.append(lc);
+      if (C().id === "he") {
+        const gc = card("goal-c"); gc.append(txt("b", null, "En hébreu, on te dit"), txt("small", "muted", "Les personnages s'adressent à toi au masculin ou au féminin"));
+        const gg = el("div", "chips"); [["m", "אַתָּה · masculin"], ["f", "אַתְּ · féminin"]].forEach(([v, l]) => { const x = el("button", "chip" + ((S.ob || {}).g === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String((S.ob || {}).g === v)); x.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { g: v }); save(); profileTab(); }; gg.append(x); });
+        gc.append(gg); root.append(gc);
+      }
+    }
     if (W.me && W.me.owner) { const adm = el("div", "acts"); adm.append(pillBtn("Gérer les membres", "", () => { setTab("profile"); WEB.friends(); })); root.append(adm); }
     sync();
   }
@@ -614,7 +684,7 @@
     const ab = root.querySelector(":scope > .actionbar"); if (ab) ab.innerHTML = "";
     { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
     if (fb.classList.contains("ko")) { const s = fb.querySelector("strong"); if (s && cur && cur.q[cur.i] && !cur.q[cur.i].retry) s.after(txt("span", "fb-tag", "Reviendra en fin de leçon")); }
-    const why = fb.querySelector(".why > .btn"); if (why) why.textContent = "Pourquoi ? Demander à Giulia";
+    const why = fb.querySelector(".why > .btn"); if (why) why.textContent = "Pourquoi ? Demander à " + PERSONAS.giulia.name;
     const sec = el("div", "fb-acts"); fb.querySelectorAll(":scope > .say, :scope > .btn:not(.primary)").forEach((b) => sec.append(b)); const prim = fb.querySelector(":scope > .btn.primary"); if (sec.children.length) fb.insertBefore(sec, prim);
   }
   const posted = new Set();
@@ -629,7 +699,7 @@
     const st = el("div", "end-stars"); st.setAttribute("aria-label", stars + (stars > 1 ? " étoiles" : " étoile") + " sur 3");
     for (let k = 0; k < 3; k++) st.insertAdjacentHTML("beforeend", '<svg class="star s' + (k + 1) + (k < stars ? " on" : "") + '" width="' + (k === 1 ? 52 : 40) + '" height="' + (k === 1 ? 52 : 40) + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z"/></svg>');
     e.insertBefore(st, e.firstChild); e.insertBefore(hero, e.firstChild);
-    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !"); h2.before(b); }
+    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); h2.before(b); }
     const tiles = el("div", "end-tiles rise");
     const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
     if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
@@ -672,7 +742,13 @@
     if (!ob || typeof ob !== "object" || !(Date.now() - (ob.at || 0) < 864e5)) return;
     if (!S.ob) {
       S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
-      GOAL = S.ob.goal; save();
+      if (ob.g === "m" || ob.g === "f") S.ob.g = ob.g;
+      // Langue choisie à l'inscription (le cours d'hébreu arrive avec le catalogue : l'accueil se redessine alors).
+      if (ob.course === "he" || ob.course === "it") {
+        S.course = ob.course;
+        if (ob.course === "he") S.from = Object.assign({}, S.from || {}, { he: typeof ob.start === "string" && /^he-u\d\d-l\d+$/.test(ob.start) ? ob.start : "" });
+      }
+      GOAL = S.ob.goal; save(); courseNow();
     }
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});

@@ -304,7 +304,8 @@
     return "Ça n'a pas marché. Réessaie dans un moment.";
   }
   let holdStart = RECOVERY;
-  const OB = { why: [], lv: 0, goal: 20, name: "" };
+  const OB = { course: "", why: [], lv: 0, start: "", g: "", goal: 20, name: "" };
+  const LANGN = () => (OB.course === "he" ? "l'hébreu" : "l'italien");
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const field = (id, label, type, extra) => {
     const w = $("div", "g-field"), l = $("label", null, label); l.htmlFor = id;
@@ -319,7 +320,7 @@
     if (opts.back || opts.step) {
       const top = $("div", "g-top");
       if (opts.back) { const b = $("button", "g-back"); b.type = "button"; b.setAttribute("aria-label", "Retour"); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.onclick = opts.back; top.append(b); }
-      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 5"); for (let k = 1; k <= 5; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
+      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 6"); for (let k = 1; k <= 6; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
       box.append(top);
     }
     gate.append(box); return box;
@@ -334,9 +335,9 @@
     const art = $("div", "g-art"); art.setAttribute("aria-hidden", "true");
     ["cafe", "viaggio", "cucina"].forEach((n) => { const i = document.createElement("img"); i.src = "img/themes/" + n + ".svg"; i.alt = ""; art.append(i); });
     box.append(art);
-    const h = $("h1", "g-hello", "Ciao."); box.append(h);
-    box.append($("p", "g-lead", "L'italien en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
-    const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepWhy();
+    const h = $("h1", "g-hello", "Ciao. "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
+    box.append($("p", "g-lead", "L'italien ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
+    const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepLang();
     const have = $("button", "g-link", "J'ai déjà un compte"); have.type = "button"; have.onclick = () => login();
     box.append(go, have);
   }
@@ -350,30 +351,46 @@
     });
     box.append(list); return list;
   }
-  function stepWhy() {
+  // Étape 0 : la langue. L'hébreu s'écrit avec un autre alphabet : son parcours commence par les lettres.
+  function stepLang() {
     const box = frame({ back: welcome, step: 1 });
-    box.append($("h1", null, "Pourquoi l'italien ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
+    box.append($("h1", null, "Quelle langue veux-tu apprendre ?"), $("p", "g-sub", "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression."));
+    const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.course;
+    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]], false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
+    list.classList.add("g-langs");
+    go.onclick = stepWhy; box.append(go);
+  }
+  function stepWhy() {
+    const box = frame({ back: stepLang, step: 2 });
+    box.append($("h1", null, "Pourquoi " + LANGN() + " ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
-    choice(box, [["voyage", "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
+    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
       (v) => { OB.why = OB.why.includes(v) ? OB.why.filter((x) => x !== v) : OB.why.concat(v); go.disabled = !OB.why.length; });
     go.onclick = stepLevel; box.append(go);
   }
   function stepLevel() {
-    const box = frame({ back: stepWhy, step: 2 });
+    const box = frame({ back: stepWhy, step: 3 });
     box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", "Pas d'examen : tu pourras changer de niveau à tout moment."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
-    choice(box, [[0, "Je débute", "Quelques mots, pas plus"], [0.5, "Je connais les bases", "Je me présente, je commande un café"], [1, "Je me débrouille", "Je tiens une conversation simple (A2)"], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)"]], false, OB.lv, (v) => { OB.lv = v; });
+    if (OB.course === "he") {
+      // Hébreu : le point de départ dans le parcours, puis la façon dont les personnages s'adressent à toi (l'hébreu tutoie au masculin ou au féminin).
+      choice(box, [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
+        ["he-u04-l1", "Je lis et je connais quelques mots", "On commence au niveau A1"], ["he-u08-l1", "Je me débrouille", "Je parle déjà au présent (A2)"]], false, OB.start, (v) => { OB.start = v; });
+      box.append($("h2", "g-h2", "En hébreu, on te dit…"));
+      const gl = choice(box, [["m", "אַתָּה (ata)", "au masculin"], ["f", "אַתְּ (at)", "au féminin"]], false, OB.g, (v) => { OB.g = v; go.disabled = false; });
+      gl.classList.add("g-two"); go.disabled = !OB.g;
+    } else choice(box, [[0, "Je débute", "Quelques mots, pas plus"], [0.5, "Je connais les bases", "Je me présente, je commande un café"], [1, "Je me débrouille", "Je tiens une conversation simple (A2)"], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)"]], false, OB.lv, (v) => { OB.lv = v; });
     go.onclick = stepGoal; box.append(go);
   }
   function stepGoal() {
-    const box = frame({ back: stepLevel, step: 3 });
+    const box = frame({ back: stepLevel, step: 4 });
     box.append($("h1", null, "Combien de temps par jour ?"), $("p", "g-sub", "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
     choice(box, [[8, "5 minutes", "Tranquille"], [12, "10 minutes", "Régulier"], [20, "20 minutes", "Sérieux"], [30, "30 minutes et plus", "Intense"]], false, OB.goal, (v) => { OB.goal = v; });
     go.onclick = stepName; box.append(go);
   }
   function stepName() {
-    const box = frame({ back: stepGoal, step: 4 });
+    const box = frame({ back: stepGoal, step: 5 });
     box.append($("h1", null, "Comment tu t'appelles ?"), $("p", "g-sub", "C'est le prénom que verront tes amis dans l'app."));
     const f = document.createElement("form"); f.className = "g-form";
     const [w, i] = field("g-name", "Ton prénom", "text", { autocomplete: "given-name", maxLength: 40, value: OB.name });
@@ -383,7 +400,7 @@
     box.append(f); setTimeout(() => softFocus(i), 60);
   }
   function signup() {
-    const box = frame({ back: stepName, step: 5 });
+    const box = frame({ back: stepName, step: 6 });
     box.append($("h1", null, "Crée ton compte, " + OB.name), $("p", "g-sub", "Pour retrouver ta progression sur tous tes appareils."));
     const f = document.createElement("form"); f.className = "g-form";
     const [we, ie] = field("g-email", "Adresse e-mail", "email", { autocomplete: "email", value: params.get("e") || "" });
@@ -415,7 +432,7 @@
     const [wp, ip] = field("gate-pass", "Mot de passe", "password", { autocomplete: "current-password" });
     const go = $("button", "g-cta", "Se connecter"); go.type = "submit"; const m = msgEl(); if (note) say(m, note);
     const forgot = $("button", "g-link", "Mot de passe oublié ?"); forgot.type = "button"; forgot.onclick = () => recover(ie.value.trim().toLowerCase());
-    const create = $("button", "g-link", "Créer un compte"); create.type = "button"; create.onclick = () => stepWhy();
+    const create = $("button", "g-link", "Créer un compte"); create.type = "button"; create.onclick = () => stepLang();
     f.append(we, wp, m, go, forgot, create);
     f.onsubmit = async (e) => {
       e.preventDefault(); const v = ie.value.trim().toLowerCase();
