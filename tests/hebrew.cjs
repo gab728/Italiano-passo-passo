@@ -69,6 +69,7 @@ const MOCKS = `
   await p.waitForSelector(".field input"); await p.fill(".field input", "aba"); await p.press(".field input", "Enter"); await p.waitForSelector(".fb");
   ok(await p.isVisible(".fb.ok"), "la translittération (aba) est acceptée aussi");
   const j = await p.evaluate(() => [QZ.judge("שלום", ["שָׁלוֹם"]), QZ.judge("שלומ", ["שָׁלוֹם"]), QZ.judge("שלם", ["שָׁלוֹם"])]);
+  ok(await p.evaluate(() => QZ.judge("אכתוב", ["אֶכְתֹּב"]) === "exact" && QZ.judge("דיברתי", ["דִּבַּרְתִּי|dibarti"]) === "exact" && QZ.judge("היא", ["הוּא"]) === "no"), "orthographe pleine sans voyelles acceptée (אכתוב, דיברתי), sans confondre הוּא et היא");
   ok(j[0] === "exact" && j[1] === "accent" && j[2] !== "exact", "voyelles ignorées ; lettre finale oubliée = presque juste : " + j);
   await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "o"); show(); }, mi2);
   await p.waitForSelector(".tray");

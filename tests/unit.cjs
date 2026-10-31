@@ -17,4 +17,8 @@ h(norm("שלומ") !== norm("שלום") && bare("שלומ") === bare("שָׁלו
 h(norm("רַב־קַו") === "רב-קו", "hébreu : maqaf lu comme un trait d'union");
 h(norm("Città") === "città" && bare("Città") === "citta", "italien inchangé");
 h(tl("bonjour, au revoir [shalom]") === "shalom" && frOnly("bonjour [shalom]") === "bonjour", "prononciation entre crochets");
+eval(src.slice(src.indexOf("function heForms"), src.indexOf("const fmt=")));
+const hf = (w, want) => h(heForms(w).includes(want), "orthographe pleine : " + w + " → " + want);
+hf("אֶכְתֹּב", "אכתוב"); hf("דִּבַּרְתִּי", "דיברתי"); hf("מִתְכַּוְּנִים", "מתכוונים"); hf("שֻׁלְחָן", "שולחן"); hf("עַכְשָׁיו", "עכשיו"); hf("אִמָּא", "אמא"); hf("נֹעָה", "נועה");
+h(!heForms("הוּא").includes("היא") && heForms("הוּא").includes("הוא"), "orthographe pleine : הוּא ne devient jamais היא");
 process.exit(bad ? 1 : 0);

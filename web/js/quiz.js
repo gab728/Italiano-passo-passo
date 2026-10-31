@@ -6,7 +6,8 @@
   const ART_IT = /^(il|lo|la|i|gli|le|un|una|uno|l'|un')\s*/i, ART_FR = /^(le|la|les|l'|un|une|des|du|de la|de l')\s*/i;
   const strip = (s) => bare(String(s)).replace(/['’]/g, "'").replace(ART_IT, "").replace(ART_FR, "").replace(/[.,;:!?…«»"()]/g, "").replace(/\s+/g, " ").trim();
   // Variantes acceptées : « essere / stare », « la casa (l'abitazione) », « prendre ; boire »…
-  const variants = (a) => String(a).replace(/\([^)]*\)/g, " ").split(/\s*[\/;|]\s*|,\s+(?=\S)/).map((x) => x.trim()).filter(Boolean).concat([String(a)]);
+  // Hébreu : chaque variante est aussi acceptée en orthographe pleine, sans voyelles (אכתוב pour אֶכְתֹּב).
+  const variants = (a) => String(a).replace(/\([^)]*\)/g, " ").split(/\s*[\/;|]\s*|,\s+(?=\S)/).map((x) => x.trim()).filter(Boolean).concat([String(a)]).flatMap((x) => (typeof heForms === "function" ? heForms(x) : [x]));
   function lev(a, b) {
     const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
     let p = Array.from({ length: n + 1 }, (_, j) => j);

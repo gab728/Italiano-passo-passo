@@ -993,6 +993,17 @@ const HEB=/[\u0590-\u05FF\uFB1D-\uFB4F]/,unpoint=s=>s.normalize("NFD").replace(/
 const norm=s=>(HEB.test(s)?unpoint(s):s).toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g," ").trim();
 const FIN={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 const bare=s=>norm(s).replace(/([aeiou])'(?=\s|$|[.,!?])/g,"$1").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[ךםןףץ]/g,c=>FIN[c]);
+/* Hébreu tapé sans voyelles : on l'écrit en orthographe pleine (ו pour o et ou, י pour i, וו pour un v au milieu du mot).
+   heForms("אֶכְתֹּב") donne aussi « אכתוב » : toutes ces graphies comptent comme justes. */
+function heForms(s){s=String(s);if(!HEB.test(s))return[s];const cl=[];
+  for(const ch of s.normalize("NFD")){if(/[\u05D0-\u05EA]/.test(ch))cl.push({l:ch,m:""});else if(/[\u0591-\u05C7]/.test(ch)&&cl.length&&cl[cl.length-1].m!==null)cl[cl.length-1].m+=ch;else cl.push({l:ch,m:null})}
+  let out=[""];const add=o=>{const n=[];out.forEach(a=>o.forEach(x=>n.push(a+x)));out=n.slice(0,64)},V=/[\u05B1-\u05BB\u05C7]/;
+  cl.forEach((c,i)=>{if(c.m===null){add([c.l]);return}
+    const p=cl[i-1],n=cl[i+1],first=!p||p.m===null,last=!n||n.m===null;
+    if(c.l==="ו"){if(/[\u05B9\u05BA]/.test(c.m)||(/\u05BC/.test(c.m)&&!V.test(c.m)&&!(p&&p.m&&V.test(p.m)))){add(["ו"]);return}add(first||last?["ו"]:["ו","וו"]);return}
+    add(c.l==="י"&&!first&&!last&&(V.test(c.m)||/\u05BC/.test(c.m))?["י","יי"]:[c.l]);
+    if(/[\u05B9\u05BB]/.test(c.m)&&!(n&&n.l==="ו"))add(["","ו"]);else if(/\u05B4/.test(c.m)&&!(n&&n.l==="י"))add(["","י"])});
+  return [...new Set(out)]}
 const fmt=q=>q.replace(/___/g,'<span class="blank"></span>').replace(/\(([^)]*)\)/g,"<small>($1)</small>");
 const canSpeak="speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 /* Synthèse vocale. Points délicats : une voix « réseau » (Google, par ex.) ne parle pas hors connexion ; Safari ignore un speak() lancé
@@ -1831,7 +1842,7 @@ f(s){const d=s.d,answers=d[2].split("|");if(d[4])body.append(el("p","fr",d[4]));
     b.onclick=()=>{const a=inp.selectionStart??inp.value.length,z=inp.selectionEnd??a;inp.value=inp.value.slice(0,a)+c+inp.value.slice(z);inp.focus();inp.setSelectionRange(a+1,a+1)};keys.append(b)});
   const ok=btn("Vérifier","primary");w.append(inp,keys,ok);body.append(w);let done=false;
   const check=async()=>{if(done||!inp.value.trim())return;done=true;inp.readOnly=true;ok.disabled=true;keys.hidden=true;
-    const u=blankOf(d[1],inp.value),exact=answers.some(a=>norm(a)===norm(u)),loose=answers.some(a=>bare(a)===bare(u));
+    const u=blankOf(d[1],inp.value),exact=answers.some(a=>heForms(a).some(f=>norm(f)===norm(u))),loose=answers.some(a=>heForms(a).some(f=>bare(f)===bare(u)));
     if(!loose&&window.QZ&&QZ.alt){const v=await QZ.alt(d[1],answers[0],u,d[3]);if(v&&v.ok){fb(true,s,"Juste aussi ! "+esc(v.why)+" Réponse prévue : <b>"+answers[0]+"</b>.",filled(d[1],u),inp.value);return}}
     let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?(HEB.test(u)?"Attention aux lettres finales. ":"Attention à l'accent. "):"")+msg;
     fb(loose,s,msg,filled(d[1],answers[0]),u)};
