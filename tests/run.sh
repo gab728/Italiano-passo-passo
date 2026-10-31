@@ -6,6 +6,7 @@ node --experimental-strip-types --no-warnings tests/mock-server.mjs 8787 > /tmp/
 PID=$!
 sleep 1.5
 node tests/unit.cjs || exit 1
+node tests/check-he.mjs > /tmp/ipp-check-he.log || { cat /tmp/ipp-check-he.log; exit 1; }
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/e2e.cjs; R1=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/stt.cjs; R2=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/voices.cjs; R3=$?

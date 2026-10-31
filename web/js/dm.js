@@ -48,7 +48,11 @@ const DM_SVG = {
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>',
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
+  mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>',
 };
+// Les répliques des personnages sont lues à voix haute dès qu'elles s'écrivent (réglage gardé : bouton haut-parleur de la conversation).
+const dmAuto = () => !(typeof S !== "undefined" && S.vx && S.vx.quiet);
 let DM = null;
 window.PERSONAS = PERSONAS;
 
@@ -147,7 +151,11 @@ function dmOpen(cfg) {
   const who = el("div", "dm-who"), nm = el("b"), sb = el("span"); nm.textContent = DM.title === DM.p.name ? DM.p.name : DM.title; sb.textContent = DM.title === DM.p.name ? DM.sub : DM.p.name + " · " + (DM.sub || ""); who.append(nm, sb);
   const car = el("button", "icon-btn dm-car"); car.type = "button"; car.innerHTML = DM_SVG.car; car.setAttribute("aria-label", "Mains libres"); car.setAttribute("aria-pressed", "false");
   car.onclick = () => dmHands(!DM.hands);
-  hd.append(back, personaAvatar(DM.p, 40), who, car); wrap.append(hd);
+  const snd = el("button", "icon-btn dm-snd"); snd.type = "button";
+  const sndSet = () => { const on = dmAuto(); snd.innerHTML = on ? DM_SVG.sound : DM_SVG.mute; snd.setAttribute("aria-pressed", String(on)); snd.setAttribute("aria-label", on ? "Lecture à voix haute activée" : "Lecture à voix haute coupée"); snd.classList.toggle("off", !on); };
+  snd.onclick = () => { S.vx = Object.assign({}, S.vx || {}, { quiet: dmAuto() }); save(); sndSet(); if (!dmAuto()) { TTS.stop(); stopSpeech(); } };
+  sndSet();
+  hd.append(back, personaAvatar(DM.p, 40), who, snd, car); wrap.append(hd);
   const hands = el("div", "dm-hands"); hands.hidden = true; hands.setAttribute("role", "status"); wrap.append(hands);
   if (DM.mission) { const m = el("div", "dm-mission"), t = el("span", "chip-dark", "Mission"), s = el("span"); s.textContent = DM.mission; m.append(t, s); wrap.append(m); }
   const log = el("div", "dm-log"); log.setAttribute("aria-live", "polite"); wrap.append(log);
@@ -162,15 +170,15 @@ function dmOpen(cfg) {
   const act = el("button", "dm-act"); act.type = "button";
   const setAct = () => {
     const typed = inp.value.trim().length > 0, talk = DM.speaking && !DM.listening;
-    act.innerHTML = DM.listening || talk ? DM_SVG.stop : typed ? DM_SVG.send : DM_SVG.mic;
-    act.setAttribute("aria-label", DM.listening ? "Arrêter l'écoute" : talk ? "Couper la parole" : typed ? "Envoyer" : "Parler");
+    act.innerHTML = DM.listening ? DM_SVG.stop : talk ? DM_SVG.mic : typed ? DM_SVG.send : DM_SVG.mic;
+    act.setAttribute("aria-label", DM.listening ? "Arrêter l'écoute" : talk ? "Couper la parole et répondre" : typed ? "Envoyer" : "Parler");
     act.classList.toggle("send", typed && !DM.listening && !talk); act.classList.toggle("on", DM.listening); act.classList.toggle("talk", talk);
     act.disabled = DM.busy && !DM.listening && !talk;
     wrap.classList.toggle("speaking", !!talk);
   };
   inp.addEventListener("input", () => { if (!inp.value.trim()) DM.fromVoice = false; setAct(); });
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (inp.value.trim() && !DM.busy) dmSend(inp.value.trim(), !!DM.fromVoice); } });
-  act.onclick = () => { if (DM.listening) { VO.stop(); return; } if (DM.speaking) { dmInterrupt(false); return; } if (inp.value.trim()) { if (!DM.busy) dmSend(inp.value.trim(), !!DM.fromVoice); return; } dmListenOnce(); };
+  act.onclick = () => { if (DM.listening) { VO.stop(); return; } if (DM.speaking && !inp.value.trim()) { dmInterrupt(false); if (!DM.hands) { if (DM.busy) DM.listenNext = true; else dmListenOnce(); } return; } if (inp.value.trim()) { if (DM.speaking) dmInterrupt(false); if (!DM.busy) dmSend(inp.value.trim(), !!DM.fromVoice); return; } dmListenOnce(); };
   if (!VO.available()) act.dataset.nomic = "1";
   comp.append(lab, inp, act); wrap.append(sug, comp);
   root.append(wrap);
@@ -180,8 +188,8 @@ function dmOpen(cfg) {
   if (mem && mem.n) DM.firstAsk = DM.kind === "role"
     ? "(Nouvelle partie de ce jeu de rôle. Ouvre la scène toi-même en variant la situation par rapport aux fois précédentes, en une ou deux phrases et une question.)"
     : "(L'élève revient te parler. Ouvre la conversation naturellement en reprenant un fil de vos échanges précédents" + (mem.suite ? " (piste : " + mem.suite + ")" : "") + ", sans te présenter à nouveau. Une ou deux phrases et une question.)";
-  if (DM.open && !DM.firstAsk) { DM.turns.push({ role: "user", content: "(Début de la conversation.)" }, { role: "assistant", content: "IT: " + DM.open }); dmBubble([{ lang: VO.IT(), t: DM.open }]); if (DM.autoHands) dmHands(true); }
-  else dmAsk(true).then(() => { if (DM && DM.autoHands) dmHands(true); });
+  if (DM.open && !DM.firstAsk) { DM.turns.push({ role: "user", content: "(Début de la conversation.)" }, { role: "assistant", content: "IT: " + DM.open }); dmBubble([{ lang: VO.IT(), t: DM.open }]); if (DM.autoHands) dmHands(true); else if (dmAuto()) { const A0 = DM; A0.spoken = dmSpeak([{ lang: VO.IT(), t: DM.open }]).then(() => { if (DM === A0 && A0.hands && !A0.listening && !A0.busy) dmListenOnce(true); }); } }
+  else dmAsk(true, dmAuto() && !DM.autoHands).then(() => { if (DM && DM.autoHands) dmHands(true); });
   vWake(true);
   try { if (!localStorage.getItem("ipp-hint-words")) { localStorage.setItem("ipp-hint-words", "1"); setTimeout(() => speakNote("Astuce : touche un mot pour voir sa traduction et l'ajouter au carnet."), 1200); } } catch (e) { /* rien */ }
 }
@@ -294,6 +302,8 @@ async function dmAsk(first, speakIt) {
   // Réponse lue en silence : son audio est préparé en avance, pour que « Réécouter » parte tout de suite.
   if (!speakIt && TTS.on()) dmChunks(r.text, true).forEach((c) => TTS.prefetch(c.t, c.lang, { who: c.lang.startsWith("fr") ? "giulia" : A.voice, rate: c.lang.startsWith("fr") ? 1 : 0.95 }));
   dmBubble(lines); A.busy = false; A.ui.setAct();
+  // Parole coupée pendant que la réponse s'écrivait : on écoute dès qu'elle est finie.
+  if (A.listenNext && DM === A) { A.listenNext = false; setTimeout(() => { if (DM === A && !A.listening) dmListenOnce(); }, 0); }
   return lines;
 }
 async function dmSend(text, voice) {
@@ -304,7 +314,7 @@ async function dmSend(text, voice) {
   dmMine(text, voice); A.turns.push({ role: "user", content: text }); A.n++; bump();
   S.pc = S.pc || {}; S.pc[pcKey(A.id)] = day(); S.dmn = (S.dmn || 0) + (A.n === 1 ? 1 : 0); if (A.n % 3 === 1) save();
   A.ui.end.disabled = A.n < 2;
-  const lines = await dmAsk(false, voice || A.hands);
+  const lines = await dmAsk(false, voice || A.hands || dmAuto());
   if (!lines || DM !== A) return;
   if (A.spoken) await A.spoken;
   if (DM === A && A.hands) dmListenOnce(true);
@@ -344,7 +354,7 @@ function dmHands(on) {
   const A = DM; if (!A) return;
   A.hands = on; A.ui.car.setAttribute("aria-pressed", String(on)); A.ui.car.classList.toggle("on", on);
   A.ui.hands.hidden = !on; A.ui.hands.textContent = on ? "Mains libres : je t'écoute après chaque réponse. Dis « basta » pour arrêter." : "";
-  if (on) { VO.tick(); vWake(true); if (!A.busy && !A.listening && !A.speaking) { const last = A.log[A.log.length - 1]; (last && last.who === "ai" ? dmSpeak(last.lines) : Promise.resolve()).then(() => { if (DM === A && A.hands && !A.listening) dmListenOnce(true); }); } }
+  if (on) { VO.tick(); vWake(true); if (!A.busy && !A.listening && !A.speaking) { const last = A.log[A.log.length - 1]; (last && last.who === "ai" && !dmAuto() ? dmSpeak(last.lines) : Promise.resolve()).then(() => { if (DM === A && A.hands && !A.listening) dmListenOnce(true); }); } }
   else { if (A.listening) VO.cancel(); if (A.unwatch) { A.unwatch(); A.unwatch = null; } }
 }
 async function dmHint() {

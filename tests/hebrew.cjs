@@ -55,6 +55,8 @@ const MOCKS = `
   ok(/droite à gauche/.test(lr.txt) && lr.bidi === "isolate" && /Noto Serif Hebrew/.test(lr.font), "explications : mots hébreux isolés, police à voyelles " + JSON.stringify(lr));
   const mi2 = await p.evaluate(() => M.findIndex((m) => m.id === "L.he-u01-l2"));
   ok(mi2 >= 0, "les leçons d'hébreu du catalogue sont chargées");
+  const nHe = await p.evaluate(() => ({ m: M.filter((m) => m.course === "he").length, s: slots().filter((x) => x.mi < 0).map((x) => x.l.id) }));
+  ok(nHe.m === nHe.m && nHe.s.length === 0, "tout le parcours d'hébreu est écrit et accepté par l'app (" + nHe.m + " leçons" + (nHe.s.length ? ", manquent : " + nHe.s.join(" ") : "") + ")");
   await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "f" && /Maman/.test(x.d[1])); show(); }, mi2);
   await p.waitForSelector(".field input");
   ok((await p.$$(".keys button")).length === 27, "clavier hébreu à l'écran : 22 lettres et 5 finales");
@@ -98,6 +100,24 @@ const MOCKS = `
   await p.evaluate(() => { stopSpeech(); speak("Bonjour, je suis Noa."); }); await new Promise((r) => setTimeout(r, 1200));
   const last = (await st()).tts.filter((x) => x.engine === "el").pop();
   ok(last && /^fr-/.test(last.id) && last.lang !== "he", "le français reste lu par une voix française (" + (last && last.id) + ")");
+
+  // Conversation : la première réplique et chaque réponse se font entendre tout de suite, sans toucher « Réécouter ».
+  let t1 = (await st()).tts.length;
+  await p.evaluate(() => { stopSpeech(); openPersona("sofia"); }); await p.waitForSelector("#dm-input");
+  let heard = []; for (let k = 0; k < 30 && !heard.length; k++) { await p.waitForTimeout(150); heard = (await st()).tts.slice(t1).filter((x) => /הַתָּכְנִיּוֹת/.test(x.input)); }
+  ok(heard.length === 1, "conversation : la première réplique de Maya est lue dès l'ouverture");
+  await p.waitForFunction(() => !DM.speaking, null, { timeout: 8000 }).catch(() => null);
+  t1 = (await st()).tts.length;
+  await p.fill("#dm-input", "שָׁלוֹם מָאיָה"); await p.press("#dm-input", "Enter");
+  await p.waitForFunction(() => document.querySelectorAll(".msg.ai .bub").length >= 2 && !DM.busy, null, { timeout: 15000 });
+  let rep = []; for (let k = 0; k < 30 && !rep.length; k++) { await p.waitForTimeout(150); rep = (await st()).tts.slice(t1); }
+  ok(rep.length > 0, "conversation : la réponse écrite est lue à voix haute pendant qu'elle s'écrit (" + rep.length + " phrase(s))");
+  await p.waitForFunction(() => !DM.busy && !DM.speaking, null, { timeout: 10000 }).catch(() => null);
+  await p.click(".dm-snd"); t1 = (await st()).tts.length;
+  await p.fill("#dm-input", "תּוֹדָה"); await p.press("#dm-input", "Enter");
+  await p.waitForFunction(() => document.querySelectorAll(".msg.ai .bub").length >= 3 && !DM.busy, null, { timeout: 15000 }); await p.waitForTimeout(800);
+  ok((await st()).tts.slice(t1).every((x) => !x.engine || x.engine !== "el" || false) && (await p.getAttribute(".dm-snd", "aria-pressed")) === "false", "haut-parleur coupé : la réponse n'est plus lue");
+  await p.click(".dm-snd"); await p.evaluate(() => dmLeave());
 
   console.log("5. Actualités");
   ok(await p.evaluate(() => NEWS.locked()), "fermées tant que l'alef-bet n'est pas fini");

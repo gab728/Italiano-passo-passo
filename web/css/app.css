@@ -857,3 +857,5 @@ html[data-course="he"] .lhero.start { box-shadow: 0 0 0 2px var(--spritz), 0 14p
 @media (prefers-reduced-motion: reduce) { .course-flash { animation: none; transition: none; } }
 .lh-from { margin: 10px 4px 0; font-size: 13.5px; color: var(--muted); text-align: center; line-height: 1.4; }
 .lh-from .link { font-size: 13.5px; padding: 0; }
+.dm-snd { background: var(--chip) !important; }
+.dm-snd.off { color: var(--muted) !important; }
