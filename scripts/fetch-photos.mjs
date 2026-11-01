@@ -21,8 +21,9 @@ const okLicense = (l) => l && !/\b(NC|ND)\b|fair use|non-free|copyright/i.test(l
 async function api(params) {
   const u = API + "?" + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...params });
   for (let k = 0; k < 4; k++) {
-    const r = await fetch(u, { headers: { "User-Agent": UA, "Api-User-Agent": UA, Accept: "application/json" } });
-    const t = await r.text();
+    let r, t;
+    try { r = await fetch(u, { headers: { "User-Agent": UA, "Api-User-Agent": UA, Accept: "application/json" }, signal: AbortSignal.timeout(20000) }); t = await r.text(); }
+    catch (e) { console.log("API injoignable : " + e.message); await new Promise((ok) => setTimeout(ok, 2000)); continue; }
     try { return JSON.parse(t); } catch (e) { console.log("API " + r.status + " " + r.url.slice(0, 120) + " → " + t.slice(0, 300).replace(/\s+/g, " ")); }
     await new Promise((ok) => setTimeout(ok, 3000 * (k + 1)));
   }
@@ -50,7 +51,7 @@ for (const [key, byC] of Object.entries(LIST)) {
     const dest = key + "-" + c + ".jpg";
     if (!force && credits[key] && credits[key][c] && fs.existsSync(path.join(OUT, dest))) continue;
     if (credits[key] && credits[key][c]) used.delete(credits[key][c].title);
-    let hit = null;
+    let hit = null; console.log("…", key, c);
     for (const f of spec.files || []) {
       const d = await api({ titles: "File:" + f, ...II });
       hit = pick(d.query && d.query.pages, used); if (hit) break;
@@ -61,7 +62,7 @@ for (const [key, byC] of Object.entries(LIST)) {
       hit = pick(pages, used);
     }
     if (!hit) { miss.push(key + "/" + c); continue; }
-    const r = await fetch(hit.thumb, { headers: { "User-Agent": UA } });
+    const r = await fetch(hit.thumb, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) }).catch((e) => ({ ok: false, status: e.message }));
     if (!r.ok) { miss.push(key + "/" + c + " (" + r.status + ")"); continue; }
     fs.writeFileSync(path.join(OUT, dest), Buffer.from(await r.arrayBuffer()));
     used.add(hit.title);
