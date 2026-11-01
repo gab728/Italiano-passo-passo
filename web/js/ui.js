@@ -718,30 +718,72 @@
       try { await sb().from("weekly").upsert({ user_id: uid(), week: monday(), answers, streak: streak(), words: vstat().seen.length, updated_at: new Date().toISOString() }, { onConflict: "user_id,week" }); } catch (e) { /* hors ligne */ }
     }
     async function post(kind, data) { try { await sb().from("activity").insert({ user_id: uid(), kind, data }); } catch (e) { /* hors ligne */ } }
+    // « Tes amis » : une ligne par ami (pas une par activité), les 3 plus récents, le reste en dépliant.
+    const AVC = ["#FFE3D6:#B33A14", "#E6E0FF:#4B32C9", "#DCE6FF:#2A44D6", "#DDF3E6:#11804A", "#FFF1C9:#8A5A00", "#FFE0EF:#A0236A"];
+    const avOf = (id, size) => { const n = nameOf(id) || "?", h = [...String(id)].reduce((x, c) => (x * 31 + c.charCodeAt(0)) >>> 0, 7), [bg, fg] = AVC[h % AVC.length].split(":");
+      const a = el("span", "av fr-av"); a.setAttribute("aria-hidden", "true"); a.style.background = bg; a.style.color = fg; if (size) { a.style.width = a.style.height = size + "px"; } a.textContent = n.charAt(0).toUpperCase(); return a; };
+    const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000)); return m < 2 ? "à l'instant" : m < 60 ? "il y a " + m + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : m < 2880 ? "hier" : "il y a " + Math.round(m / 1440) + " jours"; };
+    const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21c3.9 0 6.5-2.6 6.5-6.1 0-3.6-2.6-5.6-3.9-8.9-.4 2.1-1.7 3.3-2.9 3.9.2-2.7-1-5.5-3.4-6.9.2 3.3-3.8 5.4-3.8 10.1C4.5 18.4 7.9 21 12 21z"/></svg>';
+    const CLAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 11.5 6 9a1.6 1.6 0 0 1 2.3-2.3l4.2 4.2"/><path d="m10 8-1-1a1.6 1.6 0 0 1 2.3-2.3l4.6 4.6c1.9 1.9 1.9 5.1 0 7l-.6.6a5 5 0 0 1-7.1 0l-3.7-3.7a1.6 1.6 0 0 1 2.3-2.3l1.7 1.7"/><path d="M16 3.5 17 2M19.5 6.5 21 5.5M18 4.5l1.5-1"/></svg>';
     async function renderFeed(host) {
       try {
         await members();
         const since = new Date(Date.now() - 10 * 864e5).toISOString();
-        const { data: acts, error } = await sb().from("activity").select("id,user_id,kind,data,created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(30);
-        if (error || !acts || !acts.length || !host.isConnected) return;
-        const ids = acts.map((a) => a.id); const { data: ch } = await sb().from("cheers").select("activity_id,user_id").in("activity_id", ids);
+        const [{ data: acts, error }, { data: wk }] = await Promise.all([
+          sb().from("activity").select("id,user_id,kind,data,created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(60),
+          sb().from("weekly").select("user_id,answers,streak").eq("week", monday()),
+        ]);
+        if (error || !host.isConnected) return;
+        const A = acts || [], ids = A.map((a) => a.id);
+        const { data: ch } = ids.length ? await sb().from("cheers").select("activity_id,user_id").in("activity_id", ids) : { data: [] };
         const cheers = {}; (ch || []).forEach((c) => { (cheers[c.activity_id] = cheers[c.activity_id] || []).push(c.user_id); });
         if (!host.isConnected) return;
-        const mineCheered = acts.filter((a) => a.user_id === uid() && (cheers[a.id] || []).some((u) => u !== uid()));
-        const others = acts.filter((a) => a.user_id !== uid()).slice(0, 12);
-        if (!others.length && !mineCheered.length) return;
-        host.append(txt("h2", "feed-sec", "Tes amis"));
-        mineCheered.slice(0, 3).forEach((a) => { const who = (cheers[a.id] || []).filter((u) => u !== uid()).map(nameOf); const c = card("friend"); c.append(meAvatar(34)); c.append(txt("p", null, who.slice(0, 2).join(" et ") + (who.length > 2 ? " et " + (who.length - 2) + " autres" : "") + " " + (who.length > 1 ? "t'ont dit bravo" : "t'a dit bravo") + " pour « " + (a.data && a.data.t || "ta leçon") + " »")); host.append(c); });
-        others.forEach((a) => {
-          const c = card("friend"); const av = el("span", "av dark"); av.setAttribute("aria-hidden", "true"); av.textContent = (nameOf(a.user_id) || "?").charAt(0).toUpperCase(); c.append(av);
-          const p = el("p"); p.append(txt("b", null, nameOf(a.user_id))); p.append(document.createTextNode(a.kind === "lesson" ? " a terminé « " + (a.data && a.data.t || "une leçon") + " »" + (a.data && a.data.pct != null ? " avec " + a.data.pct + " %" : "") : a.kind === "streak" ? " tient une série de " + (a.data && a.data.n) + " jours" : " a fini une unité")); c.append(p);
-          const list = cheers[a.id] || [], did = list.includes(uid());
-          const b = el("button", "cheer" + (did ? " on" : "")); b.type = "button"; b.textContent = did ? "Bravo envoyé" : "Bravo"; b.setAttribute("aria-pressed", String(did));
-          b.onclick = async () => { const on = b.getAttribute("aria-pressed") !== "true"; b.disabled = true;
-            try { if (on) await sb().from("cheers").insert({ activity_id: a.id, user_id: uid() }); else await sb().from("cheers").delete().eq("activity_id", a.id).eq("user_id", uid()); b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on); b.textContent = on ? "Bravo envoyé" : "Bravo"; if (on && navigator.vibrate) navigator.vibrate(10); } catch (e) { /* hors ligne */ }
-            b.disabled = false; };
-          c.append(b); host.append(c);
-        });
+        // Un ami = une ligne : leçons de la semaine, dernière leçon, série.
+        const weekStart = new Date(monday() + "T00:00:00").getTime(), W7 = {}; (wk || []).forEach((r) => { W7[r.user_id] = r; });
+        const by = {};
+        A.filter((a) => a.user_id !== uid() && names[a.user_id] !== undefined).forEach((a) => { const f = by[a.user_id] = by[a.user_id] || { id: a.user_id, acts: [], last: a }; f.acts.push(a); });
+        Object.keys(W7).forEach((id) => { if (id !== uid() && names[id] !== undefined && !by[id] && (W7[id].answers || 0) > 0) by[id] = { id, acts: [], last: null }; });
+        const friends = Object.values(by).sort((x, y) => (y.last ? new Date(y.last.created_at) : 0) - (x.last ? new Date(x.last.created_at) : 0));
+        // Bravos reçus : une seule ligne.
+        const fans = [...new Set(A.filter((a) => a.user_id === uid()).flatMap((a) => (cheers[a.id] || []).filter((u) => u !== uid())))];
+        if (!friends.length && !fans.length) return;
+        const box = el("section", "card fr-card");
+        const hd = el("div", "fr-hd"); hd.append(txt("h2", "feed-sec", "Tes amis"));
+        const inv = el("button", "link fr-inv"); inv.type = "button"; inv.textContent = "Inviter";
+        inv.onclick = () => { const text = "Viens apprendre l'" + LN() + " avec moi : des leçons courtes et des conversations à voix haute. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié.")); };
+        hd.append(inv); box.append(hd);
+        if (fans.length) {
+          const f = el("div", "fr-fans"); const stack = el("span", "fr-stack"); fans.slice(0, 3).forEach((u) => stack.append(avOf(u, 26))); f.append(stack);
+          const n = fans.map(nameOf); f.append(txt("span", null, n.slice(0, 2).join(" et ") + (n.length > 2 ? " et " + (n.length - 2) + (n.length - 2 > 1 ? " autres" : " autre") : "") + (n.length > 1 ? " t'ont dit bravo" : " t'a dit bravo")));
+          box.append(f);
+        }
+        const list = el("div", "fr-list"); box.append(list);
+        const row = (f) => {
+          const r = el("div", "fr-row"), w7 = W7[f.id] || {}, lessons = f.acts.filter((a) => a.kind === "lesson" && new Date(a.created_at).getTime() >= weekStart);
+          const avw = el("span", "fr-avw"); avw.append(avOf(f.id, 42));
+          if ((w7.streak || 0) > 1) { const sk = el("span", "fr-sk"); sk.innerHTML = FLAME; sk.append(String(w7.streak)); sk.setAttribute("aria-label", "série de " + w7.streak + " jours"); avw.append(sk); }
+          r.append(avw);
+          const t = el("div", "fr-t"); t.append(txt("b", null, nameOf(f.id)));
+          const lastL = f.acts.find((a) => a.kind === "lesson");
+          const sub = lessons.length ? lessons.length + (lessons.length > 1 ? " leçons" : " leçon") + " cette semaine" : (w7.answers ? w7.answers + " réponses cette semaine" : "");
+          if (sub) t.append(txt("span", "fr-sub", sub));
+          if (lastL) t.append(txt("small", "fr-last", "« " + (lastL.data && lastL.data.t || "une leçon") + " » · " + ago(lastL.created_at)));
+          else if (f.last) t.append(txt("small", "fr-last", ago(f.last.created_at)));
+          r.append(t);
+          if (f.last) {
+            const a = f.last, list_ = cheers[a.id] || [], did = list_.includes(uid());
+            const b = el("button", "fr-cheer" + (did ? " on" : "")); b.type = "button"; b.innerHTML = CLAP; b.setAttribute("aria-pressed", String(did)); b.setAttribute("aria-label", (did ? "Bravo envoyé à " : "Dire bravo à ") + nameOf(f.id));
+            b.onclick = async () => { const on = b.getAttribute("aria-pressed") !== "true"; b.disabled = true;
+              try { if (on) await sb().from("cheers").insert({ activity_id: a.id, user_id: uid() }); else await sb().from("cheers").delete().eq("activity_id", a.id).eq("user_id", uid());
+                b.setAttribute("aria-pressed", String(on)); b.classList.toggle("on", on); b.setAttribute("aria-label", (on ? "Bravo envoyé à " : "Dire bravo à ") + nameOf(f.id)); if (on) { b.classList.add("pop"); setTimeout(() => b.classList.remove("pop"), 500); if (navigator.vibrate) navigator.vibrate(10); } } catch (e) { /* hors ligne */ }
+              b.disabled = false; };
+            r.append(b);
+          }
+          list.append(r);
+        };
+        friends.slice(0, 3).forEach(row);
+        if (friends.length > 3) { const m = el("button", "link fr-more"); m.type = "button"; m.textContent = "Voir les " + (friends.length - 3) + " autres"; m.onclick = () => { friends.slice(3).forEach(row); m.remove(); }; box.append(m); }
+        host.append(box);
       } catch (e) { /* le fil des amis reste vide hors ligne */ }
     }
     async function renderBoard(host) {

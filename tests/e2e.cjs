@@ -259,15 +259,16 @@ const MOCKS = `
   ok(xss === true, "aucune balise ne survit dans les textes d'une leçon venue de la base");
 
   console.log("10b. Entre amis : activité, bravo, classement");
-  await b.evaluate(() => SOC.post("lesson", { t: "Se présenter", pct: 92 }));
+  await b.evaluate(async () => { await SOC.post("lesson", { t: "Les nombres", pct: 80 }); await SOC.post("lesson", { t: "Se présenter", pct: 92 }); });
   await a.evaluate(() => UI.go("feed"));
-  await a.waitForSelector(".friend:has-text('Luca a terminé « Se présenter » avec 92 %')", { timeout: 8000 });
-  ok(true, "l'activité de l'ami apparaît dans le fil, sous son prénom");
-  await a.click(".friend .cheer"); await a.waitForSelector(".friend .cheer.on");
+  await a.waitForSelector(".fr-row:has-text('Luca')", { timeout: 8000 });
+  const frw = await a.evaluate(() => ({ rows: document.querySelectorAll(".fr-row").length, txt: document.querySelector(".fr-row").textContent }));
+  ok(frw.rows === 1 && /2 leçons cette semaine/.test(frw.txt) && /« Se présenter »/.test(frw.txt), "une seule ligne par ami : « 2 leçons cette semaine », la dernière leçon (" + frw.txt.slice(0, 80) + ")");
+  await a.click(".fr-row .fr-cheer"); await a.waitForSelector(".fr-row .fr-cheer.on"); await (await a.$(".fr-card")).screenshot({ path: "tests/shot-friends.png" });
   ok((await st()).cheers.length === 1, "bravo enregistré");
   await b.evaluate(() => UI.go("feed"));
-  await b.waitForSelector(".friend:has-text('dit bravo')", { timeout: 8000 });
-  ok(true, "l'ami voit le bravo reçu");
+  await b.waitForSelector(".fr-fans:has-text('dit bravo')", { timeout: 8000 });
+  ok(true, "l'ami voit le bravo reçu, en une ligne");
   await b.evaluate(() => UI.go("profile"));
   await b.waitForSelector(".lb", { timeout: 8000 });
   ok((await b.$$eval(".lb", (l) => l.length)) >= 2, "classement de la semaine entre amis");
