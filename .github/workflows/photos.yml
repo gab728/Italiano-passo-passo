@@ -1,0 +1,45 @@
+# Télécharge les photos des thèmes (Wikimedia Commons, licences libres) et les enregistre dans la branche indiquée.
+# Lancement manuel : Actions → Photos → Run workflow (clés facultatives, ex. « cafe treno »).
+name: Photos
+
+on:
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Clés à (re)télécharger, séparées par des espaces (vide = les manquantes)"
+        required: false
+        default: ""
+      force:
+        description: "Retélécharger même si la photo existe (1 = oui)"
+        required: false
+        default: ""
+      branch:
+        description: "Branche où enregistrer les photos"
+        required: false
+        default: "photos-wip"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Photos
+        env:
+          FORCE: ${{ inputs.force }}
+        run: node scripts/fetch-photos.mjs ${{ inputs.keys }}
+      - name: Enregistrer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "${{ inputs.branch }}"
+          git add web/img/photos
+          git commit -m "Photos des thèmes (Wikimedia Commons)" || echo "rien de nouveau"
+          git push -f origin "${{ inputs.branch }}"
