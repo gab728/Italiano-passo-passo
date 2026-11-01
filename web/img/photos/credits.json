@@ -1,0 +1,18 @@
+{
+ "amici": {
+  "it": {
+   "src": "img/photos/amici-it.jpg",
+   "title": "File:Milan Navigli houseboat.jpg",
+   "author": "opethpainter",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Milan_Navigli_houseboat.jpg"
+  },
+  "he": {
+   "src": "img/photos/amici-he.jpg",
+   "title": "File:Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg",
+   "author": "FLASHPACKER TRAVELGUIDE",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Tel_Aviv_Tayelet-Strand-Promenade_Beach_(34257299744).jpg"
+  }
+ }
+}
