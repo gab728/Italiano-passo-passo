@@ -1,0 +1,27 @@
+{
+ "negozio": {
+  "it": {
+   "src": "img/photos/negozio-it.jpg",
+   "title": "File:Milano, Galleria Vittorio Emanuele II, 2016-06 CN-01.jpg",
+   "author": "Steffen Schmitz",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Milano,_Galleria_Vittorio_Emanuele_II,_2016-06_CN-01.jpg"
+  },
+  "he": {
+   "src": "img/photos/negozio-he.jpg",
+   "title": "File:PikiWiki Israel 9915 sheinkin street in tel aviv.jpg",
+   "author": "ד\"ר אבישי טייכר",
+   "license": "CC BY 2.5",
+   "page": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_9915_sheinkin_street_in_tel_aviv.jpg"
+  }
+ },
+ "amici": {
+  "he": {
+   "src": "img/photos/amici-he.jpg",
+   "title": "File:Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg",
+   "author": "FLASHPACKER TRAVELGUIDE",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Tel_Aviv_Tayelet-Strand-Promenade_Beach_(34257299744).jpg"
+  }
+ }
+}
