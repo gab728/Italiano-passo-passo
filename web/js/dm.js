@@ -38,8 +38,31 @@ const PERSONA_SETS = {
       mission: "Apprends une recette avec Savta Rivka." },
   },
 };
+// Portraits dessinés et petite fiche de chaque personnage (onglet Parler, fiche personnage).
+const PERSONA_BIO = {
+  it: {
+    giulia: { face: "giulia", who: "34 ans · prof à Bologne", status: "Corrige tes fautes en douceur", quote: "Sbagliare va benissimo: è così che si impara.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
+      bio: "Giulia enseigne l'italien aux étrangers depuis dix ans. Elle adore le cinéma, les longues balades sous les arcades de Bologne, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
+    marco: { face: "marco", who: "41 ans · barista à Rome", status: "Au comptoir jusqu'à 14 h", quote: "Un caffè? Te lo faccio come piace a me.", tags: ["Parle vite", "Fan de la Roma", "Blagueur"],
+      bio: "Marco tient le bar de son père dans le Trastevere depuis vingt ans. Il connaît tout le quartier, parle de foot à la moindre occasion et te tutoie dès le premier café.", voice: "Accent romain, débit rapide" },
+    sofia: { face: "sofia", who: "28 ans · designer à Milan", status: "Sort du bureau à 18 h", quote: "Stasera c'è un concerto sui Navigli, vieni?", tags: ["Sorties", "Expos", "Voyages en train"],
+      bio: "Sofia est designer dans une agence milanaise. Toujours une expo, un concert ou un week-end en train à proposer : avec elle, on parle de sorties, de projets et de la vie à Milan.", voice: "Jeune, spontanée, souriante" },
+    rosa: { face: "rosa", who: "76 ans · cuisine à Naples", status: "Le ragù mijote depuis 8 h", quote: "Tesoro mio, hai mangiato?", tags: ["Théâtrale", "Recettes", "Famille"],
+      bio: "Nonna Rosa a élevé cinq enfants dans les Quartieri Spagnoli. Elle parle avec les mains, raconte sa famille et t'apprend ses recettes… à condition que tu manges.", voice: "Chaleureuse, accent napolitain, lente" },
+  },
+  he: {
+    giulia: { face: "noa", who: "32 ans · prof à Tel Aviv", status: "Corrige tes fautes en douceur", quote: "טָעוּיוֹת זֶה בְּסֵדֶר גָּמוּר.", tl: "ta'uyot ze beseder gamur", tags: ["Patiente", "Plage", "À ton niveau"],
+      bio: "Noa enseigne l'hébreu aux nouveaux arrivants à Tel Aviv. Elle commence chaque matin par un café sur la plage et t'aide à oser parler, même avec trois mots.", voice: "Voix chaleureuse, débit calme" },
+    marco: { face: "avi", who: "45 ans · café à Jérusalem", status: "Au café jusqu'à 15 h", quote: "קָפֶה הַבֹּקֶר?", tl: "kafe haboker?", tags: ["Parle vite", "Fan de foot", "Blagueur"],
+      bio: "Avi sert des cafés au marché Mahané Yehouda depuis quinze ans. Il connaît tous les marchands, a un avis sur tout et adore taquiner ses clients.", voice: "Vif et décontracté" },
+    sofia: { face: "maya", who: "28 ans · graphiste à Haïfa", status: "À la plage cet après-midi", quote: "יֵשׁ הוֹפָעָה הָעֶרֶב, בָּאָה?", tl: "yesh hofa'a ha'erev, ba'a?", tags: ["Sorties", "Plage", "Randos"],
+      bio: "Maya est graphiste à Haïfa. Entre deux projets, elle part randonner sur le Carmel ou file à un concert : avec elle, on organise ses week-ends.", voice: "Jeune et spontanée" },
+    rosa: { face: "rivka", who: "78 ans · cuisine à Jérusalem", status: "Prépare la shakshuka", quote: "מוֹתֶק, אָכַלְתָּ?", tl: "motek, akhalta?", tags: ["Théâtrale", "Recettes", "Souvenirs"],
+      bio: "Savta Rivka vit à Jérusalem depuis toujours. Elle raconte ses souvenirs, sa famille et ses recettes, et elle ne te laissera pas partir le ventre vide.", voice: "Chaleureuse, lente" },
+  },
+};
 const PERSONAS = {};
-function applyPersonas() { const set = PERSONA_SETS[(typeof C === "function" && C().id) || "it"] || PERSONA_SETS.it; Object.keys(set).forEach((k) => { PERSONAS[k] = Object.assign({}, set[k]); }); }
+function applyPersonas() { const c = (typeof C === "function" && C().id) || "it", set = PERSONA_SETS[c] || PERSONA_SETS.it, bio = PERSONA_BIO[c] || PERSONA_BIO.it; Object.keys(set).forEach((k) => { PERSONAS[k] = Object.assign({}, set[k], bio[k] || {}); }); }
 applyPersonas();
 window.addEventListener("ipp-course", applyPersonas);
 const DM_SVG = {
@@ -59,6 +82,7 @@ window.PERSONAS = PERSONAS;
 function personaAvatar(p, size) {
   const a = el("span", "av"); a.setAttribute("aria-hidden", "true");
   a.style.background = p.bg; a.style.color = p.fg; if (size) { a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * 0.55) + "px"; }
+  if (p.face) { a.classList.add("face"); const i = document.createElement("img"); i.src = "img/personas/" + p.face + ".svg"; i.alt = ""; i.decoding = "async"; a.append(i); return a; }
   a.textContent = p.name.replace(/^(Nonna|Savta)\s+/, "").charAt(0); return a;
 }
 /* ---------- Mémoire des conversations ----------

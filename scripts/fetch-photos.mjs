@@ -19,7 +19,7 @@ const only = process.argv.slice(2), force = !!process.env.FORCE;
 const strip = (h) => String(h || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 const okLicense = (l) => l && !/\b(NC|ND)\b|fair use|non-free|copyright/i.test(l);
 async function api(params) {
-  const u = API + "?" + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...params });
+  const u = API + "?" + new URLSearchParams({ action: "query", format: "json", formatversion: "2", origin: "*", ...params });
   for (let k = 0; k < 4; k++) {
     let r, t;
     try { r = await fetch(u, { headers: { "User-Agent": UA, "Api-User-Agent": UA, Accept: "application/json" }, signal: AbortSignal.timeout(20000) }); t = await r.text(); }

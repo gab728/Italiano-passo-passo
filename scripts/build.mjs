@@ -74,6 +74,13 @@ const files = ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js",
 const hash = createHash("sha256");
 for (const f of files) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
+// Photos des thèmes (crédits) et portraits des personnages : ils font partie de la version.
+const CRED = join(WEB, "img", "photos", "credits.json");
+const PHOTOS = existsSync(CRED) ? JSON.parse(readFileSync(CRED, "utf8")) : {};
+for (const v of Object.values(PHOTOS)) for (const c of Object.keys(v)) if (!v[c] || !existsSync(join(WEB, v[c].src))) delete v[c];
+hash.update(JSON.stringify(PHOTOS));
+const FACES = existsSync(join(WEB, "img", "personas")) ? readdirSync(join(WEB, "img", "personas")).filter((f) => f.endsWith(".svg")).map((f) => "img/personas/" + f) : [];
+for (const f of FACES) hash.update(readFileSync(join(WEB, f)));
 const BUILD = hash.digest("hex").slice(0, 10);
 
 // La configuration publique (adresse Supabase, clé publique) est aussi recopiée dans la page :
@@ -113,7 +120,7 @@ ${fonts}
 <div id="gate" class="gate" hidden></div>
 <div id="app" hidden></div>
 <noscript>Cette app a besoin de JavaScript.</noscript>
-<script>window.APP_BUILD="${BUILD}";window.APP_CONFIG_BUILT=${INLINE_CFG};</script>
+<script>window.APP_BUILD="${BUILD}";window.PHOTOS=${JSON.stringify(PHOTOS).replace(/</g, "\\u003c")};window.APP_CONFIG_BUILT=${INLINE_CFG};</script>
 <script src="config.js?v=${BUILD}"></script>
 <script src="js/supabase.js?v=${BUILD}"></script>
 <script src="js/shim.js?v=${BUILD}"></script>
@@ -124,7 +131,7 @@ writeFileSync(join(WEB, "index.html"), html);
 
 // Service worker : la coquille de l'app et le catalogue restent disponibles hors ligne.
 const shell = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"].concat(readdirSync(join(WEB, "img", "themes")).filter((f) => f.endsWith(".svg")).map((f) => "img/themes/" + f))
-  .concat(files.map((f) => f + "?v=" + BUILD));
+  .concat(FACES).concat(files.map((f) => f + "?v=" + BUILD));
 writeFileSync(join(WEB, "sw.js"), read("scripts/sw.template.js").replace("__BUILD__", BUILD).replace("__SHELL__", JSON.stringify(shell)));
 
 if (!existsSync(join(WEB, "config.js"))) writeFileSync(join(WEB, "config.js"), read("web/config.example.js"));

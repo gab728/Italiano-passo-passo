@@ -55,12 +55,16 @@
   function pillBtn(label, cls, fn, icon) { const b = el("button", "pill-btn" + (cls ? " " + cls : "")); b.type = "button"; b.innerHTML = (icon || "") + "<span></span>"; b.querySelector("span").textContent = label; b.onclick = fn; return b; }
 
   /* ---------- Thèmes de conversation (images, défilement horizontal) ---------- */
-  const THEME_IMG = [[/caf|barista|colazione|cornetto/, "cafe"], [/restaurant|ristorante|trattoria|cameriere|pizz|addition/, "ristorante"], [/march|mercato|prix|venditor|négoci|borsa/, "mercatino"],
-    [/chemin|strada|stazione|perso|indiqu|direction/, "strada"], [/boutique|negozio|vêtement|commessa|abbigliamento|achat/, "negozio"], [/bureau|ufficio|collega|travail|lavoro|métier/, "ufficio"],
-    [/enfance|souvenir|bambino|ricord|passé/, "ricordi"], [/anniversaire|compleanno|festa|fête/, "festa"], [/coloc|coinquilin|appart|maison|casa/, "casa"],
-    [/train|treno|aereo|avion|opinion|débat/, "treno"], [/cuisine|cucina|recette|ricetta|nonna|manger/, "cucina"], [/voyage|viaggio|vacanz|hôtel|hotel|réserv/, "viaggio"],
-    [/culture|cinéma|film|musique|art|livre/, "cultura"], [/week-end|weekend|ami|amic|présent|famille/, "amici"]];
-  const themeImg = (s) => { const t = bare(s || ""); const hit = THEME_IMG.find(([re]) => re.test(t)); return "img/themes/" + (hit ? hit[1] : "generico") + ".svg"; };
+  const THEME_IMG = [[/caf|barista|colazione|cornetto|kiosque|pita/, "cafe"], [/restaurant|ristorante|trattoria|cameriere|pizz|addition/, "ristorante"], [/march|mercato|prix|venditor|negoci|borsa/, "mercatino"],
+    [/chemin|strada|stazione|perso|indiqu|direction|bus|arret/, "strada"], [/boutique|negozio|vetement|commessa|abbigliamento|achat/, "negozio"], [/bureau|ufficio|collega|travail|lavoro|metier/, "ufficio"],
+    [/enfance|souvenir|bambino|ricord|passe/, "ricordi"], [/anniversaire|compleanno|festa|fete|shabbat/, "festa"], [/coloc|coinquilin|appart|voisin|maison|casa/, "casa"],
+    [/train|treno|aereo|avion|opinion|debat/, "treno"], [/cuisine|cucina|recette|ricetta|nonna|manger/, "cucina"], [/voyage|viaggio|vacanz|hotel|reserv/, "viaggio"],
+    [/culture|cinema|film|musique|art|livre/, "cultura"], [/week-end|weekend|ami|amic|present|famille/, "amici"]];
+  // Photo du thème (Wikimedia Commons, dans web/img/photos) quand elle existe pour la langue, sinon l'illustration.
+  const photoOf = (k) => { const P = window.PHOTOS || {}, x = P[k] && (P[k][C().id] || P[k].it); return x && x.src ? x.src : null; };
+  const themeKey = (s) => { const t = bare(s || ""); const hit = THEME_IMG.find(([re]) => re.test(t)); return hit ? hit[1] : "generico"; };
+  const themeImg = (s) => { const k = themeKey(s); return photoOf(k) || "img/themes/" + k + ".svg"; };
+  const keyImg = (k) => photoOf(k) || "img/themes/" + k + ".svg";
   const TOPICS_ = () => [["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui", "casa"], ["Voyager " + LXC().inLand, "préparer un voyage " + LXC().inLand + " : villes, transports, hôtel, restaurants", "viaggio"],
     ["Le travail", "son travail, ses collègues, ses projets", "ufficio"], ["Culture", "cuisine, cinéma, musique, art et histoire (" + LXC().land + ")", "cultura"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis", "amici"]];
   function themeCarousel(limit) {
@@ -75,7 +79,7 @@
     const done = (i) => ss.some((x) => x.mi === i && isDone(x)) || (S[M[i].id] && S[M[i].id].done);
     sc.sort((a, b) => (done(b) ? 1 : 0) - (done(a) ? 1 : 0));
     sc.slice(0, limit || 99).forEach((i) => { const s = M[i].scenario; add(themeImg(s.title + " " + s.role), s.title, s.goal, done(i) ? "Jeu de rôle" : "Après « " + M[i].st + " »", () => openRole(i)); });
-    TOPICS_().forEach(([t, d, img]) => add("img/themes/" + img + ".svg", t, "Avec " + PERSONAS.giulia.name + ", à ton niveau", "Libre", () => openTopic(t, d)));
+    TOPICS_().forEach(([t, d, img]) => add(keyImg(img), t, "Avec " + PERSONAS.giulia.name + ", à ton niveau", "Libre", () => openTopic(t, d)));
     return row;
   }
   function personaStories(wrap, noRip) {
@@ -520,18 +524,100 @@
   }
 
   /* ---------- Parler ---------- */
+  // Rubriques des thèmes (filtres en haut de la liste), devinées d'après le titre et le rôle du jeu de rôle.
+  const CATS = [["Travail", /bureau|ufficio|collega|collegue|travail|lavoro|metier|entretien|pause/], ["Voyage", /train|treno|gare|stazione|voyage|viaggio|hotel|bus|arret|perdu|chemin|vacanc|aeroport|taxi/],
+    ["Rencontres", /fete|anniversaire|connaissance|rencontre|presente|invit|shabbat|voisin|premier jour|premiers mots|photo|album|famille/], ["Sortir", /restaurant|trattoria|cafe|terrasse|verre|soiree|sortie|diner|bar\b|pita|kiosque|programme|week-end|samedi|concert/],
+    ["Culture", /culture|cinema|film|musique|journal|livre|art\b|musee/]];
+  const catOf = (s) => { const t = bare(s || ""); const hit = CATS.find(([, re]) => re.test(t)); return hit ? hit[0] : "Quotidien"; };
+  let talkCat = "Tous", talkAll = false;
+  function themeItems() {
+    const ss = slots(), done = (i) => ss.some((x) => x.mi === i && isDone(x)) || (S[M[i].id] && S[M[i].id].done);
+    const sc = mine().filter((i) => M[i].scenario), ok = sc.filter(done).reverse(), later = sc.filter((i) => !done(i));
+    const out = [];
+    ok.forEach((i, n) => { const s = M[i].scenario; out.push({ title: s.title, sub: s.goal, img: themeImg(s.title + " " + s.role), cat: catOf(s.title + " " + s.role), tag: n === 0 ? "À faire maintenant" : "Jeu de rôle", now: n === 0, go: () => openRole(i) }); });
+    TOPICS_().forEach(([t, d, img]) => out.push({ title: t, sub: "Avec " + PERSONAS.giulia.name + ", à ton niveau", img: keyImg(img), cat: { casa: "Quotidien", viaggio: "Voyage", ufficio: "Travail", cultura: "Culture", amici: "Rencontres" }[img] || "Quotidien", tag: "Libre", go: () => openTopic(t, d) }));
+    later.forEach((i) => { const s = M[i].scenario; out.push({ title: s.title, sub: s.goal, img: themeImg(s.title + " " + s.role), cat: catOf(s.title + " " + s.role), tag: "Après « " + M[i].st + " »", later: true, go: () => openRole(i) }); });
+    return out;
+  }
+  function personaCard(id) {
+    const p = PERSONAS[id], c = el("article", "pcard");
+    const top = el("button", "pc-top"); top.type = "button"; top.setAttribute("aria-label", "Fiche de " + p.name); top.onclick = () => personaProfile(id);
+    if (p.face) { const im = el("img"); im.src = "img/personas/" + p.face + ".svg"; im.alt = ""; im.width = 240; im.height = 200; top.append(im); }
+    if (p.tutor) top.append(txt("span", "pc-badge", "Ta prof"));
+    c.append(top);
+    const b = el("div", "pc-b");
+    const nm = el("div", "pc-n"); nm.append(txt("b", null, p.name), txt("small", null, p.who || p.sub)); b.append(nm);
+    if (p.status) b.append(txt("span", "pc-st", p.status));
+    if (p.quote) { const q = el("span", "pc-q"); const qt = txt("span", "pc-qt", "« " + p.quote + " »"); qt.dir = "auto"; q.append(qt); if (p.tl && !(S.vx && S.vx.notl)) q.append(txt("small", "pc-tl", p.tl)); b.append(q); }
+    if (p.tags) { const tg = el("span", "pc-tags"); p.tags.forEach((t) => tg.append(txt("span", null, t))); b.append(tg); }
+    const act = el("span", "pc-act");
+    const go = el("button", "pc-go"); go.type = "button"; go.innerHTML = IC.talk + "<span>Parler</span>"; go.onclick = () => openPersona(id);
+    const pf = el("button", "pc-pf"); pf.type = "button"; pf.textContent = "Profil"; pf.setAttribute("aria-label", "Profil de " + p.name); pf.onclick = () => personaProfile(id);
+    act.append(go, pf); b.append(act); c.append(b); return c;
+  }
+  function photoCredits() {
+    const list = sheetBox("Crédits photos"), P = window.PHOTOS || {}, seen = new Set();
+    Object.values(P).forEach((v) => { const x = v[C().id]; if (!x || seen.has(x.src)) return; seen.add(x.src);
+      sheetRow(list, x.title.replace(/^File:/, "").replace(/\.\w+$/, ""), (x.author || "Wikimedia Commons") + " · " + (x.license || ""), false, () => window.open(x.page, "_blank", "noopener")); });
+    if (!seen.size) list.append(txt("p", "muted", "Pas encore de photos pour cette langue."));
+  }
   function talkHub() {
-    screen("talk");
-    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Parler")); root.append(h);
+    screen("talk"); talkAll = false;
+    const h = el("header", "tab-hd"); h.append(txt("h1", null, "Parler"), langChip()); root.append(h);
     if (!AI) { root.append(txt("p", "muted", "Les conversations passent par Claude, indisponible pour l'instant. Vérifie le réseau.")); return sync(); }
-    const sec = el("div", "sec-h"); sec.append(txt("h2", null, "Thèmes")); root.append(sec, themeCarousel());
+    root.append(txt("p", "muted talk-sub", "Choisis quelqu'un à qui parler, ou un thème."));
     const sec2 = el("div", "sec-h"); sec2.append(txt("h2", null, "Tes personnages")); root.append(sec2);
-    const list = card("list");
-    Object.keys(PERSONAS).forEach((id) => { const p = PERSONAS[id], b = el("button", "row"); b.type = "button"; b.append(personaAvatar(p, 46)); const t = el("span", "row-t"); t.append(txt("b", null, p.name), txt("small", null, p.sub + (p.open && !C().rtl ? " · « " + p.open.split(/[.!?]/)[0] + "… »" : " · " + (p.open ? p.mission : p.hello)))); b.append(t); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = () => openPersona(id); list.append(b); });
-    root.append(list);
+    const row = el("div", "pcards"); Object.keys(PERSONAS).forEach((id) => row.append(personaCard(id))); root.append(row);
+
+    const items = themeItems(), cats = ["Tous"].concat(["Quotidien", "Sortir", "Voyage", "Rencontres", "Travail", "Culture"].filter((c) => items.some((x) => x.cat === c)));
+    if (!cats.includes(talkCat)) talkCat = "Tous";
+    const sec = el("div", "sec-h"); sec.append(txt("h2", null, "Thèmes")); const cnt = txt("span", "muted", ""); sec.append(cnt); root.append(sec);
+    const chips = el("div", "tchips"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Filtrer les thèmes"); root.append(chips);
+    const grid = el("div", "tgrid"); root.append(grid);
+    const draw = () => {
+      chips.innerHTML = ""; cats.forEach((c) => { const b = el("button", "tchip" + (c === talkCat ? " on" : "")); b.type = "button"; b.textContent = c; b.setAttribute("aria-pressed", c === talkCat ? "true" : "false"); b.onclick = () => { talkCat = c; talkAll = false; draw(); }; chips.append(b); });
+      const list = items.filter((x) => talkCat === "Tous" || x.cat === talkCat), cap = talkCat === "Tous" && !talkAll ? items.filter((x) => !x.later).length + 4 : list.length, shown = list.slice(0, cap);
+      cnt.textContent = list.length + (list.length > 1 ? " thèmes" : " thème");
+      grid.innerHTML = "";
+      shown.forEach((x, n) => {
+        const lead = n === 0 && (x.now || shown.length % 2 === 1);
+        const b = el("button", "tcard" + (lead ? " lead" : "") + (x.later ? " later" : "")); b.type = "button"; b.onclick = x.go;
+        const im = el("img"); im.src = x.img; im.alt = ""; im.loading = "lazy"; im.decoding = "async"; if (/\.svg$/.test(x.img)) b.classList.add("ill"); b.append(im);
+        const t = el("span", "tc-t"); t.append(txt("span", "tc-tag" + (x.now ? " now" : ""), x.tag), txt("b", null, x.title), txt("small", null, x.sub)); b.append(t); grid.append(b);
+      });
+      if (shown.length < list.length) { const m = el("button", "tmore"); m.type = "button"; m.textContent = "Voir les " + (list.length - shown.length) + " autres thèmes"; m.onclick = () => { talkAll = true; draw(); }; grid.append(m); }
+    };
+    draw();
     const more = card("list");
     if (canSpeak) { const b = el("button", "row"); b.type = "button"; const i = el("span", "row-ic"); i.innerHTML = IC.car; const t = el("span", "row-t"); t.append(txt("b", null, "Mode voiture"), txt("small", null, "La leçon du jour ou tes mots, à l'oral, sans regarder l'écran")); b.append(i, t); b.insertAdjacentHTML("beforeend", IC.chev); b.onclick = () => audioSetup(); more.append(b); }
     if (more.children.length) root.append(more);
+    if (Object.keys(window.PHOTOS || {}).length) { const cr = el("button", "link credits"); cr.type = "button"; cr.textContent = "Photos : Wikimedia Commons · crédits"; cr.onclick = photoCredits; root.append(cr); }
+    sync();
+  }
+  // Fiche d'un personnage : portrait, qui il est, sa voix, ce qu'il sait de toi, vos conversations.
+  function personaProfile(id) {
+    const p = PERSONAS[id]; if (!p) return talkHub();
+    screen("talk", "persona");
+    const hero = el("div", "pp-hero"); hero.style.background = p.bg;
+    const back = el("button", "icon-btn pp-back"); back.type = "button"; back.setAttribute("aria-label", "Retour"); back.innerHTML = IC.prev; back.onclick = () => talkHub(); hero.append(back);
+    if (p.face) { const im = el("img"); im.src = "img/personas/" + p.face + ".svg"; im.alt = "Portrait de " + p.name; im.width = 240; im.height = 200; hero.append(im); }
+    root.append(hero);
+    const hd = el("div", "pp-hd"); hd.append(txt("h1", null, p.name), txt("span", "pp-who", p.who || p.sub)); if (p.status) hd.append(txt("span", "pc-st", p.status)); root.append(hd);
+    if (p.quote) { const q = el("div", "pp-q"); const qt = txt("p", null, "« " + p.quote + " »"); qt.dir = "auto"; q.append(qt); if (p.tl && !(S.vx && S.vx.notl)) q.append(txt("small", "pc-tl", p.tl)); root.append(q); }
+    if (p.bio) root.append(txt("p", "pp-bio", p.bio));
+    if (p.quote && typeof TTS !== "undefined") {
+      const v = el("button", "pp-voice"); v.type = "button"; v.innerHTML = '<span class="pp-play">' + IC.play + "</span>";
+      const vt = el("span", "pp-vt"); vt.append(txt("b", null, "Écouter sa voix"), txt("small", null, p.voice || "")); v.append(vt);
+      v.onclick = () => { if (typeof stopSpeech === "function") stopSpeech(); TTS.say(p.quote, C().speech || "it-IT", { who: id, cache: true, fallback: (t) => typeof VO !== "undefined" && VO.deviceSay ? VO.deviceSay(t, C().speech || "it-IT", 0.95) : null }); };
+      root.append(v);
+    }
+    if (p.tags) { root.append(txt("h2", "pp-h", "Sa façon d'être")); const tg = el("div", "pc-tags big"); p.tags.forEach((t) => tg.append(txt("span", null, t))); root.append(tg); }
+    const me = (S.mem && S.mem._me && S.mem._me.facts) || [], m = memOf({ id });
+    root.append(txt("h2", "pp-h", "Ce qu'" + (p.tutor || /a$/.test(p.name) ? "elle" : "il") + " sait de toi"));
+    if (me.length) { const l = card("list pp-facts"); me.slice(0, 6).forEach((f) => l.append(txt("div", "pp-fact", f))); root.append(l); }
+    else root.append(txt("p", "muted", "Rien pour l'instant : parle-" + (p.tutor || /a$/.test(p.name) ? "lui" : "lui") + " de toi, " + (p.tutor || /a$/.test(p.name) ? "elle" : "il") + " s'en souviendra."));
+    if (m && m.n) { root.append(txt("h2", "pp-h", "Vos conversations")); const l = card("pp-conv"); l.append(txt("b", null, m.n + (m.n > 1 ? " conversations" : " conversation") + " · la dernière " + (day() - (m.last || day()) === 0 ? "aujourd'hui" : day() - m.last === 1 ? "hier" : "il y a " + (day() - m.last) + " jours"))); if (m.resume) l.append(txt("p", "muted", m.resume)); root.append(l); }
+    const cta = el("div", "pp-cta"); const go = el("button", "pp-go"); go.type = "button"; go.innerHTML = IC.talk + "<span></span>"; go.querySelector("span").textContent = "Parler avec " + p.name; go.onclick = () => openPersona(id); cta.append(go); root.append(cta);
     sync();
   }
 
