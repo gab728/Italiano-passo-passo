@@ -1,0 +1,100 @@
+{
+ "negozio": {
+  "he": {
+   "src": "img/photos/negozio-he.jpg",
+   "title": "File:PikiWiki Israel 9915 sheinkin street in tel aviv.jpg",
+   "author": "ד\"ר אבישי טייכר",
+   "license": "CC BY 2.5",
+   "page": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_9915_sheinkin_street_in_tel_aviv.jpg"
+  }
+ },
+ "ricordi": {
+  "it": {
+   "src": "img/photos/ricordi-it.jpg",
+   "title": "File:Family-album.jpg",
+   "author": "AnonymousUnknown authorderivative work: Photolis",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Family-album.jpg"
+  },
+  "he": {
+   "src": "img/photos/ricordi-he.jpg",
+   "title": "File:WCB-family-lompoc.jpg",
+   "author": "E.J. Briggs",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:WCB-family-lompoc.jpg"
+  }
+ },
+ "festa": {
+  "it": {
+   "src": "img/photos/festa-it.jpg",
+   "title": "File:Carnival of Venice, Carnevale di Venezia, Carnavalul de la Venetia - panoramio (4).jpg",
+   "author": "IonutDragu",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Carnival_of_Venice,_Carnevale_di_Venezia,_Carnavalul_de_la_Venetia_-_panoramio_(4).jpg"
+  },
+  "he": {
+   "src": "img/photos/festa-he.jpg",
+   "title": "File:Shabbat table setting.jpg",
+   "author": "Crzrussian",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Shabbat_table_setting.jpg"
+  }
+ },
+ "treno": {
+  "it": {
+   "src": "img/photos/treno-it.jpg",
+   "title": "File:FS ETR.500, Firenze S.M.N..jpg",
+   "author": "Michael Day",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:FS_ETR.500,_Firenze_S.M.N..jpg"
+  },
+  "he": {
+   "src": "img/photos/treno-he.jpg",
+   "title": "File:DD entering Haifa Bat-Galim.jpg",
+   "author": "Oyoyoy",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:DD_entering_Haifa_Bat-Galim.jpg"
+  }
+ },
+ "cultura": {
+  "it": {
+   "src": "img/photos/cultura-it.jpg",
+   "title": "File:Uffizi Gallery hallway.JPG",
+   "author": "Petar Milošević",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Uffizi_Gallery_hallway.JPG"
+  },
+  "he": {
+   "src": "img/photos/cultura-he.jpg",
+   "title": "File:The Habima Theatre in Tel Aviv (FL62658089).jpg",
+   "author": "IPPA photographer",
+   "license": "CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Habima_Theatre_in_Tel_Aviv_(FL62658089).jpg"
+  }
+ },
+ "amici": {
+  "he": {
+   "src": "img/photos/amici-he.jpg",
+   "title": "File:Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg",
+   "author": "FLASHPACKER TRAVELGUIDE",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Tel_Aviv_Tayelet-Strand-Promenade_Beach_(34257299744).jpg"
+  }
+ },
+ "generico": {
+  "it": {
+   "src": "img/photos/generico-it.jpg",
+   "title": "File:View of Spaccanapoli and the Centro Direzionale from Castel Sant'Elmo, Naples, 2010.jpg",
+   "author": "DimiTalen",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:View_of_Spaccanapoli_and_the_Centro_Direzionale_from_Castel_Sant%27Elmo,_Naples,_2010.jpg"
+  },
+  "he": {
+   "src": "img/photos/generico-he.jpg",
+   "title": "File:Israel-2013-Jaffa 01.jpg",
+   "author": "Godot13",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Israel-2013-Jaffa_01.jpg"
+  }
+ }
+}
