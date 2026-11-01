@@ -45,6 +45,13 @@
    "author": "Bahnfrend",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Carmel_Market,_2019_(07).jpg"
+  },
+  "es": {
+   "src": "img/photos/mercatino-es.jpg",
+   "title": "File:La Boqueria.JPG",
+   "author": "Dungodung",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:La_Boqueria.JPG"
   }
  },
  "strada": {
@@ -61,6 +68,13 @@
    "author": "מקף־עברי",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Jerusalem_Light_Rail_(Red_Line)_on_Jaffa_Road,_5_November_2025_20.jpg"
+  },
+  "es": {
+   "src": "img/photos/strada-es.jpg",
+   "title": "File:Calle de Manuela Malasaña, Madrid 2021-01-08 - 50857935057.jpg",
+   "author": "Nicolas Vigier",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Calle_de_Manuela_Malasa%C3%B1a,_Madrid_2021-01-08_-_50857935057.jpg"
   }
  },
  "negozio": {
@@ -77,6 +91,13 @@
    "author": "ד\"ר אבישי טייכר",
    "license": "CC BY 2.5",
    "page": "https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_9915_sheinkin_street_in_tel_aviv.jpg"
+  },
+  "es": {
+   "src": "img/photos/negozio-es.jpg",
+   "title": "File:Madrid - Springfield (Gran Vía 40).jpg",
+   "author": "Zarateman",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Madrid_-_Springfield_(Gran_V%C3%ADa_40).jpg"
   }
  },
  "ufficio": {
@@ -93,6 +114,13 @@
    "author": "Crew crew",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:Working_in_open_office_space_(Unsplash).jpg"
+  },
+  "es": {
+   "src": "img/photos/ufficio-es.jpg",
+   "title": "File:The Prospector - annual of the Colorado School of Mines (1916) (14766289325).jpg",
+   "author": "Internet Archive Book Images",
+   "license": "No restrictions",
+   "page": "https://commons.wikimedia.org/wiki/File:The_Prospector_-_annual_of_the_Colorado_School_of_Mines_(1916)_(14766289325).jpg"
   }
  },
  "ricordi": {
@@ -109,6 +137,13 @@
    "author": "E.J. Briggs",
    "license": "Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:WCB-family-lompoc.jpg"
+  },
+  "es": {
+   "src": "img/photos/ricordi-es.jpg",
+   "title": "File:Flinton Store - September 1913 (21895500533).jpg",
+   "author": "CDHS",
+   "license": "No restrictions",
+   "page": "https://commons.wikimedia.org/wiki/File:Flinton_Store_-_September_1913_(21895500533).jpg"
   }
  },
  "festa": {
@@ -125,6 +160,13 @@
    "author": "IonutDragu",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Carnival_of_Venice,_Carnevale_di_Venezia,_Carnavalul_de_la_Venetia_-_panoramio_(4).jpg"
+  },
+  "es": {
+   "src": "img/photos/festa-es.jpg",
+   "title": "File:Caseta de Radio Sevilla en la Feria de Abril.JPG",
+   "author": "Frobles",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Caseta_de_Radio_Sevilla_en_la_Feria_de_Abril.JPG"
   }
  },
  "casa": {
@@ -141,6 +183,13 @@
    "author": "andynash",
    "license": "CC BY-SA 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:White_City_(Bauhaus)_Tel_Aviv_Yafo_-_08.jpg"
+  },
+  "es": {
+   "src": "img/photos/casa-es.jpg",
+   "title": "File:Madrid, U.V.A. de Hortaleza 1977 22.jpg",
+   "author": "LBM1948",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Madrid,_U.V.A._de_Hortaleza_1977_22.jpg"
   }
  },
  "treno": {
@@ -157,6 +206,13 @@
    "author": "Oyoyoy",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:DD_entering_Haifa_Bat-Galim.jpg"
+  },
+  "es": {
+   "src": "img/photos/treno-es.jpg",
+   "title": "File:100 Renfe AVE - Madrid Puerta de Atocha - Luis Zamora.jpg",
+   "author": "eldelinux from Cataluña, España",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:100_Renfe_AVE_-_Madrid_Puerta_de_Atocha_-_Luis_Zamora.jpg"
   }
  },
  "cucina": {
@@ -173,6 +229,13 @@
    "author": "Gilabrand",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Shakshuka_011.jpg"
+  },
+  "es": {
+   "src": "img/photos/cucina-es.jpg",
+   "title": "File:Paella Valenciana, Puerto de las Nieves, Gran Canaria.jpg",
+   "author": "Gerda Arendt",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Paella_Valenciana,_Puerto_de_las_Nieves,_Gran_Canaria.jpg"
   }
  },
  "viaggio": {
@@ -189,6 +252,13 @@
    "author": "Dani Lavi 0007",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Bahai_Garden_in_Haifa_Israel.jpg"
+  },
+  "es": {
+   "src": "img/photos/viaggio-es.jpg",
+   "title": "File:Granada - View from Mirador de San Nicolás - 02.jpg",
+   "author": "Diego Delso",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Granada_-_View_from_Mirador_de_San_Nicol%C3%A1s_-_02.jpg"
   }
  },
  "cultura": {
@@ -205,6 +275,13 @@
    "author": "IPPA photographer",
    "license": "CC BY 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:The_Habima_Theatre_in_Tel_Aviv_(FL62658089).jpg"
+  },
+  "es": {
+   "src": "img/photos/cultura-es.jpg",
+   "title": "File:Maja desnuda (museo del Prado).jpg",
+   "author": "Francisco Goya",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Maja_desnuda_(museo_del_Prado).jpg"
   }
  },
  "amici": {
@@ -221,6 +298,13 @@
    "author": "FLASHPACKER TRAVELGUIDE",
    "license": "CC BY-SA 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Tel_Aviv_Tayelet-Strand-Promenade_Beach_(34257299744).jpg"
+  },
+  "es": {
+   "src": "img/photos/amici-es.jpg",
+   "title": "File:32 Plaza Mayor, Madrid - sidewalk cafes of Plaza Mayor square in Madrid, Spain Spanje.jpg",
+   "author": "Marek Ślusarczyk (Tupungato) Photo portfolio",
+   "license": "CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:32_Plaza_Mayor,_Madrid_-_sidewalk_cafes_of_Plaza_Mayor_square_in_Madrid,_Spain_Spanje.jpg"
   }
  },
  "generico": {
@@ -237,6 +321,13 @@
    "author": "Godot13",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Israel-2013-Jaffa_01.jpg"
+  },
+  "es": {
+   "src": "img/photos/generico-es.jpg",
+   "title": "File:Toledo cyl-panorama-mirador.jpg",
+   "author": "Misburg3014",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Toledo_cyl-panorama-mirador.jpg"
   }
  },
  "mercato": {
@@ -253,6 +344,13 @@
    "author": "Emmanuel DYAN from Paris, France",
    "license": "CC BY 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Mahane_Yehuda_market,_Jerusalem_-_Isra%C3%ABl_(4673933223).jpg"
+  },
+  "es": {
+   "src": "img/photos/mercato-es.jpg",
+   "title": "File:Mercado de San Miguel - Madrid.png",
+   "author": "RL0919",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Mercado_de_San_Miguel_-_Madrid.png"
   }
  }
 }
