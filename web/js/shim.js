@@ -275,7 +275,7 @@
     resolveReady(s);
     loadMe();
     try {
-      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
+      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
     } catch (e) {
       document.getElementById("app").textContent = "Impossible de charger l'app. Vérifie le réseau, puis recharge la page.";
     }
@@ -370,8 +370,13 @@
   }
   function stepLevel() {
     const box = frame({ back: stepWhy, step: 3 });
-    box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", "Pas d'examen : tu pourras changer de niveau à tout moment."));
+    box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", OB.ptest && OB.ptest.c === OB.course ? "Résultat du test : " + OB.ptest.label + ". Tu peux encore choisir toi-même." : "Fais le test, ou choisis toi-même. Tu pourras changer de niveau à tout moment."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
+    if (!(OB.ptest && OB.ptest.c === OB.course)) {
+      const t = $("button", "g-testbtn"); t.type = "button"; t.innerHTML = "<b>Faire le test de niveau</b><small>12 questions, 3 minutes</small>";
+      t.onclick = () => placement(OB.course, (r) => { OB.ptest = { c: OB.course, lv: r.label, label: r.label }; if (OB.course === "he") OB.start = r.start; else OB.lv = r.start; stepLevel(); }, stepLevel);
+      box.append(t, $("p", "g-or", "ou choisis toi-même"));
+    }
     if (OB.course === "he") {
       // Hébreu : le point de départ dans le parcours, puis la façon dont les personnages s'adressent à toi (l'hébreu tutoie au masculin ou au féminin).
       choice(box, [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
@@ -382,6 +387,74 @@
     } else choice(box, [[0, "Je débute", "Quelques mots, pas plus"], [0.5, "Je connais les bases", "Je me présente, je commande un café"], [1, "Je me débrouille", "Je tiens une conversation simple (A2)"], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)"]], false, OB.lv, (v) => { OB.lv = v; });
     go.onclick = stepGoal; box.append(go);
   }
+  /* Test de niveau : 4 paliers de 3 questions, du plus simple au plus difficile. On monte tant qu'un palier est réussi
+     (2 bonnes réponses sur 3). Le nombre de paliers réussis donne le point de départ. Sans réseau ni compte : tout est ici. */
+  const PT = {
+    it: [
+      [["Io ___ francese.", ["sono", "ho", "sei", "è"]], ["« Je voudrais un café. »", ["Vorrei un caffè.", "Voglio di un caffè.", "Volevo uno caffè.", "Vorrei una caffè."]], ["« Quanti anni hai? » veut dire…", ["Quel âge as-tu ?", "Combien en veux-tu ?", "Depuis combien d'années ?", "Où habites-tu ?"]]],
+      [["Ieri ___ al cinema.", ["siamo andati", "abbiamo andato", "siamo andato", "andiamo stati"]], ["Vado ___ Roma ___ treno.", ["a · in", "in · con", "a · con", "da · in"]], ["Le chiavi? ___ ho dimenticate a casa.", ["Le", "Li", "Gli", "La"]]],
+      [["Quando ero piccolo, ___ sempre al mare.", ["andavo", "sono andato", "andrò", "vado"]], ["Se avessi tempo, ___ un viaggio.", ["farei", "faccio", "farò", "facevo"]], ["Penso che lui ___ ragione.", ["abbia", "ha", "avrà", "avere"]]],
+      [["« Te l'ho già detto » veut dire…", ["Je te l'ai déjà dit", "Tu me l'as déjà dit", "Je te le dirai", "Je l'ai dit pour toi"]], ["« Me ne vado » veut dire…", ["Je m'en vais", "Je m'y rends", "Je vais bien", "Je le vois"]], ["Bisogna che tu ___ attenzione.", ["faccia", "fai", "farai", "facendo"]]],
+    ],
+    he: [
+      [["Quelle lettre fait le son « sh » ?", ["שׁ", "ס", "צ", "ת"]], ["Comment se lit שָׁלוֹם ?", ["shalom", "salom", "lashon", "shulam"]], ["Quelle est la forme finale de מ (m) ?", ["ם", "ן", "ס", "ך"]]],
+      [["Sans voyelles : que veut dire תודה ?", ["merci", "bonjour", "pardon", "oui"]], ["Sans voyelles : que veut dire בית ?", ["maison", "fille", "jour", "livre"]], ["Sans voyelles : que veut dire מים ?", ["eau", "jour", "mer", "ciel"]]],
+      [["« מָה שְׁלוֹמְךָ? » veut dire…", ["Comment vas-tu ?", "Comment t'appelles-tu ?", "Où es-tu ?", "Quelle heure est-il ?"]], ["« Je veux de l'eau. »", ["אֲנִי רוֹצֶה מַיִם.", "אֲנִי אוֹהֵב מַיִם.", "אֲנִי שׁוֹתֶה לֶחֶם.", "יֵשׁ לִי מַיִם."]], ["« Nous avons une maison. »", ["יֵשׁ לָנוּ בַּיִת.", "יֵשׁ לִי בַּיִת.", "אֵין לָנוּ בַּיִת.", "הָיָה לָנוּ בַּיִת."]]],
+      [["« Hier, j'ai mangé. »", ["אֶתְמוֹל אָכַלְתִּי.", "מָחָר אֹכַל.", "אֶתְמוֹל אוֹכֵל.", "אֶתְמוֹל אָכַלְנוּ."]], ["« הוּא הָלַךְ » veut dire…", ["il est allé", "il va", "il ira", "elle est allée"]], ["« Demain, nous irons à la mer. »", ["מָחָר נֵלֵךְ לַיָּם.", "אֶתְמוֹל הָלַכְנוּ לַיָּם.", "מָחָר הוֹלְכִים לַבַּיִת.", "מָחָר אֵלֵךְ לַיָּם."]]],
+    ],
+  };
+  // Résultat → point de départ. Italien : niveau (0, 0.5, 1, 2). Hébreu : première leçon du parcours.
+  const PT_OUT = {
+    it: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
+    he: [["", "L'alphabet", "On commence par les lettres, tout doucement."], ["he-u03-l1", "Lecture", "Tu connais les lettres : on reprend à la lecture sans voyelles."], ["he-u04-l1", "A1", "Tu lis : on démarre au niveau A1."], ["he-u08-l1", "A2", "Tu te débrouilles : on démarre au niveau A2."], ["he-u08-l1", "A2", "Excellent : on démarre au niveau A2."]],
+  };
+  function placement(course, onDone, onBack) {
+    const blocks = PT[course]; let b = 0, k = 0, good = 0, passed = 0, qn = 0;
+    const total = blocks.length * 3;
+    function ask() {
+      const [q, opts] = blocks[b][k];
+      const box = frame({ back: onBack, cls: "g-test" });
+      const pr = $("div", "g-tprog"); const fill = $("i"); fill.style.width = Math.round(100 * qn / total) + "%"; pr.append(fill); box.append(pr);
+      box.append($("p", "g-tstep", "Question " + (qn + 1) + " · palier " + (b + 1) + " sur " + blocks.length));
+      const h = $("h1", "g-tq", q); if (/[֐-׿]/.test(q)) h.dir = "auto"; box.append(h);
+      const list = $("div", "g-choices g-topts");
+      const order = opts.map((t, i) => [t, i]).sort(() => Math.random() - 0.5);
+      order.forEach(([t, i]) => {
+        const o = $("button", "g-choice", ""); o.type = "button"; const tt = $("b", null, t); if (/[֐-׿]/.test(t)) { tt.dir = "rtl"; tt.lang = "he"; o.classList.add("g-he-opt"); } o.append(tt);
+        o.onclick = () => {
+          [...list.children].forEach((c) => { c.disabled = true; });
+          o.classList.add(i === 0 ? "ok" : "ko"); if (i !== 0) list.children[order.findIndex((x) => x[1] === 0)].classList.add("ok");
+          if (i === 0) good++; qn++;
+          setTimeout(nextQ, i === 0 ? 450 : 900);
+        };
+        list.append(o);
+      });
+      box.append(list);
+      const skip = $("button", "g-link", "Je ne sais pas"); skip.type = "button"; skip.onclick = () => { qn++; nextQ(); }; box.append(skip);
+    }
+    function nextQ() {
+      k++;
+      if (k < 3) return ask();
+      if (good >= 2) passed++;
+      if (good < 2 || b + 1 >= blocks.length) return result();
+      b++; k = 0; good = 0; ask();
+    }
+    function result() {
+      const out = PT_OUT[course][Math.min(passed, PT_OUT[course].length - 1)];
+      const box = frame({ back: onBack, cls: "g-test" });
+      const badge = $("div", "g-tres"); badge.append($("small", null, "Ton niveau"), $("b", null, out[1])); box.append(badge);
+      box.append($("h1", null, passed >= 3 ? "Impressionnant !" : passed >= 1 ? "Joli résultat !" : "C'est parti !"), $("p", "g-sub", out[2] + " Tu pourras changer ton point de départ à tout moment."));
+      const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.onclick = () => onDone({ start: out[0], label: out[1] }); box.append(go);
+    }
+    ask();
+  }
+  // Dans l'app (profil) : même test, par-dessus l'app.
+  window.PLACE = {
+    run(course, done) {
+      const close = () => { gate.hidden = true; gate.innerHTML = ""; document.getElementById("app").hidden = false; };
+      placement(course, (r) => { close(); done(r); }, close);
+    },
+  };
   function stepGoal() {
     const box = frame({ back: stepLevel, step: 4 });
     box.append($("h1", null, "Combien de temps par jour ?"), $("p", "g-sub", "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps."));

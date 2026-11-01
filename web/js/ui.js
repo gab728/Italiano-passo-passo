@@ -198,6 +198,7 @@
   };
   /* ---------- Ta journée : révision, mot du jour, défi oral, actu ---------- */
   const ICD = {
+    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M17.7 6.3l-2.5 2.5M8.8 15.2l-2.5 2.5"/></svg>',
     rev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15"/><path d="M4 20v-5h5"/></svg>',
     sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/></svg>',
     news: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/></svg>',
@@ -224,6 +225,9 @@
     // 1. Révision espacée
     if (V.nb.length) row(ICD.rev, 0, "Révision", V.due.length ? V.due.length + (V.due.length > 1 ? " mots à revoir" : " mot à revoir") : "Carnet à jour", V.due.length ? "2 minutes, au bon moment pour les retenir" : "Rien à revoir aujourd'hui", !V.due.length,
       () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
+    // 1 bis. Révision sur mesure (fautes, grammaire, mots), préparée par Claude à la demande.
+    if (AI && typeof RV !== "undefined" && slots().some(isDone)) { const rs = RV.status();
+      row(ICD.spark, 1, "Révision sur mesure", rs.done ? "Série du jour terminée" : rs.today ? "Reprendre ma série" : "Ta série du jour", rs.faults ? rs.faults + (rs.faults > 1 ? " fautes à retravailler, avec Claude" : " faute à retravailler, avec Claude") : "Grammaire et mots, préparés par Claude", rs.done, () => rs.done ? UI.go("words") : RV.open(false)); }
     // 2. Le mot du jour : un toucher le dit et déplie l'exemple.
     const wd = wordOfDay();
     if (wd) {
@@ -627,6 +631,7 @@
     const V = vstat();
     const h = el("header", "tab-hd"); h.append(txt("h1", null, "Mots"), txt("span", "muted", V.nb.length + (V.nb.length > 1 ? " mots" : " mot") + " dans ton carnet")); root.append(h);
     if (typeof WT !== "undefined") root.append(WT.tool(() => wordsTab()));
+    if (typeof RV !== "undefined") root.append(RV.card());
     const r = el("button", "today-c"); r.type = "button"; const t = el("span", "today-t");
     t.append(txt("small", null, "Révision espacée"), txt("b", null, V.due.length ? V.due.length + (V.due.length > 1 ? " mots à revoir aujourd'hui" : " mot à revoir aujourd'hui") : "Rien à revoir aujourd'hui"));
     t.append(txt("small", "today-note", V.due.length ? "Chaque mot revient au bon moment." : "Lance un quiz pour t'entraîner quand même."));
@@ -652,14 +657,9 @@
     id.append(txt("h1", null, firstName() || "Toi"));
     const lv = vLevel(); id.append(txt("span", "muted", "Niveau " + lv.cecr + (W.me && W.me.owner ? " · créateur de l'app" : ""))); root.append(id);
     if (!firstName()) root.append(nameCard());
-    const V = vstat(), stats = el("div", "stats");
-    const stat = (n, l, hot) => { const d = el("div", "stat"); d.append(txt("b", hot ? "hot" : null, String(n)), txt("small", null, l)); stats.append(d); };
-    const sk = streak(); stat(sk, sk > 1 ? "jours de série" : "jour de série", true); stat(V.seen.length, "mots vus"); stat(S.dmn || 0, (S.dmn || 0) > 1 ? "conversations" : "conversation"); root.append(stats);
+    const sk = streak();
+    if (typeof RV !== "undefined") RV.progress(root);
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
-    const wk = card("week"); wk.append(txt("b", null, "Ta semaine")); const bars = el("div", "bars"), labels = el("div", "bars-l"); const t = day(), mon = t - ((new Date().getDay() + 6) % 7);
-    const vals = [0, 1, 2, 3, 4, 5, 6].map((i) => dayN(mon + i)), max = Math.max(GOAL, ...vals);
-    vals.forEach((v, i) => { const b = el("span", mon + i === t ? "now" : ""); b.style.height = Math.max(6, Math.round(100 * v / max)) + "%"; bars.append(b); labels.append(txt("span", mon + i === t ? "now" : "", "LMMJVSD"[i])); });
-    bars.setAttribute("role", "img"); bars.setAttribute("aria-label", "Réponses par jour cette semaine : " + vals.join(", ")); wk.append(bars, labels); root.append(wk);
     const acts = el("div", "acts two");
     acts.append(pillBtn("Inviter un ami", "dark", () => {
       const text = "Viens apprendre l'" + LN() + " avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink();
@@ -667,6 +667,13 @@
     }));
     acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur Italiano passo passo. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
     root.append(acts);
+    if (window.PLACE) {
+      const pt = (S.ptest || {})[C().id], tc = card("goal-c pt-c"); tc.append(txt("b", null, "Test de niveau"), txt("small", "muted", pt ? "Dernier résultat : " + pt.lv + ". Le refaire ajuste ton point de départ." : "12 questions pour savoir où commencer en " + LN() + "."));
+      const tb = pillBtn(pt ? "Refaire le test" : "Faire le test", "soft", () => PLACE.run(C().id, (r) => {
+        if (C().id === "it") S.ob = Object.assign({}, S.ob || {}, { lv: r.start }); else S.from = Object.assign({}, S.from || {}, { [C().id]: r.start });
+        S.ptest = Object.assign({}, S.ptest || {}, { [C().id]: { lv: r.label, t: day() } }); save(); profileTab();
+      })); tc.append(tb); root.append(tc);
+    }
     const goalC = card("goal-c"); goalC.append(txt("b", null, "Objectif du jour"), txt("small", "muted", "Nombre de réponses par jour"));
     const gl = el("div", "chips"); [[8, "5 min"], [12, "10 min"], [20, "20 min"], [30, "30 min"]].forEach(([g, l]) => {
       const c = el("button", "chip" + (GOAL === g ? " sel" : "")); c.type = "button"; c.textContent = l; c.setAttribute("aria-pressed", String(GOAL === g));
@@ -880,11 +887,12 @@
         S.course = ob.course;
         if (ob.course === "he") S.from = Object.assign({}, S.from || {}, { he: typeof ob.start === "string" && /^he-u\d\d-l\d+$/.test(ob.start) ? ob.start : "" });
       }
+      if (ob.ptest && (ob.ptest.c === "it" || ob.ptest.c === "he")) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
       GOAL = S.ob.goal; save(); courseNow();
     }
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
   })();
-  window.UI = { setTab, sync, go: goTab, lessons, news };
+  window.UI = { setTab, sync, go: goTab, lessons, news }; window.LINO = lino;
   home();
 })();
