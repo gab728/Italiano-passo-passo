@@ -156,7 +156,7 @@ const MOCKS = `
 
   console.log("5. Conversation façon messagerie, à la voix et au clavier");
   await b.click(".tabbar .tab-talk");
-  await b.click(".theme:has(b:text-is('Ma journée'))");
+  await b.click(".tcard:has(b:text-is('Ma journée'))");
   await b.waitForSelector(".msg.ai .bub", { timeout: 10000 });
   await b.evaluate(() => { window.__said = ["Oggi ho andato al lavoro"]; window.__spoken = []; });
   const ttsBefore = (await st()).tts.length;
