@@ -527,7 +527,7 @@ const MOCKS = `
   await a.fill(".qz input", "zzzz"); await a.press(".qz input", "Enter");
   await a.waitForSelector(".fb.ko"); ok(true, "mauvaise réponse signalée");
   const mi = await a.evaluate(() => M.findIndex((m) => m.custom && m.ex.some((x) => x[0] === "m" && /___/.test(x[1]))));
-  await a.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "m"); show(); }, mi);
+  await a.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "m" && /___/.test(x.d[1]) && x.d[2][0].split(/\s+/).length <= 4); show(); }, mi);
   await a.waitForSelector(".qz input", { timeout: 5000 });
   ok(await a.isVisible(".qz-help"), "exercice à trous de la leçon : champ libre aussi");
   const mq = await a.evaluate(() => document.querySelector(".q").textContent);

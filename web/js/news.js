@@ -9,6 +9,9 @@ const NEWS = (() => {
     ["sante", "Santé"], ["lifestyle", "Lifestyle"], ["moteurs", "Auto-moto"], ["rome", "Rome"], ["milan", "Milan"], ["naples", "Naples"], ["toscane", "Toscane"]];
   // Hébreu : les rubriques du site ynet.
   const THEMES_HE = [["une", "À la une"], ["actu", "Infos"], ["economie", "Économie"], ["tech", "Tech"], ["conso", "Consommation"], ["sante", "Santé"], ["sport", "Sport"], ["culture", "Culture"]];
+  // Espagnol : les rubriques d'El País.
+  const THEMES_ES = [["une", "À la une"], ["monde", "Monde"], ["espagne", "Espagne"], ["economie", "Économie"], ["societe", "Société"], ["tech", "Tech"], ["sciences", "Sciences"],
+    ["planete", "Climat"], ["culture", "Culture"], ["sport", "Sport"]];
   let THEMES = THEMES_IT, NAME = Object.fromEntries(THEMES);
   // Une icône et une teinte par thème.
   const IP = {
@@ -22,6 +25,8 @@ const NEWS = (() => {
     moteurs: '<path d="M5 16.5V12l2-5.5h10l2 5.5v4.5"/><path d="M3.5 12h17"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/>',
     actu: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/>',
     conso: '<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>',
+    societe: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5M13 20c0-2.4 1.4-4 3.5-4S21 17.6 21 20"/>',
+    planete: '<path d="M12 21c4.5-1.5 7-5.5 7-10.5V5l-7-2-7 2v5.5C5 15.5 7.5 19.5 12 21z"/><path d="M9 12l2 2 4-4"/>',
   };
   const pin = '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>';
   const icon = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IP[k] || pin) + "</svg>";
@@ -52,8 +57,18 @@ const NEWS = (() => {
     { id: "h4", name: "tous les temps du niveau B1", allow: "les temps et les binyanim du niveau B1, y compris le conditionnel et le passif courant", words: 150, block: null },
   ];
   const MILESTONES_HE = ["he-u03-l4", "he-u08-l1", "he-u09-l1", "he-u11-l1"];
+  const STAGES_ES = [
+    { id: "e1", name: "présent", allow: "le présent de l'indicatif seulement (verbes réguliers, irréguliers et à diphtongue courants), ser et estar, hay, gustar, les prépositions, estar + gérondif et ir a + infinitif. AUCUN temps du passé, ni futur, ni conditionnel, ni subjonctif", words: 90, block: /pass[ée]|pret[ée]rito|indefinido|imparfait|imperfecto|futur|conditionnel|condicional|subjonctif|subjuntivo|imp[ée]ratif/i },
+    { id: "e2", name: "présent et passés", allow: "le présent, le pretérito perfecto et l'indefinido (réguliers et irréguliers courants). PAS d'imparfait, de futur, de conditionnel, de subjonctif ni d'impératif", words: 110, block: /imparfait|imperfecto|futur|conditionnel|condicional|subjonctif|subjuntivo|imp[ée]ratif|plus-que-parfait|pluscuamperfecto/i },
+    { id: "e3", name: "présent, passés et imparfait", allow: "le présent, le perfecto, l'indefinido et l'imparfait. PAS de futur, de conditionnel, de subjonctif ni d'impératif", words: 130, block: /futur|conditionnel|condicional|subjonctif|subjuntivo|imp[ée]ratif|plus-que-parfait|pluscuamperfecto|passif/i },
+    { id: "e4", name: "jusqu'au futur et au conditionnel", allow: "le présent, les passés de l'indicatif, le futur, le conditionnel, l'impératif et les pronoms compléments. PAS de subjonctif", words: 150, block: /subjonctif|subjuntivo|plus-que-parfait|pluscuamperfecto|conditionnel pass|passif/i },
+    { id: "e5", name: "jusqu'au subjonctif présent", allow: "tous les temps courants de l'indicatif, le conditionnel, le subjonctif présent, le se impersonnel et les relatifs. PAS de subjonctif imparfait ni d'hypothèses", words: 170, block: /subjonctif imparfait|imperfecto de subjuntivo|hypoth|conditionnel pass/i },
+    { id: "e6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris les hypothèses avec si + subjonctif imparfait, le conditionnel passé et le plus-que-parfait", words: 180, block: null },
+  ];
+  const MILESTONES_ES = ["es-u07-l1", "es-u08-l1", "es-u11-l1", "es-u15-l1", "es-u16-l1"];
   const SRC = {
     it: { mast: "Il tuo giornale", themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
+    es: { mast: "Tu periódico", themes: THEMES_ES, stages: STAGES_ES, miles: MILESTONES_ES, badge: "El País", from: "D'après un article d'El País", agency: "un article du quotidien espagnol El País", word: "noticia", daily: "La noticia del día" },
     he: { mast: "הָעִתּוֹן שֶׁלִּי", themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
   };
   let STAGES = STAGES_IT, MILESTONES = MILESTONES_IT, SR = SRC.it;

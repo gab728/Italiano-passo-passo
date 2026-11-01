@@ -30,8 +30,20 @@ const TTS = (() => {
     woman: { voice: "coral", it: HE + "Natural, friendly tone, like in a real conversation, clear pronunciation." },
     man: { voice: "ash", it: HE + "Natural, friendly tone, like in a real conversation, clear pronunciation." },
   };
+  const ES = "Habla español de España como nativo, con acento castellano natural. ";
+  const WHO_ES = {
+    giulia: { voice: "marin", it: ES + "Eres Lucía, profesora de español de Madrid, 34 años. Voz cálida y sonriente, tono natural de conversación real, pronunciación clara, ritmo tranquilo.",
+      fr: "Tu es Lucía, prof d'espagnol de Madrid qui parle très bien français avec un léger accent espagnol. Voix chaleureuse et naturelle, ton complice." },
+    marco: { voice: "cedar", it: ES + "Eres Pablo, camarero sevillano simpático y charlatán en un bar de tapas. Tono vivo y cercano, ligero acento andaluz, ritmo natural pero claro." },
+    sofia: { voice: "coral", it: ES + "Eres Marta, chica de Barcelona de 27 años. Tono amistoso, joven y espontáneo, sonríes al hablar, ritmo natural." },
+    rosa: { voice: "sage", it: ES + "Eres la abuela Carmen, abuela valenciana cariñosa y un poco teatral. Voz madura y cálida, ritmo lento." },
+    narrator: { voice: "marin", it: ES + "Lee como una profesora nativa para un estudiante: español estándar, pronunciación clara y natural, ritmo un poco lento, tono cálido.",
+      fr: "Lis comme une prof bienveillante, en français, avec une voix naturelle et posée." },
+    woman: { voice: "coral", it: ES + "Tono natural y cordial, como en una conversación real, pronunciación clara." },
+    man: { voice: "ash", it: ES + "Tono natural y cordial, como en una conversación real, pronunciación clara." },
+  };
   const WHO = {};
-  const setWho = () => { const src = typeof C === "function" && C().id === "he" ? WHO_HE : WHO_IT; Object.keys(WHO).forEach((k) => delete WHO[k]); Object.assign(WHO, src); };
+  const setWho = () => { const id = typeof C === "function" ? C().id : "it", src = id === "he" ? WHO_HE : id === "es" ? WHO_ES : WHO_IT; Object.keys(WHO).forEach((k) => delete WHO[k]); Object.assign(WHO, src); };
   setWho(); window.addEventListener("ipp-course", setWho);
   const pref = () => (typeof S !== "undefined" && S.vx) || {};
   let down = false, fails = 0;
@@ -209,7 +221,9 @@ const TTS = (() => {
   // Les boutons « Écouter » lisent surtout de l'italien, parfois une explication en français : on choisit la voix selon le texte.
   const FRW = /\b(le|les|des|est|une|du|au|aux|pour|avec|dans|vous|nous|pas|ce|cette|qui|que|sur|mais|ou|donc|être|avoir|c'est|il y a)\b/gi;
   const ITW = /\b(il|lo|gli|è|una|per|con|nel|della|del|non|sono|che|di|ho|hai|ha|siamo|questo|questa|anche|perché|molto)\b/gi;
-  const looksFr = (t) => { const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s); if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
+  const ESW = /\b(el|la|los|las|es|está|están|un|una|unos|por|para|con|en|del|de|no|muy|también|pero|yo|tú|soy|estoy|tengo|hay|qué|cómo|dónde)\b/gi;
+  const looksFr = (t) => { const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s);
+    if (C().id === "es") { if (/[ñ¿¡]/.test(s)) return false; if (/[çêôîœûè]/i.test(s)) return true; return (s.replace(/\b(le|les|que)\b/gi, "").match(FRW) || []).length > (s.match(ESW) || []).length + 1; } if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
   speak = function (t, rate) {
     if (!TTS.on()) return devSpeak(t, rate);
     devStop(); TTS.stop();
@@ -238,11 +252,13 @@ const DLG = (() => {
   const set = (s) => new Set(s.split(" "));
   const F = set("nonna mamma madre zia sorella figlia ragazza bambina donna signora signorina dottoressa professoressa maestra infermiera impiegata commessa cameriera cassiera segretaria amica vicina padrona proprietaria cuoca poliziotta moglie fidanzata studentessa direttrice attrice "
     + "savta ima rut ruth tamar shira michal yael ronit sara rivka orly hila "
+    + "abuela mama tia hermana hija chica mujer senora senorita doctora profesora camarera dependienta vecina isabel raquel pilar mercedes dolores belen rocio consuelo maribel soledad luz paz montse nuria lucia "
     + "beatrice alice irene adele agnese rachele nicole marie sophie claire camille chloe manon julie ines louise zoe celine aurelie isabelle nathalie catherine helene mathilde charlotte pauline juliette cecile elise lucie noemi noemie margot elisabeth carmen miriam ester ruth gabrielle aude maud oceane amelie emilie stephanie sandrine valerie caroline delphine virginie laure clemence eloise heloise anais rachel agathe berenice");
   const Mm = set("nonno papa babbo padre zio fratello figlio ragazzo bambino uomo signore signor dottore professore maestro infermiere impiegato commesso cameriere cassiere segretario amico vicino padrone proprietario cuoco poliziotto vigile ferroviere controllore marito fidanzato studente direttore attore "
-    + "andrea luca nicola mattia elia tobia enea battista gianluca joshua aba abba saba avi ilan itai itay dan david yossi moshe eyal amit omer yoni ari ron ido uri");
-  const AMBI = set("cliente turista nipote barista collega farmacista giornalista guida tassista receptionist cantante insegnante paziente viaggiatore ospite passeggero utente");
-  const OLD = set("nonna nonno savta saba");
+    + "andrea luca nicola mattia elia tobia enea battista gianluca joshua aba abba saba avi ilan itai itay dan david yossi moshe eyal amit omer yoni ari ron ido uri "
+    + "abuelo papa tio hermano hijo chico hombre senor doctor profesor camarero dependiente vecino borja bautista");
+  const AMBI = set("recepcionista taxista periodista guia estudiante cliente turista nipote barista collega farmacista giornalista guida tassista receptionist cantante insegnante paziente viaggiatore ospite passeggero utente");
+  const OLD = set("nonna nonno savta saba abuela abuelo");
   function guess(name, lines) {
     const w = bareN(name).split(/[\s,.]+/), first = w[0], last = w[w.length - 1];
     for (const x of [first, last]) { if (F.has(x)) return "f"; if (Mm.has(x)) return "m"; }
@@ -256,6 +272,7 @@ const DLG = (() => {
   }
   const POOL = { f: ["coral", "shimmer", "marin", "nova"], m: ["ash", "cedar", "verse", "echo"] };
   const BASE_IT = "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.";
+  const BASE_ES = "Habla español de España como nativo en un diálogo cotidiano: tono natural y espontáneo, como en una conversación real, pronunciación clara.";
   const BASE_HE = "Speak native modern Israeli Hebrew in an everyday dialogue: natural, spontaneous tone, like a real conversation, clear pronunciation.";
   // Distribution des voix : chaque personnage garde la sienne pendant tout le dialogue, deux personnages n'ont jamais la même.
   function cast(dlg) {
@@ -269,7 +286,7 @@ const DLG = (() => {
       let v = old && k === "f" && !taken.has("sage") ? "sage" : old && k === "m" && !taken.has("onyx") ? "onyx" : null;
       while (!v || (taken.has(v) && used[k] < 8)) v = POOL[k][used[k]++ % POOL[k].length];
       taken.add(v);
-      const he = C().id === "he"; who[n] = { voice: v, it: (he ? BASE_HE : BASE_IT) + (old ? (he ? " Mature, warm voice, a little slower." : " Voce matura e calda, ritmo un po' più lento.") : "") }; });
+      const lc = C().id; who[n] = { voice: v, it: (lc === "he" ? BASE_HE : lc === "es" ? BASE_ES : BASE_IT) + (old ? (lc === "he" ? " Mature, warm voice, a little slower." : lc === "es" ? " Voz madura y cálida, ritmo un poco más lento." : " Voce matura e calda, ritmo un po' più lento.") : "") }; });
     return who;
   }
   const lang = () => (typeof C === "function" && C().speech) || "it-IT";

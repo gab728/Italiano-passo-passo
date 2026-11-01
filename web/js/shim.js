@@ -305,7 +305,7 @@
   }
   let holdStart = RECOVERY;
   const OB = { course: "", why: [], lv: 0, start: "", g: "", goal: 20, name: "" };
-  const LANGN = () => (OB.course === "he" ? "l'hébreu" : "l'italien");
+  const LANGN = () => (OB.course === "he" ? "l'hébreu" : OB.course === "es" ? "l'espagnol" : "l'italien");
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const field = (id, label, type, extra) => {
     const w = $("div", "g-field"), l = $("label", null, label); l.htmlFor = id;
@@ -335,8 +335,8 @@
     const art = $("div", "g-art"); art.setAttribute("aria-hidden", "true");
     ["cafe", "viaggio", "cucina"].forEach((n) => { const i = document.createElement("img"); i.src = "img/themes/" + n + ".svg"; i.alt = ""; art.append(i); });
     box.append(art);
-    const h = $("h1", "g-hello", "Ciao. "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
-    box.append($("p", "g-lead", "L'italien ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
+    const h = $("h1", "g-hello", "Ciao. ¡Hola! "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
+    box.append($("p", "g-lead", "L'italien, l'espagnol ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
     const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepLang();
     const have = $("button", "g-link", "J'ai déjà un compte"); have.type = "button"; have.onclick = () => login();
     box.append(go, have);
@@ -356,7 +356,7 @@
     const box = frame({ back: welcome, step: 1 });
     box.append($("h1", null, "Quelle langue veux-tu apprendre ?"), $("p", "g-sub", "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.course;
-    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]], false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
+    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]], false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
     list.classList.add("g-langs");
     go.onclick = stepWhy; box.append(go);
   }
@@ -364,7 +364,7 @@
     const box = frame({ back: stepLang, step: 2 });
     box.append($("h1", null, "Pourquoi " + LANGN() + " ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
-    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
+    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
       (v) => { OB.why = OB.why.includes(v) ? OB.why.filter((x) => x !== v) : OB.why.concat(v); go.disabled = !OB.why.length; });
     go.onclick = stepLevel; box.append(go);
   }
@@ -396,6 +396,12 @@
       [["Quando ero piccolo, ___ sempre al mare.", ["andavo", "sono andato", "andrò", "vado"]], ["Se avessi tempo, ___ un viaggio.", ["farei", "faccio", "farò", "facevo"]], ["Penso che lui ___ ragione.", ["abbia", "ha", "avrà", "avere"]]],
       [["« Te l'ho già detto » veut dire…", ["Je te l'ai déjà dit", "Tu me l'as déjà dit", "Je te le dirai", "Je l'ai dit pour toi"]], ["« Me ne vado » veut dire…", ["Je m'en vais", "Je m'y rends", "Je vais bien", "Je le vois"]], ["Bisogna che tu ___ attenzione.", ["faccia", "fai", "farai", "facendo"]]],
     ],
+    es: [
+      [["Yo ___ francés.", ["soy", "estoy", "tengo", "es"]], ["« Je voudrais un café. »", ["Quería un café.", "Quería uno café.", "Quiero de un café.", "Querer un café."]], ["« ¿Cuántos años tienes? » veut dire…", ["Quel âge as-tu ?", "Combien en veux-tu ?", "Depuis combien d'années ?", "Où habites-tu ?"]]],
+      [["Madrid ___ en el centro de España.", ["está", "es", "hay", "tiene"]], ["A mí me ___ los libros.", ["gustan", "gusta", "gusto", "gustas"]], ["Ahora ___ trabajando.", ["estoy", "soy", "tengo", "voy"]]],
+      [["Ayer ___ al cine con mis amigos.", ["fui", "he ido", "iba", "voy"]], ["De pequeño, siempre ___ al fútbol.", ["jugaba", "jugué", "he jugado", "jugaré"]], ["¿El libro? Ya ___ he leído.", ["lo", "le", "la", "se"]]],
+      [["Quiero que tú ___ conmigo.", ["vengas", "vienes", "vendrás", "venir"]], ["Si tuviera tiempo, ___ más.", ["viajaría", "viajo", "viajaré", "viajaba"]], ["No creo que ___ razón.", ["tenga", "tiene", "tendrá", "tener"]]],
+    ],
     he: [
       [["Quelle lettre fait le son « sh » ?", ["שׁ", "ס", "צ", "ת"]], ["Comment se lit שָׁלוֹם ?", ["shalom", "salom", "lashon", "shulam"]], ["Quelle est la forme finale de מ (m) ?", ["ם", "ן", "ס", "ך"]]],
       [["Sans voyelles : que veut dire תודה ?", ["merci", "bonjour", "pardon", "oui"]], ["Sans voyelles : que veut dire בית ?", ["maison", "fille", "jour", "livre"]], ["Sans voyelles : que veut dire מים ?", ["eau", "jour", "mer", "ciel"]]],
@@ -406,6 +412,7 @@
   // Résultat → point de départ. Italien : niveau (0, 0.5, 1, 2). Hébreu : première leçon du parcours.
   const PT_OUT = {
     it: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
+    es: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
     he: [["", "L'alphabet", "On commence par les lettres, tout doucement."], ["he-u03-l1", "Lecture", "Tu connais les lettres : on reprend à la lecture sans voyelles."], ["he-u04-l1", "A1", "Tu lis : on démarre au niveau A1."], ["he-u08-l1", "A2", "Tu te débrouilles : on démarre au niveau A2."], ["he-u08-l1", "A2", "Excellent : on démarre au niveau A2."]],
   };
   function placement(course, onDone, onBack) {

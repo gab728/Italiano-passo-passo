@@ -254,6 +254,12 @@ const VO = (() => {
     if (/^(basta|stop|fine|pausa|finito|ferma|fermati|arrivederci|ciao ciao)$/.test(s)) return "stop";
     if (/^(non lo so|non so|non lo ricordo|non (me )?lo ricordo|non ricordo|non mi ricordo|boh|aiuto|mi arrendo|je sais pas|je ne sais pas|j sais pas|sais pas|chais pas|je (ne )?sais plus|aucune idee|j ai oublie|je l ai oublie|jsp|gene se pa|je ne se pa)$/.test(s)) return "dunno";
     if (/^(piu piano|piu lentamente|lentamente|piano)$/.test(s)) return "slower";
+    // Espagnol (sans accents : bare les retire)
+    if (/^(otra vez|repite|repitelo|repitemelo|puedes repetir|como|perdon|que)$/.test(s)) return "repeat";
+    if (/^(siguiente|pasa|salta|adelante|la siguiente)$/.test(s)) return "skip";
+    if (/^(basta|para|pausa|fin|se acabo|ya esta|adios)$/.test(s)) return "stop";
+    if (/^(no se|no lo se|no me acuerdo|ni idea|no lo recuerdo)$/.test(s)) return "dunno";
+    if (/^(mas despacio|despacio|mas lento)$/.test(s)) return "slower";
     // Hébreu (formes sans voyelles, lettres finales ramenées à la forme normale par bare)
     if (/^(שוב|עוד פעמ|עוד פעמ אחת|תחזור|תחזרי|מה|סליחה מה)$/.test(s)) return "repeat";
     if (/^(הבא|הבאה|דלג|תמשיכ|תמשיכי|הלאה)$/.test(s)) return "skip";
@@ -320,7 +326,7 @@ function carSteps(src) {
   const ask = (exps, kind, extra) => Object.assign({ exps: exps.filter(Boolean), kind, wait: think(exps[0] || "") }, extra || {});
   if (src.kind === "lesson") {
     const m = M[src.mi];
-    out.push({ parts: [fr("Leçon : " + m.st + ". Après le bip, réponds à voix haute : je te dis si c'est juste. " + (C().id === "he" ? "Dis « shouv » pour réentendre, « haba » pour passer, « dai » pour faire une pause." : "Dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause."))] });
+    out.push({ parts: [fr("Leçon : " + m.st + ". Après le bip, réponds à voix haute : je te dis si c'est juste. " + ("Dis « " + vcw("rep") + " pour réentendre, « " + vcw("skip") + " pour passer, « " + vcw("stop") + " pour faire une pause."))] });
     if (m.vocab.length) out.push({ parts: [fr("D'abord, le vocabulaire. Répète chaque mot après le bip.")] });
     m.vocab.forEach((v) => out.push({ parts: [it(v[0]), gap(0.5), fr(frOnly(v[1])), gap(0.3), it(v[0])], ask: ask([v[0]], "repeat") }));
     out.push({ parts: [fr("Maintenant, à toi de construire les phrases.")] });
@@ -476,7 +482,7 @@ audioSetup = function () {
   body.append(el("h2", null, "En voiture, mains libres"));
   if (!canSpeak) { body.append(el("p", "fr", "Ce navigateur ne sait pas lire le texte à voix haute : le mode voiture ne peut pas fonctionner ici.")); return; }
   const mic = VO.available();
-  body.append(el("p", "fr", mic ? "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher : " + (C().id === "he" ? "dis « שׁוּב » (shouv) pour réentendre, « הַבָּא » (haba) pour passer, « דַּי » (dai) pour faire une pause." : "dis « ripeti » pour réentendre, « avanti » pour passer, « basta » pour faire une pause.") : "Ce navigateur ne peut pas écouter : l'app laisse des silences pour répondre à voix haute, sans vérifier ta réponse."));
+  body.append(el("p", "fr", mic ? "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher : " + ("dis « " + vcw("rep") + " pour réentendre, « " + vcw("skip") + " pour passer, « " + vcw("stop") + " pour faire une pause.") : "Ce navigateur ne peut pas écouter : l'app laisse des silences pour répondre à voix haute, sans vérifier ta réponse."));
   const ss = slots(), cu = current(), ready = mine().filter((i) => M[i].vocab && M[i].vocab.length), V = vstat();
   let pick = null; const opts = [];
   if (AI && mic) opts.push({ kind: "talk", label: "Parler librement avec Claude" });
@@ -509,6 +515,9 @@ audioSetup = function () {
 
 /* ---------- Conversation à voix haute avec Claude ---------- */
 let VC = null;
+// Mots de commande à voix haute, selon la langue apprise.
+const VCMD = () => ({ he: { rep: "שׁוּב", repT: "shouv", skip: "הַבָּא", skipT: "haba", stop: "דַּי", stopT: "dai", slow: "לְאַט" }, es: { rep: "otra vez", skip: "siguiente", stop: "basta", slow: "más despacio" } }[C().id] || { rep: "ripeti", skip: "avanti", stop: "basta", slow: "più piano" });
+const vcw = (k) => { const v = VCMD(); return v[k] + (v[k + "T"] ? " » (" + v[k + "T"] + ")" : " »"); };
 function vLevel() {
   const cu = current(), done = slots().filter(isDone);
   const lv = cu ? cu.lv : (done.length ? done[done.length - 1].lv : null);
@@ -523,7 +532,7 @@ function vchatTopics(car) {
   body.append(el("h2", null, "Parler avec Claude"));
   if (!AI) { body.append(el("p", "fr", "La conversation passe par Claude, indisponible pour l'instant. Vérifie le réseau.")); return; }
   if (!VO.available()) { body.append(el("p", "fr", VO.failText({ code: "unsupported" }))); return; }
-  body.append(el("p", "fr", "Claude te parle en " + LN() + " à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis « " + (C().id === "he" ? "שׁוּב" : "ripeti") + " » pour réentendre, « " + (C().id === "he" ? "לְאַט" : "più piano") + " » pour ralentir, « " + (C().id === "he" ? "דַּי" : "basta") + " » pour terminer."));
+  body.append(el("p", "fr", "Claude te parle en " + LN() + " à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis « " + VCMD().rep + " » pour réentendre, « " + VCMD().slow + " » pour ralentir, « " + VCMD().stop + " » pour terminer."));
   const lvl = vLevel();
   const topics = [["Ce que j'apprends", "la leçon en cours (" + lvl.grammar + ") : fais-le pratiquer ce point dans une conversation naturelle"], ["Ma journée", "sa journée, ses habitudes, ce qu'il fait aujourd'hui"], ["Voyager " + LXC().inLand, "préparer un voyage " + LXC().inLand + " : villes, transports, hôtel, restaurants"], ["Les amis et la famille", "ses proches, ce qu'ils font, les sorties entre amis"], ["Le travail", "son travail, ses collègues, ses projets"], ["Culture", "cuisine, cinéma, musique, art et histoire (" + LXC().land + ")"]];
   const g = el("div", "opts");

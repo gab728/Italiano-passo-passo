@@ -384,6 +384,12 @@ async function admin(req: Request, u: User): Promise<Response> {
       if (r.res) { await r.res.body?.cancel(); out.voix_he = { ok: true, from: "ElevenLabs v3, " + (n ? n + " voix israéliennes" : "voix italiennes (aucune voix israélienne trouvée)") }; }
       else out.voix_he = { ok: false, why: "ElevenLabs ne lit pas l'hébreu (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
     }
+    if (elOn()) {
+      const h = await elVoicesLang("es", true), n = new Set(Object.values(h)).size;
+      const r = await elSpeak("¡Hola!", "marin", 1, "es", false);
+      if (r.res) { await r.res.body?.cancel(); out.voix_es = { ok: true, from: "ElevenLabs, " + (n ? n + " voix espagnoles" : "voix italiennes (aucune voix espagnole trouvée)") }; }
+      else out.voix_es = { ok: false, why: "ElevenLabs ne lit pas l'espagnol (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
+    }
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
     out.owner = { ok: true };
@@ -468,6 +474,7 @@ async function stt(req: Request, u: User): Promise<Response> {
     if (/^[a-z]{2}$/.test(lang)) form.append("language", lang);
     if (lang === "it" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Trascrizione fedele in italiano, parola per parola.");
     else if (lang === "he" && /gpt-4o|whisper/.test(model)) form.append("prompt", "תמלול נאמן בעברית, מילה במילה.");
+    else if (lang === "es" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Transcripción fiel en español, palabra por palabra.");
     form.append("temperature", "0");
     form.append("response_format", "json");
     try {
@@ -534,7 +541,7 @@ const elOn = () => !!elKey() && env("TTS_PROVIDER", "elevenlabs").toLowerCase() 
 let elMap: Record<string, string> | null = null, elMapAt = 0, elFailAt = 0, elWhy = "";
 const EL_MAP_FILE = "tts/el-voices-v2.json";
 // Voix de la bibliothèque ElevenLabs pour une langue : les plus utilisées, sans tarif majoré ni voix de personnage.
-type ElV = { id: string; g: string; age: string; score: number; name: string; lang: string };
+type ElV = { id: string; g: string; age: string; score: number; name: string; lang: string; accent?: string };
 async function elShared(lang: string, g: string): Promise<ElV[]> {
   const out: ElV[] = [];
   try {
@@ -547,7 +554,7 @@ async function elShared(lang: string, g: string): Promise<ElV[]> {
       const costly = (Number(v.rate) || 0) > 1 || (Number(v.fiat_rate) || 0) > 0;
       if (costly || /character|meditat|asmr|game|cartoon/i.test(String(v.use_case || "") + " " + String(v.descriptive || ""))) { dropped++; continue; }
       const bonus = /conversational|informative|educational|narrat/i.test(String(v.use_case || "")) ? 1.5 : 1;
-      out.push({ id: v.voice_id, g, age: String(v.age || ""), score: (Number(v.usage_character_count_1y) || Number(v.cloned_by_count) || 1) * bonus, name: v.name, lang });
+      out.push({ id: v.voice_id, g, age: String(v.age || ""), score: (Number(v.usage_character_count_1y) || Number(v.cloned_by_count) || 1) * bonus, name: v.name, lang, accent: String(v.accent || "") + " " + String(v.locale || "") + " " + String(v.description || "").slice(0, 120) });
     }
     console.log("el shared", lang, g, JSON.stringify({ found: vs.length, kept: out.length, dropped }));
   } catch (e) { elWhy = "bibliothèque injoignable"; console.error("el shared", lang, g, String(e).slice(0, 120)); }
@@ -586,24 +593,32 @@ async function elVoices(force = false): Promise<Record<string, string>> {
   try { await fetch(SB + "/storage/v1/object/" + EL_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
   return map;
 }
-// Hébreu : voix israéliennes de la bibliothèque (seul le modèle eleven_v3 parle hébreu). Sans voix hébraïque, les voix italiennes servent.
-let heMap: Record<string, string> | null = null, heMapAt = 0, heFailAt = 0;
-const HE_MAP_FILE = "tts/el-voices-he-v1.json";
-async function elVoicesHe(force = false): Promise<Record<string, string>> {
-  if (heMap && !force && Date.now() - heMapAt < 6 * 3600e3) return heMap;
-  if (!force && !heMap && Date.now() - heFailAt < 10 * 60e3) return {};
+// Hébreu et espagnol : voix natives de la bibliothèque (pour l'hébreu, seul le modèle eleven_v3 sait le parler).
+// Sans voix native trouvée, les voix italiennes servent.
+const LANG_VOICES: Record<string, { file: string; re: RegExp; prefer?: RegExp; avoid?: RegExp }> = {
+  he: { file: "tts/el-voices-he-v1.json", re: /hebrew|israel/i },
+  es: { file: "tts/el-voices-es-v1.json", re: /spanish|spain|castil|peninsular|madrid|andalu/i, prefer: /spain|castil|peninsular|madrid|european|iberian/i, avoid: /mexic|latin|argent|colomb|chile|venez|caribb|peru|cuba/i },
+};
+const lvMap: Record<string, Record<string, string> | null> = {}, lvAt: Record<string, number> = {}, lvFail: Record<string, number> = {};
+async function elVoicesLang(lang: string, force = false): Promise<Record<string, string>> {
+  const cfg = LANG_VOICES[lang]; if (!cfg) return {};
+  const have = lvMap[lang];
+  if (have && !force && Date.now() - (lvAt[lang] || 0) < 6 * 3600e3) return have;
+  if (!force && !have && Date.now() - (lvFail[lang] || 0) < 10 * 60e3) return {};
   if (!force) {
-    try { const r = await fetch(SB + "/storage/v1/object/" + HE_MAP_FILE, { headers: svcHeaders() }); if (r.ok) { const j = await r.json(); if (j && j.marin && j.cedar) { heMap = j; heMapAt = Date.now(); return j; } } } catch { /* on cherche */ }
+    try { const r = await fetch(SB + "/storage/v1/object/" + cfg.file, { headers: svcHeaders() }); if (r.ok) { const j = await r.json(); if (j && j.marin && j.cedar) { lvMap[lang] = j; lvAt[lang] = Date.now(); return j; } } } catch { /* on cherche */ }
   }
   const pool: ElV[] = [];
   try {
     const r = await fetch(EL + "/voices", { headers: { "xi-api-key": elKey() }, signal: AbortSignal.timeout(10000) });
     if (r.ok) for (const v of ((await r.json()).voices || [])) {
       const l = v.labels || {};
-      if ((l.language === "he" || /hebrew|israel/i.test(String(l.accent || ""))) && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang: "he" });
+      if ((l.language === lang || cfg.re.test(String(l.accent || ""))) && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang });
     }
   } catch { /* rien */ }
-  for (const g of ["female", "male"]) pool.push(...await elShared("he", g));
+  for (const g of ["female", "male"]) pool.push(...await elShared(lang, g));
+  // Espagnol : accent d'Espagne de préférence.
+  if (cfg.prefer || cfg.avoid) pool.forEach((v: ElV) => { const a = String(v.accent || "") + " " + v.name; if (cfg.prefer && cfg.prefer.test(a)) v.score *= 4; if (cfg.avoid && cfg.avoid.test(a)) v.score /= 4; });
   const map: Record<string, string> = {}, used = new Set<string>();
   const pick = (g: string, old: boolean) => {
     const c = pool.filter((v) => v.g === g && !used.has(v.id)).sort((a, b) => b.score - a.score);
@@ -612,17 +627,18 @@ async function elVoicesHe(force = false): Promise<Record<string, string>> {
   };
   for (const name of ["marin", "cedar", "coral", "ash", "sage", "onyx", "shimmer", "verse", "nova", "echo"]) { const r = EL_ROLE[name]; const id = pick(r.g, !!r.old); if (id) map[name] = id; }
   map.alloy = map.nova || map.coral; map.ballad = map.echo || map.ash; map.fable = map.verse || map.cedar;
-  console.log("el voices he", JSON.stringify({ pool: pool.length, mapped: Object.keys(map).length }));
-  if (!map.marin || !map.cedar) { heFailAt = Date.now(); return heMap || {}; }
-  heMap = map; heMapAt = Date.now();
-  try { await fetch(SB + "/storage/v1/object/" + HE_MAP_FILE, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
+  console.log("el voices " + lang, JSON.stringify({ pool: pool.length, mapped: Object.keys(map).length }));
+  if (!map.marin || !map.cedar) { lvFail[lang] = Date.now(); return have || {}; }
+  lvMap[lang] = map; lvAt[lang] = Date.now();
+  try { await fetch(SB + "/storage/v1/object/" + cfg.file, { method: "POST", headers: svcHeaders({ "content-type": "application/json", "x-upsert": "true" }), body: JSON.stringify(map) }); } catch { /* rien */ }
   return map;
 }
+const elVoicesHe = (force = false) => elVoicesLang("he", force);
 async function elVoiceId(voice: string, lang = "it"): Promise<string> {
   const g = EL_ROLE[voice]?.g === "male" ? "male" : "female";
-  if (lang === "he") {
-    const f = env("ELEVENLABS_VOICE_HE_" + voice.toUpperCase()); if (f) return f;
-    const h = await elVoicesHe(); const id = h[voice] || h[g === "male" ? "cedar" : "marin"]; if (id) return id;
+  if (LANG_VOICES[lang]) {
+    const f = env("ELEVENLABS_VOICE_" + lang.toUpperCase() + "_" + voice.toUpperCase()); if (f) return f;
+    const h = await elVoicesLang(lang); const id = h[voice] || h[g === "male" ? "cedar" : "marin"]; if (id) return id;
   }
   // Le français est dit par une voix française native (même sexe que le personnage), l'italien par une voix italienne.
   if (lang === "fr") { const f = env("ELEVENLABS_VOICE_FR_" + g.toUpperCase()); if (f) return f; const m = await elVoices(); if (m["fr_" + g]) return m["fr_" + g]; }
@@ -728,12 +744,20 @@ export const NEWS_FEEDS_HE: Record<string, string> = {
   tech: "https://www.ynet.co.il/Integration/StoryRss544.xml", conso: "https://www.ynet.co.il/Integration/StoryRss5363.xml", sante: "https://www.ynet.co.il/Integration/StoryRss1208.xml",
   sport: "https://www.ynet.co.il/Integration/StoryRss3.xml", culture: "https://www.ynet.co.il/Integration/StoryRss538.xml",
 };
+// Espagnol : rubriques d'El País (adresses complètes).
+const EP = "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/";
+export const NEWS_FEEDS_ES: Record<string, string> = {
+  une: EP + "portada", monde: EP + "section/internacional/portada", espagne: EP + "section/espana/portada", economie: EP + "section/economia/portada",
+  societe: EP + "section/sociedad/portada", tech: EP + "section/tecnologia/portada", sciences: EP + "section/ciencia/portada",
+  planete: "https://feeds.elpais.com/mrss-s/list/ep/site/elpais.com/section/clima-y-medio-ambiente", culture: EP + "section/cultura/portada", sport: EP + "section/deportes/portada",
+};
+const FEEDS: Record<string, Record<string, string>> = { it: NEWS_FEEDS, he: NEWS_FEEDS_HE, es: NEWS_FEEDS_ES };
 const unxml = (t: string) => t.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " ")
   .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
 const tag = (x: string, n: string) => { const m = x.match(new RegExp("<" + n + "[^>]*>([\\s\\S]*?)</" + n + ">", "i")); return m ? unxml(m[1]) : ""; };
 async function feed(theme: string, lang = "it") {
-  const path = lang === "he" ? NEWS_FEEDS_HE[theme] : NEWS_FEEDS[theme]; if (!path) return [];
+  const path = (FEEDS[lang] || NEWS_FEEDS)[theme]; if (!path) return [];
   try {
     const r = await fetch(/^https:/.test(path) ? path : ANSA + path, { headers: { "user-agent": "Mozilla/5.0 (compatible; ItalianoPassoPasso/1.0; +https://github.com/gab728/Italiano-passo-passo)", accept: "application/rss+xml, application/xml, text/xml" }, signal: AbortSignal.timeout(8000) });
     if (!r.ok) { console.error("news", lang, theme, r.status); return []; }
@@ -751,7 +775,7 @@ async function feed(theme: string, lang = "it") {
 }
 async function news(req: Request): Promise<Response> {
   let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
-  const lang = b && b.lang === "he" ? "he" : "it", feeds = lang === "he" ? NEWS_FEEDS_HE : NEWS_FEEDS;
+  const lang = b && FEEDS[b.lang] ? String(b.lang) : "it", feeds = FEEDS[lang];
   const themes = (Array.isArray(b && b.themes) ? b.themes : []).map(String).filter((t: string) => feeds[t]).slice(0, 8);
   if (!themes.length) return json(req, { items: [] });
   const lists = await Promise.all(themes.map((t: string) => feed(t, lang)));

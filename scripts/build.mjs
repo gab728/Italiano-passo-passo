@@ -24,7 +24,7 @@ const patches = [
   ["w.append(inp,keys,ok);", "w.append(inp,keys,ok);if(window.WEB)WEB.mic(w,inp);", 2],
   ["end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);", "end.onclick=()=>bilan(k,sc,script(),n);row.append(hint,end);if(window.WEB)WEB.convExtra(row,k);"],
   // Niveau choisi à l'inscription (italien) : on commence au niveau correspondant. L'hébreu a son propre point de départ (S.from).
-  ["const current=()=>{const ss=slots(),k=fromN(ss);return ss.find(x=>x.n>=k&&!isDone(x))||ss.find(x=>!isDone(x))||null};", "const current=()=>{const ss=slots(),k=fromN(ss),lo=S.ob&&C().id===\"it\"?Math.floor(S.ob.lv||0):0;return ss.find(x=>x.n>=k&&x.li>=lo&&!isDone(x))||ss.find(x=>!isDone(x))||null};"],
+  ["const current=()=>{const ss=slots(),k=fromN(ss);return ss.find(x=>x.n>=k&&!isDone(x))||ss.find(x=>!isDone(x))||null};", "const current=()=>{const ss=slots(),k=fromN(ss),lo=S.ob&&C().id!==\"he\"?Math.floor(((S.ob.lvc||{})[C().id]!=null?S.ob.lvc[C().id]:C().id===\"it\"?S.ob.lv:0)||0):0;return ss.find(x=>x.n>=k&&x.li>=lo&&!isDone(x))||ss.find(x=>!isDone(x))||null};"],
   ["async function creer(job,st){cur=null;st=st||{};", "async function creer(job,st){cur=null;st=st||{};if(window.WEB&&WEB.keepAwake)WEB.keepAwake();"],
   ["const fail=(step,e,lead,btns)=>{if(!here())return;", "const fail=(step,e,lead,btns)=>{if(!here())return;if(window.WEB&&WEB.resume&&WEB.resume(e,st,()=>creer(job,st),note,step))return;"],
   // Fusion de la progression : garde aussi les réglages propres à la web app (accueil, voix, dates d'ajout au carnet…).

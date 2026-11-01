@@ -873,6 +873,8 @@ const LX={
     fill:"allora, dai, beh, eh sì, ah, ecco",tutor:"Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne",fix:"vorrei un caffè",form:"infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle",frx:""},
   he:{native:"עִבְרִית",hi:"שָׁלוֹם!",hello:["לַיְלָה טוֹב","בֹּקֶר טוֹב","צָהֳרַיִם טוֹבִים","עֶרֶב טוֹב"],land:"Israël",inLand:"en Israël",adj:"israélienne",app:"Ivrit passo passo",
     fill:"נוּ, אָז, יַאלְלָה, וָואלָה, טוֹב, אֵה",tutor:"Noa, professeure d'hébreu chaleureuse, patiente et drôle, de Tel Aviv",fix:"אֲנִי רוֹצֶה קָפֶה",form:"avec le niqqud complet ; infinitif pour un verbe, nom au singulier sans article, adjectif au masculin singulier, expression telle quelle",frx:", suivie de sa prononciation entre crochets, comme « livre [sefer] »"}};
+LX.es={native:"Español",hi:"¡Hola!",hello:["Buenas noches","Buenos días","Buenas tardes","Buenas tardes"],land:"l'Espagne",inLand:"en Espagne",adj:"espagnole",app:"Español paso a paso",
+  fill:"pues, bueno, vale, venga, o sea, mira",tutor:"Lucía, professeure d'espagnol chaleureuse, patiente et drôle, de Madrid",fix:"quería un café",form:"infinitif pour un verbe, nom avec son article au singulier comme « el café », adjectif au masculin singulier, expression telle quelle",frx:""};
 const LXC=()=>LX[C().id]||LX.it;
 const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const OKTAG=/^(H2|H3|P|EM|B|STRONG|I|SUP|BR|DIV|SPAN|TABLE|TBODY|THEAD|TR|TH|TD|UL|OL|LI)$/,OKCLASS=/^(scroll|ex|tip)$/;
@@ -1162,7 +1164,7 @@ function show(){const m=M[cur.mi];view="course";root.innerHTML="";stopSpeech();
   if(cur.i<cur.q.length){const sub=el("div","sub");
     if(cur.i>0){const pb=el("button","linkbtn");pb.type="button";pb.textContent="‹ Écran précédent";pb.onclick=prev;sub.append(pb)}
     const nbk=el("button","linkbtn");nbk.type="button";nbk.textContent="Mon carnet";nbk.onclick=()=>carnet(true);sub.append(nbk);
-    const cjk=el("button","linkbtn");cjk.type="button";cjk.textContent="Conjugaisons";cjk.onclick=()=>cjOpen(true);sub.append(cjk);
+    if(C().id==="it"){const cjk=el("button","linkbtn");cjk.type="button";cjk.textContent="Conjugaisons";cjk.onclick=()=>cjOpen(true);sub.append(cjk)}
     const c=el("span","count");c.textContent=(cur.i+1)+" / "+cur.q.length;sub.append(c);bar.append(sub)}
   bar.append(syncEl());root.append(bar);
   body=el("main","body");root.append(body);window.scrollTo(0,0);
@@ -1180,7 +1182,7 @@ function end(){const m=M[cur.mi],T=tally(),pct=T.n?Math.round(100*T.ok/T.n):100,
   S[m.id]={done:true,i:0,best:Math.max(pct,st.best||0)};save();
   const e=el("div","end");e.append(el("div","kind","Leçon terminée"));
   const h=el("h2");h.textContent=m.st;e.append(h);e.append(el("div","score",pct+" %"));
-  e.append(el("p",null,T.ok+" bonnes réponses sur "+T.n+". "+(pct>=85?(C().id==="it"?"Ottimo lavoro":"Très bien")+", tu maîtrises cette leçon.":pct>=65?"Bien joué. Un second passage fixerait les points encore fragiles.":"Cette leçon mérite un deuxième tour : relis les explications, puis recommence.")));
+  e.append(el("p",null,T.ok+" bonnes réponses sur "+T.n+". "+(pct>=85?(C().id==="it"?"Ottimo lavoro":C().id==="es"?"¡Buen trabajo!":"Très bien")+", tu maîtrises cette leçon.":pct>=65?"Bien joué. Un second passage fixerait les points encore fragiles.":"Cette leçon mérite un deuxième tour : relis les explications, puis recommence.")));
   const r=el("div","rowb"),mi=cur.mi,ss=slots(),pos=ss.findIndex(x=>x.mi===mi);
   if(AI&&m.scenario){const cv=btn("Mettre en pratique : conversation","primary");cv.onclick=()=>conv(mi);r.append(cv)}
   if(pos>=0){const nx=ss[pos+1];if(nx){const n=btn((nx.mi>=0?"Leçon suivante : ":"Préparer la suivante : ")+nx.l.t,AI&&m.scenario?"":"primary");n.onclick=()=>openSlot(nx);r.append(n)}}

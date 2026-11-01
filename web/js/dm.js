@@ -5,6 +5,22 @@
 /* Les quatre personnages gardent les mêmes clés d'une langue à l'autre (giulia = la prof, marco = le café, sofia = l'amie, rosa = la grand-mère) :
    seul leur contenu change avec le cours. */
 const PERSONA_SETS = {
+  es: {
+    giulia: { name: "Lucía", sub: "Prof à Madrid", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
+      hello: "Conversation libre à ton niveau", mission: "" },
+    marco: { name: "Pablo", sub: "Bar à tapas à Séville", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
+      open: "¡Buenas! ¿Qué te pongo?",
+      role: "Pablo, camarero simpático y charlatán de un bar de tapas del barrio de Triana, en Sevilla, al que le encantan el fútbol, las tapas bien hechas y su barrio",
+      mission: "Commande au bar, puis bavarde un peu avec Pablo." },
+    sofia: { name: "Marta", sub: "Amie à Barcelone", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
+      open: "¡Hola! ¿Qué planes tienes para el fin de semana?",
+      role: "Marta, una amiga de Barcelona de 27 años, diseñadora, a la que le encanta salir, los conciertos, las exposiciones y las escapadas a la playa",
+      mission: "Organise ton week-end avec Marta." },
+    rosa: { name: "Abuela Carmen", sub: "Cuisine à Valence", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
+      open: "¡Hola, cariño! ¿Has comido? Hoy te enseño a hacer una paella de verdad.",
+      role: "la abuela Carmen, una abuela valenciana cariñosa y un poco teatral, que habla de cocina, de su familia y de Valencia",
+      mission: "Apprends une recette avec Abuela Carmen." },
+  },
   it: {
     giulia: { name: "Giulia", sub: "Prof à Bologne", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
       hello: "Conversation libre à ton niveau", mission: "" },
@@ -40,6 +56,16 @@ const PERSONA_SETS = {
 };
 // Portraits dessinés et petite fiche de chaque personnage (onglet Parler, fiche personnage).
 const PERSONA_BIO = {
+  es: {
+    giulia: { face: "lucia", who: "34 ans · prof à Madrid", status: "Corrige tes fautes en douceur", quote: "Equivocarse es normal: así se aprende.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
+      bio: "Lucía enseigne l'espagnol aux étrangers à Madrid depuis dix ans. Elle adore le cinéma, les terrasses de Lavapiés, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
+    marco: { face: "pablo", who: "42 ans · bar à tapas à Séville", status: "Derrière le comptoir jusqu'à 16 h", quote: "¿Una tapita de jamón? Te la pongo yo.", tags: ["Parle vite", "Fan du Betis", "Blagueur"],
+      bio: "Pablo tient un bar à tapas dans le quartier de Triana. Il connaît tout le monde, parle de foot à la moindre occasion et te tutoie dès la première tapa.", voice: "Accent andalou, débit rapide" },
+    sofia: { face: "marta", who: "27 ans · designer à Barcelone", status: "Sort du bureau à 19 h", quote: "Esta noche hay un concierto en la playa, ¿te vienes?", tags: ["Sorties", "Expos", "Plage"],
+      bio: "Marta est designer dans une agence de Barcelone. Toujours un concert, une expo ou une escapade à proposer : avec elle, on parle de sorties, de projets et de la vie en ville.", voice: "Jeune, spontanée, souriante" },
+    rosa: { face: "carmen", who: "77 ans · cuisine à Valence", status: "La paella est sur le feu", quote: "Cariño, ¿has comido?", tags: ["Théâtrale", "Recettes", "Famille"],
+      bio: "Abuela Carmen a élevé quatre enfants à Valence. Elle parle avec les mains, raconte sa famille et t'apprend ses recettes… à condition que tu manges.", voice: "Chaleureuse, lente" },
+  },
   it: {
     giulia: { face: "giulia", who: "34 ans · prof à Bologne", status: "Corrige tes fautes en douceur", quote: "Sbagliare va benissimo: è così che si impara.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
       bio: "Giulia enseigne l'italien aux étrangers depuis dix ans. Elle adore le cinéma, les longues balades sous les arcades de Bologne, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
@@ -83,7 +109,7 @@ function personaAvatar(p, size) {
   const a = el("span", "av"); a.setAttribute("aria-hidden", "true");
   a.style.background = p.bg; a.style.color = p.fg; if (size) { a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * 0.55) + "px"; }
   if (p.face) { a.classList.add("face"); const i = document.createElement("img"); i.src = "img/personas/" + p.face + ".svg"; i.alt = ""; i.decoding = "async"; a.append(i); return a; }
-  a.textContent = p.name.replace(/^(Nonna|Savta)\s+/, "").charAt(0); return a;
+  a.textContent = p.name.replace(/^(Nonna|Savta|Abuela)\s+/, "").charAt(0); return a;
 }
 /* ---------- Mémoire des conversations ----------
    Chaque personnage se souvient de vos échanges (résumé, piste pour la prochaine fois), et tous partagent

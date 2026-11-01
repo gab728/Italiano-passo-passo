@@ -101,10 +101,12 @@
     return { w, ex };
   }
   // Nom court du niveau : « Bases A1 → A2 » en italien ; en hébreu, le nom du niveau (« L'alef-bet »).
-  const lvName = (x) => C().id === "it" ? (x.li === 0 ? "Bases" : "Niveau") + " " + x.lv.cecr : x.lv.t + " · " + x.lv.cecr;
+  const lvName = (x) => C().id !== "he" ? (x.li === 0 ? "Bases" : "Niveau") + " " + x.lv.cecr : x.lv.t + " · " + x.lv.cecr;
   /* ---------- Langue : petit bouton en haut des écrans, qui ouvre le choix ----------
      Une langue jamais commencée demande d'abord par où commencer (l'hébreu peut se commencer après l'alphabet). */
   const START = {
+    es: [["", "Je débute", "On commence par les bases, tout doucement"], ["es-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
+      ["es-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["es-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
     he: [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
       ["he-u04-l1", "Je lis et je connais quelques mots", "On commence au niveau A1"], ["he-u08-l1", "Je me débrouille", "Je parle déjà au présent (A2)"]],
   };
@@ -151,6 +153,12 @@
       if (id === "he" && !(S.ob && S.ob.g)) return askGender(go);
       go();
     }));
+    if (window.PLACE) sheetRow(list, "Faire le test de niveau", "12 questions, 3 minutes : l'app choisit pour toi", false, () => { closeSheet(); PLACE.run(id, (r) => {
+      if (id === "he") S.from = Object.assign({}, S.from || {}, { he: r.start });
+      else { S.from = Object.assign({}, S.from || {}, { [id]: "" }); S.ob = Object.assign({}, S.ob || {}); S.ob.lvc = Object.assign({}, S.ob.lvc || {}, { [id]: r.start }); }
+      S.ptest = Object.assign({}, S.ptest || {}, { [id]: { lv: r.label, t: day() } }); save();
+      if (id === "he" && !(S.ob && S.ob.g)) return askGender(go); go();
+    }); });
   }
   // Changement de langue bien visible : un écran d'une seconde avec le drapeau, le nom de la langue et où tu en es dans CE parcours.
   function flashCourse(id) {
@@ -430,7 +438,7 @@
       const l = el("div", "vy-done");
       done.forEach((x) => {
         const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
-        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
+        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
         b.onclick = () => openSlot(x); l.append(b);
       });
       wrap.append(l);
@@ -444,7 +452,7 @@
     const c = el("article", "vy-ticket" + (isCur ? " cur" : ""));
     if (isCur) { const l = el("div", "vy-sit"); l.append(lino("wave", 60)); c.append(l); }
     const top = el("div", "vy-t-top");
-    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", (C().id === "it" ? "BIGLIETTO" : "BILLET") + " · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
+    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", (C().id === "it" ? "BIGLIETTO" : C().id === "es" ? "BILLETE" : "BILLET") + " · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
     top.append(row, txt("h3", "vy-t-title", x.l.t));
     if (isS(x.l.g)) top.append(txt("span", "vy-t-sub", x.l.g));
     const p = m ? partOf(m, i) : null;
@@ -670,7 +678,8 @@
     if (window.PLACE) {
       const pt = (S.ptest || {})[C().id], tc = card("goal-c pt-c"); tc.append(txt("b", null, "Test de niveau"), txt("small", "muted", pt ? "Dernier résultat : " + pt.lv + ". Le refaire ajuste ton point de départ." : "12 questions pour savoir où commencer en " + LN() + "."));
       const tb = pillBtn(pt ? "Refaire le test" : "Faire le test", "soft", () => PLACE.run(C().id, (r) => {
-        if (C().id === "it") S.ob = Object.assign({}, S.ob || {}, { lv: r.start }); else S.from = Object.assign({}, S.from || {}, { [C().id]: r.start });
+        if (C().id === "he") S.from = Object.assign({}, S.from || {}, { [C().id]: r.start });
+        else { S.ob = Object.assign({}, S.ob || {}); S.ob.lvc = Object.assign({}, S.ob.lvc || {}, { [C().id]: r.start }); if (C().id === "it") S.ob.lv = r.start; }
         S.ptest = Object.assign({}, S.ptest || {}, { [C().id]: { lv: r.label, t: day() } }); save(); profileTab();
       })); tc.append(tb); root.append(tc);
     }
@@ -849,7 +858,7 @@
     const st = el("div", "end-stars"); st.setAttribute("aria-label", stars + (stars > 1 ? " étoiles" : " étoile") + " sur 3");
     for (let k = 0; k < 3; k++) st.insertAdjacentHTML("beforeend", '<svg class="star s' + (k + 1) + (k < stars ? " on" : "") + '" width="' + (k === 1 ? 52 : 40) + '" height="' + (k === 1 ? 52 : 40) + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z"/></svg>');
     e.insertBefore(st, e.firstChild); e.insertBefore(hero, e.firstChild);
-    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); h2.before(b); }
+    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : C().id === "es" ? (pct >= 85 ? "¡Muy bien!" : pct >= 65 ? "¡Bien hecho!" : "¡Ánimo, sigue así!") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); h2.before(b); }
     const tiles = el("div", "end-tiles rise");
     const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
     if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
@@ -925,11 +934,12 @@
       S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
       if (ob.g === "m" || ob.g === "f") S.ob.g = ob.g;
       // Langue choisie à l'inscription (le cours d'hébreu arrive avec le catalogue : l'accueil se redessine alors).
-      if (ob.course === "he" || ob.course === "it") {
+      if (ob.course === "he" || ob.course === "it" || ob.course === "es") {
         S.course = ob.course;
+        if (ob.course === "es") { S.ob.lvc = { es: S.ob.lv }; S.ob.lv = 0; }
         if (ob.course === "he") S.from = Object.assign({}, S.from || {}, { he: typeof ob.start === "string" && /^he-u\d\d-l\d+$/.test(ob.start) ? ob.start : "" });
       }
-      if (ob.ptest && (ob.ptest.c === "it" || ob.ptest.c === "he")) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
+      if (ob.ptest && ["it", "he", "es"].includes(ob.ptest.c)) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
       GOAL = S.ob.goal; save(); courseNow();
     }
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
