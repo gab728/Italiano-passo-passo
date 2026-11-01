@@ -11,6 +11,10 @@
     "Cafe Batia in Tel Aviv.JPG"
    ],
    "q": "cafe Tel Aviv street terrace"
+  },
+  "es": {
+   "files": [],
+   "q": "cafe terrace Madrid street"
   }
  },
  "ristorante": {
@@ -25,6 +29,10 @@
     "PikiWiki Israel 740 Falafel Hazkenim פלאפל הזקנים.JPG"
    ],
    "q": "falafel restaurant Israel"
+  },
+  "es": {
+   "files": [],
+   "q": "tapas bar Spain counter"
   }
  },
  "mercatino": {
@@ -39,6 +47,10 @@
     "Carmel Market, 2019 (07).jpg"
    ],
    "q": "Carmel Market Tel Aviv stalls"
+  },
+  "es": {
+   "files": [],
+   "q": "Mercat de la Boqueria Barcelona stalls"
   }
  },
  "strada": {
@@ -53,6 +65,10 @@
     "JLR 18, Jaffa Street, 2019 (01).jpg"
    ],
    "q": "Jaffa Street Jerusalem light rail"
+  },
+  "es": {
+   "files": [],
+   "q": "Malasaña street Madrid"
   }
  },
  "negozio": {
@@ -65,6 +81,10 @@
     "PikiWiki Israel 9915 sheinkin street in tel aviv.jpg"
    ],
    "q": "Sheinkin street shops Tel Aviv"
+  },
+  "es": {
+   "files": [],
+   "q": "Gran Vía Madrid shops"
   }
  },
  "ufficio": {
@@ -79,6 +99,10 @@
     "Working in open office space (Unsplash).jpg"
    ],
    "q": "open space office interior"
+  },
+  "es": {
+   "files": [],
+   "q": "modern office interior people working"
   }
  },
  "ricordi": {
@@ -91,6 +115,10 @@
   "he": {
    "files": [],
    "q": "old family photographs album black white"
+  },
+  "es": {
+   "files": [],
+   "q": "old family photo album vintage photographs"
   }
  },
  "festa": {
@@ -101,6 +129,10 @@
   "he": {
    "files": [],
    "q": "Shabbat candles challah"
+  },
+  "es": {
+   "files": [],
+   "q": "Feria de Abril Sevilla casetas"
   }
  },
  "casa": {
@@ -115,6 +147,10 @@
     "White City (Bauhaus) Tel Aviv Yafo - 08.jpg"
    ],
    "q": "Bauhaus building balconies Tel Aviv"
+  },
+  "es": {
+   "files": [],
+   "q": "balconies apartment building Madrid"
   }
  },
  "treno": {
@@ -127,6 +163,10 @@
   "he": {
    "files": [],
    "q": "Israel Railways double-decker train"
+  },
+  "es": {
+   "files": [],
+   "q": "AVE Renfe train Atocha station"
   }
  },
  "cucina": {
@@ -141,6 +181,10 @@
     "Shakshuka 011.jpg"
    ],
    "q": "shakshuka pan"
+  },
+  "es": {
+   "files": [],
+   "q": "paella valenciana pan"
   }
  },
  "viaggio": {
@@ -155,6 +199,10 @@
     "Bahai Garden in Haifa Israel.jpg"
    ],
    "q": "Bahai Gardens Haifa"
+  },
+  "es": {
+   "files": [],
+   "q": "Alhambra Granada view"
   }
  },
  "cultura": {
@@ -167,6 +215,10 @@
   "he": {
    "files": [],
    "q": "Habima Theatre Tel Aviv"
+  },
+  "es": {
+   "files": [],
+   "q": "Museo del Prado Madrid"
   }
  },
  "amici": {
@@ -179,6 +231,10 @@
     "Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg"
    ],
    "q": "Tel Aviv promenade beach"
+  },
+  "es": {
+   "files": [],
+   "q": "Plaza Mayor Madrid people"
   }
  },
  "generico": {
@@ -191,6 +247,10 @@
   "he": {
    "files": [],
    "q": "Jaffa old city Tel Aviv"
+  },
+  "es": {
+   "files": [],
+   "q": "Toledo Spain old town street"
   }
  },
  "mercato": {
@@ -205,6 +265,10 @@
     "Mahane Yehuda market, Jerusalem - Israël (4673933223).jpg"
    ],
    "q": "Mahane Yehuda market"
+  },
+  "es": {
+   "files": [],
+   "q": "Mercado de San Miguel Madrid"
   }
  }
 }
