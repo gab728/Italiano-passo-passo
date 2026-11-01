@@ -13,6 +13,13 @@
    "author": "Avi1111 dr. avishai teicher",
    "license": "CC BY 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Cafe_Batia_in_Tel_Aviv.JPG"
+  },
+  "es": {
+   "src": "img/photos/cafe-es.jpg",
+   "title": "File:\"Café Moderno\" Escena película Madres paralelas.jpg",
+   "author": "Lucía Arquero",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:%22Caf%C3%A9_Moderno%22_Escena_pel%C3%ADcula_Madres_paralelas.jpg"
   }
  },
  "ristorante": {
@@ -29,6 +36,13 @@
    "author": "Israel_photo_gallery",
    "license": "CC BY-SA 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Falafel_in_a_pita.jpg"
+  },
+  "es": {
+   "src": "img/photos/ristorante-es.jpg",
+   "title": "File:Bar à pintxos (8287063576).jpg",
+   "author": "Nicolas Vollmer from Munich [Allemagne]",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Bar_%C3%A0_pintxos_(8287063576).jpg"
   }
  },
  "mercatino": {
@@ -109,6 +123,13 @@
    "author": "E.J. Briggs",
    "license": "Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:WCB-family-lompoc.jpg"
+  },
+  "es": {
+   "src": "img/photos/ricordi-es.jpg",
+   "title": "File:Hungarian family photo album, photo 7.jpg",
+   "author": "Unknown authorUnknown author",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Hungarian_family_photo_album,_photo_7.jpg"
   }
  },
  "festa": {
@@ -205,6 +226,13 @@
    "author": "IPPA photographer",
    "license": "CC BY 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:The_Habima_Theatre_in_Tel_Aviv_(FL62658089).jpg"
+  },
+  "es": {
+   "src": "img/photos/cultura-es.jpg",
+   "title": "File:East facade of the Casón del Buen Retiro, Museo del Prado, Madrid.jpg",
+   "author": "Benjaminkhas07",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:East_facade_of_the_Cas%C3%B3n_del_Buen_Retiro,_Museo_del_Prado,_Madrid.jpg"
   }
  },
  "amici": {
