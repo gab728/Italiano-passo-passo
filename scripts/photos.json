@@ -1,66 +1,210 @@
 {
-  "cafe": {
-    "it": {"files": ["Barista prepares espresso at coffee shop.jpg"], "q": "espresso bar counter Italy"},
-    "he": {"files": ["Cafe Batia in Tel Aviv.JPG"], "q": "cafe Tel Aviv street terrace"}
+ "cafe": {
+  "it": {
+   "files": [
+    "Barista prepares espresso at coffee shop.jpg"
+   ],
+   "q": "espresso bar counter Italy"
   },
-  "ristorante": {
-    "it": {"files": ["Rome Piazza Margana 2020 Antica Trattoria Angelino.jpg"], "q": "trattoria Rome outdoor tables"},
-    "he": {"files": ["PikiWiki Israel 740 Falafel Hazkenim פלאפל הזקנים.JPG"], "q": "falafel restaurant Israel"}
-  },
-  "mercatino": {
-    "it": {"files": ["Mercato di ballarò - palermo.jpg"], "q": "Ballarò market Palermo stalls"},
-    "he": {"files": ["Carmel Market, 2019 (07).jpg"], "q": "Carmel Market Tel Aviv stalls"}
-  },
-  "strada": {
-    "it": {"files": ["Roma Trastevere Vicolo del Cinque.jpg"], "q": "Trastevere street Rome"},
-    "he": {"files": ["JLR 18, Jaffa Street, 2019 (01).jpg"], "q": "Jaffa Street Jerusalem light rail"}
-  },
-  "negozio": {
-    "it": {"files": ["Via Monte Napoleone, Milan, Italy.jpg"], "q": "shop window boutique Milan"},
-    "he": {"files": ["PikiWiki Israel 9915 sheinkin street in tel aviv.jpg"], "q": "Sheinkin street shops Tel Aviv"}
-  },
-  "ufficio": {
-    "it": {"files": ["CBR Building co-working space interior.jpg"], "q": "coworking space interior"},
-    "he": {"files": ["Working in open office space (Unsplash).jpg"], "q": "open space office interior"}
-  },
-  "ricordi": {
-    "it": {"files": ["Family-album.jpg"], "q": "old family photographs album"},
-    "he": {"files": [], "q": "old photographs Tel Aviv 1930s street"}
-  },
-  "festa": {
-    "it": {"files": [], "q": "birthday party friends Italy table"},
-    "he": {"files": ["Shabbat table setting.jpg"], "q": "Shabbat table candles challah"}
-  },
-  "casa": {
-    "it": {"files": ["Balconi fioriti Ortigia.jpg"], "q": "balcony flowers Italy apartment"},
-    "he": {"files": ["White City (Bauhaus) Tel Aviv Yafo - 08.jpg"], "q": "Bauhaus building balconies Tel Aviv"}
-  },
-  "treno": {
-    "it": {"files": ["FS ETR.500, Firenze S.M.N..jpg"], "q": "Frecciarossa train station Italy"},
-    "he": {"files": [], "q": "Israel Railways train station"}
-  },
-  "cucina": {
-    "it": {"files": ["Tagliatelle al ragu Bolognese.jpg"], "q": "tagliatelle ragù"},
-    "he": {"files": ["Shakshuka 011.jpg"], "q": "shakshuka pan"}
-  },
-  "viaggio": {
-    "it": {"files": ["Manarola NW Cinque Terre Sep23 A7C 07233.jpg"], "q": "Manarola Cinque Terre"},
-    "he": {"files": ["Bahai Garden in Haifa Israel.jpg"], "q": "Bahai Gardens Haifa"}
-  },
-  "cultura": {
-    "it": {"files": ["Uffizi Gallery hallway.JPG"], "q": "Uffizi gallery corridor"},
-    "he": {"files": ["Israel museum.JPG"], "q": "Israel Museum Jerusalem"}
-  },
-  "amici": {
-    "it": {"files": ["Piazza Navona (Rome - 2016) 17.jpg"], "q": "Piazza Navona people"},
-    "he": {"files": ["Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg"], "q": "Tel Aviv promenade beach"}
-  },
-  "generico": {
-    "it": {"files": ["Spaccanapoli, Via dei Tribunali, Naples, Italy (18036064939).jpg"], "q": "Spaccanapoli Naples street"},
-    "he": {"files": ["Narrow alleyways of Old Jerusalem (10805384165).jpg"], "q": "Old City Jerusalem alley"}
-  },
-  "mercato": {
-    "it": {"files": ["Mercato Centrale (Florence)-Interior-Second floor.jpg"], "q": "Mercato Centrale Firenze"},
-    "he": {"files": ["Mahane Yehuda market, Jerusalem - Israël (4673933223).jpg"], "q": "Mahane Yehuda market"}
+  "he": {
+   "files": [
+    "Cafe Batia in Tel Aviv.JPG"
+   ],
+   "q": "cafe Tel Aviv street terrace"
   }
+ },
+ "ristorante": {
+  "it": {
+   "files": [
+    "Rome Piazza Margana 2020 Antica Trattoria Angelino.jpg"
+   ],
+   "q": "trattoria Rome outdoor tables"
+  },
+  "he": {
+   "files": [
+    "PikiWiki Israel 740 Falafel Hazkenim פלאפל הזקנים.JPG"
+   ],
+   "q": "falafel restaurant Israel"
+  }
+ },
+ "mercatino": {
+  "it": {
+   "files": [
+    "Mercato di ballarò - palermo.jpg"
+   ],
+   "q": "Ballarò market Palermo stalls"
+  },
+  "he": {
+   "files": [
+    "Carmel Market, 2019 (07).jpg"
+   ],
+   "q": "Carmel Market Tel Aviv stalls"
+  }
+ },
+ "strada": {
+  "it": {
+   "files": [
+    "Roma Trastevere Vicolo del Cinque.jpg"
+   ],
+   "q": "Trastevere street Rome"
+  },
+  "he": {
+   "files": [
+    "JLR 18, Jaffa Street, 2019 (01).jpg"
+   ],
+   "q": "Jaffa Street Jerusalem light rail"
+  }
+ },
+ "negozio": {
+  "it": {
+   "files": [],
+   "q": "shop windows Via del Corso Rome shopping street"
+  },
+  "he": {
+   "files": [
+    "PikiWiki Israel 9915 sheinkin street in tel aviv.jpg"
+   ],
+   "q": "Sheinkin street shops Tel Aviv"
+  }
+ },
+ "ufficio": {
+  "it": {
+   "files": [
+    "CBR Building co-working space interior.jpg"
+   ],
+   "q": "coworking space interior"
+  },
+  "he": {
+   "files": [
+    "Working in open office space (Unsplash).jpg"
+   ],
+   "q": "open space office interior"
+  }
+ },
+ "ricordi": {
+  "it": {
+   "files": [
+    "Family-album.jpg"
+   ],
+   "q": "old family photographs album"
+  },
+  "he": {
+   "files": [],
+   "q": "old family photographs album black white"
+  }
+ },
+ "festa": {
+  "it": {
+   "files": [],
+   "q": "Carnevale di Venezia piazza San Marco"
+  },
+  "he": {
+   "files": [],
+   "q": "Shabbat candles challah"
+  }
+ },
+ "casa": {
+  "it": {
+   "files": [
+    "Balconi fioriti Ortigia.jpg"
+   ],
+   "q": "balcony flowers Italy apartment"
+  },
+  "he": {
+   "files": [
+    "White City (Bauhaus) Tel Aviv Yafo - 08.jpg"
+   ],
+   "q": "Bauhaus building balconies Tel Aviv"
+  }
+ },
+ "treno": {
+  "it": {
+   "files": [
+    "FS ETR.500, Firenze S.M.N..jpg"
+   ],
+   "q": "Frecciarossa train station Italy"
+  },
+  "he": {
+   "files": [],
+   "q": "Israel Railways double-decker train"
+  }
+ },
+ "cucina": {
+  "it": {
+   "files": [
+    "Tagliatelle al ragu Bolognese.jpg"
+   ],
+   "q": "tagliatelle ragù"
+  },
+  "he": {
+   "files": [
+    "Shakshuka 011.jpg"
+   ],
+   "q": "shakshuka pan"
+  }
+ },
+ "viaggio": {
+  "it": {
+   "files": [
+    "Manarola NW Cinque Terre Sep23 A7C 07233.jpg"
+   ],
+   "q": "Manarola Cinque Terre"
+  },
+  "he": {
+   "files": [
+    "Bahai Garden in Haifa Israel.jpg"
+   ],
+   "q": "Bahai Gardens Haifa"
+  }
+ },
+ "cultura": {
+  "it": {
+   "files": [
+    "Uffizi Gallery hallway.JPG"
+   ],
+   "q": "Uffizi gallery corridor"
+  },
+  "he": {
+   "files": [],
+   "q": "Habima Theatre Tel Aviv"
+  }
+ },
+ "amici": {
+  "it": {
+   "files": [],
+   "q": "Campo de' Fiori Rome evening people"
+  },
+  "he": {
+   "files": [
+    "Tel Aviv Tayelet-Strand-Promenade Beach (34257299744).jpg"
+   ],
+   "q": "Tel Aviv promenade beach"
+  }
+ },
+ "generico": {
+  "it": {
+   "files": [
+    "Spaccanapoli, Via dei Tribunali, Naples, Italy (18036064939).jpg"
+   ],
+   "q": "Spaccanapoli Naples street"
+  },
+  "he": {
+   "files": [],
+   "q": "Jaffa old city Tel Aviv"
+  }
+ },
+ "mercato": {
+  "it": {
+   "files": [
+    "Mercato Centrale (Florence)-Interior-Second floor.jpg"
+   ],
+   "q": "Mercato Centrale Firenze"
+  },
+  "he": {
+   "files": [
+    "Mahane Yehuda market, Jerusalem - Israël (4673933223).jpg"
+   ],
+   "q": "Mahane Yehuda market"
+  }
+ }
 }
