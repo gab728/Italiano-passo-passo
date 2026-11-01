@@ -103,6 +103,7 @@ function fakeClaude(b) {
       { type: "choix", question: "Noi ___ già mangiato.", choix: ["abbiamo", "siamo", "avete", "hanno"], explication: "Mangiare prend avere.", source: "grammaire", faute: 0 },
       { type: "traduction", fr: "Je voudrais un café.", cible: "Vorrei un caffè.", point: "conditionnel de politesse", source: "mot", faute: 0 },
       { type: "trou", phrase: "Lei ___ (essere) stanca.", reponse: "è", explication: "Essere à la 3e personne.", source: "grammaire", faute: 0 },
+      { type: "trou", phrase: "La casa è ___ (grande). Le camere sono ___.", reponse: "grandi", explication: "x… en réalité y ? Non : z.", source: "grammaire", faute: 0 },
     ] }); }
   else if (/^Tu corriges un exercice d'italien/.test(last)) { const g = (last.match(/Réponse de l'élève : (.*)/) || [])[1] || ""; text = /sbagliat/.test(g) ? '{"ok":false,"presque":false,"corrige":"Il tram collega la stazione con il centro.","explication":"Le verbe collegare est à la 3e personne : collega."}' : '{"ok":true,"presque":false,"corrige":"","explication":"Très bien, la phrase est naturelle."}'; }
   else if (/PREMIÈRE PARTIE/.test(last)) text = JSON.stringify({ title: "Parler de son travail", topic: "le vocabulaire de la finance", lessons: ["<h2>Il lavoro</h2><p>Lavoro <em>in</em> una banca.</p>", "<h2>Le parole</h2><div class=\"ex\">Faccio il consulente.<span>Je suis consultant.</span></div>"], vocab: Array.from({ length: 14 }, (_, i) => ["la parola " + i, "le mot " + i]) });

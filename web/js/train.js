@@ -21,6 +21,19 @@
     return p[n];
   }
   const same = (given, target) => heForms(target).some((f) => key(f) === key(given));
+  const holes = (t) => (String(t).match(/_{3,}/g) || []).length;
+  // Une explication claire : si Claude hésite ou se corrige en route (« en réalité », « ? Non »…), on ne garde que la règle finale.
+  function cleanWhy(t) {
+    t = String(t || "").replace(/\s+/g, " ").trim(); if (!t) return "";
+    if (t.length > 240 || /en réalité|\?\s*Non\b|\bou plutôt\b|\bje veux dire\b|…/i.test(t)) {
+      const segs = t.split(/(?<=[.!?…])\s+/).map((x) => x.replace(/^(Non|Oui|Donc|Bref)\s*[:,]\s*/i, "").trim()).filter(Boolean);
+      const good = segs.filter((x) => !/[?…]$|en réalité|ou plutôt|je veux dire/i.test(x));
+      t = good.length ? good[good.length - 1] : segs[segs.length - 1];
+      t = t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    return t.slice(0, 240);
+  }
+
   const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej({ code: "slow" }), ms));
 
   /* ===== 1. Traduction libre ===== */
@@ -34,12 +47,12 @@
       (he ? "Ignore les voyelles (niqqud) et l'orthographe pleine ou défective. « Tu » et « vous » peuvent se traduire au masculin comme au féminin, sauf si la phrase française précise le genre. "
         : "Un pronom sujet ajouté ou omis est juste. ") +
       "\n« presque » : le sens et la grammaire sont justes, il ne reste qu'un détail (un accent, une lettre, une faute de frappe). « faux » : un contresens, un mot qui manque, ou une erreur de grammaire (accord, conjugaison, temps, préposition, article).\n" +
-      "Réponds uniquement par un objet JSON : {\"verdict\": \"juste\" ou \"presque\" ou \"faux\", \"correction\": \"la phrase de l'élève corrigée en changeant le moins de choses possible (identique si elle est juste)" + (he ? ", avec le niqqud complet" : "") + "\", \"explication\": \"en français, une ou deux phrases courtes : ce qui est réussi, ou la faute et la règle à retenir\"}";
+      "Réponds uniquement par un objet JSON : {\"verdict\": \"juste\" ou \"presque\" ou \"faux\", \"correction\": \"la phrase de l'élève corrigée en changeant le moins de choses possible (identique si elle est juste)" + (he ? ", avec le niqqud complet" : "") + "\", \"explication\": \"en français, une ou deux phrases courtes et définitives (sans hésitation) : ce qui est réussi, ou la faute et la règle à retenir\"}";
     try {
       const r = await Promise.race([AI(p, { modelTier: "quick", cache: true, maxTokens: 400 }), timeout(16000)]);
       const j = parseObj(r.text), v = String(j.verdict || "").toLowerCase();
       if (!/^(juste|presque|faux)$/.test(v)) return null;
-      return { v, correction: String(j.correction || "").slice(0, 300), why: String(j.explication || "").slice(0, 400) };
+      return { v, correction: String(j.correction || "").slice(0, 300), why: cleanWhy(j.explication) };
     } catch (e) { return null; }
   }
   // Exercice de traduction libre. fallback : affiche la version « mots à remettre dans l'ordre » (bouton Je bloque).
@@ -122,6 +135,8 @@
     body.append(ul);
   }
 
+  try { if (Array.isArray(S.err)) { const n = S.err.length; S.err = S.err.filter((e) => !(/^rv-/.test(String(e.l || "")) && holes(e.q) > 1)); if (S.err.length !== n) save(); } } catch (e) { /* rien */ }
+
   /* ===== 3. Révision sur mesure ===== */
   const rvAll = () => (S.rv = S.rv || {});
   const rvGet = () => rvAll()[cid()] || null;
@@ -142,11 +157,11 @@
       (m.due.length ? "Mots à revoir : " + m.due.map((w) => w.it + " = " + frOnly(w.fr)).join(" ; ") + "\n" : "") +
       "\nRépartition : 5 traductions du français vers l'" + LN() + " (phrases de la vie courante de 5 à 12 mots, qui obligent à employer une règle travaillée ou un mot à revoir), 4 phrases à trous, 3 questions à choix. " +
       (faultsOnly ? "Concentre-toi sur ses fautes : au moins 8 exercices doivent en reprendre une. " : "Commence par ses fautes, puis la grammaire, puis les mots. ") +
-      "Reste à son niveau : ni temps ni structure qu'il n'a pas encore étudiés." +
+      "Reste à son niveau : ni temps ni structure qu'il n'a pas encore étudiés. Vérifie chaque exercice avant de l'écrire : une seule bonne réponse possible pour les questions à choix, un seul trou par phrase, et des explications nettes et définitives (la règle, sans hésitation ni correction en cours de phrase)." +
       (he ? "\nHébreu : écris tout l'hébreu avec le niqqud complet, en hébreu israélien de tous les jours." + ((S.ob || {}).g === "f" ? " L'élève est une femme : formes au féminin quand il parle de lui-même." : (S.ob || {}).g === "m" ? " L'élève est un homme." : "") : "") +
       "\n\nRéponds uniquement par un objet JSON : {\"items\": [ ... 12 exercices ... ]}, chaque exercice sous l'une de ces formes :\n" +
       "{\"type\": \"traduction\", \"fr\": \"phrase française\", \"cible\": \"une bonne traduction\", \"point\": \"ce que ça fait travailler, en français, quelques mots\", \"source\": \"faute\" ou \"grammaire\" ou \"mot\", \"faute\": numéro de la faute reprise ou 0}\n" +
-      "{\"type\": \"trou\", \"phrase\": \"phrase en " + LN() + " avec ___ à la place d'un mot ou deux, suivi entre parenthèses d'un indice en français (forme de base, personne)\", \"reponse\": \"réponse attendue (variantes séparées par |)\", \"explication\": \"la règle en une phrase, en français\", \"source\": ..., \"faute\": ...}\n" +
+      "{\"type\": \"trou\", \"phrase\": \"phrase en " + LN() + " avec UN SEUL ___ (un seul trou par phrase), à la place d'un mot ou deux, suivi entre parenthèses d'un indice en français (forme de base, personne)\", \"reponse\": \"réponse attendue (variantes séparées par |)\", \"explication\": \"la règle en une phrase, en français\", \"source\": ..., \"faute\": ...}\n" +
       "{\"type\": \"choix\", \"question\": \"phrase à trous ___ ou question\", \"choix\": [\"bonne réponse\", \"fausse 1\", \"fausse 2\", \"fausse 3\"], \"explication\": \"la règle en une phrase, en français\", \"source\": ..., \"faute\": ...}";
     const r = await Promise.race([AI(p, { cache: false, maxTokens: 4000 }), timeout(90000)]);
     const j = parseObj(r.text), raw = Array.isArray(j.items) ? j.items : [];
@@ -155,9 +170,9 @@
       if (!x || typeof x !== "object") return;
       let e = null;
       const s = (v) => typeof v === "string" ? v.replace(/[<>]/g, "").trim() : "";
-      if (x.type === "traduction" && s(x.fr) && s(x.cible)) e = ["t", s(x.fr), s(x.cible), s(x.point)];
-      else if (x.type === "trou" && s(x.phrase).includes("___") && s(x.reponse)) e = ["f", s(x.phrase), s(x.reponse), s(x.explication) || " "];
-      else if (x.type === "choix" && s(x.question) && Array.isArray(x.choix)) { const c = x.choix.map(s).filter(Boolean); if (c.length >= 2 && new Set(c).size === c.length) e = ["m", s(x.question), c.slice(0, 5), s(x.explication) || " "]; }
+      if (x.type === "traduction" && s(x.fr) && s(x.cible)) e = ["t", s(x.fr), s(x.cible), cleanWhy(s(x.point))];
+      else if (x.type === "trou" && holes(s(x.phrase)) === 1 && s(x.reponse) && !/[,;]/.test(s(x.reponse).replace(/\|/g, ""))) e = ["f", s(x.phrase), s(x.reponse), cleanWhy(s(x.explication)) || " "];
+      else if (x.type === "choix" && s(x.question) && holes(s(x.question)) <= 1 && Array.isArray(x.choix)) { const c = x.choix.map(s).filter(Boolean); if (c.length >= 2 && new Set(c).size === c.length) e = ["m", s(x.question), c.slice(0, 5), cleanWhy(s(x.explication)) || " "]; }
       if (!e) return;
       const fi = Number(x.faute) | 0, fe = fi >= 1 && fi <= m.E.length ? m.E[fi - 1] : null;
       items.push(e); meta.push({ src: ["faute", "grammaire", "mot"].includes(x.source) ? x.source : "grammaire", err: fe ? fe.q : "" });
@@ -180,6 +195,8 @@
     }
   }
   function rvRun(set) {
+    const keep = set.items.map((d, k) => k).filter((k) => { const d = set.items[k]; return !(d[0] === "f" && holes(d[1]) !== 1) && !(d[0] === "m" && holes(d[1]) > 1); });
+    if (keep.length !== set.items.length) { set.items = keep.map((k) => set.items[k]); set.meta = keep.map((k) => set.meta[k] || {}); set.i = Math.min(set.i || 0, set.items.length); set.res = {}; save(); }
     M[-1] = { id: "rv-" + cid(), st: "Révision sur mesure", course: cid(), ex: [], dq: [], lessons: [], vocab: [], dlg: [], rv: true };
     const q = set.items.map((d, k) => ({ t: d[0], d, k, src: (set.meta[k] || {}).src }));
     cur = { mi: -1, q, base: q.length, i: Math.min(set.i || 0, q.length), res: Object.assign({}, set.res || {}) };

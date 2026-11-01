@@ -62,6 +62,7 @@ const st = async () => (await fetch(O + "/__state")).json();
   const asked = (await st()).rvAsked || "";
   ok(/rimanere/.test(asked) && /Grammaire de ses leçons terminées/.test(asked), "Claude reçoit les fautes et la grammaire des leçons faites");
   ok(/Ta faute/.test(await p.textContent(".kind")), "chaque exercice dit d'où il vient (« Ta faute »)");
+  ok(await p.evaluate(() => RV && S.rv[C().id].items.length === 5 && S.rv[C().id].items.every((d) => (String(d[1]).match(/_{3,}/g) || []).length <= 1)), "exercice mal formé (deux trous, une seule réponse) écarté");
   await p.screenshot({ path: "tests/shot-rv.png" });
   const answer = async (sel, v) => { await p.waitForSelector(sel); await p.fill(sel, v); await p.keyboard.press("Enter"); await p.waitForSelector(".fb", { timeout: 8000 }); const good = await p.isVisible(".fb.ok"); await p.click(".fb button:has-text('Continuer')"); return good; };
   const r1 = await answer(".tr-inp", "Ieri sera siamo rimasti a casa");
