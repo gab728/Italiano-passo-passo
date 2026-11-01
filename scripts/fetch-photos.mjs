@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..")
 const OUT = path.join(ROOT, "web/img/photos");
 const LIST = JSON.parse(fs.readFileSync(path.join(ROOT, "scripts/photos.json"), "utf8"));
 const CRED_F = path.join(OUT, "credits.json");
-const UA = "ItalianoPassoPasso/1.0 (https://github.com; app d'apprentissage des langues)";
+const UA = "ItalianoPassoPassoPhotos/1.0 (https://github.com/gab728/Italiano-passo-passo) node-fetch";
 const API = "https://commons.wikimedia.org/w/api.php";
 const W = 720;
 fs.mkdirSync(OUT, { recursive: true });
@@ -20,9 +20,13 @@ const strip = (h) => String(h || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " "
 const okLicense = (l) => l && !/\b(NC|ND)\b|fair use|non-free|copyright/i.test(l);
 async function api(params) {
   const u = API + "?" + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...params });
-  const r = await fetch(u, { headers: { "User-Agent": UA } });
-  if (!r.ok) throw new Error("API " + r.status);
-  return r.json();
+  for (let k = 0; k < 4; k++) {
+    const r = await fetch(u, { headers: { "User-Agent": UA, "Api-User-Agent": UA, Accept: "application/json" } });
+    const t = await r.text();
+    try { return JSON.parse(t); } catch (e) { console.log("API " + r.status + " " + r.url.slice(0, 120) + " → " + t.slice(0, 300).replace(/\s+/g, " ")); }
+    await new Promise((ok) => setTimeout(ok, 3000 * (k + 1)));
+  }
+  return {};
 }
 const II = { prop: "imageinfo", iiprop: "url|extmetadata|size|mime", iiurlwidth: String(W) };
 function pick(pages, used) {
