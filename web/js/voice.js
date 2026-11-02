@@ -77,7 +77,7 @@ const VO = (() => {
       };
       const begin = () => {
         r = new SR();
-        r.lang = o.lang || IT(); r.interimResults = true; r.maxAlternatives = 4; r.continuous = !!o.manual;
+        r.lang = SPK(o.lang || IT()); r.interimResults = true; r.maxAlternatives = 4; r.continuous = !!o.manual;
         let seg = "";
         r.onresult = (e) => {
           let interim = "";
@@ -261,6 +261,11 @@ const VO = (() => {
     if (/^(basta|para|pausa|fin|se acabo|ya esta|adios)$/.test(s)) return "stop";
     if (/^(no se|no lo se|no me acuerdo|ni idea|no lo recuerdo)$/.test(s)) return "dunno";
     if (/^(mas despacio|despacio|mas lento)$/.test(s)) return "slower";
+    // Français (langue apprise)
+    if (/^(repete|repetez|repete s il te plait|encore|encore une fois|pardon|quoi|comment|tu peux repeter)$/.test(s)) return "repeat";
+    if (/^(suivant|suivante|passe|on passe|la suivante|apres)$/.test(s)) return "skip";
+    if (/^(stop|arrete|arretez|pause|fini|c est fini|au revoir)$/.test(s)) return "stop";
+    if (/^(plus lentement|moins vite|doucement|plus doucement)$/.test(s)) return "slower";
     // Hébreu (formes sans voyelles, lettres finales ramenées à la forme normale par bare)
     if (/^(שוב|עוד פעמ|עוד פעמ אחת|תחזור|תחזרי|מה|סליחה מה)$/.test(s)) return "repeat";
     if (/^(הבא|הבאה|דלג|תמשיכ|תמשיכי|הלאה)$/.test(s)) return "skip";
@@ -357,7 +362,7 @@ function carPrefetch(first) {
   if (first) { CAR_FIXED.forEach((t) => pf(t, "fr-FR", 1)); try { (C().cheers || []).forEach((t) => pf(t, VO.IT(), 1)); } catch (e) { /* rien */ } }
   for (let k = VCAR.i; k < Math.min(VCAR.steps.length, VCAR.i + 3); k++) {
     const s = VCAR.steps[k];
-    s.parts.forEach((p) => { if (p.p == null) pf(p.t, p.l, p.l.startsWith("fr") ? 1 : VCAR.rate); });
+    s.parts.forEach((p) => { if (p.p == null) pf(p.t, p.l, NARR(p.l) ? 1 : VCAR.rate); });
     if (s.ask && s.ask.kind !== "repeat") pf(s.ask.answer || s.ask.exps[0], VO.IT(), VCAR.rate * 0.9);
     if (s.ask && s.ask.kind === "repeat") pf(s.ask.exps[0], VO.IT(), VCAR.rate * 0.9);
   }
@@ -366,7 +371,7 @@ async function carPart(p) {
   if (!VCAR) return;
   if (p.p != null) { await new Promise((r) => { VCAR.timer = setTimeout(r, p.p * 1000); }); return; }
   VCAR.say = p.t; carRender();
-  await VO.say(p.t, p.l, p.l.startsWith("fr") ? 1 : VCAR.rate);
+  await VO.say(p.t, p.l, NARR(p.l) ? 1 : VCAR.rate);
 }
 async function carAsk(a, token, repeatOnly) {
   for (let tries = 0; tries < 2; tries++) {
@@ -517,7 +522,7 @@ audioSetup = function () {
 /* ---------- Conversation à voix haute avec Claude ---------- */
 let VC = null;
 // Mots de commande à voix haute, selon la langue apprise.
-const VCMD = () => ({ he: { rep: "שׁוּב", repT: "shouv", skip: "הַבָּא", skipT: "haba", stop: "דַּי", stopT: "dai", slow: "לְאַט" }, es: { rep: "otra vez", skip: "siguiente", stop: "basta", slow: "más despacio" } }[C().id] || { rep: "ripeti", skip: "avanti", stop: "basta", slow: "più piano" });
+const VCMD = () => ({ he: { rep: "שׁוּב", repT: "shouv", skip: "הַבָּא", skipT: "haba", stop: "דַּי", stopT: "dai", slow: "לְאַט" }, es: { rep: "otra vez", skip: "siguiente", stop: "basta", slow: "más despacio" }, fr: { rep: "répète", skip: "suivant", stop: "stop", slow: "plus lentement" } }[C().id] || { rep: "ripeti", skip: "avanti", stop: "basta", slow: "più piano" });
 const vcw = (k) => { const v = VCMD(); return v[k] + (v[k + "T"] ? " » (" + v[k + "T"] + ")" : " »"); };
 function vLevel() {
   const cu = current(), done = slots().filter(isDone);
@@ -600,14 +605,14 @@ function vcRender() {
   const end = btn(A.n >= 2 ? "Terminer et voir le bilan" : "Terminer"); end.onclick = vcEnd;
   row.append(rep, end); body.append(main, hands, row);
   const log = el("div", "chat"); log.setAttribute("aria-live", "polite");
-  A.log.forEach((x) => { const b = el("div", "bub " + (x.who === "me" ? "me" : "ai")); x.lines.forEach((l) => { const s = el("span", l.lang.startsWith("fr") ? "fr-line" : null); s.textContent = l.t; b.append(s); }); log.append(b); });
+  A.log.forEach((x) => { const b = el("div", "bub " + (x.who === "me" ? "me" : "ai")); x.lines.forEach((l) => { const s = el("span", NARR(l.lang) ? "fr-line" : null); s.textContent = l.t; if (!NARR(l.lang)) s.lang = SPK(l.lang).slice(0, 2); b.append(s); }); log.append(b); });
   if (A.live) { const b = el("div", "bub ai live"), s = el("span"); s.textContent = A.live; b.append(s); log.append(b); }
   body.append(log);
 }
 function vcSet(state) { if (!VC) return; VC.state = state; vcRender(); }
 function vcPause() { if (!VC) return; VC.token = 0; VO.cancel(); stopSpeech(); if (VC.abort) VC.abort.abort(); VC.state = "idle"; vcRender(); }
 function vcStop() { if (!VC) return; VC.token = 0; VO.cancel(); stopSpeech(); if (VC.abort) VC.abort.abort(); VO.release(); vWake(false); }
-async function vcSpeakAgain() { if (!VC || !VC.lastAI) return; const t = VC.token = Date.now(); vcSet("speak"); for (const l of VC.lastAI) { if (!VC || VC.token !== t) return; await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate, "giulia"); } if (VC && VC.token === t) { VC.state = "idle"; if (VC.hands) vcLoop(true); else vcRender(); } }
+async function vcSpeakAgain() { if (!VC || !VC.lastAI) return; const t = VC.token = Date.now(); vcSet("speak"); for (const l of VC.lastAI) { if (!VC || VC.token !== t) return; await VO.say(l.t, l.lang, NARR(l.lang) ? 1 : VC.rate, "giulia"); } if (VC && VC.token === t) { VC.state = "idle"; if (VC.hands) vcLoop(true); else vcRender(); } }
 async function vcAsk(token) {
   const A = VC; A.state = "think"; A.live = "…"; vcRender();
   const msgs = A.turns.length ? A.turns.slice(-30) : [{ role: "user", content: "(L'élève vient de lancer la conversation. Commence : salue-le et pose ta première question.)" }];
@@ -619,7 +624,7 @@ async function vcAsk(token) {
     const parsed = vParse(complete.join("\n"));
     for (; spoken < parsed.length; spoken++) {
       const l = parsed[spoken]; queue.push(l);
-      speaking = speaking.then(async () => { if (!VC || VC.token !== token) return; if (VC.state !== "speak") { VC.state = "speak"; vcRender(); } await VO.say(l.t, l.lang, l.lang.startsWith("fr") ? 1 : VC.rate, "giulia"); });
+      speaking = speaking.then(async () => { if (!VC || VC.token !== token) return; if (VC.state !== "speak") { VC.state = "speak"; vcRender(); } await VO.say(l.t, l.lang, NARR(l.lang) ? 1 : VC.rate, "giulia"); });
     }
   };
   let r;
@@ -676,7 +681,7 @@ function vcEnd() {
   const A = VC; if (!A) return home();
   vcStop(); VC = null; save();
   if (A.n < 2) return home();
-  const script = A.log.map((x) => (x.who === "me" ? "Élève : " : "Personnage : ") + x.lines.map((l) => (l.lang.startsWith("fr") ? "(en français) " : "") + l.t).join(" ")).join("\n");
+  const script = A.log.map((x) => (x.who === "me" ? "Élève : " : "Personnage : ") + x.lines.map((l) => (NARR(l.lang) ? "(en français) " : "") + l.t).join(" ")).join("\n");
   if (A.kind === "role") return bilan(A.k, M[A.k].scenario, script, A.n);
   vBilan(A, script);
 }

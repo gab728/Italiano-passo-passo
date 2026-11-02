@@ -105,6 +105,8 @@
   /* ---------- Langue : petit bouton en haut des écrans, qui ouvre le choix ----------
      Une langue jamais commencée demande d'abord par où commencer (l'hébreu peut se commencer après l'alphabet). */
   const START = {
+    fr: [["", "Je débute", "On commence par les bases, tout doucement"], ["fr-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
+      ["fr-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["fr-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
     es: [["", "Je débute", "On commence par les bases, tout doucement"], ["es-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
       ["es-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["es-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
     he: [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
@@ -112,7 +114,7 @@
   };
   function langChip() {
     const b = el("button", "lang-chip"); b.type = "button"; b.setAttribute("aria-label", "Langue apprise : " + C().name + ". Changer de langue");
-    b.innerHTML = '<i class="flag flag-' + C().id + '" aria-hidden="true"></i><span></span>' + IC.chev; b.querySelector("span").textContent = cap(C().name);
+    b.innerHTML = '<i class="flag flag-' + C().id + '" aria-hidden="true"></i><span></span>' + IC.chev; b.querySelector("span").textContent = cap(T(C().name));
     b.onclick = () => langSheet(); return b;
   }
   function closeSheet() { const o = document.querySelector(".lsheet"); if (o) { o.classList.remove("in"); setTimeout(() => o.remove(), 180); } }
@@ -137,7 +139,7 @@
     const list = sheetBox("Quelle langue ?");
     Object.values(COURSES).forEach((c) => {
       const ss = slots(c), dn = ss.filter(isDone).length;
-      sheetRow(list, cap(c.name) + " · " + c.title, c.id === C().id ? "Langue en cours · " + dn + " / " + ss.length + " leçons" : dn ? dn + " / " + ss.length + " leçons faites" : (c.desc || "Pas encore commencé"), c.id === C().id,
+      sheetRow(list, cap(T(c.name)) + " · " + c.title, c.id === C().id ? "Langue en cours · " + dn + " / " + ss.length + " leçons" : dn ? dn + " / " + ss.length + " leçons faites" : (c.desc || "Pas encore commencé"), c.id === C().id,
         () => { if (c.id === C().id) return closeSheet(); pickCourse(c.id); }, c.id);
     });
     const f = list.querySelector(".here") || list.firstChild; if (f) f.focus({ preventScroll: true });
@@ -166,7 +168,7 @@
     const ss = slots(c), dn = ss.filter(isDone).length, o = el("div", "course-flash"); o.setAttribute("role", "status");
     o.innerHTML = '<i class="flag flag-' + id + '" aria-hidden="true"></i>';
     const nat = txt("span", "cf-nat", (LX[id] || {}).native || c.title); if (id === "he") nat.dir = "rtl";
-    o.append(txt("b", null, cap(c.name)), nat, txt("small", null, dn ? "Ton parcours : " + dn + " leçon" + (dn > 1 ? "s" : "") + " sur " + ss.length : "Nouveau parcours : " + ss.length + " leçons"));
+    o.append(txt("b", null, cap(T(c.name))), nat, txt("small", null, dn ? "Ton parcours : " + dn + " leçon" + (dn > 1 ? "s" : "") + " sur " + ss.length : "Nouveau parcours : " + ss.length + " leçons"));
     document.body.append(o); setTimeout(() => o.classList.add("out"), 750); setTimeout(() => o.remove(), 1100);
   }
   function askGender(then) {
@@ -438,7 +440,7 @@
       const l = el("div", "vy-done");
       done.forEach((x) => {
         const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
-        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
+        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : C().id === "fr" ? "FAIT" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
         b.onclick = () => openSlot(x); l.append(b);
       });
       wrap.append(l);
@@ -690,7 +692,7 @@
     }); goalC.append(gl); root.append(goalC);
     if (Object.keys(COURSES).length > 1) {
       const lc = card("goal-c"); lc.append(txt("b", null, "Langue apprise"), txt("small", "muted", "Chaque langue garde sa progression"));
-      const cl = el("div", "chips"); Object.values(COURSES).forEach((c) => { const x = el("button", "chip" + (c.id === C().id ? " sel" : "")); x.type = "button"; x.innerHTML = '<i class="flag flag-' + c.id + '" aria-hidden="true"></i>'; x.append(document.createTextNode(cap(c.name))); x.setAttribute("aria-pressed", String(c.id === C().id)); x.onclick = () => pickCourse(c.id, () => profileTab()); cl.append(x); });
+      const cl = el("div", "chips"); Object.values(COURSES).forEach((c) => { const x = el("button", "chip" + (c.id === C().id ? " sel" : "")); x.type = "button"; x.innerHTML = '<i class="flag flag-' + c.id + '" aria-hidden="true"></i>'; x.append(document.createTextNode(cap(T(c.name)))); x.setAttribute("aria-pressed", String(c.id === C().id)); x.onclick = () => pickCourse(c.id, () => profileTab()); cl.append(x); });
       lc.append(cl); root.append(lc);
       if (START[C().id]) {
         const fc = card("goal-c"), curFrom = (S.from || {})[C().id] || "";
@@ -872,7 +874,7 @@
     const st = el("div", "end-stars"); st.setAttribute("aria-label", stars + (stars > 1 ? " étoiles" : " étoile") + " sur 3");
     for (let k = 0; k < 3; k++) st.insertAdjacentHTML("beforeend", '<svg class="star s' + (k + 1) + (k < stars ? " on" : "") + '" width="' + (k === 1 ? 52 : 40) + '" height="' + (k === 1 ? 52 : 40) + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z"/></svg>');
     e.insertBefore(st, e.firstChild); e.insertBefore(hero, e.firstChild);
-    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : C().id === "es" ? (pct >= 85 ? "¡Muy bien!" : pct >= 65 ? "¡Bien hecho!" : "¡Ánimo, sigue así!") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); h2.before(b); }
+    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : C().id === "es" ? (pct >= 85 ? "¡Muy bien!" : pct >= 65 ? "¡Bien hecho!" : "¡Ánimo, sigue así!") : C().id === "fr" ? (pct >= 85 ? "Excellent !" : pct >= 65 ? "Bien joué !" : "Courage, continue comme ça !") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); if (C().id === "fr") b.lang = "fr"; h2.before(b); }
     const tiles = el("div", "end-tiles rise");
     const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
     if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
@@ -949,17 +951,32 @@
       S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
       if (ob.g === "m" || ob.g === "f") S.ob.g = ob.g;
       // Langue choisie à l'inscription (le cours d'hébreu arrive avec le catalogue : l'accueil se redessine alors).
-      if (ob.course === "he" || ob.course === "it" || ob.course === "es") {
+      if (ob.course === "he" || ob.course === "it" || ob.course === "es" || ob.course === "fr") {
         S.course = ob.course;
-        if (ob.course === "es") { S.ob.lvc = { es: S.ob.lv }; S.ob.lv = 0; }
+        if (ob.course === "es" || ob.course === "fr") { S.ob.lvc = { [ob.course]: S.ob.lv }; S.ob.lv = 0; }
         if (ob.course === "he") S.from = Object.assign({}, S.from || {}, { he: typeof ob.start === "string" && /^he-u\d\d-l\d+$/.test(ob.start) ? ob.start : "" });
       }
-      if (ob.ptest && ["it", "he", "es"].includes(ob.ptest.c)) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
+      if (ob.ptest && ["it", "he", "es", "fr"].includes(ob.ptest.c)) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
       GOAL = S.ob.goal; save(); courseNow();
     }
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
   })();
+  /* Le contenu des leçons et du carnet n'est jamais retraduit à l'écran (voir I18N.protect). */
+  function protectAll() {
+    if (!window.I18N || I18N.ui === "fr") return;
+    const out = [], ex = (x) => { if (!Array.isArray(x)) return; x.forEach((y) => { if (typeof y === "string") out.push(y); else if (Array.isArray(y)) ex(y); }); };
+    try {
+      M.forEach((m) => { ex(m.vocab); ex(m.ex); ex(m.dlg); ex(m.dq); if (m.scenario) out.push(m.scenario.open || ""); });
+      Object.values(S.cw || {}).forEach((w) => { if (w) out.push(w.it || ""); });
+      Object.values(window.PERSONAS || {}).forEach((p) => { if (p) out.push(p.open || "", p.quote || ""); });
+      if (C().id === "fr") out.push("FAIT", "BILLET", ...(C().cheers || []), ...(typeof LXC === "function" ? [LXC().hi].concat(LXC().hello) : []), "répète", "suivant", "stop", "plus lentement");
+    } catch (e) { /* rien */ }
+    I18N.protect(out);
+  }
+  if (typeof applyBase === "function") { const ab0 = applyBase; applyBase = function (b) { const r = ab0.apply(this, arguments); protectAll(); return r; }; }
+  window.addEventListener("ipp-course", () => setTimeout(protectAll, 0));
+  protectAll();
   /* Langue de l'app : gardée dans la progression (S.ui), pour la retrouver sur un autre appareil. Les comptes d'avant le choix de la
      langue sont francophones. Rend true quand la page se recharge dans la bonne langue. */
   window.UISYNC = (remote) => {

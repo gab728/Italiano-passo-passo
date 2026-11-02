@@ -819,6 +819,7 @@ button.who { border: 0; background: none; padding: 0; margin: 0; text-align: lef
 .flag { flex: none; display: inline-block; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(23, 20, 15, .12); }
 .flag-it { background: linear-gradient(90deg, #1F9D55 0 33.3%, #fff 33.3% 66.6%, #D7383F 66.6%); }
 .flag-es { background: linear-gradient(#C60B1E 0 25%, #FFC400 25% 75%, #C60B1E 75%); }
+.flag-fr { background: linear-gradient(90deg, #2350A8 0 33.3%, #fff 33.3% 66.6%, #E1343F 66.6%); }
 .flag-he { background: linear-gradient(#fff 0 18%, #2457D6 18% 30%, #fff 30% 70%, #2457D6 70% 82%, #fff 82%); }
 .chip .flag { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
 .tab-hd-l { display: flex; flex-direction: column; gap: 2px; }

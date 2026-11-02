@@ -66,13 +66,26 @@ const NEWS = (() => {
     { id: "e6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris les hypothèses avec si + subjonctif imparfait, le conditionnel passé et le plus-que-parfait", words: 180, block: null },
   ];
   const MILESTONES_ES = ["es-u07-l1", "es-u08-l1", "es-u11-l1", "es-u15-l1", "es-u16-l1"];
+  // Français langue apprise : les rubriques du Monde. Étapes de grammaire (f1…f6) d'après le programme de français.
+  const THEMES_FR = [["une", "À la une"], ["monde", "Monde"], ["politique", "Politique"], ["economie", "Économie"], ["societe", "Société"], ["planete", "Climat"],
+    ["sciences", "Sciences"], ["tech", "Tech"], ["culture", "Culture"], ["sport", "Sport"]];
+  const STAGES_FR = [
+    { id: "f1", name: "présent", allow: "le présent de l'indicatif seulement (verbes en -er, être, avoir, aller, faire, venir, prendre et irréguliers courants), il y a, c'est, les articles et partitifs, le futur proche (aller + infinitif) et le passé récent (venir de + infinitif). AUCUN passé composé, imparfait, futur simple, conditionnel ni subjonctif", words: 90, block: /pass[ée] compos|imparfait|futur simple|conditionnel|subjonctif|plus-que-parfait|passif|g[ée]rondif/i },
+    { id: "f2", name: "présent et passé composé", allow: "le présent, le futur proche et le passé composé (avec avoir et être, participes irréguliers courants, accord avec être). PAS d'imparfait, de futur simple, de conditionnel, de subjonctif ni d'impératif", words: 110, block: /imparfait|futur simple|conditionnel|subjonctif|imp[ée]ratif|plus-que-parfait|passif/i },
+    { id: "f3", name: "présent, passé composé, imparfait", allow: "le présent, le passé composé et l'imparfait, le futur proche, les pronoms compléments simples. PAS de futur simple, de conditionnel, de subjonctif ni d'impératif", words: 130, block: /futur simple|conditionnel|subjonctif|imp[ée]ratif|plus-que-parfait|passif/i },
+    { id: "f4", name: "jusqu'au futur et au conditionnel", allow: "le présent, le passé composé, l'imparfait, le futur simple, le conditionnel présent, l'impératif, les pronoms compléments, y et en. PAS de subjonctif", words: 150, block: /subjonctif|plus-que-parfait|conditionnel pass|passif/i },
+    { id: "f5", name: "jusqu'au subjonctif présent", allow: "tous les temps courants de l'indicatif, le conditionnel, le subjonctif présent, les pronoms relatifs qui, que, où, dont. PAS de subjonctif passé ni d'hypothèses au passé", words: 170, block: /subjonctif pass|hypoth[ée]tique|conditionnel pass/i },
+    { id: "f6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris le plus-que-parfait, le conditionnel passé et les hypothèses (si + imparfait, si + plus-que-parfait)", words: 180, block: null },
+  ];
+  let MILESTONES_FR = ["fr-u07-l1", "fr-u08-l1", "fr-u11-l1", "fr-u15-l1", "fr-u16-l1"];
   const SRC = {
+    fr: { mast: "Ton journal", themes: THEMES_FR, stages: STAGES_FR, miles: MILESTONES_FR, badge: "Le Monde", from: "D'après un article du Monde", agency: "un article du quotidien Le Monde", word: "article", daily: "L'article du jour" },
     it: { mast: "Il tuo giornale", themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
     es: { mast: "Tu periódico", themes: THEMES_ES, stages: STAGES_ES, miles: MILESTONES_ES, badge: "El País", from: "D'après un article d'El País", agency: "un article du quotidien espagnol El País", word: "noticia", daily: "La noticia del día" },
     he: { mast: "הָעִתּוֹן שֶׁלִּי", themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
   };
   let STAGES = STAGES_IT, MILESTONES = MILESTONES_IT, SR = SRC.it;
-  function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; }
+  function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; if (window.I18N && C().id === "fr") I18N.protect([SR.mast, SR.daily]); }
   setLang(); window.addEventListener("ipp-course", setLang);
   function stage() {
     const ss = slots(), k0 = fromN(ss), done = new Set(ss.filter((x) => isDone(x) || x.n < k0).map((x) => String(x.l.id)));
@@ -110,7 +123,7 @@ const NEWS = (() => {
   // Élève anglophone ou hispanophone : ses notizie (traductions, consignes) sont écrites et partagées à part.
   async function loadDoc(it, onStep) {
     const lv = lvl(), id = docId(it, lv), local = ls.get(NKEY("ipp-news-docs")) || {};
-    if (local[id]) return local[id];
+    if (local[id]) return guardDoc(local[id]);
     try { const { data } = await W.sb.from("news_lessons").select("doc").eq("id", id).maybeSingle(); if (data && data.doc) return keep(id, data.doc); } catch (e) { /* hors ligne : on écrit */ }
     if (!AI) throw { code: "offline" };
     onStep && onStep("write");
@@ -136,7 +149,9 @@ const NEWS = (() => {
     try { await W.sb.from("news_lessons").insert({ id, theme: it.theme, level: lv, title: d.title.slice(0, 200), link: it.link, published: it.date, doc: d, created_by: W.user && W.user.id }); } catch (e) { /* déjà écrite par un autre membre, ou hors ligne : on garde la nôtre */ }
     return keep(id, d);
   }
-  function keep(id, d) { const local = ls.get(NKEY("ipp-news-docs")) || {}; local[id] = d; const ks = Object.keys(local); ks.slice(0, Math.max(0, ks.length - 12)).forEach((k) => delete local[k]); ls.set(NKEY("ipp-news-docs"), local); return d; }
+  // Le texte de la notizia (dans la langue apprise) n'est jamais retraduit à l'écran.
+  function guardDoc(d) { try { if (window.I18N && d) { const out = []; const walk = (x) => { if (typeof x === "string") out.push(x); else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === "object") Object.keys(x).filter((k) => !/_fr$/.test(k)).forEach((k) => walk(x[k])); }; walk([d.title, d.text, d.keywords, d.ex, d.structure && d.structure.examples]); I18N.protect(out); } } catch (e) { /* rien */ } return d; }
+  function keep(id, d) { guardDoc(d); const local = ls.get(NKEY("ipp-news-docs")) || {}; local[id] = d; const ks = Object.keys(local); ks.slice(0, Math.max(0, ks.length - 12)).forEach((k) => delete local[k]); ls.set(NKEY("ipp-news-docs"), local); return d; }
   const S_ = (x) => (typeof x === "string" ? x.trim() : "");
   function tidy(d) {
     if (!d || typeof d !== "object") return null;

@@ -391,6 +391,12 @@ async function admin(req: Request, u: User): Promise<Response> {
       else out.voix_es = { ok: false, why: "ElevenLabs ne lit pas l'espagnol (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
     }
     if (elOn()) {
+      const h = await elVoicesLang("fx", true), n = new Set(Object.values(h)).size;
+      const r = await elSpeak("Bonjour !", "marin", 1, "fx", false);
+      if (r.res) { await r.res.body?.cancel(); out.voix_fx = { ok: true, from: "ElevenLabs, " + (n ? n + " voix de France (cours de français)" : "voix italiennes (aucune voix française trouvée)") }; }
+      else out.voix_fx = { ok: false, why: "ElevenLabs ne lit pas le français (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
+    }
+    if (elOn()) {
       const h = await elVoicesLang("en", true), n = new Set(Object.values(h)).size;
       const r = await elSpeak("Hello!", "marin", 1, "en", false);
       if (r.res) { await r.res.body?.cancel(); out.voix_en = { ok: true, from: "ElevenLabs, " + (n ? n + " voix anglaises (explications des élèves anglophones)" : "voix italiennes (aucune voix anglaise trouvée)") }; }
@@ -481,6 +487,7 @@ async function stt(req: Request, u: User): Promise<Response> {
     if (lang === "it" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Trascrizione fedele in italiano, parola per parola.");
     else if (lang === "he" && /gpt-4o|whisper/.test(model)) form.append("prompt", "תמלול נאמן בעברית, מילה במילה.");
     else if (lang === "es" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Transcripción fiel en español, palabra por palabra.");
+    else if (lang === "fr" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Transcription fidèle en français, mot à mot.");
     form.append("temperature", "0");
     form.append("response_format", "json");
     try {
@@ -601,8 +608,10 @@ async function elVoices(force = false): Promise<Record<string, string>> {
 }
 // Hébreu et espagnol : voix natives de la bibliothèque (pour l'hébreu, seul le modèle eleven_v3 sait le parler).
 // Sans voix native trouvée, les voix italiennes servent.
-const LANG_VOICES: Record<string, { file: string; re: RegExp; prefer?: RegExp; avoid?: RegExp }> = {
+const LANG_VOICES: Record<string, { file: string; re: RegExp; prefer?: RegExp; avoid?: RegExp; api?: string }> = {
   he: { file: "tts/el-voices-he-v1.json", re: /hebrew|israel/i },
+  // Français langue apprise (« fx ») : voix de France pour les personnages. Le français des explications (« fr ») garde ses voix.
+  fx: { file: "tts/el-voices-fx-v1.json", api: "fr", re: /french|france|parisi/i, prefer: /france|parisi|standard|european|metropol/i, avoid: /canad|qu[eé]b|belg|swiss|suisse|africa|afric/i },
   // Anglais : les explications pour les élèves anglophones (voix américaines de préférence).
   en: { file: "tts/el-voices-en-v1.json", re: /americ|british|english|^us$|standard/i, prefer: /americ|standard|neutral|^us$/i, avoid: /scott|irish|indian|austral|southern/i },
   es: { file: "tts/el-voices-es-v1.json", re: /spanish|spain|castil|peninsular|madrid|andalu/i, prefer: /spain|castil|peninsular|madrid|european|iberian/i, avoid: /mexic|latin|argent|colomb|chile|venez|caribb|peru|cuba/i },
@@ -621,10 +630,10 @@ async function elVoicesLang(lang: string, force = false): Promise<Record<string,
     const r = await fetch(EL + "/voices", { headers: { "xi-api-key": elKey() }, signal: AbortSignal.timeout(10000) });
     if (r.ok) for (const v of ((await r.json()).voices || [])) {
       const l = v.labels || {};
-      if ((l.language === lang || cfg.re.test(String(l.accent || ""))) && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang });
+      if ((l.language === (cfg.api || lang) || cfg.re.test(String(l.accent || ""))) && v.category !== "premade") pool.push({ id: v.voice_id, g: String(l.gender || "").toLowerCase(), age: String(l.age || ""), score: 1e15, name: v.name, lang });
     }
   } catch { /* rien */ }
-  for (const g of ["female", "male"]) pool.push(...await elShared(lang, g));
+  for (const g of ["female", "male"]) pool.push(...await elShared(cfg.api || lang, g));
   // Espagnol : accent d'Espagne de préférence.
   if (cfg.prefer || cfg.avoid) pool.forEach((v: ElV) => { const a = String(v.accent || "") + " " + v.name; if (cfg.prefer && cfg.prefer.test(a)) v.score *= 4; if (cfg.avoid && cfg.avoid.test(a)) v.score /= 4; });
   const map: Record<string, string> = {}, used = new Set<string>();
@@ -670,7 +679,8 @@ async function elSpeak(text: string, voice: string, speed: number, lang: string,
   // L'hébreu n'existe que dans eleven_v3, qui n'accepte que trois valeurs de stabilité et pas de réglage de vitesse.
   const model = lang === "he" ? env("ELEVENLABS_TTS_MODEL_HE", "eleven_v3") : cache ? env("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2") : env("ELEVENLABS_TTS_MODEL_LIVE", "eleven_flash_v2_5");
   const v3 = /v3/.test(model);
-  const body = JSON.stringify({ text, model_id: model, ...(/v2_5|v3/.test(model) && /^[a-z]{2}$/.test(lang) ? { language_code: lang } : {}),
+  const code = lang === "fx" ? "fr" : lang;
+  const body = JSON.stringify({ text, model_id: model, ...(/v2_5|v3/.test(model) && /^[a-z]{2}$/.test(code) ? { language_code: code } : {}),
     voice_settings: v3 ? { stability: 0.5, similarity_boost: 0.8 } : { stability: 0.45, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: Math.min(Math.max(speed, 0.7), 1.2) } });
   const go = () => fetch(EL + "/text-to-speech/" + id + "?output_format=mp3_44100_128", { method: "POST", headers: { "xi-api-key": elKey(), "content-type": "application/json", accept: "audio/mpeg" }, body, signal: AbortSignal.timeout(25000) });
   try {
@@ -759,7 +769,14 @@ export const NEWS_FEEDS_ES: Record<string, string> = {
   societe: EP + "section/sociedad/portada", tech: EP + "section/tecnologia/portada", sciences: EP + "section/ciencia/portada",
   planete: "https://feeds.elpais.com/mrss-s/list/ep/site/elpais.com/section/clima-y-medio-ambiente", culture: EP + "section/cultura/portada", sport: EP + "section/deportes/portada",
 };
-const FEEDS: Record<string, Record<string, string>> = { it: NEWS_FEEDS, he: NEWS_FEEDS_HE, es: NEWS_FEEDS_ES };
+// Français (élèves anglophones et hispanophones) : les rubriques du Monde.
+const LM = "https://www.lemonde.fr/";
+export const NEWS_FEEDS_FR: Record<string, string> = {
+  une: LM + "rss/une.xml", monde: LM + "international/rss_full.xml", politique: LM + "politique/rss_full.xml", economie: LM + "economie/rss_full.xml",
+  societe: LM + "societe/rss_full.xml", planete: LM + "planete/rss_full.xml", sciences: LM + "sciences/rss_full.xml", tech: LM + "pixels/rss_full.xml",
+  culture: LM + "culture/rss_full.xml", sport: LM + "sport/rss_full.xml",
+};
+const FEEDS: Record<string, Record<string, string>> = { it: NEWS_FEEDS, he: NEWS_FEEDS_HE, es: NEWS_FEEDS_ES, fr: NEWS_FEEDS_FR };
 const unxml = (t: string) => t.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " ")
   .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();

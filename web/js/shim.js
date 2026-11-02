@@ -19,7 +19,13 @@
     en: "LEARNER'S LANGUAGE (this overrides everything below): the learner is a native English speaker and does not read French. The instructions below were written for French speakers. Wherever they ask for French — explanations, translations, glosses, hints, corrections, feedback, summaries, instructions to the learner, any text the learner reads that is not in the language being studied, including JSON fields whose names contain \"fr\" or \"_fr\" — write it in natural English instead, and compare with English (not French) when you explain. Lines that the instructions tag \"FR:\" keep that tag but contain English. Keep JSON field names, formats, lengths and the language being studied exactly as requested.",
     es: "IDIOMA DEL ALUMNO (esto prevalece sobre todo lo que sigue): el alumno es hispanohablante nativo y no lee francés. Las instrucciones siguientes se escribieron para francófonos. Siempre que pidan francés — explicaciones, traducciones, glosas, pistas, correcciones, comentarios, resúmenes, consignas para el alumno, cualquier texto que el alumno lea y que no esté en la lengua que estudia, incluidos los campos JSON cuyo nombre contenga \"fr\" o \"_fr\" — escríbelo en un español natural y neutro (tuteo), y compara con el español (no con el francés) cuando expliques. Las líneas que las instrucciones marcan con \"FR:\" conservan esa marca pero van en español. Conserva exactamente los nombres de los campos JSON, los formatos, las longitudes y la lengua estudiada.",
   };
-  const sysFor = (s) => { const n = NATIVE[UI()]; return n ? n + (typeof s === "string" && s ? "\n\n" + s : "") : (typeof s === "string" ? s : undefined); };
+  // Quand le français est la langue apprise, « français » a deux sens dans les consignes : on dit lequel est lequel.
+  const NATIVE_FR = {
+    en: "HERE THE LANGUAGE BEING STUDIED IS FRENCH ITSELF. Because the instructions were written for French speakers learning another language, the word « français » has two meanings in them: (1) the studied language — sentences, dialogue lines, exercises, texts, words to learn, lines tagged \"IT:\", fields such as \"title\", \"text\", \"it\": write those in French (from France); (2) the learner's own language — explanations, translations (« traduction », « traduis en français »), glosses, notes, corrections, hints, feedback, lines tagged \"FR:\", JSON fields whose names end in \"_fr\" or are \"fr\": write those in English. « francophone » means the learner, an English speaker. Compare French with English when you explain.",
+    es: "AQUÍ LA LENGUA QUE SE ESTUDIA ES EL PROPIO FRANCÉS. Como las instrucciones se escribieron para francófonos que aprenden otra lengua, la palabra « français » tiene dos sentidos: (1) la lengua estudiada — frases, réplicas, ejercicios, textos, palabras que aprender, líneas marcadas \"IT:\", campos como \"title\", \"text\", \"it\": escríbelos en francés (de Francia); (2) la lengua del alumno — explicaciones, traducciones (« traduction », « traduis en français »), glosas, notas, correcciones, pistas, comentarios, líneas marcadas \"FR:\", campos JSON cuyo nombre termina en \"_fr\" o es \"fr\": escríbelos en español. « francophone » designa al alumno, un hispanohablante. Compara el francés con el español cuando expliques.",
+  };
+  const learningFr = () => { try { return typeof C === "function" && C().id === "fr"; } catch (e) { return false; } };
+  const sysFor = (s) => { let n = NATIVE[UI()]; if (n && learningFr()) n += "\n" + NATIVE_FR[UI()]; return n ? n + (typeof s === "string" && s ? "\n\n" + s : "") : (typeof s === "string" ? s : undefined); };
   const OWNER_KEY = "ipp-local-owner";
   const SLOT = /^[a-z]{2}-u\d{2}-l\d{1,2}$/;
   const $ = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.textContent = h; return e; };
@@ -321,7 +327,7 @@
   }
   let holdStart = RECOVERY;
   const OB = { ui: "", course: "", why: [], lv: 0, start: "", g: "", goal: 20, name: "" };
-  const LANGN = () => (OB.course === "he" ? "l'hébreu" : OB.course === "es" ? "l'espagnol" : "l'italien");
+  const LANGN = () => (OB.course === "he" ? "l'hébreu" : OB.course === "es" ? "l'espagnol" : OB.course === "fr" ? "le français" : "l'italien");
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const field = (id, label, type, extra) => {
     const w = $("div", "g-field"), l = $("label", null, label); l.htmlFor = id;
@@ -352,7 +358,7 @@
     ["cafe", "viaggio", "cucina"].forEach((n) => { const i = document.createElement("img"); i.src = "img/themes/" + n + ".svg"; i.alt = ""; art.append(i); });
     box.append(art);
     const h = $("h1", "g-hello", "Ciao. ¡Hola! "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
-    box.append($("p", "g-lead", "L'italien, l'espagnol ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
+    box.append($("p", "g-lead", UI() === "fr" ? "L'italien, l'espagnol ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute." : "L'italien, l'espagnol, l'hébreu ou le français en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."))
     const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepNative();
     const have = $("button", "g-link", "J'ai déjà un compte"); have.type = "button"; have.onclick = () => login();
     box.append(go, have);
@@ -386,7 +392,7 @@
     const box = frame({ back: stepNative, step: 2 });
     box.append($("h1", null, "Quelle langue veux-tu apprendre ?"), $("p", "g-sub", "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.course;
-    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]].filter(([v]) => v !== (OB.ui || (window.I18N ? I18N.ui : "fr"))), false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
+    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"], ["fr", (window.T ? T("français") : "français").replace(/^./, (c) => c.toUpperCase()), "Bonjour ! De zéro jusqu'au niveau B1"]].filter(([v]) => v !== (OB.ui || (window.I18N ? I18N.ui : "fr"))), false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
     list.classList.add("g-langs");
     go.onclick = stepWhy; box.append(go);
   }
@@ -394,7 +400,7 @@
     const box = frame({ back: stepLang, step: 3 });
     box.append($("h1", null, "Pourquoi " + LANGN() + " ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
-    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
+    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : OB.course === "fr" ? "Voyager en France ou dans un pays francophone" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
       (v) => { OB.why = OB.why.includes(v) ? OB.why.filter((x) => x !== v) : OB.why.concat(v); go.disabled = !OB.why.length; });
     go.onclick = stepLevel; box.append(go);
   }
@@ -420,6 +426,14 @@
   /* Test de niveau : 4 paliers de 3 questions, du plus simple au plus difficile. On monte tant qu'un palier est réussi
      (2 bonnes réponses sur 3). Le nombre de paliers réussis donne le point de départ. Sans réseau ni compte : tout est ici. */
   const PT = {
+    // Français langue apprise : seuls les élèves anglophones et hispanophones le voient. Les consignes sont en anglais (traduites pour
+    // les hispanophones), les phrases françaises ne sont jamais traduites.
+    fr: [
+      [["Je ___ américain.", ["suis", "ai", "es", "est"]], ["“I would like a coffee.”", ["Je voudrais un café.", "Je veux de un café.", "Je voudrais une café.", "J'aimerais du un café."]], ["“Quel âge as-tu ?” means…", ["How old are you?", "How much do you want?", "How long have you been here?", "Where do you live?"]]],
+      [["Hier, nous ___ au cinéma.", ["sommes allés", "avons allé", "sommes allé", "allons été"]], ["Je vais ___ Paris ___ train.", ["à · en", "en · avec", "à · avec", "de · en"]], ["Les clés ? Je ___ ai oubliées à la maison.", ["les", "leur", "lui", "la"]]],
+      [["Quand j'étais petit, je ___ souvent à la mer.", ["allais", "suis allé", "irai", "vais"]], ["Si j'avais le temps, je ___ un voyage.", ["ferais", "fais", "ferai", "faisais"]], ["Il faut que tu ___ attention.", ["fasses", "fais", "feras", "faire"]]],
+      [["“Je te l'ai déjà dit” means…", ["I already told you", "You already told me", "I will tell you", "I said it for you"]], ["“Je m'en vais” means…", ["I'm leaving", "I'm going there", "I'm fine", "I see it"]], ["C'est le livre ___ je t'ai parlé.", ["dont", "que", "qui", "où"]]],
+    ],
     it: [
       [["Io ___ francese.", ["sono", "ho", "sei", "è"]], ["« Je voudrais un café. »", ["Vorrei un caffè.", "Voglio di un caffè.", "Volevo uno caffè.", "Vorrei una caffè."]], ["« Quanti anni hai? » veut dire…", ["Quel âge as-tu ?", "Combien en veux-tu ?", "Depuis combien d'années ?", "Où habites-tu ?"]]],
       [["Ieri ___ al cinema.", ["siamo andati", "abbiamo andato", "siamo andato", "andiamo stati"]], ["Vado ___ Roma ___ treno.", ["a · in", "in · con", "a · con", "da · in"]], ["Le chiavi? ___ ho dimenticate a casa.", ["Le", "Li", "Gli", "La"]]],
@@ -441,12 +455,14 @@
   };
   // Résultat → point de départ. Italien : niveau (0, 0.5, 1, 2). Hébreu : première leçon du parcours.
   const PT_OUT = {
+    fr: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
     it: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
     es: [[0, "Débutant", "On commence par les bases, tout doucement."], [0.5, "Bases (A1)", "Tu connais les bases : on démarre au début du niveau A1."], [1, "A2", "Tu te débrouilles : on démarre au niveau A2."], [2, "B1", "Tu es à l'aise : on démarre au niveau B1."], [2, "B1", "Excellent : on démarre au niveau B1, le plus avancé du parcours."]],
     he: [["", "L'alphabet", "On commence par les lettres, tout doucement."], ["he-u03-l1", "Lecture", "Tu connais les lettres : on reprend à la lecture sans voyelles."], ["he-u04-l1", "A1", "Tu lis : on démarre au niveau A1."], ["he-u08-l1", "A2", "Tu te débrouilles : on démarre au niveau A2."], ["he-u08-l1", "A2", "Excellent : on démarre au niveau A2."]],
   };
   function placement(course, onDone, onBack) {
-    const blocks = PT[course]; let b = 0, k = 0, good = 0, passed = 0, qn = 0;
+    const blocks = PT[course];
+    if (course === "fr" && window.I18N) blocks.forEach((bl) => bl.forEach(([q, opts]) => I18N.protect(/___/.test(q) ? [q].concat(opts) : /means…$/.test(q) ? [] : opts))); let b = 0, k = 0, good = 0, passed = 0, qn = 0;
     const total = blocks.length * 3;
     function ask() {
       const [q, opts] = blocks[b][k];

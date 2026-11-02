@@ -5,6 +5,23 @@
 /* Les quatre personnages gardent les mêmes clés d'une langue à l'autre (giulia = la prof, marco = le café, sofia = l'amie, rosa = la grand-mère) :
    seul leur contenu change avec le cours. */
 const PERSONA_SETS = {
+  // Français langue apprise (élèves anglophones et hispanophones) : les textes ci-dessous sont traduits à l'affichage.
+  fr: {
+    giulia: { name: "Camille", sub: "Prof à Lyon", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
+      hello: "Conversation libre à ton niveau", mission: "" },
+    marco: { name: "Karim", sub: "Café à Paris", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
+      open: "Bonjour ! Qu'est-ce que je vous sers ?",
+      role: "Karim, patron sympathique et bavard d'un café du quartier de la Butte-aux-Cailles, à Paris, qui adore le foot, le café bien serré et les histoires de son quartier",
+      mission: "Commande au comptoir, puis bavarde un peu avec Karim." },
+    sofia: { name: "Léa", sub: "Amie à Marseille", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
+      open: "Salut ! Tu fais quoi ce week-end ?",
+      role: "Léa, une amie marseillaise de 27 ans, graphiste, qui adore sortir, les concerts, les expos et les calanques",
+      mission: "Organise ton week-end avec Léa." },
+    rosa: { name: "Mamie Jeanne", sub: "Cuisine en Bretagne", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
+      open: "Bonjour, mon petit ! Tu as mangé ? Aujourd'hui, je t'apprends à faire de vraies crêpes.",
+      role: "Mamie Jeanne, une grand-mère bretonne affectueuse et un peu théâtrale, qui parle de cuisine, de sa famille et de Saint-Malo",
+      mission: "Apprends une recette avec Mamie Jeanne." },
+  },
   es: {
     giulia: { name: "Lucía", sub: "Prof à Madrid", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
       hello: "Conversation libre à ton niveau", mission: "" },
@@ -56,6 +73,16 @@ const PERSONA_SETS = {
 };
 // Portraits dessinés et petite fiche de chaque personnage (onglet Parler, fiche personnage).
 const PERSONA_BIO = {
+  fr: {
+    giulia: { face: "camille", who: "34 ans · prof à Lyon", status: "Corrige tes fautes en douceur", quote: "Se tromper, c'est normal : c'est comme ça qu'on apprend.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
+      bio: "Camille enseigne le français aux étrangers à Lyon depuis dix ans. Elle adore le cinéma, les quais de Saône et les bouchons lyonnais, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
+    marco: { face: "karim", who: "44 ans · café à Paris", status: "Au comptoir jusqu'à 15 h", quote: "Un petit café ? Je vous le fais bien serré.", tags: ["Parle vite", "Fan du PSG", "Blagueur"],
+      bio: "Karim tient le café de son quartier, à la Butte-aux-Cailles, depuis quinze ans. Il connaît tout le monde, parle de foot à la moindre occasion et passe au tutoiement dès le deuxième café.", voice: "Parisien, débit rapide" },
+    sofia: { face: "lea", who: "27 ans · graphiste à Marseille", status: "Sort du studio à 19 h", quote: "Ce soir, il y a un concert sur le Vieux-Port, tu viens ?", tags: ["Sorties", "Expos", "Calanques"],
+      bio: "Léa est graphiste dans un studio de Marseille. Toujours un concert, une expo ou une balade dans les calanques à proposer : avec elle, on parle de sorties, de projets et de la vie en ville.", voice: "Jeune, spontanée, souriante" },
+    rosa: { face: "jeanne", who: "78 ans · cuisine en Bretagne", status: "Les crêpes sont sur le feu", quote: "Mon petit, tu as mangé ?", tags: ["Théâtrale", "Recettes", "Famille"],
+      bio: "Mamie Jeanne a élevé quatre enfants à Saint-Malo. Elle parle avec les mains, raconte sa famille et t'apprend ses recettes… à condition que tu manges.", voice: "Chaleureuse, lente" },
+  },
   es: {
     giulia: { face: "lucia", who: "34 ans · prof à Madrid", status: "Corrige tes fautes en douceur", quote: "Equivocarse es normal: así se aprende.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
       bio: "Lucía enseigne l'espagnol aux étrangers à Madrid depuis dix ans. Elle adore le cinéma, les terrasses de Lavapiés, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
@@ -247,10 +274,10 @@ function dmOpen(cfg) {
 function dmScroll() { const l = DM && DM.ui.log; if (l) requestAnimationFrame(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }); }
 function dmBubble(lines, opts) {
   const log = DM.ui.log, out = el("div", "msg ai");
-  const fr = lines.filter((l) => l.lang.startsWith("fr")), it = lines.filter((l) => !l.lang.startsWith("fr"));
+  const fr = lines.filter((l) => NARR(l.lang)), it = lines.filter((l) => !NARR(l.lang));
   fr.forEach((l) => { const n = el("div", "note"); n.append(personaAvatar(PERSONAS.giulia, 22)); const s = el("span"); s.textContent = l.t; n.append(s); log.append(n); });
   if (it.length) {
-    const b = el("div", "bub it"); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
+    const b = el("div", "bub it"); b.lang = SPK(VO.IT()).slice(0, 2); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
     const acts = el("div", "msg-acts"), tr = el("button", null, "Traduire"), re = el("button", null, "Réécouter"); tr.type = re.type = "button";
     re.onclick = () => { if (re.disabled) return; re.disabled = true; re.textContent = "Lecture…"; dmSpeak(it).finally(() => { re.disabled = false; re.textContent = "Réécouter"; }); };
     tr.onclick = async () => {
@@ -272,12 +299,12 @@ function dmQueue(A) {
   stopSpeech();
   const q = TTS.queue({ fallback: (t, lang, rate) => VO.deviceSay(t, lang, rate), onState: (on) => dmSpeaking(A, on) });
   return {
-    push: (t, lang) => q.push(t, lang, { who: lang.startsWith("fr") ? "giulia" : A.voice, rate: lang.startsWith("fr") ? 1 : 0.95 }),
+    push: (t, lang) => q.push(t, lang, { who: NARR(lang) ? "giulia" : A.voice, rate: NARR(lang) ? 1 : 0.95 }),
     end: () => q.end(), done: q.done.then(() => dmSpeaking(A, false)),
   };
 }
 // Mêmes morceaux qu'à la première lecture : « Réécouter » rejoue l'audio déjà reçu, sans attendre.
-const dmRaw = (lines) => lines.map((l) => (l.lang.startsWith("fr") ? "FR: " : "IT: ") + l.t).join("\n");
+const dmRaw = (lines) => lines.map((l) => (NARR(l.lang) ? "FR: " : "IT: ") + l.t).join("\n");
 async function dmSpeak(lines) {
   const A = DM; if (!A) return;
   const q = dmQueue(A); dmChunks(dmRaw(lines), true).forEach((c) => q.push(c.t, c.lang)); q.end(); await q.done;
@@ -333,7 +360,7 @@ async function dmAsk(first, speakIt) {
   try {
     r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, maxTokens: 400, onText: ({ text }) => {
       if (DM !== A) return; feed(text, false);
-      const it = vParse(text).filter((l) => !l.lang.startsWith("fr")).map((l) => l.t).join(" ");
+      const it = vParse(text).filter((l) => !NARR(l.lang)).map((l) => l.t).join(" ");
       if (it) { if (!liveB) { typing.remove(); liveB = el("div", "msg ai"); liveB.append(el("div", "bub it")); A.ui.log.append(liveB); } liveB.firstChild.textContent = it; dmScroll(); } } });
   } catch (e) {
     if (q) q.end();
@@ -350,7 +377,7 @@ async function dmAsk(first, speakIt) {
   typing.remove(); if (liveB) liveB.remove();
   const lines = vParse(r.text); A.turns.push({ role: "assistant", content: r.text });
   // Réponse lue en silence : son audio est préparé en avance, pour que « Réécouter » parte tout de suite.
-  if (!speakIt && TTS.on()) dmChunks(r.text, true).forEach((c) => TTS.prefetch(c.t, c.lang, { who: c.lang.startsWith("fr") ? "giulia" : A.voice, rate: c.lang.startsWith("fr") ? 1 : 0.95 }));
+  if (!speakIt && TTS.on()) dmChunks(r.text, true).forEach((c) => TTS.prefetch(c.t, c.lang, { who: NARR(c.lang) ? "giulia" : A.voice, rate: NARR(c.lang) ? 1 : 0.95 }));
   dmBubble(lines); A.busy = false; A.ui.setAct();
   // Parole coupée pendant que la réponse s'écrivait : on écoute dès qu'elle est finie.
   if (A.listenNext && DM === A) { A.listenNext = false; setTimeout(() => { if (DM === A && !A.listening) dmListenOnce(); }, 0); }
@@ -382,7 +409,7 @@ async function dmListenOnce(auto) {
   if (auto && hot == null) await VO.tick();
   let r = null;
   const lastAi = [...A.log].reverse().find((x) => x.who === "ai");
-  const context = lastAi ? lastAi.lines.filter((l) => !l.lang.startsWith("fr")).map((l) => l.t).join(" ") : "";
+  const context = lastAi ? lastAi.lines.filter((l) => !NARR(l.lang)).map((l) => l.t).join(" ") : "";
   const show = (t) => { if (DM === A && t !== "…") A.ui.inp.value = (before ? before + " " : "") + t; };
   try { r = await VO.listen(manual ? { lang: VO.IT(), context, manual: true, maxMs: 60000, onPartial: show } : { lang: VO.IT(), hot, context, startMs: 12000, maxMs: 45000, endMs: dmPause(), keepMic: dmBarge(), onPartial: show }); }
   catch (e) { if (DM === A) { speakNote(VO.failText(e)); if (A.hands) dmHands(false); } }
@@ -424,7 +451,7 @@ function dmStop() { if (!DM) return; DM.token++; if (DM.unwatch) { DM.unwatch();
 function dmLeave() { const A = DM; dmStop(); DM = null; dmRemember(A); save(); if (A && A.back) A.back(); else if (window.UI) UI.go("talk"); else home(); }
 function dmEnd() {
   const A = DM; if (!A) return; dmStop(); DM = null; dmRemember(A); save();
-  const script = A.log.map((x) => (x.who === "me" ? "Élève : " : "Personnage : ") + x.lines.map((l) => (l.lang.startsWith("fr") ? "(note en français) " : "") + l.t).join(" ")).join("\n");
+  const script = A.log.map((x) => (x.who === "me" ? "Élève : " : "Personnage : ") + x.lines.map((l) => (NARR(l.lang) ? "(note en français) " : "") + l.t).join(" ")).join("\n");
   if (A.kind === "role") return bilan(A.k, M[A.k].scenario, script, A.n);
   vBilan({ title: A.title === A.p.name ? "Avec " + A.p.name : A.title, goal: A.mission || A.topic || "Conversation avec " + A.p.name, focus: vLevel().grammar }, script);
 }

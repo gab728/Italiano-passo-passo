@@ -62,7 +62,7 @@ async function onboard(p, ui, courseIdx) {
   await p.click(".g-choice:has-text('English')"); await p.waitForFunction(() => /language/i.test(document.querySelector(".g-screen h1").textContent), null, { timeout: 4000 }).catch(() => null);
   await p.click(".g-cta"); await p.waitForSelector(".g-langs");
   const l1 = await p.evaluate(() => ({ h: document.querySelector(".g-screen h1").textContent, opts: [...document.querySelectorAll(".g-choice b")].map((b) => b.textContent) }));
-  ok(/learn/i.test(l1.h) && l1.opts.join() === "Italian,Spanish,Hebrew", "étape 2, la langue à apprendre, en anglais : " + l1.opts.join(", "));
+  ok(/learn/i.test(l1.h) && l1.opts.join() === "Italian,Spanish,Hebrew,French", "étape 2, la langue à apprendre, en anglais : " + l1.opts.join(", "));
   await crawl(p, "en", "inscription");
   await p.click(".g-choice:nth-child(1)"); await p.click(".g-cta");
   await p.click(".g-choice:nth-child(1)"); await p.click(".g-cta");
@@ -138,7 +138,7 @@ async function onboard(p, ui, courseIdx) {
   ok(await q.isVisible(".g-choice[aria-pressed=true]:has-text('Español')"), "langue de l'élève devinée : Español");
   await q.click(".g-cta"); await q.waitForSelector(".g-langs");
   const e1 = await q.evaluate(() => [...document.querySelectorAll(".g-choice b")].map((b) => b.textContent));
-  ok(e1.join() === "Italiano,Hebreo", "un hispanophone choisit entre l'italien et l'hébreu : " + e1.join(", "));
+  ok(e1.join() === "Italiano,Hebreo,Francés", "un hispanophone choisit entre l'italien, l'hébreu et le français : " + e1.join(", "));
   await crawl(q, "es", "inscription");
   await q.click(".g-choice:nth-child(2)"); await q.click(".g-cta");   // hébreu
   for (let i = 0; i < 8 && !(await q.isVisible("#g-name")); i++) {

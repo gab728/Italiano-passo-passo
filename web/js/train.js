@@ -40,12 +40,13 @@
   async function judgeTr(fr, target, given, focus) {
     if (typeof AI !== "function") return null;
     const he = cid() === "he", lv = vLevel();
-    const p = "Tu corriges un exercice de traduction du français vers l'" + LN() + " fait par un élève francophone (niveau " + lv.cecr + ").\n" +
+    const p = (cid() === "fr" ? "Tu corriges un exercice de traduction vers le français (la langue qu'il apprend) fait par un élève dont c'est la langue étrangère (niveau " + lv.cecr + ").\n"
+      : "Tu corriges un exercice de traduction du français vers l'" + LN() + " fait par un élève francophone (niveau " + lv.cecr + ").\n") +
       "Phrase à traduire : « " + fr + " »\nUne traduction possible (ce n'est pas la seule) : « " + target + " »\n" + (focus ? "Ce que l'exercice fait travailler : " + String(focus).replace(/<[^>]+>/g, "") + "\n" : "") +
       "Traduction de l'élève : « " + given + " »\n\n" +
       "Juge le sens et la grammaire, jamais la ressemblance avec la traduction proposée : toute traduction correcte et naturelle est juste, même avec d'autres mots, un synonyme, un autre ordre ou une tournure plus simple. Ignore les majuscules et la ponctuation. " +
       (he ? "Ignore les voyelles (niqqud) et l'orthographe pleine ou défective. « Tu » et « vous » peuvent se traduire au masculin comme au féminin, sauf si la phrase française précise le genre. "
-        : "Un pronom sujet ajouté ou omis est juste. ") +
+        : cid() === "fr" ? "En français, le pronom sujet est obligatoire ; « on » pour « nous » est juste ; la négation sans « ne » est « presque ». " : "Un pronom sujet ajouté ou omis est juste. ") +
       "\n« presque » : le sens et la grammaire sont justes, il ne reste qu'un détail (un accent, une lettre, une faute de frappe). « faux » : un contresens, un mot qui manque, ou une erreur de grammaire (accord, conjugaison, temps, préposition, article).\n" +
       "Réponds uniquement par un objet JSON : {\"verdict\": \"juste\" ou \"presque\" ou \"faux\", \"correction\": \"la phrase de l'élève corrigée en changeant le moins de choses possible (identique si elle est juste)" + (he ? ", avec le niqqud complet" : "") + "\", \"explication\": \"en français, une ou deux phrases courtes et définitives (sans hésitation) : ce qui est réussi, ou la faute et la règle à retenir\"}";
     try {

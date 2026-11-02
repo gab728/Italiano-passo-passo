@@ -873,6 +873,8 @@ const LX={
     fill:"allora, dai, beh, eh sì, ah, ecco",tutor:"Giulia, professeure d'italien chaleureuse, patiente et drôle, de Bologne",fix:"vorrei un caffè",form:"infinitif pour un verbe, nom avec son article au singulier comme « il caffè », adjectif au masculin singulier, expression telle quelle",frx:""},
   he:{native:"עִבְרִית",hi:"שָׁלוֹם!",hello:["לַיְלָה טוֹב","בֹּקֶר טוֹב","צָהֳרַיִם טוֹבִים","עֶרֶב טוֹב"],land:"Israël",inLand:"en Israël",adj:"israélienne",app:"Ivrit passo passo",
     fill:"נוּ, אָז, יַאלְלָה, וָואלָה, טוֹב, אֵה",tutor:"Noa, professeure d'hébreu chaleureuse, patiente et drôle, de Tel Aviv",fix:"אֲנִי רוֹצֶה קָפֶה",form:"avec le niqqud complet ; infinitif pour un verbe, nom au singulier sans article, adjectif au masculin singulier, expression telle quelle",frx:", suivie de sa prononciation entre crochets, comme « livre [sefer] »"}};
+LX.fr={native:"Français",hi:"Bonjour !",hello:["Bonne nuit","Bonjour","Bon après-midi","Bonsoir"],land:"la France",inLand:"en France",adj:"française",app:"Français pas à pas",
+  fill:"bon, ben, euh, alors, du coup, en fait, tu vois",tutor:"Camille, professeure de français chaleureuse, patiente et drôle, de Lyon",fix:"je voudrais un café",form:"infinitif pour un verbe, nom avec son article au singulier comme « le café » (avec m. ou f. si l'article est élidé : « l'école (f.) »), adjectif au masculin singulier, expression telle quelle",frx:""};
 LX.es={native:"Español",hi:"¡Hola!",hello:["Buenas noches","Buenos días","Buenas tardes","Buenas tardes"],land:"l'Espagne",inLand:"en Espagne",adj:"espagnole",app:"Español paso a paso",
   fill:"pues, bueno, vale, venga, o sea, mira",tutor:"Lucía, professeure d'espagnol chaleureuse, patiente et drôle, de Madrid",fix:"quería un café",form:"infinitif pour un verbe, nom avec son article au singulier comme « el café », adjectif au masculin singulier, expression telle quelle",frx:""};
 const LXC=()=>LX[C().id]||LX.it;
@@ -1059,7 +1061,7 @@ function stopSpeech(){try{if(speechSynthesis.speaking||speechSynthesis.pending)s
 function speakNote(msg){const old=document.querySelector(".speaknote");if(old)old.remove();if(!msg)return;
   const n=el("div","speaknote");n.setAttribute("role","status");n.textContent=msg;document.body.append(n);setTimeout(()=>n.remove(),6000)}
 function speak(t,rate){if(!canSpeak)return speakNote("Ce navigateur ne sait pas lire le texte à voix haute.");
-  const lang=C().speech||"it-IT",text=String(t).replace(/ \/ /g,", ");let started=false,retried=false;
+  const lang=window.SPK?SPK(C().speech||"it-IT"):(C().speech||"it-IT"),text=String(t).replace(/ \/ /g,", ");let started=false,retried=false;
   const go=withVoice=>{const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=rate||.9;
     const v=withVoice?pickVoice(lang):null;if(v)u.voice=v;
     u.onstart=()=>{started=true;speakNote("")};
@@ -1461,7 +1463,7 @@ function audioSteps(src){const T=C().speech||"it-IT",sl=t=>String(t).replace(/ \
 function sayPart(part,token){return new Promise(res=>{
   if(part.p!=null){AUD.timer=setTimeout(res,part.p*1000*AUD.pace);return}
   let done=false;const fin=()=>{if(done)return;done=true;clearTimeout(AUD.guard);res()};
-  try{const sp=window.I18N?I18N.sp(part.t,part.l):[part.t,part.l],u=new SpeechSynthesisUtterance(sp[0]),isFr=part.l.startsWith("fr");u.lang=sp[1];u.rate=isFr?1:AUD.rate;const v=pickVoice(sp[1]);if(v)u.voice=v;
+  try{const sp=window.I18N?I18N.sp(part.t,part.l):[part.t,part.l],u=new SpeechSynthesisUtterance(sp[0]),isFr=(window.NARR?NARR(part.l):part.l.startsWith("fr"));u.lang=sp[1];u.rate=isFr?1:AUD.rate;const v=pickVoice(sp[1]);if(v)u.voice=v;
     u.onend=fin;u.onerror=fin;UTT=u;AUD.guard=setTimeout(fin,2500+part.t.length*95/u.rate);try{speechSynthesis.resume()}catch(e){}speechSynthesis.speak(u)}catch(e){fin()}})}
 async function audioPlay(){if(!AUD)return;const token=AUD.token=Date.now()+Math.random();AUD.playing=true;audioRender();
   while(AUD.i<AUD.steps.length){for(const part of AUD.steps[AUD.i]){if(!AUD||AUD.token!==token||view!=="audio")return;await sayPart(part,token)}
@@ -1804,7 +1806,7 @@ function carnet(fromCourse){if(!fromCourse)cur=null;const V=vstat();
       acts.append(rm);li.append(it,acts,tr);ul.append(li)});
     sec.append(ul);body.append(sec)});
   const form=el("form","addw panel");form.append(el("div","count","Ajouter un mot"));
-  const pair=el("div","pair"),a=el("input"),b=el("input");a.id="cw-it";b.id="cw-fr";a.placeholder=cap(LN());b.placeholder="Français";
+  const pair=el("div","pair"),a=el("input"),b=el("input");a.id="cw-it";b.id="cw-fr";a.placeholder=cap(window.T?T(LN()):LN());b.placeholder="Français";
   [a,b].forEach(x=>{x.type="text";x.maxLength=80;x.autocomplete="off";x.setAttribute("autocapitalize","off");x.setAttribute("aria-label",x.placeholder)});
   pair.append(a,b);const add=btn("Ajouter au carnet","primary");add.type="submit";form.append(pair,add);
   form.addEventListener("submit",e=>{e.preventDefault();const it=a.value.trim(),fr=b.value.trim();if(!it||!fr){(it?b:a).focus();return}
@@ -1823,7 +1825,7 @@ function quizSetup(){cur=null;const V=vstat(),cfg=Object.assign({dir:"fr-it",src
   const group=(label,key,opts)=>{const g=el("div","grp");g.append(el("div","count",label));const sg=el("div","seg");
     opts.forEach(([val,txt,off])=>{const b=el("button","chip");b.type="button";b.textContent=txt;b.disabled=!!off;b.setAttribute("aria-pressed",String(cfg[key]===val));
       b.onclick=()=>{cfg[key]=val;[...sg.children].forEach(x=>x.setAttribute("aria-pressed",String(x===b)))};sg.append(b)});g.append(sg);body.append(g)};
-  group("Sens","dir",[["fr-it","Français → "+LN()],["it-fr",cap(LN())+" → français"]]);
+  group("Sens","dir",[["fr-it","Français → "+LN()],["it-fr",cap(window.T?T(LN()):LN())+" → français"]]);
   group("Mots","src",[["seen","Mots vus ("+V.seen.length+")",!V.seen.length],["nb","Mon carnet ("+V.nb.length+")",!V.nb.length],["all","Tout le cours ("+V.all.length+")"]]);
   group("Longueur","n",[[10,"10 questions"],[20,"20 questions"],[0,"Tous les mots"]]);
   if(!V.seen.length)body.append(el("p","fr","Tu n'as pas encore parcouru de cartes de vocabulaire : le quiz piochera dans tout le cours."));
@@ -1832,7 +1834,7 @@ function quizRun(cfg){const V=vstat(),toIt=cfg.dir==="fr-it";if(cfg.src==="due"&
   const A=w=>toIt?w.it:w.fr,Q=w=>toIt?w.fr:w.it;let i=0,ok=0;const miss=[];
   function ask(){if(i>=pool.length)return fin();const w=pool[i];
     qbar(Math.round(100*i/pool.length),(i+1)+" / "+pool.length);
-    body.append(el("div","kind",(cfg.src==="due"?"Révision · ":"")+(toIt?"Français → "+LN():cap(LN())+" → français")));
+    body.append(el("div","kind",(cfg.src==="due"?"Révision · ":"")+(toIt?"Français → "+LN():cap(window.T?T(LN()):LN())+" → français")));
     const q=el("p","word");q.textContent=Q(w);body.append(q);if(!toIt&&canSpeak)body.append(sayBtn(w.it));
     const others=V.all.filter(o=>A(o)!==A(w)&&Q(o)!==Q(w)),ds=[];
     const add=o=>{if(ds.length<3&&!ds.some(d=>A(d)===A(o)))ds.push(o)};
@@ -1886,7 +1888,7 @@ f(s){const d=s.d,answers=d[2].split("|");if(d[4])body.append(el("p","fr",d[4]));
     let msg=d[3];if(!exact)msg="Réponse : <b>"+answers[0]+"</b>. "+(loose?(HEB.test(u)?"Attention aux lettres finales. ":"Attention à l'accent. "):"")+msg;
     fb(loose,s,msg,filled(d[1],answers[0]),u)};
   ok.onclick=check;inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();check()}})},
-o(s){const d=s.d,target=d[2].replace(/[.,!?]/g,""),words=target.split(" ");
+o(s){const d=s.d,target=d[2].replace(/[.,!?;:«»…]/g,"").replace(/[\s\u00a0\u202f]+/g," ").trim(),words=target.split(" ");
   body.append(el("p","fr","Remets les mots dans l'ordre pour traduire :"));const q=el("p","q");q.textContent=d[1];body.append(q);
   const tray=el("div","tray"),pool=el("div","pool");tray.setAttribute("aria-label","Ta phrase");
   let sh=shuffle(words);if(words.length>2&&sh.join(" ")===target)sh=sh.reverse();

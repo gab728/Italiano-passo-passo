@@ -15,6 +15,10 @@
   "es": {
    "files": [],
    "q": "Café Gijón Madrid"
+  },
+  "fr": {
+   "files": [],
+   "q": "Paris café terrace"
   }
  },
  "ristorante": {
@@ -33,6 +37,10 @@
   "es": {
    "files": [],
    "q": "pintxos bar San Sebastián"
+  },
+  "fr": {
+   "files": [],
+   "q": "bistrot Paris interior"
   }
  },
  "mercatino": {
@@ -51,6 +59,10 @@
   "es": {
    "files": [],
    "q": "Mercat de la Boqueria Barcelona stalls"
+  },
+  "fr": {
+   "files": [],
+   "q": "marché Aix-en-Provence stalls"
   }
  },
  "strada": {
@@ -69,6 +81,10 @@
   "es": {
    "files": [],
    "q": "Malasaña street Madrid"
+  },
+  "fr": {
+   "files": [],
+   "q": "Montmartre street Paris"
   }
  },
  "negozio": {
@@ -85,6 +101,10 @@
   "es": {
    "files": [],
    "q": "Gran Vía Madrid shops"
+  },
+  "fr": {
+   "files": [],
+   "q": "boulangerie Paris shop front"
   }
  },
  "ufficio": {
@@ -103,6 +123,10 @@
   "es": {
    "files": [],
    "q": "open plan office interior modern desks"
+  },
+  "fr": {
+   "files": [],
+   "q": "open space office"
   }
  },
  "ricordi": {
@@ -119,6 +143,10 @@
   "es": {
    "files": [],
    "q": "family photo album old photographs"
+  },
+  "fr": {
+   "files": [],
+   "q": "family photo album old photographs"
   }
  },
  "festa": {
@@ -133,6 +161,10 @@
   "es": {
    "files": [],
    "q": "Feria de Abril Sevilla casetas"
+  },
+  "fr": {
+   "files": [],
+   "q": "Fête de la musique Paris"
   }
  },
  "casa": {
@@ -151,6 +183,10 @@
   "es": {
    "files": [],
    "q": "colorful balconies Cádiz houses"
+  },
+  "fr": {
+   "files": [],
+   "q": "Haussmannian building Paris"
   }
  },
  "treno": {
@@ -167,6 +203,10 @@
   "es": {
    "files": [],
    "q": "AVE Renfe train Atocha station"
+  },
+  "fr": {
+   "files": [],
+   "q": "TGV train Gare de Lyon"
   }
  },
  "cucina": {
@@ -185,6 +225,10 @@
   "es": {
    "files": [],
    "q": "paella valenciana pan"
+  },
+  "fr": {
+   "files": [],
+   "q": "crêpes Bretagne"
   }
  },
  "viaggio": {
@@ -203,6 +247,10 @@
   "es": {
    "files": [],
    "q": "Alhambra Granada view"
+  },
+  "fr": {
+   "files": [],
+   "q": "Mont-Saint-Michel"
   }
  },
  "cultura": {
@@ -219,6 +267,10 @@
   "es": {
    "files": [],
    "q": "Museo del Prado facade Velázquez entrance"
+  },
+  "fr": {
+   "files": [],
+   "q": "Musée du Louvre pyramid"
   }
  },
  "amici": {
@@ -235,6 +287,10 @@
   "es": {
    "files": [],
    "q": "Plaza Mayor Madrid people"
+  },
+  "fr": {
+   "files": [],
+   "q": "Champ de Mars picnic"
   }
  },
  "generico": {
@@ -251,6 +307,10 @@
   "es": {
    "files": [],
    "q": "Toledo Spain old town street"
+  },
+  "fr": {
+   "files": [],
+   "q": "Vieux Lyon rue Saint-Jean"
   }
  },
  "mercato": {
@@ -269,6 +329,10 @@
   "es": {
    "files": [],
    "q": "Mercado de San Miguel Madrid"
+  },
+  "fr": {
+   "files": [],
+   "q": "Marché des Capucins Bordeaux"
   }
  }
 }

@@ -33,9 +33,17 @@
     pats.sort((a, b) => b.len - a.len);
   }
   // Traduction d'un texte : exact, puis sans les espaces autour, puis par modèle (les valeurs insérées sont traduites aussi).
+  // Textes protégés : le contenu des leçons (mots étudiés, réponses, dialogues…). Ils sont déjà dans la bonne langue, et un mot
+  // étudié peut ressembler à un libellé de l'interface (« merci », « être » quand on apprend le français) : on n'y touche pas.
+  const guard = new Set();
+  // À l'écran, la protection ne vaut que là où s'affiche du contenu (leçon, exercices, conversation, actualité, fiche d'un personnage) :
+  // un bouton « Tous » de l'interface reste traduit même si une leçon contient « Tous ».
+  const CONTENT = "main.body, .msg, .bub, .pcard, .pp-hero, .pp-q, .feed-hd, .wsheet";
+  let scoped = true;
   function T(s, depth) {
     if (ui === "fr" || s == null) return s;
     const str = String(s); if (!str.trim()) return str;
+    if (scoped && guard.size && guard.has(str.trim())) return str;
     let v = exact.get(str); if (v != null) return v;
     const m = str.match(/^(\s*)([\s\S]*?)(\s*)$/), core = m[2];
     v = exact.get(core); if (v != null) return m[1] + v + m[3];
@@ -61,7 +69,9 @@
   function textNode(n) {
     if (skip(n)) return;
     const d = n.data; if (done.get(n) === d) return;
-    const t = T(d); done.set(n, t); if (t !== d) n.data = t;
+    scoped = !!n.parentElement.closest(CONTENT);
+    let t; try { t = T(d); } finally { scoped = true; }
+    done.set(n, t); if (t !== d) n.data = t;
   }
   function el(e) {
     for (const a of ATTRS) { const v = e.getAttribute && e.getAttribute(a); if (v) { const t = T(v); if (t !== v) e.setAttribute(a, t); } }
@@ -106,11 +116,12 @@
     get ui() { return ui; }, get ready() { return ready; }, LANGS, NAME, T,
     locale: (u) => LOCALE[u || ui], loaded: () => loaded,
     // Clé de stockage propre à la langue (textes écrits par Claude pour cette langue) ; inchangée en français.
+    protect(list) { (list || []).forEach((x) => { if (typeof x !== "string") return; const t = x.trim(); if (!t || t.length > 300) return; guard.add(t); if (t.includes("|")) t.split("|").forEach((y) => { if (y.trim()) guard.add(y.trim()); }); }); },
     key: (k) => (ui === "fr" ? k : k + "-" + ui),
     // Texte à dire « en français » : pour un anglophone ou un hispanophone, c'est sa langue (texte traduit, voix de sa langue).
-    sp: (text, lang) => (ui !== "fr" && /^fr/i.test(String(lang || "")) ? [T(text), LOCALE[ui]] : [text, lang]),
+    sp: (text, lang) => (ui !== "fr" && NARR(lang) ? [T(text), LOCALE[ui]] : [text, SPK(lang)]),
     // Une voix ou une reconnaissance « fr » désigne la langue de l'élève.
-    nat: (lang) => /^fr/i.test(String(lang || "")) ? LOCALE[ui] : lang,
+    nat: (lang) => NARR(lang) ? LOCALE[ui] : SPK(lang),
     set(u, reload) { if (!LANGS.includes(u)) return; try { localStorage.setItem(KEY, u); } catch (e) { /* rien */ } if (u !== ui && reload !== false) location.reload(); else ui = u; },
     // Changer de langue sans recharger (avant la connexion : l'écran suivant est construit dans la nouvelle langue).
     use(u) {
@@ -123,4 +134,8 @@
     },
   };
   window.T = T;
+  /* Voix « fr-FR » dans le code = l'explication, dans la langue de l'élève. Quand le français est la langue apprise, ses phrases portent
+     la marque « fr-FR-x-t » (NARR les distingue ; SPK rend le code de langue à donner au téléphone). */
+  window.NARR = (l) => /^fr/i.test(String(l || "")) && !/-x-t$/i.test(String(l || ""));
+  window.SPK = (l) => String(l || "").replace(/-x-t$/i, "");
 })();

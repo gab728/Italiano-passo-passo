@@ -80,6 +80,8 @@ Ce qui suit la langue de l'élève :
 - **Claude** : chaque demande part avec une consigne « l'élève est anglophone / hispanophone », si bien que les explications, traductions, corrections et leçons préparées à la demande sont dans sa langue. Ces leçons-là sont rangées à part dans la base (identifiants `uen-…`, `ues-…`), comme les notizie (`…-en`, `…-es`) ;
 - **les voix** : ce qui était dit en français l'est dans la langue de l'élève (voix américaines d'ElevenLabs pour l'anglais, ligne « Voix anglaises » du diagnostic).
 
+**Le français langue apprise** (`content/fr/`) n'existe que pour les anglophones et les hispanophones : programme de 90 leçons des bases au C1, 70 leçons écrites en anglais (`content/fr/lessons/`, vérifiées par `node tests/check-fr.mjs`) et adaptées pour les hispanophones (`content/fr/i18n/es/`), les suivantes préparées par Claude à la demande. Personnages de France (Camille à Lyon, Karim au café, Léa à Marseille, Mamie Jeanne en Bretagne), voix de France d'ElevenLabs (ligne « Voix de France » du diagnostic), actualités du Monde. Dans le code, une voix « fr-FR » désigne l'explication (dans la langue de l'élève) ; le français appris porte la marque « fr-FR-x-t ». Le contenu des leçons n'est jamais retraduit à l'écran (un mot étudié comme « être » ressemble à un libellé de l'interface).
+
 Pour vérifier une traduction de leçon : `node tests/check-i18n.mjs en it it-u01-l1`. Après avoir ajouté des textes à l'interface : `node scripts/i18n-extract.mjs` (et `--content` pour les fiches des personnages, le test de niveau…) liste ceux à traduire.
 
 ## Les voix

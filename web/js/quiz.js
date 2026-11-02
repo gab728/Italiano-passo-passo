@@ -120,7 +120,7 @@
       if (i >= pool.length) return fin();
       const w = pool[i];
       qbar(Math.round(100 * i / pool.length), (i + 1) + " / " + pool.length);
-      body.append(el("div", "kind", (cfg.src === "due" ? "Révision · " : "") + (toIt ? "Français → " + LN() : cap(LN()) + " → français")));
+      body.append(el("div", "kind", (cfg.src === "due" ? "Révision · " : "") + (toIt ? "Français → " + LN() : cap(T(LN())) + " → français")));
       const q = el("p", "word"); q.textContent = Q(w); body.append(q);
       if (!toIt && canSpeak) body.append(sayBtn(w.it));
       body.append(el("p", "fr qz-ask", toIt ? "Écris-le en " + LN() + ", ou dis-le avec le micro." : "Écris sa traduction en français."));
@@ -181,8 +181,8 @@
     pending[m.id] = true;
     try {
       const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  " + answerOf(x)).join("\n");
-      const r = await AI("Pour chaque phrase d'exercice d'" + LN() + " ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : "italien") + " et le mette à la bonne forme.\n" +
-        "Règles : jamais le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : "italien") + " attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
+      const r = await AI("Pour chaque phrase d'exercice d'" + LN() + " ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : C().id === "fr" ? "français" : "italien") + " et le mette à la bonne forme.\n" +
+        "Règles : jamais le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : C().id === "fr" ? "français" : "italien") + " attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
         "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre, sans parenthèses.",
         { modelTier: "quick", cache: true, maxTokens: 120 + 40 * todo.length });
       const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));

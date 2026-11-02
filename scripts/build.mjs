@@ -56,7 +56,9 @@ for (const c of readdirSync(join(ROOT, "content"))) {
   }
 }
 mkdirSync(join(WEB, "content"), { recursive: true });
-const catJSON = JSON.stringify(catalog);
+// Le catalogue français (catalog.json) n'a pas de cours de français : un francophone ne l'apprend pas.
+const frCat = { courses: Object.fromEntries(Object.entries(catalog.courses).filter(([c]) => c !== "fr")), lessons: Object.fromEntries(Object.entries(catalog.lessons).filter(([, l]) => l.course !== "fr")) };
+const catJSON = JSON.stringify(frCat);
 
 // Élèves anglophones et hispanophones : l'interface est traduite à l'affichage (dictionnaires i18n/<langue>.json, sans les textes laissés
 // en français), et chaque langue a son catalogue, avec les leçons et les programmes traduits (content/<cours>/i18n/<langue>/), le
@@ -95,7 +97,7 @@ for (const u of UIS) {
 {
   const start = "try{applyBase(JSON.parse(localStorage.getItem(BKEY)))}catch(e){}";
   const pick = (cs) => Object.entries(cs).filter(([id]) => id !== "it" && id !== "_builtin").map(([id, c]) => Object.assign({}, c, { id }));
-  const emb = { fr: pick(catalog.courses) }; for (const u of UIS) emb[u] = pick(catalog["ui_" + u].courses);
+  const emb = { fr: pick(frCat.courses) }; for (const u of UIS) emb[u] = pick(catalog["ui_" + u].courses);
   if (js.split(start).length !== 2) throw new Error("accroche de démarrage introuvable");
   js = js.replace(start, () => "{const EMBS=" + JSON.stringify(emb).replace(/<\//g, "<\\/") + ",EMB={courses:EMBS[(window.I18N&&I18N.ui)||\"fr\"]||EMBS.fr,lessons:[]};let cb=null;try{cb=JSON.parse(localStorage.getItem(BKEY))}catch(e){}cb=cb&&typeof cb===\"object\"?cb:{};cb.courses=Array.isArray(cb.courses)?cb.courses:[];cb.lessons=Array.isArray(cb.lessons)?cb.lessons:[];" +
     "EMB.courses.forEach(c=>{if(!cb.courses.some(x=>x&&x.id===c.id))cb.courses.push(c)});EMB.lessons.forEach(l=>{if(!cb.lessons.some(x=>x&&x.id===l.id))cb.lessons.push(l)});try{applyBase(cb)}catch(e){}}");

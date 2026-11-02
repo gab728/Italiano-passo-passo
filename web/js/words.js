@@ -75,7 +75,7 @@ const WT = (() => {
       const c = el("form", "wt-card wt-manual");
       if (why) c.append(txt("p", "muted", why));
       c.append(txt("p", "small", "Écris-le dans les deux langues pour l'ajouter quand même :"));
-      const a = el("input"), b = el("input"); a.placeholder = cap(LN()); b.placeholder = "Français"; b.value = q;
+      const a = el("input"), b = el("input"); a.placeholder = cap(T(LN())); b.placeholder = "Français"; b.value = q;
       [a, b].forEach((y) => { y.type = "text"; y.maxLength = 80; y.setAttribute("aria-label", y.placeholder); y.setAttribute("autocapitalize", "off"); });
       const ok = el("button", "pill-btn blue", "Ajouter au carnet"); ok.type = "submit";
       c.append(a, b, ok); c.onsubmit = (e) => { e.preventDefault(); if (!a.value.trim() || !b.value.trim()) return (a.value.trim() ? b : a).focus(); addCustom(a.value.trim(), b.value.trim()); save(); LAST = { q, r: { it: a.value.trim(), fr: b.value.trim(), added: true } }; onChange(); };
