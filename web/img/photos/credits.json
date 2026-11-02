@@ -20,6 +20,13 @@
    "author": "Roberto Garcia",
    "license": "CC BY 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Caf%C3%A9_Gij%C3%B3n.jpg"
+  },
+  "fr": {
+   "src": "img/photos/cafe-fr.jpg",
+   "title": "File:Terrace cafe, Rue de Buci, Paris July 2010.jpg",
+   "author": "zoetnet",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Terrace_cafe,_Rue_de_Buci,_Paris_July_2010.jpg"
   }
  },
  "ristorante": {
@@ -43,6 +50,13 @@
    "author": "Nicolas Vollmer from Munich [Allemagne]",
    "license": "CC BY 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Bar_%C3%A0_pintxos_(8287063576).jpg"
+  },
+  "fr": {
+   "src": "img/photos/ristorante-fr.jpg",
+   "title": "File:Bistrot de Paris (Colombes).jpg",
+   "author": "Tangopaso",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Bistrot_de_Paris_(Colombes).jpg"
   }
  },
  "mercatino": {
@@ -89,6 +103,13 @@
    "author": "Nicolas Vigier",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:Calle_de_Manuela_Malasa%C3%B1a,_Madrid_2021-01-08_-_50857935057.jpg"
+  },
+  "fr": {
+   "src": "img/photos/strada-fr.jpg",
+   "title": "File:Paris - Basilique du Sacré-Cœur de Montmartre - 2025-09-30 23-31-57 001.jpg",
+   "author": "Giò Terra (Terragio67)",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Paris_-_Basilique_du_Sacr%C3%A9-C%C5%93ur_de_Montmartre_-_2025-09-30_23-31-57_001.jpg"
   }
  },
  "negozio": {
@@ -112,6 +133,13 @@
    "author": "Zarateman",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:Madrid_-_Springfield_(Gran_V%C3%ADa_40).jpg"
+  },
+  "fr": {
+   "src": "img/photos/negozio-fr.jpg",
+   "title": "File:Pletzl rue des Rosiers Boulangerie Juive Vitrine.jpg",
+   "author": "Utilisateur:Djampa - User:Djampa",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Pletzl_rue_des_Rosiers_Boulangerie_Juive_Vitrine.jpg"
   }
  },
  "ufficio": {
@@ -151,6 +179,13 @@
    "author": "Unknown authorUnknown author",
    "license": "Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:Hungarian_family_photo_album,_photo_7.jpg"
+  },
+  "fr": {
+   "src": "img/photos/ricordi-fr.jpg",
+   "title": "File:Hungarian family photo album, photo 88.jpg",
+   "author": "Unknown authorUnknown author",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Hungarian_family_photo_album,_photo_88.jpg"
   }
  },
  "festa": {
@@ -174,6 +209,13 @@
    "author": "Frobles",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Caseta_de_Radio_Sevilla_en_la_Feria_de_Abril.JPG"
+  },
+  "fr": {
+   "src": "img/photos/festa-fr.jpg",
+   "title": "File:Fête de la Musique 2008, Paris 2.jpg",
+   "author": "Syced",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:F%C3%AAte_de_la_Musique_2008,_Paris_2.jpg"
   }
  },
  "casa": {
@@ -190,6 +232,13 @@
    "author": "andynash",
    "license": "CC BY-SA 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:White_City_(Bauhaus)_Tel_Aviv_Yafo_-_08.jpg"
+  },
+  "fr": {
+   "src": "img/photos/casa-fr.jpg",
+   "title": "File:Charles Marville, Boulevard Haussmann, de la rue Miromesnil, ca. 1853–70.jpg",
+   "author": "Charles Marville",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Charles_Marville,_Boulevard_Haussmann,_de_la_rue_Miromesnil,_ca._1853%E2%80%9370.jpg"
   }
  },
  "treno": {
@@ -213,6 +262,13 @@
    "author": "eldelinux from Cataluña, España",
    "license": "CC BY 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:100_Renfe_AVE_-_Madrid_Puerta_de_Atocha_-_Luis_Zamora.jpg"
+  },
+  "fr": {
+   "src": "img/photos/treno-fr.jpg",
+   "title": "File:Gare de Lyon - Avril 2013 - TGV SE carmillon.jpg",
+   "author": "Akiry",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Gare_de_Lyon_-_Avril_2013_-_TGV_SE_carmillon.jpg"
   }
  },
  "cucina": {
@@ -236,6 +292,13 @@
    "author": "Gerda Arendt",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Paella_Valenciana,_Puerto_de_las_Nieves,_Gran_Canaria.jpg"
+  },
+  "fr": {
+   "src": "img/photos/cucina-fr.jpg",
+   "title": "File:Roscoff 2008 PD 30.JPG",
+   "author": "Kamel15",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Roscoff_2008_PD_30.JPG"
   }
  },
  "viaggio": {
@@ -259,6 +322,13 @@
    "author": "Diego Delso",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Granada_-_View_from_Mirador_de_San_Nicol%C3%A1s_-_02.jpg"
+  },
+  "fr": {
+   "src": "img/photos/viaggio-fr.jpg",
+   "title": "File:MSM sunset 02.JPG",
+   "author": "Benh LIEU SONG",
+   "license": "CC BY 2.5",
+   "page": "https://commons.wikimedia.org/wiki/File:MSM_sunset_02.JPG"
   }
  },
  "cultura": {
@@ -282,6 +352,13 @@
    "author": "Benjaminkhas07",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:East_facade_of_the_Cas%C3%B3n_del_Buen_Retiro,_Museo_del_Prado,_Madrid.jpg"
+  },
+  "fr": {
+   "src": "img/photos/cultura-fr.jpg",
+   "title": "File:Louvre Museum Wikimedia Commons.jpg",
+   "author": "Benh LIEU SONG (Flickr)",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Louvre_Museum_Wikimedia_Commons.jpg"
   }
  },
  "amici": {
@@ -305,6 +382,13 @@
    "author": "Marek Ślusarczyk (Tupungato) Photo portfolio",
    "license": "CC BY 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:32_Plaza_Mayor,_Madrid_-_sidewalk_cafes_of_Plaza_Mayor_square_in_Madrid,_Spain_Spanje.jpg"
+  },
+  "fr": {
+   "src": "img/photos/amici-fr.jpg",
+   "title": "File:Paris Canal Saint-Martin 565.jpg",
+   "author": "GFreihalter",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Paris_Canal_Saint-Martin_565.jpg"
   }
  },
  "generico": {
@@ -328,6 +412,13 @@
    "author": "Misburg3014",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Toledo_cyl-panorama-mirador.jpg"
+  },
+  "fr": {
+   "src": "img/photos/generico-fr.jpg",
+   "title": "File:Vieux Lyon, 69005 Lyon, France - panoramio.jpg",
+   "author": "4net",
+   "license": "CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Vieux_Lyon,_69005_Lyon,_France_-_panoramio.jpg"
   }
  },
  "mercato": {
@@ -351,6 +442,13 @@
    "author": "RL0919",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Mercado_de_San_Miguel_-_Madrid.png"
+  },
+  "fr": {
+   "src": "img/photos/mercato-fr.jpg",
+   "title": "File:Oysters Marché des Capucins Bordeaux (1).jpg",
+   "author": "Benreis",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Oysters_March%C3%A9_des_Capucins_Bordeaux_(1).jpg"
   }
  }
 }
