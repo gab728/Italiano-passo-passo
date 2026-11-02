@@ -128,6 +128,13 @@
    "author": "Crew crew",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:Working_in_open_office_space_(Unsplash).jpg"
+  },
+  "fr": {
+   "src": "img/photos/ufficio-fr.jpg",
+   "title": "File:Open Foundation Office Launch( Office Space).jpg",
+   "author": "Pirate 064",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Open_Foundation_Office_Launch(_Office_Space).jpg"
   }
  },
  "ricordi": {
@@ -190,6 +197,13 @@
    "author": "andynash",
    "license": "CC BY-SA 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:White_City_(Bauhaus)_Tel_Aviv_Yafo_-_08.jpg"
+  },
+  "fr": {
+   "src": "img/photos/casa-fr.jpg",
+   "title": "File:Haussmannian building (28285608446).jpg",
+   "author": "Gary Todd from Xinzheng, China",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Haussmannian_building_(28285608446).jpg"
   }
  },
  "treno": {
@@ -305,6 +319,13 @@
    "author": "Marek Ślusarczyk (Tupungato) Photo portfolio",
    "license": "CC BY 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:32_Plaza_Mayor,_Madrid_-_sidewalk_cafes_of_Plaza_Mayor_square_in_Madrid,_Spain_Spanje.jpg"
+  },
+  "fr": {
+   "src": "img/photos/amici-fr.jpg",
+   "title": "File:Champ de Mars - 55495801447.jpg",
+   "author": "xiquinhosilva",
+   "license": "CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55495801447.jpg"
   }
  },
  "generico": {
@@ -328,6 +349,13 @@
    "author": "Misburg3014",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Toledo_cyl-panorama-mirador.jpg"
+  },
+  "fr": {
+   "src": "img/photos/generico-fr.jpg",
+   "title": "File:Musee des Miniatures et Decors de Cinema - Rue Saint-Jean, Vieux Lyon - sign (35381517641).jpg",
+   "author": "Elliott Brown from Birmingham, United Kingdom",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Musee_des_Miniatures_et_Decors_de_Cinema_-_Rue_Saint-Jean,_Vieux_Lyon_-_sign_(35381517641).jpg"
   }
  },
  "mercato": {
