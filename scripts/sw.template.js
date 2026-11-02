@@ -21,7 +21,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
-  const fresh = req.mode === "navigate" || url.pathname.endsWith("/catalog.json") || url.pathname.endsWith("/config.js");
+  const fresh = req.mode === "navigate" || /\/catalog(-[a-z]{2})?\.json$/.test(url.pathname) || url.pathname.endsWith("/config.js");
   if (fresh) {
     // Réseau d'abord, mais pas plus de 3 secondes quand une copie existe : avec un réseau faible (voiture, train), l'app s'ouvre quand même.
     const key = req.mode === "navigate" ? "index.html" : req;

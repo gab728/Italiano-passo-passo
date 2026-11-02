@@ -4,7 +4,7 @@ const O = "http://127.0.0.1:8787";
 (async () => {
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"] });
   await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com", password: "motdepasse1" }) });
-  const ctx = await br.newContext({ permissions: ["microphone"] });
+  const ctx = await br.newContext({ locale: "fr-FR", permissions: ["microphone"] });
   await ctx.addInitScript(() => { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
   const p = await ctx.newPage(); const errs = [], logs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => logs.push(m.type() + ":" + m.text().slice(0, 120))); p.on("requestfailed", (r) => logs.push("reqfail:" + r.url().slice(0, 80))); p.on("response", (r) => { if (/auth|functions/.test(r.url())) logs.push(r.status() + ":" + r.url().replace(O, "").slice(0, 60)); });
   await p.goto(O + "/"); await p.click("text=J'ai déjà un compte"); await p.waitForSelector("#gate-email");
@@ -29,7 +29,7 @@ const O = "http://127.0.0.1:8787";
   console.log(/Non lo so/.test(fixed) && models.join() === "scribe_v2,gpt-4o-transcribe,whisper-1" ? "ok  transcription en anglais détectée, refaite par le service suivant jusqu'à une version en italien" : "FAIL retraduction : " + fixed + " " + models.join());
   // Couper la parole : le faux micro de Chromium émet un bip régulier, pris pour une voix pendant que le personnage parle.
   const br2 = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required", "--use-file-for-fake-audio-capture=" + require("path").join(__dirname, "fixtures/speech-like.wav")] });
-  const ctx2 = await br2.newContext({ permissions: ["microphone"] }); await ctx2.addInitScript(() => { window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
+  const ctx2 = await br2.newContext({ locale: "fr-FR", permissions: ["microphone"] }); await ctx2.addInitScript(() => { window.SpeechRecognition = undefined; window.webkitSpeechRecognition = undefined; });
   const p2 = await ctx2.newPage(); p2.on("pageerror", (e) => errs.push(e.message));
   await p2.goto(O + "/"); await p2.click("text=J'ai déjà un compte"); await p2.fill("#gate-email", "bramigab@gmail.com"); await p2.fill("#gate-pass", "motdepasse1"); await p2.click("button:has-text('Se connecter')");
   await p2.waitForSelector(".tabbar [data-tab=news]", { timeout: 10000 });

@@ -151,7 +151,7 @@ async function claude(req: Request, u: User): Promise<Response> {
   try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
   const { messages, error } = readInput(b);
   if (error) return fail(req, 400, error, error === "too_long" ? "Message trop long." : "Message invalide.");
-  const system = typeof b.system === "string" ? b.system.slice(0, 8000) : "";
+  const system = typeof b.system === "string" ? b.system.slice(0, 12000) : "";
   const quick = b.tier === "quick";
   const model = quick ? env("MODEL_QUICK", "claude-haiku-5-5") : env("MODEL_DEFAULT", "claude-sonnet-5-5");
   const cap = quick ? 2048 : 16000;
@@ -390,6 +390,12 @@ async function admin(req: Request, u: User): Promise<Response> {
       if (r.res) { await r.res.body?.cancel(); out.voix_es = { ok: true, from: "ElevenLabs, " + (n ? n + " voix espagnoles" : "voix italiennes (aucune voix espagnole trouvée)") }; }
       else out.voix_es = { ok: false, why: "ElevenLabs ne lit pas l'espagnol (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
     }
+    if (elOn()) {
+      const h = await elVoicesLang("en", true), n = new Set(Object.values(h)).size;
+      const r = await elSpeak("Hello!", "marin", 1, "en", false);
+      if (r.res) { await r.res.body?.cancel(); out.voix_en = { ok: true, from: "ElevenLabs, " + (n ? n + " voix anglaises (explications des élèves anglophones)" : "voix italiennes (aucune voix anglaise trouvée)") }; }
+      else out.voix_en = { ok: false, why: "ElevenLabs ne lit pas l'anglais (" + r.why.slice(0, 80) + "). Les voix OpenAI prennent le relais." };
+    }
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
     out.owner = { ok: true };
@@ -597,6 +603,8 @@ async function elVoices(force = false): Promise<Record<string, string>> {
 // Sans voix native trouvée, les voix italiennes servent.
 const LANG_VOICES: Record<string, { file: string; re: RegExp; prefer?: RegExp; avoid?: RegExp }> = {
   he: { file: "tts/el-voices-he-v1.json", re: /hebrew|israel/i },
+  // Anglais : les explications pour les élèves anglophones (voix américaines de préférence).
+  en: { file: "tts/el-voices-en-v1.json", re: /americ|british|english|^us$|standard/i, prefer: /americ|standard|neutral|^us$/i, avoid: /scott|irish|indian|austral|southern/i },
   es: { file: "tts/el-voices-es-v1.json", re: /spanish|spain|castil|peninsular|madrid|andalu/i, prefer: /spain|castil|peninsular|madrid|european|iberian/i, avoid: /mexic|latin|argent|colomb|chile|venez|caribb|peru|cuba/i },
 };
 const lvMap: Record<string, Record<string, string> | null> = {}, lvAt: Record<string, number> = {}, lvFail: Record<string, number> = {};

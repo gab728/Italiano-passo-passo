@@ -213,7 +213,7 @@
   };
   function dailyPlan() {
     const sec = el("section", "daily"), V = vstat();
-    const head = el("div", "daily-h"); const ht = el("div"); ht.append(txt("h2", "feed-sec", "Ta journée"), txt("small", "muted", new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })));
+    const head = el("div", "daily-h"); const ht = el("div"); ht.append(txt("h2", "feed-sec", "Ta journée"), txt("small", "muted", new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "long", day: "numeric", month: "long" })));
     const cnt = el("span", "daily-n"), lw = el("span", "daily-lino"); const right = el("div", "daily-r"); right.append(lw, cnt); head.append(ht, right); sec.append(head);
     const box = el("div", "daily-box"); sec.append(box);
     const items = [];
@@ -271,7 +271,7 @@
       c.append(txt("h2", "feed-sec", first ? "Commence ici" : stt.i ? "Ta leçon en cours" : "Ta leçon du jour"));
       c.append(txt("p", "home-trip-u", lvName(cu) + " · Unité " + cu.un + " · " + cu.u.t + " · " + d + "/" + ux.length));
       const t = ticket(cu, ux.findIndex((x) => x.n === cu.n) + 1, true);
-      if (first) { const g = t.querySelector(".vy-go"); if (g && g.textContent === "Commencer") g.textContent = "Commencer ma première leçon"; }
+      if (first) { const g = t.querySelector(".vy-go"); if (g && (g.textContent === "Commencer" || g.textContent === T("Commencer"))) g.textContent = "Commencer ma première leçon"; }
       c.append(t);
       // Départ choisi plus loin que le début (hébreu) : on le dit, et on propose de reprendre au tout début tant que rien d'avant n'est fait.
       const k0 = fromN(ss);
@@ -670,10 +670,10 @@
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
     const acts = el("div", "acts two");
     acts.append(pillBtn("Inviter un ami", "dark", () => {
-      const text = "Viens apprendre l'" + LN() + " avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink();
+      const text = T("Viens apprendre l'" + LN() + " avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink());
       if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié. Colle-le dans un message.")); else speakNote(text);
     }));
-    acts.append(pillBtn("Partager ma série", "", () => { const text = (sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur Italiano passo passo. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
+    acts.append(pillBtn("Partager ma série", "", () => { const text = T((sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur Italiano passo passo. ") + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
     root.append(acts);
     if (window.PLACE) {
       const pt = (S.ptest || {})[C().id], tc = card("goal-c pt-c"); tc.append(txt("b", null, "Test de niveau"), txt("small", "muted", pt ? "Dernier résultat : " + pt.lv + ". Le refaire ajuste ton point de départ." : "12 questions pour savoir où commencer en " + LN() + "."));
@@ -708,6 +708,19 @@
         const gg = el("div", "chips"); [["m", "אַתָּה · masculin"], ["f", "אַתְּ · féminin"]].forEach(([v, l]) => { const x = el("button", "chip" + ((S.ob || {}).g === v ? " sel" : "")); x.type = "button"; x.textContent = l; x.setAttribute("aria-pressed", String((S.ob || {}).g === v)); x.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { g: v }); save(); profileTab(); }; gg.append(x); });
         gc.append(gg); root.append(gc);
       }
+    }
+    if (window.I18N) {
+      // Langue de l'app (et des explications, des traductions, de Claude). Chaque nom est écrit dans sa propre langue.
+      const uc = card("goal-c"); uc.append(txt("b", null, "Langue de l'app"), txt("small", "muted", "Les explications, les traductions et les corrections"));
+      const ul = el("div", "chips"); ul.setAttribute("data-no-i18n", "");
+      I18N.LANGS.forEach((u) => { const x = el("button", "chip" + (I18N.ui === u ? " sel" : "")); x.type = "button"; x.textContent = I18N.NAME[u]; x.lang = u; x.setAttribute("aria-pressed", String(I18N.ui === u));
+        x.onclick = () => {
+          if (u === I18N.ui) return;
+          if (u === C().id) return speakNote(T("Tu apprends cette langue : choisis-en une autre pour l'app, ou change d'abord de langue apprise."));
+          S.ui = u; save(); try { if (typeof push === "function") push(); } catch (e) { /* rien */ }
+          ul.querySelectorAll("button").forEach((b) => { b.disabled = true; }); setTimeout(() => I18N.set(u), 700);
+        }; ul.append(x); });
+      uc.append(ul); root.append(uc);
     }
     if (W.me && W.me.owner) { const adm = el("div", "acts"); adm.append(pillBtn("Gérer les membres", "", () => { setTab("profile"); WEB.friends(); })); root.append(adm); }
     sync();
@@ -759,7 +772,7 @@
         const box = el("section", "card fr-card");
         const hd = el("div", "fr-hd"); hd.append(txt("h2", "feed-sec", "Tes amis"));
         const inv = el("button", "link fr-inv"); inv.type = "button"; inv.textContent = "Inviter";
-        inv.onclick = () => { const text = "Viens apprendre l'" + LN() + " avec moi : des leçons courtes et des conversations à voix haute. " + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié.")); };
+        inv.onclick = () => { const text = T("Viens apprendre l'" + LN() + " avec moi : des leçons courtes et des conversations à voix haute. ") + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié.")); };
         hd.append(inv); box.append(hd);
         if (fans.length) {
           const f = el("div", "fr-fans"); const stack = el("span", "fr-stack"); fans.slice(0, 3).forEach((u) => stack.append(avOf(u, 26))); f.append(stack);
@@ -810,7 +823,8 @@
   window.SOC = SOC;
 
   /* ---------- Leçons en plein écran ---------- */
-  const LINKS = [[/précédent/i, IC.prev, "Écran précédent"], [/carnet/i, IC.book, "Mon carnet"], [/conjugaisons/i, IC.table, "Conjugaisons"]];
+  // Le texte a pu être traduit avant d'arriver ici (élève anglophone ou hispanophone) : on le reconnaît dans les trois langues.
+  const LINKS = [[/précédent|previous|anterior/i, IC.prev, "Écran précédent"], [/carnet|notebook|cuaderno|libreta/i, IC.book, "Mon carnet"], [/conjugaisons|conjugations|conjugaciones/i, IC.table, "Conjugaisons"]];
   function decorateBar() {
     const b = root.querySelector(".bar"); if (!b || b.dataset.ui) return; b.dataset.ui = "1";
     const back = b.querySelector(".top > .linkbtn");
@@ -824,7 +838,7 @@
   }
   function decorateBody() {
     const main = root.querySelector("main.body"); if (!main || main.dataset.ui) return; main.dataset.ui = "1";
-    main.querySelectorAll(".q").forEach((q) => { if (q.querySelector(".blank") || /[àèéìòù]|\b(il|la|di|che|non|sono|ho)\b/i.test(q.textContent) && !/\b(le|les|des|est|une)\b/i.test(q.textContent)) q.classList.add("q-it"); });
+    main.querySelectorAll(".q").forEach((q) => { if (q.querySelector(".blank") || /[àèéìòù]|\b(il|la|di|che|non|sono|ho)\b/i.test(q.textContent) && !/\b(le|les|des|est|une|the|is|you|what|how|el|los|las|qué|cómo)\b/i.test(q.textContent)) q.classList.add("q-it"); });
     main.querySelectorAll(".opts").forEach((o) => { const opts = [...o.querySelectorAll(".opt")]; if (opts.length >= 2 && opts.every((x) => x.textContent.trim().length <= 16)) o.classList.add("grid2"); });
   }
   function actionBar() {
@@ -905,7 +919,7 @@
       if (HEB.test(t)) {
         const near = (e.parentElement && e.parentElement.textContent) || "";
         const skip = (reading && (e.matches(".q") || e.closest(".fb"))) || (e.matches(".opt") && t.replace(/[^\u05D0-\u05EA]/g, "").length <= 2) ||
-          (e.matches(".lesson em, .fb p, .nb .it, .miss b") && /\[[^\]]+\]/.test(near)) || (e.closest("td") && /Pronon|Son|Lecture|Translit/i.test((e.closest("table").querySelector("tr") || {}).textContent || ""));
+          (e.matches(".lesson em, .fb p, .nb .it, .miss b") && /\[[^\]]+\]/.test(near)) || (e.closest("td") && /Pronon|Son|Lecture|Translit|Sound|Reading|Sonido|Lectura/i.test((e.closest("table").querySelector("tr") || {}).textContent || ""));
         if (!skip) v = (e.matches(".flash .it, .dlg .ln .it, .tray .chip, .pool .chip, .ws-word, .opt, .word") && authTl(t)) || heTl(t);
         if (e.matches(".dlg .ln .it")) { const tr = e.parentElement.querySelector(".tr"); if (tr && tl(tr.textContent)) v = tl(tr.textContent); }
       }
@@ -930,6 +944,7 @@
   (function applyOnboarding() {
     let ob = null; try { ob = JSON.parse(localStorage.getItem("ipp-onboarding") || "null"); localStorage.removeItem("ipp-onboarding"); } catch (e) { return; }
     if (!ob || typeof ob !== "object" || !(Date.now() - (ob.at || 0) < 864e5)) return;
+    if (window.I18N && I18N.LANGS.includes(ob.ui)) S.ui = ob.ui;
     if (!S.ob) {
       S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
       if (ob.g === "m" || ob.g === "f") S.ob.g = ob.g;
@@ -945,6 +960,16 @@
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
     if (nm) W.admin("rename", { name: nm }).then((r) => { if (W.me) W.me.name = r.name; if (view === "home") home(); }).catch(() => {});
   })();
+  /* Langue de l'app : gardée dans la progression (S.ui), pour la retrouver sur un autre appareil. Les comptes d'avant le choix de la
+     langue sont francophones. Rend true quand la page se recharge dans la bonne langue. */
+  window.UISYNC = (remote) => {
+    if (!window.I18N) return false;
+    if (!I18N.LANGS.includes(S.ui)) { S.ui = remote && Object.keys(remote).length > 3 ? "fr" : I18N.ui; if (S.ui === S.course) S.ui = I18N.ui === S.course ? "fr" : I18N.ui; save(); }
+    if (S.ui === I18N.ui) return false;
+    let n = 0; try { n = +sessionStorage.getItem("ipp-ui-reload") || 0; sessionStorage.setItem("ipp-ui-reload", String(n + 1)); } catch (e) { n = 9; }
+    if (n > 1) return false;
+    I18N.set(S.ui); return true;
+  };
   window.UI = { setTab, sync, go: goTab, lessons, news }; window.LINO = lino;
   home();
 })();

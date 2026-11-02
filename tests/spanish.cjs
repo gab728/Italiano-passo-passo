@@ -21,7 +21,7 @@ const MOCKS = `
   const errors = [];
   await post("/__seed", { email: "bramigab@gmail.com" });
   await fetch(O + "/__ttsProvider?v=elevenlabs");
-  const cx = await br.newContext({ viewport: { width: 390, height: 844 } }); await cx.addInitScript(MOCKS);
+  const cx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } }); await cx.addInitScript(MOCKS);
   const p = await cx.newPage();
   p.on("pageerror", (e) => errors.push(e.message));
   p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text()); });
@@ -30,6 +30,8 @@ const MOCKS = `
   await p.goto(O + "/"); await p.waitForSelector(".g-hello");
   ok(/¡Hola!/.test(await p.textContent(".g-hello")), "accueil : Ciao. ¡Hola! שָׁלוֹם.");
   await p.click("button:has-text('Commencer')");
+  ok(await p.isVisible(".g-choice[aria-pressed=true]:has-text('Français')"), "langue de l'élève : français par défaut (navigateur en français)");
+  await p.click("button:has-text('Continuer')");
   ok(await p.isVisible(".g-choice:has-text('Espagnol')"), "l'espagnol est proposé");
   await p.click(".g-choice:has-text('Espagnol')"); await p.click("button:has-text('Continuer')");
   ok(/l'espagnol/.test(await p.textContent(".g-screen h1")), "questions adaptées : « Pourquoi l'espagnol ? »");

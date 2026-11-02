@@ -44,6 +44,7 @@ const VO = (() => {
   function deviceSay(text, lang, rate) {
     return new Promise((res) => {
       text = String(text || "").replace(/ \/ /g, ", ").trim();
+      if (window.I18N) [text, lang] = I18N.sp(text, lang);
       if (!canSpeak || !text) return res();
       let done = false, g = 0;
       const fin = () => { if (done) return; done = true; clearTimeout(g); res(); };

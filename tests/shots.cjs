@@ -7,7 +7,7 @@ const MOCKS = fs.readFileSync(__dirname + "/e2e.cjs", "utf8").match(/const MOCKS
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
   await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "bramigab@gmail.com", password: "motdepasse1" }) });
   for (const scheme of ["light", "dark"]) {
-    const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme, deviceScaleFactor: 1 });
+    const ctx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 }, colorScheme: scheme, deviceScaleFactor: 1 });
     await ctx.addInitScript(MOCKS);
     const p = await ctx.newPage();
     await p.goto(O + "/"); await p.click("text=J'ai déjà un compte"); await p.waitForSelector("#gate-email");

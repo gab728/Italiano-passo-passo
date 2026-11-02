@@ -21,7 +21,7 @@ const MOCKS = `
   const errors = [];
   await post("/__seed", { email: "bramigab@gmail.com" });
   await fetch(O + "/__ttsProvider?v=elevenlabs");
-  const cx = await br.newContext({ viewport: { width: 390, height: 844 } }); await cx.addInitScript(MOCKS);
+  const cx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } }); await cx.addInitScript(MOCKS);
   const p = await cx.newPage();
   p.on("pageerror", (e) => errors.push(e.message));
   p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text()); });
@@ -29,7 +29,7 @@ const MOCKS = `
   console.log("1. Inscription en choisissant l'hébreu");
   await p.goto(O + "/"); await p.waitForSelector(".g-hello");
   ok(/שָׁלוֹם/.test(await p.textContent(".g-hello")), "accueil bilingue : Ciao. שָׁלוֹם.");
-  await p.click("button:has-text('Commencer')"); await p.click(".g-choice:has-text('Hébreu')"); await p.click("button:has-text('Continuer')");
+  await p.click("button:has-text('Commencer')"); await p.click("button:has-text('Continuer')"); await p.click(".g-choice:has-text('Hébreu')"); await p.click("button:has-text('Continuer')");
   ok(/l'hébreu/.test(await p.textContent(".g-screen h1")) && await p.isVisible(".g-choice:has-text('Voyager en Israël')"), "questions adaptées : « Pourquoi l'hébreu ? », voyager en Israël");
   await p.click(".g-choice:has-text('Voyager en Israël')"); await p.click("button:has-text('Continuer')");
   ok(await p.isVisible(".g-choice:has-text(\"Je ne connais pas l'alphabet\")"), "niveau de départ : on peut ne pas connaître l'alphabet");

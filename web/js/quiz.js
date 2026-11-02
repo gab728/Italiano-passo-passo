@@ -166,7 +166,7 @@
    Les indices d'une leçon sont demandés à Claude une seule fois, dès le début de la leçon, et gardés sur l'appareil. */
 (function () {
   "use strict";
-  const KEY = (id) => "ipp-frh2-" + id;
+  const KEY = (id) => "ipp-frh2-" + id + (window.I18N && I18N.ui !== "fr" ? "-" + I18N.ui : "");
   const load = (id) => { try { return JSON.parse(localStorage.getItem(KEY(id)) || "{}") || {}; } catch (e) { return {}; } };
   const store = (id, v) => { try { localStorage.setItem(KEY(id), JSON.stringify(v)); } catch (e) { /* rien */ } };
   const answerOf = (x) => Array.isArray(x[2]) ? String(x[2][0]) : String(x[2]).split("|")[0];

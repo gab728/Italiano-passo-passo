@@ -334,10 +334,10 @@
     // Rang et points
     const hero = el("section", "pg-hero");
     const hl = el("div", "pg-rank"); hl.append(txt("small", null, "Rang"), txt("b", null, rk.name));
-    const hx = el("div", "pg-xp"); hx.append(txt("b", null, s.xp.toLocaleString("fr-FR")), txt("small", null, "points"));
+    const hx = el("div", "pg-xp"); hx.append(txt("b", null, s.xp.toLocaleString(window.I18N ? I18N.locale() : "fr-FR")), txt("small", null, "points"));
     const top = el("div", "pg-top"); top.append(hl, hx); hero.append(top);
     const bar = el("div", "pg-bar"); const fill = el("i"); fill.style.width = rk.pct + "%"; bar.append(fill); hero.append(bar);
-    hero.append(txt("small", "pg-next", rk.next ? "Encore " + (rk.to - s.xp).toLocaleString("fr-FR") + " points pour devenir « " + rk.next + " »" : "Rang maximum : bravo !"));
+    hero.append(txt("small", "pg-next", rk.next ? "Encore " + (rk.to - s.xp).toLocaleString(window.I18N ? I18N.locale() : "fr-FR") + " points pour devenir « " + rk.next + " »" : "Rang maximum : bravo !"));
     // Niveau européen : leçons faites dans le niveau en cours
     const cu = current(), lv = cu ? cu.lv : (s.done.length ? s.done[s.done.length - 1].lv : null);
     if (lv) {

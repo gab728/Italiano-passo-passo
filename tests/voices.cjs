@@ -19,7 +19,7 @@ const IT = /^it-/, FR = /^fr-/;
   await fetch(O + "/__ttsProvider?v=elevenlabs", { method: "POST" });
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--autoplay-policy=no-user-gesture-required"] }).catch(() => chromium.launch({ args: ["--autoplay-policy=no-user-gesture-required"] }));
   await fetch(O + "/__seed", { method: "POST", body: JSON.stringify({ email: "voix@example.com", password: "motdepasse1" }) });
-  const ctx = await br.newContext({ viewport: { width: 390, height: 844 } }); await ctx.addInitScript(MOCKS);
+  const ctx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } }); await ctx.addInitScript(MOCKS);
   const p = await ctx.newPage(); const errs = []; p.on("pageerror", (e) => errs.push(e.message));
   await p.goto(O + "/"); await p.click("text=J'ai déjà un compte"); await p.waitForSelector("#gate-email");
   await p.fill("#gate-email", "voix@example.com"); await p.fill("#gate-pass", "motdepasse1"); await p.click("button:has-text('Se connecter')");

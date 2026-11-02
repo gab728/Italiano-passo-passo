@@ -71,6 +71,17 @@ L'hébreu (`content/he/`) commence par **l'alef-bet** (niveau A0, trois unités)
 
 Les trois premières leçons sont écrites à la main ; les suivantes sont préparées par Claude à la demande, en suivant le guide du cours (champ `guide` de `content/he/course.json`) et les consignes de chaque leçon du programme.
 
+## L'app en français, en anglais ou en espagnol
+La première question de l'inscription est la langue de l'élève : **français, anglais ou espagnol** (devinée d'après le téléphone, et l'écran change de langue dès qu'on en choisit une autre). Ensuite seulement vient la langue à apprendre ; un hispanophone choisit entre l'italien et l'hébreu. La langue de l'app se change dans *Profil → Langue de l'app* et suit le compte d'un appareil à l'autre ; les comptes créés avant restent en français.
+
+Ce qui suit la langue de l'élève :
+- **l'interface** : chaque texte affiché est remplacé par sa traduction (`i18n/en.json`, `i18n/es.json` et leurs compléments `-content`, `-extra`) ;
+- **les leçons et les programmes** : traduits et adaptés une fois pour toutes (`content/<cours>/i18n/<langue>/`), avec des comparaisons avec l'anglais ou l'espagnol au lieu du français. Chaque langue a son catalogue (`web/content/catalog-en.json`, `catalog-es.json`) ;
+- **Claude** : chaque demande part avec une consigne « l'élève est anglophone / hispanophone », si bien que les explications, traductions, corrections et leçons préparées à la demande sont dans sa langue. Ces leçons-là sont rangées à part dans la base (identifiants `uen-…`, `ues-…`), comme les notizie (`…-en`, `…-es`) ;
+- **les voix** : ce qui était dit en français l'est dans la langue de l'élève (voix américaines d'ElevenLabs pour l'anglais, ligne « Voix anglaises » du diagnostic).
+
+Pour vérifier une traduction de leçon : `node tests/check-i18n.mjs en it it-u01-l1`. Après avoir ajouté des textes à l'interface : `node scripts/i18n-extract.mjs` (et `--content` pour les fiches des personnages, le test de niveau…) liste ceux à traduire.
+
 ## Les voix
 Avec une clé OpenAI, les personnages parlent avec des voix naturelles (modèle `gpt-4o-mini-tts`) : Giulia, Marco, Sofia et Nonna Rosa ont chacun leur voix, leur accent et leur ton ; les leçons et le mode voiture sont lus par la voix de Giulia. Pendant une conversation, chaque phrase est lue dès que Claude l'a écrite : la réponse commence à se faire entendre presque tout de suite. En mains libres, il suffit de parler pendant que le personnage parle pour lui couper la parole.
 

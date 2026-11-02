@@ -10,7 +10,7 @@ const post = (p, b) => fetch(O + p, { method: "POST", body: JSON.stringify(b) })
   const br = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" }).catch(() => chromium.launch());
   const errors = [];
   await post("/__seed", { email: "bramigab@gmail.com" });
-  const cx = await br.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const cx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const p = await cx.newPage();
   p.on("pageerror", (e) => errors.push(e.message));
   p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text()); });

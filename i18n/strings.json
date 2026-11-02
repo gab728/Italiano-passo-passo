@@ -1,0 +1,5602 @@
+[
+ {
+  "s": "Torino P.N. → Reggio C. C.le",
+  "ctx": "src/app.html:865"
+ },
+ {
+  "s": "De Turin à Reggio de Calabre : tu montes au niveau A2, tu descends avec un pied dans le B1.",
+  "ctx": "src/app.html:866"
+ },
+ {
+  "s": "en Espagne",
+  "ctx": "src/app.html:876"
+ },
+ {
+  "s": "Lucía, professeure d'espagnol chaleureuse, patiente et drôle, de Madrid",
+  "ctx": "src/app.html:877"
+ },
+ {
+  "s": "quería un café",
+  "ctx": "src/app.html:877"
+ },
+ {
+  "s": "infinitif pour un verbe, nom avec son article au singulier comme « el café », adjectif au masculin singulier, expression telle quelle",
+  "ctx": "src/app.html:877"
+ },
+ {
+  "s": "Un programme pas à pas, des bases au C1, à raison de 20 à 30 minutes par jour.",
+  "ctx": "src/app.html:922"
+ },
+ {
+  "s": "Le cours se charge, un instant…",
+  "ctx": "src/app.html:943"
+ },
+ {
+  "s": "Cette leçon n'est pas encore prête. Elle se prépare avec l'assistant, indisponible ici : ouvre la page dans l'app Claude, avec du réseau.",
+  "ctx": "src/app.html:944"
+ },
+ {
+  "s": "% de réussite",
+  "ctx": "src/app.html:950 (morceau)"
+ },
+ {
+  "s": "{0} % de réussite",
+  "ctx": "src/app.html:950"
+ },
+ {
+  "s": "Terminée · {0}",
+  "ctx": "src/app.html:950"
+ },
+ {
+  "s": "En cours · reprendre",
+  "ctx": "src/app.html:951"
+ },
+ {
+  "s": "Prête · environ 25 min",
+  "ctx": "src/app.html:952"
+ },
+ {
+  "s": "À préparer · 2 à 3 minutes",
+  "ctx": "src/app.html:953"
+ },
+ {
+  "s": "À préparer avec l'assistant",
+  "ctx": "src/app.html:953"
+ },
+ {
+  "s": "Chargement de ta progression…",
+  "ctx": "src/app.html:958"
+ },
+ {
+  "s": "Progression enregistrée dans ton compte Claude",
+  "ctx": "src/app.html:958"
+ },
+ {
+  "s": "Compte indisponible ici : la progression reste sur cet appareil uniquement.",
+  "ctx": "src/app.html:959"
+ },
+ {
+  "s": "Enregistrement impossible pour l'instant : la progression reste sur cet appareil.",
+  "ctx": "src/app.html:959"
+ },
+ {
+  "s": "Ce navigateur ne sait pas lire le texte à voix haute.",
+  "ctx": "src/app.html:1056"
+ },
+ {
+  "s": "La voix demande une connexion. Installe une voix en",
+  "ctx": "src/app.html:1063 (morceau)"
+ },
+ {
+  "s": "utilisable hors ligne dans les réglages de synthèse vocale de ton appareil.",
+  "ctx": "src/app.html:1063 (morceau)"
+ },
+ {
+  "s": "La voix demande une connexion. Installe une voix en {0} utilisable hors ligne dans les réglages de synthèse vocale de ton appareil.",
+  "ctx": "src/app.html:1063"
+ },
+ {
+  "s": "La lecture a échoué. Vérifie le son, puis réessaie.",
+  "ctx": "src/app.html:1063"
+ },
+ {
+  "s": "La lecture a échoué. Réessaie.",
+  "ctx": "src/app.html:1065"
+ },
+ {
+  "s": "Rien ne sort ? Monte le volume et vérifie que le téléphone n'est pas en mode silencieux.",
+  "ctx": "src/app.html:1067"
+ },
+ {
+  "s": "Aucune voix en",
+  "ctx": "src/app.html:1067 (morceau)"
+ },
+ {
+  "s": "n'est installée sur cet appareil. Ajoute-la dans les réglages de synthèse vocale (accessibilité), puis recharge la page.",
+  "ctx": "src/app.html:1067 (morceau)"
+ },
+ {
+  "s": "Aucune voix en {0} n'est installée sur cet appareil. Ajoute-la dans les réglages de synthèse vocale (accessibilité), puis recharge la page.",
+  "ctx": "src/app.html:1067"
+ },
+ {
+  "s": "Écouter",
+  "ctx": "src/app.html:1069"
+ },
+ {
+  "s": "Leçon",
+  "ctx": "src/app.html:1077"
+ },
+ {
+  "s": " jour",
+  "ctx": "src/app.html:1087"
+ },
+ {
+  "s": "Série · {0}{1}",
+  "ctx": "src/app.html:1087"
+ },
+ {
+  "s": "Unité {0} · {1}. {2}",
+  "ctx": "src/app.html:1089"
+ },
+ {
+  "s": "Programme terminé. Complimenti !",
+  "ctx": "src/app.html:1089"
+ },
+ {
+  "s": " du programme",
+  "ctx": "src/app.html:1092"
+ },
+ {
+  "s": "Réviser tes mots",
+  "ctx": "src/app.html:1100"
+ },
+ {
+  "s": " mots du carnet à revoir",
+  "ctx": "src/app.html:1100"
+ },
+ {
+  "s": " mot du carnet à revoir",
+  "ctx": "src/app.html:1100"
+ },
+ {
+  "s": "Réviser",
+  "ctx": "src/app.html:1100"
+ },
+ {
+  "s": "Unité {0}, leçon {1}{2} · {3}",
+  "ctx": "src/app.html:1101"
+ },
+ {
+  "s": "Préparer",
+  "ctx": "src/app.html:1101"
+ },
+ {
+  "s": "· une conversation écrite avec l'assistant",
+  "ctx": "src/app.html:1104 (morceau)"
+ },
+ {
+  "s": "{0} · une conversation écrite avec l'assistant",
+  "ctx": "src/app.html:1104"
+ },
+ {
+  "s": " mots",
+  "ctx": "src/app.html:1107"
+ },
+ {
+  "s": " mot",
+  "ctx": "src/app.html:1107"
+ },
+ {
+  "s": "Quiz de vocabulaire",
+  "ctx": "src/app.html:1107"
+ },
+ {
+  "s": "Dictée",
+  "ctx": "src/app.html:1108"
+ },
+ {
+  "s": "Le programme",
+  "ctx": "src/app.html:1110"
+ },
+ {
+  "s": "Unité {0} · {1}",
+  "ctx": "src/app.html:1114"
+ },
+ {
+  "s": "Leçons à la carte",
+  "ctx": "src/app.html:1123"
+ },
+ {
+  "s": "Mes leçons",
+  "ctx": "src/app.html:1123"
+ },
+ {
+  "s": "Terminée · {0} % de réussite",
+  "ctx": "src/app.html:1125"
+ },
+ {
+  "s": "Prête",
+  "ctx": "src/app.html:1125"
+ },
+ {
+  "s": "Un sujet précis en tête, hors programme ? Décris-le : l'assistant écrit la leçon à ton niveau, une relecture la vérifie, et elle s'ajoute ici. Compte deux à trois minutes, avec du réseau.",
+  "ctx": "src/app.html:1126"
+ },
+ {
+  "s": "Un sujet précis en tête ? Décris-le. L'assistant n'est pas disponible ici pour l'instant : ta demande est gardée, et tu pourras lancer la création dès qu'il le sera.",
+  "ctx": "src/app.html:1126"
+ },
+ {
+  "s": "Créer",
+  "ctx": "src/app.html:1130"
+ },
+ {
+  "s": "Par exemple : le vocabulaire pour louer un appartement, ou parler de ton métier",
+  "ctx": "src/app.html:1132"
+ },
+ {
+  "s": "Ce que tu veux travailler",
+  "ctx": "src/app.html:1132"
+ },
+ {
+  "s": "Créer la leçon",
+  "ctx": "src/app.html:1133"
+ },
+ {
+  "s": "Garder la demande",
+  "ctx": "src/app.html:1133"
+ },
+ {
+  "s": "Ta progression est enregistrée dans ton compte Claude à chaque réponse. Les leçons « à préparer » sont écrites par l'assistant au moment où tu les ouvres, à partir du programme, puis relues avant d'apparaître.",
+  "ctx": "src/app.html:1139"
+ },
+ {
+  "s": "Transférer ma progression vers l'app mobile",
+  "ctx": "src/app.html:1143"
+ },
+ {
+  "s": "Copié. Dans l'app mobile, ouvre « Mon compte », section « Reprendre ma progression de l'app Claude », et colle le texte.",
+  "ctx": "src/app.html:1146"
+ },
+ {
+  "s": "Copie automatique impossible ici : touche le texte ci-dessous, sélectionne tout, copie-le, puis colle-le dans l'app mobile (« Mon compte », section « Reprendre ma progression de l'app Claude »).",
+  "ctx": "src/app.html:1146"
+ },
+ {
+  "s": "Progression à copier",
+  "ctx": "src/app.html:1147"
+ },
+ {
+  "s": "‹ Écran précédent",
+  "ctx": "src/app.html:1165"
+ },
+ {
+  "s": "Deuxième chance",
+  "ctx": "src/app.html:1172"
+ },
+ {
+  "s": "Pas tout à fait.",
+  "ctx": "src/app.html:1175"
+ },
+ {
+  "s": "Écouter la phrase",
+  "ctx": "src/app.html:1177"
+ },
+ {
+  "s": "Leçon terminée",
+  "ctx": "src/app.html:1183"
+ },
+ {
+  "s": "bonnes réponses sur",
+  "ctx": "src/app.html:1185 (morceau)"
+ },
+ {
+  "s": "Très bien",
+  "ctx": "src/app.html:1185"
+ },
+ {
+  "s": ", tu maîtrises cette leçon.",
+  "ctx": "src/app.html:1185 (morceau)"
+ },
+ {
+  "s": "{0}, tu maîtrises cette leçon.",
+  "ctx": "src/app.html:1185"
+ },
+ {
+  "s": "Bien joué. Un second passage fixerait les points encore fragiles.",
+  "ctx": "src/app.html:1185"
+ },
+ {
+  "s": "Cette leçon mérite un deuxième tour : relis les explications, puis recommence.",
+  "ctx": "src/app.html:1185"
+ },
+ {
+  "s": "{0} bonnes réponses sur {1}. {2}",
+  "ctx": "src/app.html:1185"
+ },
+ {
+  "s": "Mettre en pratique : conversation",
+  "ctx": "src/app.html:1187"
+ },
+ {
+  "s": "Leçon suivante : ",
+  "ctx": "src/app.html:1188"
+ },
+ {
+  "s": "Préparer la suivante : ",
+  "ctx": "src/app.html:1188"
+ },
+ {
+  "s": "Leçon suivante :",
+  "ctx": "src/app.html:1189 (morceau)"
+ },
+ {
+  "s": "Leçon suivante : {0}",
+  "ctx": "src/app.html:1189"
+ },
+ {
+  "s": "Refaire cette leçon",
+  "ctx": "src/app.html:1190"
+ },
+ {
+  "s": "Retour à l'accueil",
+  "ctx": "src/app.html:1191"
+ },
+ {
+  "s": "Trop de demandes pour l'instant. Réessaie dans un moment.",
+  "ctx": "src/app.html:1208"
+ },
+ {
+  "s": "Ta session a expiré : reconnecte-toi à Claude, puis réessaie.",
+  "ctx": "src/app.html:1208"
+ },
+ {
+  "s": "L'assistant n'a pas pu répondre à cette demande.",
+  "ctx": "src/app.html:1209"
+ },
+ {
+  "s": "La réponse de l'assistant était illisible. Réessaie.",
+  "ctx": "src/app.html:1209"
+ },
+ {
+  "s": "La réponse de l'assistant a été coupée en route. Réessaie.",
+  "ctx": "src/app.html:1209"
+ },
+ {
+  "s": "Pas de réponse de l'assistant. Vérifie le réseau, puis réessaie.",
+  "ctx": "src/app.html:1209"
+ },
+ {
+  "s": "L'assistant n'est pas disponible ici.",
+  "ctx": "src/app.html:1210"
+ },
+ {
+  "s": "Insérer {0}",
+  "ctx": "src/app.html:1213"
+ },
+ {
+  "s": "Ajouter au carnet",
+  "ctx": "src/app.html:1220"
+ },
+ {
+  "s": "Dans ton carnet",
+  "ctx": "src/app.html:1220"
+ },
+ {
+  "s": "Toute la phrase :",
+  "ctx": "src/app.html:1230 (morceau)"
+ },
+ {
+  "s": "Toute la phrase : {0}",
+  "ctx": "src/app.html:1230"
+ },
+ {
+  "s": "Ce mot n'est pas dans le lexique du cours.",
+  "ctx": "src/app.html:1231"
+ },
+ {
+  "s": "Recherche de «",
+  "ctx": "src/app.html:1232 (morceau)"
+ },
+ {
+  "s": "Recherche de « {0} »…",
+  "ctx": "src/app.html:1232"
+ },
+ {
+  "s": "». Il apparaît dans la phrase : «",
+  "ctx": "src/app.html:1233 (morceau)"
+ },
+ {
+  "s": "Choix proposés :",
+  "ctx": "src/app.html:1239 (morceau)"
+ },
+ {
+  "s": ". Bonne réponse :",
+  "ctx": "src/app.html:1239 (morceau)"
+ },
+ {
+  "s": "{0}{1} Choix proposés : {2}. Bonne réponse : {3}",
+  "ctx": "src/app.html:1239"
+ },
+ {
+  "s": "Bonne réponse :",
+  "ctx": "src/app.html:1240 (morceau)"
+ },
+ {
+  "s": "{0}{1} Bonne réponse : {2}",
+  "ctx": "src/app.html:1240"
+ },
+ {
+  "s": "Traduire en {0} : {1} Bonne réponse : {2}",
+  "ctx": "src/app.html:1241"
+ },
+ {
+  "s": "Pourquoi ? Demander à l'assistant",
+  "ctx": "src/app.html:1242"
+ },
+ {
+  "s": "L'assistant réfléchit…",
+  "ctx": "src/app.html:1243"
+ },
+ {
+  "s": ") pour un francophone de niveau A2 vers B1. Exercice :",
+  "ctx": "src/app.html:1244 (morceau)"
+ },
+ {
+  "s": "Explique en français, en 2 à 4 phrases, pourquoi sa réponse ne convient pas et la règle à retenir. Si sa réponse était en réalité acceptable, dis-le. Texte brut, sans markdown ni titre.",
+  "ctx": "src/app.html:1244 (morceau)"
+ },
+ {
+  "s": "Écoute la phrase et écris-la en",
+  "ctx": "src/app.html:1258 (morceau)"
+ },
+ {
+  "s": ". La ponctuation et les majuscules ne comptent pas.",
+  "ctx": "src/app.html:1258 (morceau)"
+ },
+ {
+  "s": "Écoute la phrase et écris-la en {0}. La ponctuation et les majuscules ne comptent pas.",
+  "ctx": "src/app.html:1258"
+ },
+ {
+  "s": "Plus lentement",
+  "ctx": "src/app.html:1259"
+ },
+ {
+  "s": "Ce que tu entends",
+  "ctx": "src/app.html:1260"
+ },
+ {
+  "s": "Vérifier",
+  "ctx": "src/app.html:1260"
+ },
+ {
+  "s": " mots à corriger.",
+  "ctx": "src/app.html:1264"
+ },
+ {
+  "s": " mot à corriger.",
+  "ctx": "src/app.html:1264"
+ },
+ {
+  "s": "Attention aux accents.",
+  "ctx": "src/app.html:1266"
+ },
+ {
+  "s": "Dictée terminée",
+  "ctx": "src/app.html:1273"
+ },
+ {
+  "s": "phrases écrites sans faute.",
+  "ctx": "src/app.html:1274"
+ },
+ {
+  "s": "Nouvelle dictée",
+  "ctx": "src/app.html:1274"
+ },
+ {
+  "s": "Au guichet de la gare",
+  "ctx": "src/app.html:1279"
+ },
+ {
+  "s": "Achète un aller-retour pour Florence pour demain matin, puis demande la voie et si le train est à l'heure.",
+  "ctx": "src/app.html:1279"
+ },
+ {
+  "s": "présent des verbes irréguliers, prépositions articulées (dal binario, alle otto)",
+  "ctx": "src/app.html:1279"
+ },
+ {
+  "s": "Paolo, un collega italiano curioso, il lunedì mattina davanti alla macchinetta del caffè",
+  "ctx": "src/app.html:1280"
+ },
+ {
+  "s": "Raconte ton week-end : où tu es allé, avec qui, ce que tu as vu et mangé.",
+  "ctx": "src/app.html:1280"
+ },
+ {
+  "s": "passato prossimo (essere ou avere, participes irréguliers, accords)",
+  "ctx": "src/app.html:1280"
+ },
+ {
+  "s": "Lucia, un'amica italiana che vuole conoscerti meglio",
+  "ctx": "src/app.html:1281"
+ },
+ {
+  "s": "Décris ton enfance : où tu habitais, tes habitudes, tes vacances, un souvenir précis.",
+  "ctx": "src/app.html:1281"
+ },
+ {
+  "s": "imperfetto pour les habitudes et descriptions, passato prossimo pour un événement précis",
+  "ctx": "src/app.html:1281"
+ },
+ {
+  "s": "Dimmi un po': com'eri da bambino? Dove abitavi?",
+  "ctx": "src/app.html:1281"
+ },
+ {
+  "s": "Organiser un anniversaire",
+  "ctx": "src/app.html:1282"
+ },
+ {
+  "s": "Anna, un'amica con cui organizzi la festa di compleanno di un'amica comune, Chiara",
+  "ctx": "src/app.html:1282"
+ },
+ {
+  "s": "Répartis les tâches (cadeau, gâteau, invités) sans répéter les noms : utilise lo, la, li, le, gli, le.",
+  "ctx": "src/app.html:1282"
+ },
+ {
+  "s": "pronoms directs et indirects, ci et ne",
+  "ctx": "src/app.html:1282"
+ },
+ {
+  "s": "Allora, per la festa di Chiara: chi compra il regalo? E la torta, la porti tu?",
+  "ctx": "src/app.html:1282"
+ },
+ {
+  "s": "Au restaurant",
+  "ctx": "src/app.html:1283"
+ },
+ {
+  "s": "un cameriere in una trattoria di Roma",
+  "ctx": "src/app.html:1283"
+ },
+ {
+  "s": "Demande une table, commande poliment, pose une question sur un plat, puis demande l'addition.",
+  "ctx": "src/app.html:1283"
+ },
+ {
+  "s": "conditionnel de politesse (vorrei, potrebbe, prenderei) et futur",
+  "ctx": "src/app.html:1283"
+ },
+ {
+  "s": "Négocier un prix",
+  "ctx": "src/app.html:1284"
+ },
+ {
+  "s": "Marchande le prix d'un sac : trouve-le trop cher, propose ton prix, puis conclus ou renonce.",
+  "ctx": "src/app.html:1284"
+ },
+ {
+  "s": "expressions courantes (Dai!, Che ne dice?, Meno male) et chiffres",
+  "ctx": "src/app.html:1284"
+ },
+ {
+  "s": "Indiquer le chemin",
+  "ctx": "src/app.html:1285"
+ },
+ {
+  "s": "un turista italiano che si è perso e ti ferma per strada",
+  "ctx": "src/app.html:1285"
+ },
+ {
+  "s": "Explique-lui comment aller à la gare : tout droit, à gauche, au feu, après le pont.",
+  "ctx": "src/app.html:1285"
+ },
+ {
+  "s": "impératif à la forme Lei (vada, giri, prenda, attraversi)",
+  "ctx": "src/app.html:1285"
+ },
+ {
+  "s": "Scusi, mi sono perso! Sa dirmi come arrivo alla stazione da qui?",
+  "ctx": "src/app.html:1285"
+ },
+ {
+  "s": "Dans une boutique",
+  "ctx": "src/app.html:1286"
+ },
+ {
+  "s": "una commessa in un negozio di abbigliamento",
+  "ctx": "src/app.html:1286"
+ },
+ {
+  "s": "Essaie un vêtement, compare deux modèles, puis demande une réduction.",
+  "ctx": "src/app.html:1286"
+ },
+ {
+  "s": "comparatifs et superlatifs (più… di, meno caro, meglio, migliore)",
+  "ctx": "src/app.html:1286"
+ },
+ {
+  "s": "Réclame tes affaires (chargeur, parapluie, livre) et demande-lui de te les rendre.",
+  "ctx": "src/app.html:1287"
+ },
+ {
+  "s": "pronoms combinés (me lo, te la, glielo) et relatifs (che, cui)",
+  "ctx": "src/app.html:1287"
+ },
+ {
+  "s": "Défendre une opinion",
+  "ctx": "src/app.html:1288"
+ },
+ {
+  "s": "Défends le train contre l'avion : donne ton avis, nuance, réponds à ses arguments.",
+  "ctx": "src/app.html:1288"
+ },
+ {
+  "s": "Secondo me l'aereo è sempre meglio del treno: è più veloce e spesso costa meno. Tu che ne pensi?",
+  "ctx": "src/app.html:1288"
+ },
+ {
+  "s": "Jeu de rôle",
+  "ctx": "src/app.html:1290"
+ },
+ {
+  "s": "La conversation passe par l'assistant Claude, qui n'est pas disponible ici pour l'instant. Ouvre la page dans l'app Claude avec du réseau, et accepte quand elle demande à utiliser Claude.",
+  "ctx": "src/app.html:1291"
+ },
+ {
+  "s": "Tu écris en",
+  "ctx": "src/app.html:1292 (morceau)"
+ },
+ {
+  "s": ", l'assistant joue l'autre personnage et te répond. À la fin, un bilan reprend tes erreurs et les mots à retenir. Il faut du réseau.",
+  "ctx": "src/app.html:1292 (morceau)"
+ },
+ {
+  "s": "Tu écris en {0}, l'assistant joue l'autre personnage et te répond. À la fin, un bilan reprend tes erreurs et les mots à retenir. Il faut du réseau.",
+  "ctx": "src/app.html:1292"
+ },
+ {
+  "s": " · déjà fait",
+  "ctx": "src/app.html:1294"
+ },
+ {
+  "s": "Jeu de rôle pour un francophone qui apprend cette langue :",
+  "ctx": "src/app.html:1296 (morceau)"
+ },
+ {
+  "s": "). Tu joues :",
+  "ctx": "src/app.html:1296 (morceau)"
+ },
+ {
+  "s": ". Tu as ouvert la conversation avec : «",
+  "ctx": "src/app.html:1296 (morceau)"
+ },
+ {
+  "s": "Élève : ",
+  "ctx": "src/app.html:1297"
+ },
+ {
+  "s": "← Les scénarios",
+  "ctx": "src/app.html:1298"
+ },
+ {
+  "s": "Ta réponse en",
+  "ctx": "src/app.html:1304 (morceau)"
+ },
+ {
+  "s": "Ta réponse en {0}",
+  "ctx": "src/app.html:1304"
+ },
+ {
+  "s": "Bilan après 2 répliques",
+  "ctx": "src/app.html:1307"
+ },
+ {
+  "s": "Terminer et voir le bilan",
+  "ctx": "src/app.html:1307"
+ },
+ {
+  "s": "Que dire ?",
+  "ctx": "src/app.html:1311"
+ },
+ {
+  "s": "L'assistant cherche une idée…",
+  "ctx": "src/app.html:1312"
+ },
+ {
+  "s": "Jeu de rôle en",
+  "ctx": "src/app.html:1313 (morceau)"
+ },
+ {
+  "s": ", chacune suivie de sa traduction française entre parenthèses. Une par ligne, sans numéro ni autre texte.",
+  "ctx": "src/app.html:1313 (morceau)"
+ },
+ {
+  "s": "Bilan de la conversation",
+  "ctx": "src/app.html:1316"
+ },
+ {
+  "s": "L'assistant relit tes répliques. Cela peut prendre jusqu'à une minute.",
+  "ctx": "src/app.html:1317"
+ },
+ {
+  "s": "Point de langue visé :",
+  "ctx": "src/app.html:1319 (morceau)"
+ },
+ {
+  "s": "Réessayer",
+  "ctx": "src/app.html:1320"
+ },
+ {
+  "s": "Conversation terminée.",
+  "ctx": "src/app.html:1322"
+ },
+ {
+  "s": "À corriger",
+  "ctx": "src/app.html:1325"
+ },
+ {
+  "s": "Aucune erreur relevée",
+  "ctx": "src/app.html:1325"
+ },
+ {
+  "s": "À retenir",
+  "ctx": "src/app.html:1330"
+ },
+ {
+  "s": "Rejouer ce scénario",
+  "ctx": "src/app.html:1331"
+ },
+ {
+  "s": "Autre scénario",
+  "ctx": "src/app.html:1331"
+ },
+ {
+  "s": "réponse illisible",
+  "ctx": "src/app.html:1342"
+ },
+ {
+  "s": "pour un francophone adulte qui veut parler en voyage, avec des amis, au travail et pour la culture. Il y consacre 20 à 30 minutes par jour. Toutes les explications et consignes sont en français.",
+  "ctx": "src/app.html:1351 (morceau)"
+ },
+ {
+  "s": "Cours de {0} pour un francophone adulte qui veut parler en voyage, avec des amis, au travail et pour la culture. Il y consacre 20 à 30 minutes par jour. Toutes les explications et consignes sont en français. ",
+  "ctx": "src/app.html:1351"
+ },
+ {
+  "s": "Point de langue :",
+  "ctx": "src/app.html:1352 (morceau)"
+ },
+ {
+  "s": "Déjà vu dans les leçons précédentes :",
+  "ctx": "src/app.html:1353 (morceau)"
+ },
+ {
+  "s": "rien : c'est la toute première leçon.",
+  "ctx": "src/app.html:1353"
+ },
+ {
+  "s": "Règle d'or : n'emploie que des structures déjà vues ou celle du jour, et avance lentement, avec beaucoup de réemploi.",
+  "ctx": "src/app.html:1353 (morceau)"
+ },
+ {
+  "s": " Déjà vu dans les leçons précédentes : {0} Règle d'or : n'emploie que des structures déjà vues ou celle du jour, et avance lentement, avec beaucoup de réemploi. ",
+  "ctx": "src/app.html:1353"
+ },
+ {
+  "s": "Demande de l'apprenant : «",
+  "ctx": "src/app.html:1354 (morceau)"
+ },
+ {
+  "s": " Demande de l'apprenant : «{0}» ",
+  "ctx": "src/app.html:1354"
+ },
+ {
+  "s": "Il en est à :",
+  "ctx": "src/app.html:1355 (morceau)"
+ },
+ {
+  "s": "), unité «",
+  "ctx": "src/app.html:1355 (morceau)"
+ },
+ {
+  "s": "». En dehors du point demandé, n'emploie que des structures qu'il connaît déjà :",
+  "ctx": "src/app.html:1355 (morceau)"
+ },
+ {
+  "s": "les toutes premières bases.",
+  "ctx": "src/app.html:1355"
+ },
+ {
+  "s": "Il en est à : {0} ({1}), unité « {2} ». En dehors du point demandé, n'emploie que des structures qu'il connaît déjà : {3} ",
+  "ctx": "src/app.html:1355"
+ },
+ {
+  "s": "→ il a répondu :",
+  "ctx": "src/app.html:1356 (morceau)"
+ },
+ {
+  "s": "- {0} → il a répondu : {1}",
+  "ctx": "src/app.html:1356"
+ },
+ {
+  "s": "Ses erreurs récentes, à réemployer si le sujet s'y prête :",
+  "ctx": "src/app.html:1356 (morceau)"
+ },
+ {
+  "s": " Ses erreurs récentes, à réemployer si le sujet s'y prête : {0} ",
+  "ctx": "src/app.html:1356"
+ },
+ {
+  "s": "Particularités de ce cours, à respecter partout :",
+  "ctx": "src/app.html:1357 (morceau)"
+ },
+ {
+  "s": " Particularités de ce cours, à respecter partout : {0} ",
+  "ctx": "src/app.html:1357"
+ },
+ {
+  "s": "La langue cible doit être irréprochable : au moindre doute sur une forme, choisis une autre phrase. Pas de paroles de chansons ni de marques.",
+  "ctx": "src/app.html:1358 (morceau)"
+ },
+ {
+  "s": "{0} La langue cible doit être irréprochable : au moindre doute sur une forme, choisis une autre phrase. Pas de paroles de chansons ni de marques. ",
+  "ctx": "src/app.html:1358"
+ },
+ {
+  "s": "Explications déjà écrites (résumé) :",
+  "ctx": "src/app.html:1364 (morceau)"
+ },
+ {
+  "s": "Vocabulaire de la leçon :",
+  "ctx": "src/app.html:1364 (morceau)"
+ },
+ {
+  "s": " Explications déjà écrites (résumé) : {0} Vocabulaire de la leçon : {1} ",
+  "ctx": "src/app.html:1364"
+ },
+ {
+  "s": "Préparation",
+  "ctx": "src/app.html:1390"
+ },
+ {
+  "s": "Leçon à la carte",
+  "ctx": "src/app.html:1390"
+ },
+ {
+  "s": "Unité {0}, leçon {1}{2}",
+  "ctx": "src/app.html:1390"
+ },
+ {
+  "s": "À la carte",
+  "ctx": "src/app.html:1390"
+ },
+ {
+  "s": "Ta leçon se prépare",
+  "ctx": "src/app.html:1391"
+ },
+ {
+  "s": "à venir",
+  "ctx": "src/app.html:1393"
+ },
+ {
+  "s": "Explications et vocabulaire",
+  "ctx": "src/app.html:1394"
+ },
+ {
+  "s": "Dialogue et mise en situation",
+  "ctx": "src/app.html:1394"
+ },
+ {
+  "s": "Relecture indépendante",
+  "ctx": "src/app.html:1394"
+ },
+ {
+  "s": "Ajout à ton programme",
+  "ctx": "src/app.html:1394"
+ },
+ {
+  "s": "Compte deux à trois minutes. Tu peux revenir à l'accueil : la leçon s'ajoutera toute seule quand elle sera prête.",
+  "ctx": "src/app.html:1395"
+ },
+ {
+  "s": "échec",
+  "ctx": "src/app.html:1397"
+ },
+ {
+  "s": "en cours…",
+  "ctx": "src/app.html:1401"
+ },
+ {
+  "s": "Les explications reçues étaient incomplètes.",
+  "ctx": "src/app.html:1402"
+ },
+ {
+  "s": "La leçon est écrite mais pas encore relue.",
+  "ctx": "src/app.html:1413"
+ },
+ {
+  "s": "Réessayer la relecture",
+  "ctx": "src/app.html:1413"
+ },
+ {
+  "s": "La relecture a écarté trop d'exercices.",
+  "ctx": "src/app.html:1414"
+ },
+ {
+  "s": "ignorée",
+  "ctx": "src/app.html:1415"
+ },
+ {
+  "s": "La leçon n'a pas passé le contrôle final.",
+  "ctx": "src/app.html:1420"
+ },
+ {
+  "s": "La relecture n'a rien trouvé à corriger.",
+  "ctx": "src/app.html:1426"
+ },
+ {
+  "s": " points corrigés",
+  "ctx": "src/app.html:1426"
+ },
+ {
+  "s": " point corrigé",
+  "ctx": "src/app.html:1426"
+ },
+ {
+  "s": " exercices retirés",
+  "ctx": "src/app.html:1426"
+ },
+ {
+  "s": " exercice retiré",
+  "ctx": "src/app.html:1426"
+ },
+ {
+  "s": "Leçon ajoutée sans relecture : signale toute réponse qui te semble fausse.",
+  "ctx": "src/app.html:1427"
+ },
+ {
+  "s": "Elle n'a pas pu être enregistrée dans la base pour l'instant : elle reste sur cet appareil, et l'enregistrement sera retenté à la prochaine ouverture.",
+  "ctx": "src/app.html:1428"
+ },
+ {
+  "s": "Commencer la leçon",
+  "ctx": "src/app.html:1430"
+ },
+ {
+  "s": ". Pendant les silences, réponds à voix haute, puis répète après moi.",
+  "ctx": "src/app.html:1440 (morceau)"
+ },
+ {
+  "s": "Leçon : {0}. Pendant les silences, réponds à voix haute, puis répète après moi.",
+  "ctx": "src/app.html:1440"
+ },
+ {
+  "s": "Maintenant, à toi de parler.",
+  "ctx": "src/app.html:1443"
+ },
+ {
+  "s": ", avec :",
+  "ctx": "src/app.html:1447 (morceau)"
+ },
+ {
+  "s": ", avec : {0}",
+  "ctx": "src/app.html:1447"
+ },
+ {
+  "s": "Complète{0}.",
+  "ctx": "src/app.html:1447"
+ },
+ {
+  "s": "Pour finir, le dialogue. Écoute, puis répète chaque réplique.",
+  "ctx": "src/app.html:1448"
+ },
+ {
+  "s": "C'est fini pour cette leçon. Brava, bravo ! Tu pourras faire les exercices à l'écran une fois arrivé.",
+  "ctx": "src/app.html:1450"
+ },
+ {
+  "s": "mots de ton carnet. Je dis le mot en français : dis-le en",
+  "ctx": "src/app.html:1452 (morceau)"
+ },
+ {
+  "s": "{0} mots de ton carnet. Je dis le mot en français : dis-le en {1} avant moi.",
+  "ctx": "src/app.html:1452"
+ },
+ {
+  "s": "Révision terminée. Bravo !",
+  "ctx": "src/app.html:1454"
+ },
+ {
+  "s": "Écouter et parler",
+  "ctx": "src/app.html:1472"
+ },
+ {
+  "s": "En voiture, mains libres",
+  "ctx": "src/app.html:1472"
+ },
+ {
+  "s": "La page te parle : elle te donne une phrase en français ou un début de phrase, laisse un silence pour que tu répondes à voix haute en",
+  "ctx": "src/app.html:1473 (morceau)"
+ },
+ {
+  "s": ", puis te donne la bonne réponse et un silence pour la répéter. Rien à toucher pendant la séance.",
+  "ctx": "src/app.html:1473 (morceau)"
+ },
+ {
+  "s": "La page te parle : elle te donne une phrase en français ou un début de phrase, laisse un silence pour que tu répondes à voix haute en {0}, puis te donne la bonne réponse et un silence pour la répéter. Rien à toucher pendant la séance.",
+  "ctx": "src/app.html:1473"
+ },
+ {
+  "s": "Ce navigateur ne sait pas lire le texte à voix haute : le mode audio ne peut pas fonctionner ici.",
+  "ctx": "src/app.html:1474"
+ },
+ {
+  "s": "Leçon du jour :",
+  "ctx": "src/app.html:1477 (morceau)"
+ },
+ {
+  "s": "Leçon du jour : {0}",
+  "ctx": "src/app.html:1477"
+ },
+ {
+  "s": "Dernière leçon faite :",
+  "ctx": "src/app.html:1478 (morceau)"
+ },
+ {
+  "s": "Dernière leçon faite : {0}",
+  "ctx": "src/app.html:1478"
+ },
+ {
+  "s": "Mes mots à réviser (",
+  "ctx": "src/app.html:1479 (morceau)"
+ },
+ {
+  "s": "Mes mots à réviser ({0})",
+  "ctx": "src/app.html:1479"
+ },
+ {
+  "s": "Mon carnet ({0} mots)",
+  "ctx": "src/app.html:1479"
+ },
+ {
+  "s": "Quoi écouter",
+  "ctx": "src/app.html:1480"
+ },
+ {
+  "s": "Une autre leçon",
+  "ctx": "src/app.html:1483"
+ },
+ {
+  "s": "Une autre leçon prête…",
+  "ctx": "src/app.html:1483"
+ },
+ {
+  "s": "Silences pour répondre",
+  "ctx": "src/app.html:1486"
+ },
+ {
+  "s": "Plus longs",
+  "ctx": "src/app.html:1487"
+ },
+ {
+  "s": "Attention : aucune voix en",
+  "ctx": "src/app.html:1489 (morceau)"
+ },
+ {
+  "s": "n'est installée sur cet appareil. Ajoute-la dans les réglages de synthèse vocale avant de partir.",
+  "ctx": "src/app.html:1489 (morceau)"
+ },
+ {
+  "s": "Attention : aucune voix en {0} n'est installée sur cet appareil. Ajoute-la dans les réglages de synthèse vocale avant de partir.",
+  "ctx": "src/app.html:1489"
+ },
+ {
+  "s": "Prépare tout avant de démarrer, téléphone sur son support. Garde l'écran allumé et la page ouverte : si l'écran s'éteint ou si tu changes d'application, la lecture s'arrête, et il faudra toucher « Reprendre » une fois à l'arrêt.",
+  "ctx": "src/app.html:1490"
+ },
+ {
+  "s": "Démarrer",
+  "ctx": "src/app.html:1491"
+ },
+ {
+  "s": "Étape précédente",
+  "ctx": "src/app.html:1497"
+ },
+ {
+  "s": "Étape suivante",
+  "ctx": "src/app.html:1497"
+ },
+ {
+  "s": "Révision du carnet",
+  "ctx": "src/app.html:1504"
+ },
+ {
+  "s": "Séance terminée",
+  "ctx": "src/app.html:1505"
+ },
+ {
+  "s": "Écoute et réponds à voix haute",
+  "ctx": "src/app.html:1505"
+ },
+ {
+  "s": "En pause",
+  "ctx": "src/app.html:1505"
+ },
+ {
+  "s": "L'écran s'est éteint ou la page a été quittée. Une fois à l'arrêt, touche « Reprendre ».",
+  "ctx": "src/app.html:1506"
+ },
+ {
+  "s": "étudier",
+  "ctx": "src/app.html:1649"
+ },
+ {
+  "s": "écouter",
+  "ctx": "src/app.html:1649"
+ },
+ {
+  "s": "coûter|e",
+  "ctx": "src/app.html:1650"
+ },
+ {
+  "s": "voler (dans l'air)|ea",
+  "ctx": "src/app.html:1651"
+ },
+ {
+  "s": "jouer (d'un instrument), sonner",
+  "ctx": "src/app.html:1653"
+ },
+ {
+  "s": "préparer",
+  "ctx": "src/app.html:1653"
+ },
+ {
+  "s": "rappeler, se souvenir de",
+  "ctx": "src/app.html:1654"
+ },
+ {
+  "s": "espérer",
+  "ctx": "src/app.html:1654"
+ },
+ {
+  "s": "rêver",
+  "ctx": "src/app.html:1654"
+ },
+ {
+  "s": "téléphoner",
+  "ctx": "src/app.html:1655"
+ },
+ {
+  "s": "réserver",
+  "ctx": "src/app.html:1655"
+ },
+ {
+  "s": "arrêter",
+  "ctx": "src/app.html:1656"
+ },
+ {
+  "s": "louer (une voiture)",
+  "ctx": "src/app.html:1657"
+ },
+ {
+  "s": "offrir (un cadeau)",
+  "ctx": "src/app.html:1657"
+ },
+ {
+  "s": "prêter",
+  "ctx": "src/app.html:1657"
+ },
+ {
+  "s": "rendre (un objet)|isc",
+  "ctx": "src/app.html:1657"
+ },
+ {
+  "s": "vérifier",
+  "ctx": "src/app.html:1657"
+ },
+ {
+  "s": "déplacer",
+  "ctx": "src/app.html:1658"
+ },
+ {
+  "s": "goûter",
+  "ctx": "src/app.html:1658"
+ },
+ {
+  "s": "désirer",
+  "ctx": "src/app.html:1658"
+ },
+ {
+  "s": "fêter",
+  "ctx": "src/app.html:1659"
+ },
+ {
+  "s": "démontrer",
+  "ctx": "src/app.html:1660"
+ },
+ {
+  "s": "considérer",
+  "ctx": "src/app.html:1660"
+ },
+ {
+  "s": "améliorer|ea",
+  "ctx": "src/app.html:1660"
+ },
+ {
+  "s": "répéter",
+  "ctx": "src/app.html:1661"
+ },
+ {
+  "s": "profiter de, jouir de|godr",
+  "ctx": "src/app.html:1661"
+ },
+ {
+  "s": "préférer|isc",
+  "ctx": "src/app.html:1663"
+ },
+ {
+  "s": "expédier|isc",
+  "ctx": "src/app.html:1663"
+ },
+ {
+  "s": "suggérer|isc",
+  "ctx": "src/app.html:1663"
+ },
+ {
+  "s": "obéir|isc",
+  "ctx": "src/app.html:1664"
+ },
+ {
+  "s": "empêcher|isc",
+  "ctx": "src/app.html:1664"
+ },
+ {
+  "s": "gérer|isc",
+  "ctx": "src/app.html:1664"
+ },
+ {
+  "s": "définir|isc",
+  "ctx": "src/app.html:1664"
+ },
+ {
+  "s": "insérer|isc",
+  "ctx": "src/app.html:1664"
+ },
+ {
+  "s": "se réveiller",
+  "ctx": "src/app.html:1666"
+ },
+ {
+  "s": "se préparer",
+  "ctx": "src/app.html:1666"
+ },
+ {
+  "s": "s'arrêter",
+  "ctx": "src/app.html:1667"
+ },
+ {
+  "s": "déménager, s'installer|isc",
+  "ctx": "src/app.html:1667"
+ },
+ {
+  "s": "s'inquiéter",
+  "ctx": "src/app.html:1668"
+ },
+ {
+  "s": "se fâcher",
+  "ctx": "src/app.html:1668"
+ },
+ {
+  "s": "se dépêcher",
+  "ctx": "src/app.html:1669"
+ },
+ {
+  "s": "obtenir son diplôme",
+  "ctx": "src/app.html:1669"
+ },
+ {
+  "s": "é / ette",
+  "ctx": "src/app.html:1693"
+ },
+ {
+  "s": "avrò avrai avrà avremo avrete avranno",
+  "ctx": "src/app.html:1709"
+ },
+ {
+  "s": "sarò sarai sarà saremo sarete saranno",
+  "ctx": "src/app.html:1710"
+ },
+ {
+  "s": "présent",
+  "ctx": "src/app.html:1724"
+ },
+ {
+  "s": "passé composé",
+  "ctx": "src/app.html:1724"
+ },
+ {
+  "s": "futur antérieur",
+  "ctx": "src/app.html:1725"
+ },
+ {
+  "s": "conditionnel présent",
+  "ctx": "src/app.html:1726"
+ },
+ {
+  "s": "conditionnel passé",
+  "ctx": "src/app.html:1726"
+ },
+ {
+  "s": "subjonctif présent",
+  "ctx": "src/app.html:1727"
+ },
+ {
+  "s": "subjonctif passé",
+  "ctx": "src/app.html:1727"
+ },
+ {
+  "s": "subjonctif plus-que-parfait",
+  "ctx": "src/app.html:1728"
+ },
+ {
+  "s": "passé simple",
+  "ctx": "src/app.html:1729"
+ },
+ {
+  "s": "unité 1",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 7",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 8",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 16",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 11",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 15",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 19",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 23",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "unité 9",
+  "ctx": "src/app.html:1734"
+ },
+ {
+  "s": "← Retour à la leçon",
+  "ctx": "src/app.html:1740"
+ },
+ {
+  "s": "Référence",
+  "ctx": "src/app.html:1741"
+ },
+ {
+  "s": "Cherche un verbe en italien ou en français. Chaque verbe s'affiche à tous les temps, avec ses pièges.",
+  "ctx": "src/app.html:1742 (morceau)"
+ },
+ {
+  "s": "verbes courants, et n'importe quel verbe régulier en plus.",
+  "ctx": "src/app.html:1742 (morceau)"
+ },
+ {
+  "s": "Cherche un verbe en italien ou en français. Chaque verbe s'affiche à tous les temps, avec ses pièges. {0} verbes courants, et n'importe quel verbe régulier en plus.",
+  "ctx": "src/app.html:1742"
+ },
+ {
+  "s": "Chercher un verbe",
+  "ctx": "src/app.html:1743"
+ },
+ {
+  "s": "Les plus utiles",
+  "ctx": "src/app.html:1746"
+ },
+ {
+  "s": "irrégulier",
+  "ctx": "src/app.html:1750"
+ },
+ {
+  "s": "Aucun verbe trouvé. Tape un infinitif italien (en -are, -ere, -ire) pour le conjuguer.",
+  "ctx": "src/app.html:1753"
+ },
+ {
+  "s": "Verbe irrégulier",
+  "ctx": "src/app.html:1756"
+ },
+ {
+  "s": "Verbe régulier",
+  "ctx": "src/app.html:1756"
+ },
+ {
+  "s": "Ce verbe n'est pas dans la liste : il est conjugué comme un verbe régulier. Vérifie-le s'il s'agit d'un verbe irrégulier ou en -isc-.",
+  "ctx": "src/app.html:1758"
+ },
+ {
+  "s": "avere ou essere",
+  "ctx": "src/app.html:1760"
+ },
+ {
+  "s": "essere ou avere",
+  "ctx": "src/app.html:1760"
+ },
+ {
+  "s": "Participe passé",
+  "ctx": "src/app.html:1760"
+ },
+ {
+  "s": "Gérondif",
+  "ctx": "src/app.html:1760"
+ },
+ {
+  "s": "Les deux auxiliaires existent. En général : <em>avere</em> quand le verbe a un complément d'objet (<em>ho finito il lavoro</em>), <em>essere</em> quand il n'en a pas (<em>il film è finito</em>). Les tableaux montrent l'auxiliaire le plus courant.",
+  "ctx": "src/app.html:1761"
+ },
+ {
+  "s": "Les deux auxiliaires existent. En général : ",
+  "ctx": "src/app.html:1761 (fragment)"
+ },
+ {
+  "s": " quand le verbe a un complément d'objet (",
+  "ctx": "src/app.html:1761 (fragment)"
+ },
+ {
+  "s": " quand il n'en a pas (",
+  "ctx": "src/app.html:1761 (fragment)"
+ },
+ {
+  "s": "il film è finito",
+  "ctx": "src/app.html:1761 (fragment)"
+ },
+ {
+  "s": "). Les tableaux montrent l'auxiliaire le plus courant.",
+  "ctx": "src/app.html:1761 (fragment)"
+ },
+ {
+  "s": "Au passé, ce verbe prend l'auxiliaire du verbe qui le suit : <em>ho dovuto lavorare</em>, mais <em>sono dovuto partire</em>.",
+  "ctx": "src/app.html:1762"
+ },
+ {
+  "s": "Au passé, ce verbe prend l'auxiliaire du verbe qui le suit : ",
+  "ctx": "src/app.html:1762 (fragment)"
+ },
+ {
+  "s": ", mais ",
+  "ctx": "src/app.html:1762 (fragment)"
+ },
+ {
+  "s": "Tous les temps",
+  "ctx": "src/app.html:1763"
+ },
+ {
+  "s": "impératif",
+  "ctx": "src/app.html:1773"
+ },
+ {
+  "s": "Pas d'impératif en usage pour ce verbe.",
+  "ctx": "src/app.html:1773"
+ },
+ {
+  "s": "Négatif avec tu :",
+  "ctx": "src/app.html:1773 (morceau)"
+ },
+ {
+  "s": "Négatif avec tu : {0}.",
+  "ctx": "src/app.html:1773"
+ },
+ {
+  "s": "mots du jour",
+  "ctx": "src/app.html:1789 (morceau)"
+ },
+ {
+  "s": "Réviser les {0} mots du jour",
+  "ctx": "src/app.html:1789"
+ },
+ {
+  "s": "Réviser le mot du jour",
+  "ctx": "src/app.html:1789"
+ },
+ {
+  "s": " mots à garder sous la main.",
+  "ctx": "src/app.html:1790"
+ },
+ {
+  "s": " mot à garder sous la main.",
+  "ctx": "src/app.html:1790"
+ },
+ {
+  "s": "Chaque mot revient en révision à intervalles croissants (1, 3, 7, 14 puis 30 jours) et reste ici tant que tu ne le retires pas.",
+  "ctx": "src/app.html:1790 (morceau)"
+ },
+ {
+  "s": "{0}{1} Chaque mot revient en révision à intervalles croissants (1, 3, 7, 14 puis 30 jours) et reste ici tant que tu ne le retires pas.",
+  "ctx": "src/app.html:1790"
+ },
+ {
+  "s": "Ton carnet est vide. Les mots que tu marques « À revoir » sur les cartes, ou que tu rates au quiz, viendront s'y ranger. Tu peux aussi en ajouter à la main.",
+  "ctx": "src/app.html:1790"
+ },
+ {
+  "s": "à réviser",
+  "ctx": "src/app.html:1795"
+ },
+ {
+  "s": "dans {0} j",
+  "ctx": "src/app.html:1795"
+ },
+ {
+  "s": "Écouter {0}",
+  "ctx": "src/app.html:1796"
+ },
+ {
+  "s": "Retirer {0} du carnet",
+  "ctx": "src/app.html:1797"
+ },
+ {
+  "s": "Ajouter un mot",
+  "ctx": "src/app.html:1801"
+ },
+ {
+  "s": "Français",
+  "ctx": "src/app.html:1802"
+ },
+ {
+  "s": "Me tester sur mon carnet",
+  "ctx": "src/app.html:1808"
+ },
+ {
+  "s": "Réglages",
+  "ctx": "src/app.html:1817"
+ },
+ {
+  "s": "Français → {0}",
+  "ctx": "src/app.html:1821"
+ },
+ {
+  "s": "{0} → français",
+  "ctx": "src/app.html:1821"
+ },
+ {
+  "s": "Mots",
+  "ctx": "src/app.html:1822"
+ },
+ {
+  "s": "Mots vus (",
+  "ctx": "src/app.html:1822 (morceau)"
+ },
+ {
+  "s": "Mots vus ({0})",
+  "ctx": "src/app.html:1822"
+ },
+ {
+  "s": "Tout le cours (",
+  "ctx": "src/app.html:1822 (morceau)"
+ },
+ {
+  "s": "Tout le cours ({0})",
+  "ctx": "src/app.html:1822"
+ },
+ {
+  "s": "Tous les mots",
+  "ctx": "src/app.html:1823"
+ },
+ {
+  "s": "Tu n'as pas encore parcouru de cartes de vocabulaire : le quiz piochera dans tout le cours.",
+  "ctx": "src/app.html:1824"
+ },
+ {
+  "s": "Lancer le quiz",
+  "ctx": "src/app.html:1825"
+ },
+ {
+  "s": "Révision · ",
+  "ctx": "src/app.html:1830"
+ },
+ {
+  "s": "Écouter le mot",
+  "ctx": "src/app.html:1841"
+ },
+ {
+  "s": "Quiz terminé",
+  "ctx": "src/app.html:1845"
+ },
+ {
+  "s": " Les mots ratés sont rangés dans ton carnet.",
+  "ctx": "src/app.html:1846"
+ },
+ {
+  "s": " Aucun mot à revoir.",
+  "ctx": "src/app.html:1846"
+ },
+ {
+  "s": "{0} bonnes réponses sur {1}.{2}",
+  "ctx": "src/app.html:1846"
+ },
+ {
+  "s": "Changer les réglages",
+  "ctx": "src/app.html:1848"
+ },
+ {
+  "s": "Continuer la révision",
+  "ctx": "src/app.html:1849"
+ },
+ {
+  "s": "Fais glisser le tableau pour voir la suite →",
+  "ctx": "src/app.html:1853"
+ },
+ {
+  "s": "Essaie de traduire chaque mot avant de retourner la carte.",
+  "ctx": "src/app.html:1855"
+ },
+ {
+  "s": "Passer le vocabulaire",
+  "ctx": "src/app.html:1857"
+ },
+ {
+  "s": "Voir la traduction",
+  "ctx": "src/app.html:1861"
+ },
+ {
+  "s": "À revoir",
+  "ctx": "src/app.html:1863"
+ },
+ {
+  "s": "Je le savais",
+  "ctx": "src/app.html:1863"
+ },
+ {
+  "s": "Ta réponse",
+  "ctx": "src/app.html:1873"
+ },
+ {
+  "s": "Réponse prévue : <b>",
+  "ctx": "src/app.html:1880 (morceau)"
+ },
+ {
+  "s": "Réponse prévue : ",
+  "ctx": "src/app.html:1880 (morceau) (fragment)"
+ },
+ {
+  "s": "Juste aussi ! {0} Réponse prévue : <b>{1}</b>.",
+  "ctx": "src/app.html:1880"
+ },
+ {
+  "s": "Juste aussi ! {0} Réponse prévue : ",
+  "ctx": "src/app.html:1880 (fragment)"
+ },
+ {
+  "s": "Réponse : <b>",
+  "ctx": "src/app.html:1881 (morceau)"
+ },
+ {
+  "s": "Réponse : ",
+  "ctx": "src/app.html:1881 (morceau) (fragment)"
+ },
+ {
+  "s": "Attention aux lettres finales. ",
+  "ctx": "src/app.html:1881"
+ },
+ {
+  "s": "Attention à l'accent. ",
+  "ctx": "src/app.html:1881"
+ },
+ {
+  "s": "Réponse : <b>{0}</b>. {1}{2}",
+  "ctx": "src/app.html:1881"
+ },
+ {
+  "s": "Remets les mots dans l'ordre pour traduire :",
+  "ctx": "src/app.html:1885"
+ },
+ {
+  "s": "Ta phrase",
+  "ctx": "src/app.html:1886"
+ },
+ {
+  "s": "Réponse : <b>{0}</b>",
+  "ctx": "src/app.html:1894"
+ },
+ {
+  "s": "Associe chaque mot à sa traduction.",
+  "ctx": "src/app.html:1895"
+ },
+ {
+  "s": "{0} erreur{1} en chemin.",
+  "ctx": "src/app.html:1900"
+ },
+ {
+  "s": "Lis le dialogue. Touche un mot pour le traduire et le ranger dans ton carnet. Affiche la traduction complète seulement si tu bloques, puis réponds aux trois questions.",
+  "ctx": "src/app.html:1905"
+ },
+ {
+  "s": "Afficher la traduction",
+  "ctx": "src/app.html:1909"
+ },
+ {
+  "s": "Passer aux questions",
+  "ctx": "src/app.html:1909"
+ },
+ {
+  "s": "Masquer la traduction",
+  "ctx": "src/app.html:1910"
+ },
+ {
+  "s": "L'app n'est pas encore reliée à son serveur : il manque l'adresse Supabase et la clé publique dans config.js. Le guide de mise en ligne explique où les trouver.",
+  "ctx": "web/js/shim.js:23"
+ },
+ {
+  "s": "L'app n'a pas pu se charger complètement : le réseau est sans doute trop faible. Vérifie ta connexion, puis réessaie.",
+  "ctx": "web/js/shim.js:29"
+ },
+ {
+  "s": "Pas de réseau.",
+  "ctx": "web/js/shim.js:50"
+ },
+ {
+  "s": "Annulé.",
+  "ctx": "web/js/shim.js:73"
+ },
+ {
+  "s": "Pas de réponse.",
+  "ctx": "web/js/shim.js:111"
+ },
+ {
+  "s": "Réponse vide.",
+  "ctx": "web/js/shim.js:136"
+ },
+ {
+  "s": "Impossible de charger l'app. Vérifie le réseau, puis recharge la page.",
+  "ctx": "web/js/shim.js:280"
+ },
+ {
+  "s": "E-mail ou mot de passe incorrect.",
+  "ctx": "web/js/shim.js:293"
+ },
+ {
+  "s": "Un compte existe déjà avec cette adresse. Connecte-toi.",
+  "ctx": "web/js/shim.js:294"
+ },
+ {
+  "s": "Les inscriptions sont fermées pour l'instant. Demande une invitation au créateur de l'app.",
+  "ctx": "web/js/shim.js:295"
+ },
+ {
+  "s": "Aucun compte avec cette adresse.",
+  "ctx": "web/js/shim.js:296"
+ },
+ {
+  "s": "Confirme d'abord ton adresse avec l'e-mail reçu.",
+  "ctx": "web/js/shim.js:297"
+ },
+ {
+  "s": "L'envoi d'e-mails n'est pas activé sur l'app. Demande un code au créateur de l'app.",
+  "ctx": "web/js/shim.js:298"
+ },
+ {
+  "s": "Trop de tentatives. Patiente une minute, puis réessaie.",
+  "ctx": "web/js/shim.js:299"
+ },
+ {
+  "s": "Mot de passe trop court : 8 caractères au moins.",
+  "ctx": "web/js/shim.js:300"
+ },
+ {
+  "s": "Cette adresse e-mail ne semble pas valide.",
+  "ctx": "web/js/shim.js:301"
+ },
+ {
+  "s": "Ce code n'est pas valable ou a expiré.",
+  "ctx": "web/js/shim.js:302"
+ },
+ {
+  "s": "Pas de réseau. Vérifie ta connexion, puis réessaie.",
+  "ctx": "web/js/shim.js:303"
+ },
+ {
+  "s": "Ça n'a pas marché. Réessaie dans un moment.",
+  "ctx": "web/js/shim.js:304"
+ },
+ {
+  "s": "l'hébreu",
+  "ctx": "web/js/shim.js:308"
+ },
+ {
+  "s": "Étape {0} sur 6",
+  "ctx": "web/js/shim.js:323"
+ },
+ {
+  "s": "L'italien, l'espagnol ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute.",
+  "ctx": "web/js/shim.js:339"
+ },
+ {
+  "s": "J'ai déjà un compte",
+  "ctx": "web/js/shim.js:341"
+ },
+ {
+  "s": "Quelle langue veux-tu apprendre ?",
+  "ctx": "web/js/shim.js:357"
+ },
+ {
+  "s": "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression.",
+  "ctx": "web/js/shim.js:357"
+ },
+ {
+  "s": "Ciao ! De zéro jusqu'au niveau B1",
+  "ctx": "web/js/shim.js:359"
+ },
+ {
+  "s": "¡Hola! De zéro jusqu'au niveau B1",
+  "ctx": "web/js/shim.js:359"
+ },
+ {
+  "s": "Hébreu",
+  "ctx": "web/js/shim.js:359"
+ },
+ {
+  "s": "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront.",
+  "ctx": "web/js/shim.js:365"
+ },
+ {
+  "s": "Voyager en Israël",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Voyager en Espagne ou en Amérique latine",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Voyager en Italie",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Parler avec des amis ou de la famille",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Pour le travail",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "La culture : cinéma, musique, cuisine",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Pour le plaisir d'apprendre",
+  "ctx": "web/js/shim.js:367"
+ },
+ {
+  "s": "Tu en es où ?",
+  "ctx": "web/js/shim.js:373"
+ },
+ {
+  "s": "Résultat du test :",
+  "ctx": "web/js/shim.js:373 (morceau)"
+ },
+ {
+  "s": ". Tu peux encore choisir toi-même.",
+  "ctx": "web/js/shim.js:373 (morceau)"
+ },
+ {
+  "s": "Résultat du test : {0}. Tu peux encore choisir toi-même.",
+  "ctx": "web/js/shim.js:373"
+ },
+ {
+  "s": "Fais le test, ou choisis toi-même. Tu pourras changer de niveau à tout moment.",
+  "ctx": "web/js/shim.js:373"
+ },
+ {
+  "s": "<b>Faire le test de niveau</b><small>12 questions, 3 minutes</small>",
+  "ctx": "web/js/shim.js:376"
+ },
+ {
+  "s": "Faire le test de niveau",
+  "ctx": "web/js/shim.js:376 (fragment)"
+ },
+ {
+  "s": "ou choisis toi-même",
+  "ctx": "web/js/shim.js:378"
+ },
+ {
+  "s": "Je ne connais pas l'alphabet",
+  "ctx": "web/js/shim.js:382"
+ },
+ {
+  "s": "On commence par les lettres, tout doucement",
+  "ctx": "web/js/shim.js:382"
+ },
+ {
+  "s": "Je lis un peu, avec les voyelles",
+  "ctx": "web/js/shim.js:382"
+ },
+ {
+  "s": "On reprend à la lecture sans voyelles",
+  "ctx": "web/js/shim.js:382"
+ },
+ {
+  "s": "Je lis et je connais quelques mots",
+  "ctx": "web/js/shim.js:383"
+ },
+ {
+  "s": "On commence au niveau A1",
+  "ctx": "web/js/shim.js:383"
+ },
+ {
+  "s": "Je me débrouille",
+  "ctx": "web/js/shim.js:383"
+ },
+ {
+  "s": "Je parle déjà au présent (A2)",
+  "ctx": "web/js/shim.js:383"
+ },
+ {
+  "s": "En hébreu, on te dit…",
+  "ctx": "web/js/shim.js:384"
+ },
+ {
+  "s": "au masculin",
+  "ctx": "web/js/shim.js:385"
+ },
+ {
+  "s": "au féminin",
+  "ctx": "web/js/shim.js:385"
+ },
+ {
+  "s": "Je débute",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Quelques mots, pas plus",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Je connais les bases",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Je me présente, je commande un café",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Je tiens une conversation simple (A2)",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Je suis à l'aise",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Je parle de beaucoup de sujets (B1)",
+  "ctx": "web/js/shim.js:387"
+ },
+ {
+  "s": "Question {0}{1} · palier {2}{3} sur {4}",
+  "ctx": "web/js/shim.js:425"
+ },
+ {
+  "s": "Je ne sais pas",
+  "ctx": "web/js/shim.js:440"
+ },
+ {
+  "s": "Ton niveau",
+  "ctx": "web/js/shim.js:452"
+ },
+ {
+  "s": "Joli résultat !",
+  "ctx": "web/js/shim.js:453"
+ },
+ {
+  "s": "C'est parti !",
+  "ctx": "web/js/shim.js:453"
+ },
+ {
+  "s": "Tu pourras changer ton point de départ à tout moment.",
+  "ctx": "web/js/shim.js:453 (morceau)"
+ },
+ {
+  "s": "{0} Tu pourras changer ton point de départ à tout moment.",
+  "ctx": "web/js/shim.js:453"
+ },
+ {
+  "s": "Combien de temps par jour ?",
+  "ctx": "web/js/shim.js:467"
+ },
+ {
+  "s": "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps.",
+  "ctx": "web/js/shim.js:467"
+ },
+ {
+  "s": "Régulier",
+  "ctx": "web/js/shim.js:469"
+ },
+ {
+  "s": "Sérieux",
+  "ctx": "web/js/shim.js:469"
+ },
+ {
+  "s": "30 minutes et plus",
+  "ctx": "web/js/shim.js:469"
+ },
+ {
+  "s": "Comment tu t'appelles ?",
+  "ctx": "web/js/shim.js:474"
+ },
+ {
+  "s": "C'est le prénom que verront tes amis dans l'app.",
+  "ctx": "web/js/shim.js:474"
+ },
+ {
+  "s": "Ton prénom",
+  "ctx": "web/js/shim.js:476"
+ },
+ {
+  "s": "Crée ton compte,",
+  "ctx": "web/js/shim.js:484 (morceau)"
+ },
+ {
+  "s": "Crée ton compte, {0}",
+  "ctx": "web/js/shim.js:484"
+ },
+ {
+  "s": "Pour retrouver ta progression sur tous tes appareils.",
+  "ctx": "web/js/shim.js:484"
+ },
+ {
+  "s": "Mot de passe (8 caractères au moins)",
+  "ctx": "web/js/shim.js:487"
+ },
+ {
+  "s": "Créer mon compte",
+  "ctx": "web/js/shim.js:488"
+ },
+ {
+  "s": "Ta progression reste privée. Tes amis voient seulement ton prénom, tes leçons terminées et ta série.",
+  "ctx": "web/js/shim.js:490"
+ },
+ {
+  "s": "Cette adresse e-mail ne semble pas complète.",
+  "ctx": "web/js/shim.js:493"
+ },
+ {
+  "s": "Création du compte…",
+  "ctx": "web/js/shim.js:495"
+ },
+ {
+  "s": "Vérifie tes e-mails",
+  "ctx": "web/js/shim.js:502"
+ },
+ {
+  "s": "Un lien de confirmation est parti à",
+  "ctx": "web/js/shim.js:502 (morceau)"
+ },
+ {
+  "s": ". Ouvre-le sur ce téléphone pour activer ton compte.",
+  "ctx": "web/js/shim.js:502 (morceau)"
+ },
+ {
+  "s": "Un lien de confirmation est parti à {0}. Ouvre-le sur ce téléphone pour activer ton compte.",
+  "ctx": "web/js/shim.js:502"
+ },
+ {
+  "s": "J'ai confirmé, me connecter",
+  "ctx": "web/js/shim.js:503"
+ },
+ {
+  "s": "Mot de passe",
+  "ctx": "web/js/shim.js:512"
+ },
+ {
+  "s": "Mot de passe oublié ?",
+  "ctx": "web/js/shim.js:514"
+ },
+ {
+  "s": "Créer un compte",
+  "ctx": "web/js/shim.js:515"
+ },
+ {
+  "s": "Mot de passe oublié",
+  "ctx": "web/js/shim.js:531"
+ },
+ {
+  "s": "Reçois un lien par e-mail, ou entre le code que t'a donné le créateur de l'app.",
+  "ctx": "web/js/shim.js:531"
+ },
+ {
+  "s": "Recevoir un lien par e-mail",
+  "ctx": "web/js/shim.js:534"
+ },
+ {
+  "s": "Code reçu",
+  "ctx": "web/js/shim.js:535"
+ },
+ {
+  "s": "Continuer avec le code",
+  "ctx": "web/js/shim.js:536"
+ },
+ {
+  "s": "Entre d'abord ton adresse e-mail.",
+  "ctx": "web/js/shim.js:539"
+ },
+ {
+  "s": "Si un compte existe, un e-mail est parti à",
+  "ctx": "web/js/shim.js:542 (morceau)"
+ },
+ {
+  "s": ". Ouvre le lien sur ce téléphone.",
+  "ctx": "web/js/shim.js:542 (morceau)"
+ },
+ {
+  "s": "Si un compte existe, un e-mail est parti à {0}. Ouvre le lien sur ce téléphone.",
+  "ctx": "web/js/shim.js:542"
+ },
+ {
+  "s": "Le code compte au moins 6 chiffres.",
+  "ctx": "web/js/shim.js:547"
+ },
+ {
+  "s": "Vérification…",
+  "ctx": "web/js/shim.js:548"
+ },
+ {
+  "s": "Nouveau mot de passe",
+  "ctx": "web/js/shim.js:559"
+ },
+ {
+  "s": "Choisis-le bien : ton téléphone pourra le retenir.",
+  "ctx": "web/js/shim.js:559"
+ },
+ {
+  "s": "Enregistrer et entrer",
+  "ctx": "web/js/shim.js:563"
+ },
+ {
+  "s": "8 caractères au moins.",
+  "ctx": "web/js/shim.js:566"
+ },
+ {
+  "s": "Ce lien a expiré ou a déjà servi. Connecte-toi, ou demande un nouveau lien.",
+  "ctx": "web/js/shim.js:585"
+ },
+ {
+  "s": "Leçons",
+  "ctx": "web/js/ui.js:34"
+ },
+ {
+  "s": "Ma journée",
+  "ctx": "web/js/ui.js:68"
+ },
+ {
+  "s": "sa journée, ses habitudes, ce qu'il fait aujourd'hui",
+  "ctx": "web/js/ui.js:68"
+ },
+ {
+  "s": "préparer un voyage",
+  "ctx": "web/js/ui.js:68 (morceau)"
+ },
+ {
+  "s": ": villes, transports, hôtel, restaurants",
+  "ctx": "web/js/ui.js:68 (morceau)"
+ },
+ {
+  "s": "préparer un voyage {0} : villes, transports, hôtel, restaurants",
+  "ctx": "web/js/ui.js:68"
+ },
+ {
+  "s": "Le travail",
+  "ctx": "web/js/ui.js:69"
+ },
+ {
+  "s": "son travail, ses collègues, ses projets",
+  "ctx": "web/js/ui.js:69"
+ },
+ {
+  "s": "cuisine, cinéma, musique, art et histoire (",
+  "ctx": "web/js/ui.js:69 (morceau)"
+ },
+ {
+  "s": "cuisine, cinéma, musique, art et histoire ({0})",
+  "ctx": "web/js/ui.js:69"
+ },
+ {
+  "s": "Les amis et la famille",
+  "ctx": "web/js/ui.js:69"
+ },
+ {
+  "s": "ses proches, ce qu'ils font, les sorties entre amis",
+  "ctx": "web/js/ui.js:69"
+ },
+ {
+  "s": "Après « {0} »",
+  "ctx": "web/js/ui.js:81"
+ },
+ {
+  "s": ", à ton niveau",
+  "ctx": "web/js/ui.js:82 (morceau)"
+ },
+ {
+  "s": "Avec {0}, à ton niveau",
+  "ctx": "web/js/ui.js:82"
+ },
+ {
+  "s": "<b></b><small>mots</small>",
+  "ctx": "web/js/ui.js:88"
+ },
+ {
+  "s": "mots",
+  "ctx": "web/js/ui.js:88 (fragment)"
+ },
+ {
+  "s": "On commence par les bases, tout doucement",
+  "ctx": "web/js/ui.js:108"
+ },
+ {
+  "s": "Je me présente, je parle de mon quotidien",
+  "ctx": "web/js/ui.js:108"
+ },
+ {
+  "s": "Je parle au présent, je veux raconter (A2)",
+  "ctx": "web/js/ui.js:109"
+ },
+ {
+  "s": "Je raconte au passé, je veux nuancer (B1)",
+  "ctx": "web/js/ui.js:109"
+ },
+ {
+  "s": ". Changer de langue",
+  "ctx": "web/js/ui.js:114 (morceau)"
+ },
+ {
+  "s": "Langue apprise : {0}. Changer de langue",
+  "ctx": "web/js/ui.js:114"
+ },
+ {
+  "s": "Langue en cours ·",
+  "ctx": "web/js/ui.js:140 (morceau)"
+ },
+ {
+  "s": "Langue en cours · {0} / {1} leçons",
+  "ctx": "web/js/ui.js:140"
+ },
+ {
+  "s": "Pas encore commencé",
+  "ctx": "web/js/ui.js:140"
+ },
+ {
+  "s": "Par où commencer ?",
+  "ctx": "web/js/ui.js:150"
+ },
+ {
+  "s": "12 questions, 3 minutes : l'app choisit pour toi",
+  "ctx": "web/js/ui.js:156"
+ },
+ {
+  "s": "Ton parcours :",
+  "ctx": "web/js/ui.js:169 (morceau)"
+ },
+ {
+  "s": "Ton parcours : {0} leçon{1} sur {2}",
+  "ctx": "web/js/ui.js:169"
+ },
+ {
+  "s": "Nouveau parcours : {0} leçons",
+  "ctx": "web/js/ui.js:169"
+ },
+ {
+  "s": "L'hébreu tutoie différemment un homme et une femme. Les personnages s'adresseront à toi ainsi.",
+  "ctx": "web/js/ui.js:174"
+ },
+ {
+  "s": "Série : {0}{1} d'affilée",
+  "ctx": "web/js/ui.js:183"
+ },
+ {
+  "s": "Objectif du jour :",
+  "ctx": "web/js/ui.js:185 (morceau)"
+ },
+ {
+  "s": "Objectif du jour : {0} réponses sur {1}",
+  "ctx": "web/js/ui.js:185"
+ },
+ {
+  "s": "Parler avec…",
+  "ctx": "web/js/ui.js:199"
+ },
+ {
+  "s": "Ta journée",
+  "ctx": "web/js/ui.js:216"
+ },
+ {
+  "s": "Révision",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": " mots à revoir",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": " mot à revoir",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": "Carnet à jour",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": "2 minutes, au bon moment pour les retenir",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": "Rien à revoir aujourd'hui",
+  "ctx": "web/js/ui.js:234"
+ },
+ {
+  "s": "Révision sur mesure",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": "Série du jour terminée",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": "Reprendre ma série",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": "Ta série du jour",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": " fautes à retravailler, avec Claude",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": " faute à retravailler, avec Claude",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": "Grammaire et mots, préparés par Claude",
+  "ctx": "web/js/ui.js:238"
+ },
+ {
+  "s": "Le mot du jour",
+  "ctx": "web/js/ui.js:243"
+ },
+ {
+  "s": "Écouter l'exemple",
+  "ctx": "web/js/ui.js:251"
+ },
+ {
+  "s": "Au carnet",
+  "ctx": "web/js/ui.js:252"
+ },
+ {
+  "s": "Défi oral · 2 min",
+  "ctx": "web/js/ui.js:258"
+ },
+ {
+  "s": "Ta leçon en cours",
+  "ctx": "web/js/ui.js:271"
+ },
+ {
+  "s": "Ta leçon du jour",
+  "ctx": "web/js/ui.js:271"
+ },
+ {
+  "s": "{0} · Unité {1} · {2} · {3}/{4}",
+  "ctx": "web/js/ui.js:272"
+ },
+ {
+  "s": "Commencer ma première leçon",
+  "ctx": "web/js/ui.js:274"
+ },
+ {
+  "s": "Tu as choisi de commencer ici (",
+  "ctx": "web/js/ui.js:279 (morceau)"
+ },
+ {
+  "s": "Tu as choisi de commencer ici ({0}). ",
+  "ctx": "web/js/ui.js:279"
+ },
+ {
+  "s": "Commencer plutôt par le début",
+  "ctx": "web/js/ui.js:280"
+ },
+ {
+  "s": "Voir tout le voyage (",
+  "ctx": "web/js/ui.js:283 (morceau)"
+ },
+ {
+  "s": "Voir tout le voyage ({0}/{1})",
+  "ctx": "web/js/ui.js:283"
+ },
+ {
+  "s": "Programme terminé",
+  "ctx": "web/js/ui.js:289"
+ },
+ {
+  "s": "Tu as fait toutes les leçons du programme. Demande une leçon sur mesure sur le sujet de ton choix.",
+  "ctx": "web/js/ui.js:289"
+ },
+ {
+  "s": "Créer une leçon sur mesure",
+  "ctx": "web/js/ui.js:290"
+ },
+ {
+  "s": "{0} · Unité {1} · {2}",
+  "ctx": "web/js/ui.js:303"
+ },
+ {
+  "s": "leçon(s) faite(s) sur",
+  "ctx": "web/js/ui.js:309 (morceau)"
+ },
+ {
+  "s": "Unité {0} : {1} leçon(s) faite(s) sur {2}",
+  "ctx": "web/js/ui.js:309"
+ },
+ {
+  "s": "Préparer la leçon",
+  "ctx": "web/js/ui.js:315"
+ },
+ {
+  "s": "Préparer quand le réseau revient",
+  "ctx": "web/js/ui.js:315"
+ },
+ {
+  "s": "Claude l'écrit pour toi en deux à trois minutes.",
+  "ctx": "web/js/ui.js:317"
+ },
+ {
+  "s": "La leçon se prépare avec l'assistant, qui a besoin du réseau.",
+  "ctx": "web/js/ui.js:317"
+ },
+ {
+  "s": "Explications, vocabulaire, exercices, puis un petit dialogue. Ensuite, tu pourras parler avec",
+  "ctx": "web/js/ui.js:318 (morceau)"
+ },
+ {
+  "s": "et les autres.",
+  "ctx": "web/js/ui.js:318 (morceau)"
+ },
+ {
+  "s": "Explications, vocabulaire, exercices, puis un petit dialogue. Ensuite, tu pourras parler avec {0} et les autres.",
+  "ctx": "web/js/ui.js:318"
+ },
+ {
+  "s": "Explications, exercices et dialogue, environ 20 minutes.",
+  "ctx": "web/js/ui.js:318"
+ },
+ {
+  "s": "Voir tout le parcours (",
+  "ctx": "web/js/ui.js:319 (morceau)"
+ },
+ {
+  "s": "Voir tout le parcours ({0}/{1})",
+  "ctx": "web/js/ui.js:319"
+ },
+ {
+  "s": "Tes amis te verront sous ce prénom.",
+  "ctx": "web/js/ui.js:326"
+ },
+ {
+  "s": "Unités",
+  "ctx": "web/js/ui.js:394"
+ },
+ {
+  "s": " · en cours",
+  "ctx": "web/js/ui.js:398"
+ },
+ {
+  "s": "Unité {0}{1}",
+  "ctx": "web/js/ui.js:398"
+ },
+ {
+  "s": " lumières",
+  "ctx": "web/js/ui.js:409"
+ },
+ {
+  "s": " lumière",
+  "ctx": "web/js/ui.js:409"
+ },
+ {
+  "s": "{0} · Unité {1} · {2}{3} sur {4}",
+  "ctx": "web/js/ui.js:409"
+ },
+ {
+  "s": "VOYAGE TERMINÉ",
+  "ctx": "web/js/ui.js:417"
+ },
+ {
+  "s": "Unité {0} validée",
+  "ctx": "web/js/ui.js:417"
+ },
+ {
+  "s": "% de réussite en moyenne",
+  "ctx": "web/js/ui.js:418 (morceau)"
+ },
+ {
+  "s": "{0} % de réussite en moyenne",
+  "ctx": "web/js/ui.js:418"
+ },
+ {
+  "s": "Unité suivante :",
+  "ctx": "web/js/ui.js:420 (morceau)"
+ },
+ {
+  "s": "Unité suivante : {0}",
+  "ctx": "web/js/ui.js:420"
+ },
+ {
+  "s": "À préparer",
+  "ctx": "web/js/ui.js:430"
+ },
+ {
+  "s": "Bientôt",
+  "ctx": "web/js/ui.js:430"
+ },
+ {
+  "s": "{0} billets validés",
+  "ctx": "web/js/ui.js:437"
+ },
+ {
+  "s": "1 billet validé",
+  "ctx": "web/js/ui.js:437"
+ },
+ {
+  "s": "{0} · LEÇON {1}",
+  "ctx": "web/js/ui.js:455"
+ },
+ {
+  "s": "ÉTAPE",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "Le cours",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "ÉCRAN",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "{0}{1} sur {2}",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "{0} écrans",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "ÉTAT",
+  "ctx": "web/js/ui.js:467"
+ },
+ {
+  "s": "DURÉE",
+  "ctx": "web/js/ui.js:468"
+ },
+ {
+  "s": "2 à 3 min",
+  "ctx": "web/js/ui.js:468"
+ },
+ {
+  "s": "Préparer avec le réseau",
+  "ctx": "web/js/ui.js:473"
+ },
+ {
+  "s": "Sommaire de la leçon",
+  "ctx": "web/js/ui.js:475"
+ },
+ {
+  "s": "{0} sur {1} terminée{2}",
+  "ctx": "web/js/ui.js:493"
+ },
+ {
+  "s": "Tout ce que tu as fait",
+  "ctx": "web/js/ui.js:493"
+ },
+ {
+  "s": "Unité {0}",
+  "ctx": "web/js/ui.js:510"
+ },
+ {
+  "s": "{0} leçons sur {1}",
+  "ctx": "web/js/ui.js:511"
+ },
+ {
+  "s": "En cours ·",
+  "ctx": "web/js/ui.js:516 (morceau)"
+ },
+ {
+  "s": "En cours · {0} %",
+  "ctx": "web/js/ui.js:516"
+ },
+ {
+  "s": "Claude la prépare à l'ouverture",
+  "ctx": "web/js/ui.js:516"
+ },
+ {
+  "s": "Prête · environ ",
+  "ctx": "web/js/ui.js:516"
+ },
+ {
+  "s": "Prête · ",
+  "ctx": "web/js/ui.js:516"
+ },
+ {
+  "s": "Une leçon sur mesure",
+  "ctx": "web/js/ui.js:525"
+ },
+ {
+  "s": "Décris un sujet, Claude l'écrit à ton niveau.",
+  "ctx": "web/js/ui.js:525"
+ },
+ {
+  "s": "Décris un sujet : la leçon se préparera quand le réseau reviendra.",
+  "ctx": "web/js/ui.js:525"
+ },
+ {
+  "s": "Sujet de la leçon",
+  "ctx": "web/js/ui.js:532"
+ },
+ {
+  "s": "Louer un appart à Rome",
+  "ctx": "web/js/ui.js:532"
+ },
+ {
+  "s": "À faire maintenant",
+  "ctx": "web/js/ui.js:549"
+ },
+ {
+  "s": "Fiche de {0}",
+  "ctx": "web/js/ui.js:556"
+ },
+ {
+  "s": "Ta prof",
+  "ctx": "web/js/ui.js:558"
+ },
+ {
+  "s": "Profil de {0}",
+  "ctx": "web/js/ui.js:567"
+ },
+ {
+  "s": "Crédits photos",
+  "ctx": "web/js/ui.js:571"
+ },
+ {
+  "s": "Pas encore de photos pour cette langue.",
+  "ctx": "web/js/ui.js:574"
+ },
+ {
+  "s": "Les conversations passent par Claude, indisponible pour l'instant. Vérifie le réseau.",
+  "ctx": "web/js/ui.js:579"
+ },
+ {
+  "s": "Choisis quelqu'un à qui parler, ou un thème.",
+  "ctx": "web/js/ui.js:580"
+ },
+ {
+  "s": "Tes personnages",
+  "ctx": "web/js/ui.js:581"
+ },
+ {
+  "s": "Thèmes",
+  "ctx": "web/js/ui.js:586"
+ },
+ {
+  "s": "Filtrer les thèmes",
+  "ctx": "web/js/ui.js:587"
+ },
+ {
+  "s": " thèmes",
+  "ctx": "web/js/ui.js:592"
+ },
+ {
+  "s": " thème",
+  "ctx": "web/js/ui.js:592"
+ },
+ {
+  "s": "Voir les {0} autres thèmes",
+  "ctx": "web/js/ui.js:600"
+ },
+ {
+  "s": "La leçon du jour ou tes mots, à l'oral, sans regarder l'écran",
+  "ctx": "web/js/ui.js:604"
+ },
+ {
+  "s": "Photos : Wikimedia Commons · crédits",
+  "ctx": "web/js/ui.js:606"
+ },
+ {
+  "s": "Portrait de {0}",
+  "ctx": "web/js/ui.js:615"
+ },
+ {
+  "s": "Écouter sa voix",
+  "ctx": "web/js/ui.js:622"
+ },
+ {
+  "s": "Sa façon d'être",
+  "ctx": "web/js/ui.js:626"
+ },
+ {
+  "s": "sait de toi",
+  "ctx": "web/js/ui.js:628 (morceau)"
+ },
+ {
+  "s": "Ce qu'{0} sait de toi",
+  "ctx": "web/js/ui.js:628"
+ },
+ {
+  "s": "Rien pour l'instant : parle-",
+  "ctx": "web/js/ui.js:630 (morceau)"
+ },
+ {
+  "s": "Rien pour l'instant : parle-{0} de toi, {1} s'en souviendra.",
+  "ctx": "web/js/ui.js:630"
+ },
+ {
+  "s": "· la dernière",
+  "ctx": "web/js/ui.js:631 (morceau)"
+ },
+ {
+  "s": "{0}{1} · la dernière {2}",
+  "ctx": "web/js/ui.js:631"
+ },
+ {
+  "s": "Parler avec {0}",
+  "ctx": "web/js/ui.js:632"
+ },
+ {
+  "s": "dans ton carnet",
+  "ctx": "web/js/ui.js:640 (morceau)"
+ },
+ {
+  "s": "{0}{1} dans ton carnet",
+  "ctx": "web/js/ui.js:640"
+ },
+ {
+  "s": "Révision espacée",
+  "ctx": "web/js/ui.js:644"
+ },
+ {
+  "s": " mots à revoir aujourd'hui",
+  "ctx": "web/js/ui.js:644"
+ },
+ {
+  "s": " mot à revoir aujourd'hui",
+  "ctx": "web/js/ui.js:644"
+ },
+ {
+  "s": "Chaque mot revient au bon moment.",
+  "ctx": "web/js/ui.js:645"
+ },
+ {
+  "s": "Lance un quiz pour t'entraîner quand même.",
+  "ctx": "web/js/ui.js:645"
+ },
+ {
+  "s": "Tes mots, à relire et à compléter",
+  "ctx": "web/js/ui.js:651"
+ },
+ {
+  "s": "Du français vers l'",
+  "ctx": "web/js/ui.js:652 (morceau)"
+ },
+ {
+  "s": "Du français vers l'{0}, ou l'inverse",
+  "ctx": "web/js/ui.js:652"
+ },
+ {
+  "s": "Écoute une phrase, écris-la",
+  "ctx": "web/js/ui.js:653"
+ },
+ {
+  "s": "Tous les verbes, à tous les temps",
+  "ctx": "web/js/ui.js:654"
+ },
+ {
+  "s": "Mots à l'oral",
+  "ctx": "web/js/ui.js:655"
+ },
+ {
+  "s": "Révise ton carnet en parlant, mains libres",
+  "ctx": "web/js/ui.js:655"
+ },
+ {
+  "s": "Réglages du compte",
+  "ctx": "web/js/ui.js:663"
+ },
+ {
+  "s": " · créateur de l'app",
+  "ctx": "web/js/ui.js:666"
+ },
+ {
+  "s": "Cette semaine entre amis",
+  "ctx": "web/js/ui.js:670"
+ },
+ {
+  "s": "réponses",
+  "ctx": "web/js/ui.js:670"
+ },
+ {
+  "s": "Inviter un ami",
+  "ctx": "web/js/ui.js:672"
+ },
+ {
+  "s": "avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici :",
+  "ctx": "web/js/ui.js:673 (morceau)"
+ },
+ {
+  "s": "Viens apprendre l'{0} avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : {1}",
+  "ctx": "web/js/ui.js:673"
+ },
+ {
+  "s": "Lien d'invitation copié. Colle-le dans un message.",
+  "ctx": "web/js/ui.js:674"
+ },
+ {
+  "s": "Partager ma série",
+  "ctx": "web/js/ui.js:676"
+ },
+ {
+  "s": "{0}{1} d'{2} d'affilée",
+  "ctx": "web/js/ui.js:676"
+ },
+ {
+  "s": "sur Italiano passo passo.",
+  "ctx": "web/js/ui.js:676 (morceau)"
+ },
+ {
+  "s": "{0} sur Italiano passo passo. {1}",
+  "ctx": "web/js/ui.js:676"
+ },
+ {
+  "s": "Copié.",
+  "ctx": "web/js/ui.js:676"
+ },
+ {
+  "s": "Test de niveau",
+  "ctx": "web/js/ui.js:679"
+ },
+ {
+  "s": "Dernier résultat :",
+  "ctx": "web/js/ui.js:679 (morceau)"
+ },
+ {
+  "s": ". Le refaire ajuste ton point de départ.",
+  "ctx": "web/js/ui.js:679 (morceau)"
+ },
+ {
+  "s": "Dernier résultat : {0}. Le refaire ajuste ton point de départ.",
+  "ctx": "web/js/ui.js:679"
+ },
+ {
+  "s": "12 questions pour savoir où commencer en",
+  "ctx": "web/js/ui.js:679 (morceau)"
+ },
+ {
+  "s": "12 questions pour savoir où commencer en {0}.",
+  "ctx": "web/js/ui.js:679"
+ },
+ {
+  "s": "Refaire le test",
+  "ctx": "web/js/ui.js:680"
+ },
+ {
+  "s": "Faire le test",
+  "ctx": "web/js/ui.js:680"
+ },
+ {
+  "s": "Objectif du jour",
+  "ctx": "web/js/ui.js:686"
+ },
+ {
+  "s": "Nombre de réponses par jour",
+  "ctx": "web/js/ui.js:686"
+ },
+ {
+  "s": "Point de départ",
+  "ctx": "web/js/ui.js:697"
+ },
+ {
+  "s": "Où commence ton parcours. Les leçons d'avant restent ouvertes.",
+  "ctx": "web/js/ui.js:697"
+ },
+ {
+  "s": "En lettres latines, sous chaque mot et chaque phrase en hébreu",
+  "ctx": "web/js/ui.js:702"
+ },
+ {
+  "s": "Affichée",
+  "ctx": "web/js/ui.js:703"
+ },
+ {
+  "s": "Masquée",
+  "ctx": "web/js/ui.js:703"
+ },
+ {
+  "s": "En hébreu, on te dit",
+  "ctx": "web/js/ui.js:707"
+ },
+ {
+  "s": "Les personnages s'adressent à toi au masculin ou au féminin",
+  "ctx": "web/js/ui.js:707"
+ },
+ {
+  "s": "Gérer les membres",
+  "ctx": "web/js/ui.js:712"
+ },
+ {
+  "s": "Un ami",
+  "ctx": "web/js/ui.js:722"
+ },
+ {
+  "s": "à l'instant",
+  "ctx": "web/js/ui.js:734"
+ },
+ {
+  "s": "Tes amis",
+  "ctx": "web/js/ui.js:760"
+ },
+ {
+  "s": "avec moi : des leçons courtes et des conversations à voix haute.",
+  "ctx": "web/js/ui.js:762 (morceau)"
+ },
+ {
+  "s": "Viens apprendre l'{0} avec moi : des leçons courtes et des conversations à voix haute. {1}",
+  "ctx": "web/js/ui.js:762"
+ },
+ {
+  "s": "Lien d'invitation copié.",
+  "ctx": "web/js/ui.js:762"
+ },
+ {
+  "s": "série de {0} jours",
+  "ctx": "web/js/ui.js:773"
+ },
+ {
+  "s": " leçons",
+  "ctx": "web/js/ui.js:777"
+ },
+ {
+  "s": " leçon",
+  "ctx": "web/js/ui.js:777"
+ },
+ {
+  "s": "{0}{1} cette semaine",
+  "ctx": "web/js/ui.js:777"
+ },
+ {
+  "s": "réponses cette semaine",
+  "ctx": "web/js/ui.js:777 (morceau)"
+ },
+ {
+  "s": "{0} réponses cette semaine",
+  "ctx": "web/js/ui.js:777"
+ },
+ {
+  "s": "une leçon",
+  "ctx": "web/js/ui.js:779"
+ },
+ {
+  "s": "Bravo envoyé à ",
+  "ctx": "web/js/ui.js:784"
+ },
+ {
+  "s": "Dire bravo à ",
+  "ctx": "web/js/ui.js:784"
+ },
+ {
+  "s": "Voir les {0} autres",
+  "ctx": "web/js/ui.js:794"
+ },
+ {
+  "s": "Invite des amis pour vous comparer chaque semaine.",
+  "ctx": "web/js/ui.js:804"
+ },
+ {
+  "s": "Le classement s'affichera avec du réseau.",
+  "ctx": "web/js/ui.js:806"
+ },
+ {
+  "s": "Écran précédent",
+  "ctx": "web/js/ui.js:813"
+ },
+ {
+  "s": "Quitter la leçon",
+  "ctx": "web/js/ui.js:818"
+ },
+ {
+  "s": "Reviendra en fin de leçon",
+  "ctx": "web/js/ui.js:845"
+ },
+ {
+  "s": "Pourquoi ? Demander à",
+  "ctx": "web/js/ui.js:846 (morceau)"
+ },
+ {
+  "s": "Pourquoi ? Demander à {0}",
+  "ctx": "web/js/ui.js:846"
+ },
+ {
+  "s": " étoiles",
+  "ctx": "web/js/ui.js:858"
+ },
+ {
+  "s": " étoile",
+  "ctx": "web/js/ui.js:858"
+ },
+ {
+  "s": "{0}{1} sur 3",
+  "ctx": "web/js/ui.js:858"
+ },
+ {
+  "s": "de réussite",
+  "ctx": "web/js/ui.js:864"
+ },
+ {
+  "s": "jours d'affilée",
+  "ctx": "web/js/ui.js:866"
+ },
+ {
+  "s": "jour d'affilée",
+  "ctx": "web/js/ui.js:866"
+ },
+ {
+  "s": "Unité {0} · {1}{2} sur {3}",
+  "ctx": "web/js/ui.js:872"
+ },
+ {
+  "s": "Vous avez déjà parlé",
+  "ctx": "web/js/dm.js:127 (morceau)"
+ },
+ {
+  "s": " fois",
+  "ctx": "web/js/dm.js:127"
+ },
+ {
+  "s": ", la dernière",
+  "ctx": "web/js/dm.js:127 (morceau)"
+ },
+ {
+  "s": ". Ce que vous vous êtes dit :",
+  "ctx": "web/js/dm.js:127 (morceau)"
+ },
+ {
+  "s": "Piste pour cette fois :",
+  "ctx": "web/js/dm.js:128 (morceau)"
+ },
+ {
+  "s": " Piste pour cette fois : {0}",
+  "ctx": "web/js/dm.js:128"
+ },
+ {
+  "s": "Ses progrès et ses difficultés :",
+  "ctx": "web/js/dm.js:128 (morceau)"
+ },
+ {
+  "s": " Ses progrès et ses difficultés : {0}",
+  "ctx": "web/js/dm.js:128"
+ },
+ {
+  "s": "Ne te présente pas à nouveau et ne repose pas les mêmes questions : reprends un fil, fais référence à ce qu'il t'a raconté, approfondis et fais-le aller plus loin (nouveaux sujets, questions plus riches, un peu plus de vocabulaire).",
+  "ctx": "web/js/dm.js:129 (morceau)"
+ },
+ {
+  "s": " Vous avez déjà parlé {0}{1}, la dernière {2}. Ce que vous vous êtes dit : {3}{4}{5} Ne te présente pas à nouveau et ne repose pas les mêmes questions : reprends un fil, fais référence à ce qu'il t'a raconté, approfondis et fais-le aller plus loin (nouveaux sujets, questions plus riches, un peu plus de vocabulaire).",
+  "ctx": "web/js/dm.js:127"
+ },
+ {
+  "s": "Avec {0}",
+  "ctx": "web/js/dm.js:134"
+ },
+ {
+  "s": ", qui discute en",
+  "ctx": "web/js/dm.js:140 (morceau)"
+ },
+ {
+  "s": "avec un élève francophone",
+  "ctx": "web/js/dm.js:140 (morceau)"
+ },
+ {
+  "s": "(jeu de rôle :",
+  "ctx": "web/js/dm.js:140 (morceau)"
+ },
+ {
+  "s": " (jeu de rôle : {0})",
+  "ctx": "web/js/dm.js:140"
+ },
+ {
+  "s": "Résumé des conversations précédentes avec",
+  "ctx": "web/js/dm.js:141 (morceau)"
+ },
+ {
+  "s": "se sont dit, en gardant l'essentiel des fois précédentes, 3 phrases au plus, en français\", \"suite\": \"une piste précise pour la prochaine conversation : une question à reprendre ou un sujet à approfondir\",",
+  "ctx": "web/js/dm.js:143 (morceau)"
+ },
+ {
+  "s": ". Points qu'il étudie :",
+  "ctx": "web/js/dm.js:166 (morceau)"
+ },
+ {
+  "s": " Il est encore dans les bases : reste au présent et aux structures simples, sauf s'il utilise lui-même un autre temps.",
+  "ctx": "web/js/dm.js:166"
+ },
+ {
+  "s": "Mots de son carnet à réutiliser quand c'est naturel :",
+  "ctx": "web/js/dm.js:166 (morceau)"
+ },
+ {
+  "s": " Mots de son carnet à réutiliser quand c'est naturel : {0}.",
+  "ctx": "web/js/dm.js:166"
+ },
+ {
+  "s": "parler avec des amis ou de la famille",
+  "ctx": "web/js/dm.js:167"
+ },
+ {
+  "s": "le travail",
+  "ctx": "web/js/dm.js:167"
+ },
+ {
+  "s": "la culture (cinéma, musique, cuisine)",
+  "ctx": "web/js/dm.js:167"
+ },
+ {
+  "s": "le plaisir d'apprendre",
+  "ctx": "web/js/dm.js:167"
+ },
+ {
+  "s": ". Quand le thème est libre, choisis des sujets qui s'en rapprochent.",
+  "ctx": "web/js/dm.js:169 (morceau)"
+ },
+ {
+  "s": " Il apprend l'{0} pour : {1}. Quand le thème est libre, choisis des sujets qui s'en rapprochent.",
+  "ctx": "web/js/dm.js:169"
+ },
+ {
+  "s": "Tes phrases sont lues à voix haute par une voix de synthèse : écris comme on parle, avec des phrases courtes et quelques petites interjections naturelles (",
+  "ctx": "web/js/dm.js:170 (morceau)"
+ },
+ {
+  "s": "), sans en abuser. Pas d'abréviations, pas de listes, pas de parenthèses.",
+  "ctx": "web/js/dm.js:170 (morceau)"
+ },
+ {
+  "s": " Tes phrases sont lues à voix haute par une voix de synthèse : écris comme on parle, avec des phrases courtes et quelques petites interjections naturelles ({0}), sans en abuser. Pas d'abréviations, pas de listes, pas de parenthèses.",
+  "ctx": "web/js/dm.js:170"
+ },
+ {
+  "s": "Jeu de rôle pour un francophone qui apprend l'",
+  "ctx": "web/js/dm.js:172 (morceau)"
+ },
+ {
+  "s": ". Tu joues :",
+  "ctx": "web/js/dm.js:172 (morceau)"
+ },
+ {
+  "s": ". Tu discutes avec un élève francophone, par écrit ou à voix haute.",
+  "ctx": "web/js/dm.js:174 (morceau)"
+ },
+ {
+  "s": "Objectif : le faire parler le plus possible. À chaque tour : une ou deux phrases courtes en",
+  "ctx": "web/js/dm.js:176 (morceau)"
+ },
+ {
+  "s": "simple, puis une seule question ouverte. S'il demande comment dire quelque chose, donne la phrase en",
+  "ctx": "web/js/dm.js:176 (morceau)"
+ },
+ {
+  "s": "et invite-le à l'utiliser.",
+  "ctx": "web/js/dm.js:176 (morceau)"
+ },
+ {
+  "s": ". Tu discutes avec un élève francophone qui apprend l'",
+  "ctx": "web/js/dm.js:177 (morceau)"
+ },
+ {
+  "s": ", en une à trois phrases courtes et naturelles, comme à l'oral. Raconte un détail de ta vie de temps en temps, et termine le plus souvent par une question pour le faire parler.",
+  "ctx": "web/js/dm.js:178 (morceau)"
+ },
+ {
+  "s": "Parler de :",
+  "ctx": "web/js/dm.js:183 (morceau)"
+ },
+ {
+  "s": "Parler de : {0}",
+  "ctx": "web/js/dm.js:183"
+ },
+ {
+  "s": "Lecture à voix haute activée",
+  "ctx": "web/js/dm.js:205"
+ },
+ {
+  "s": "Lecture à voix haute coupée",
+  "ctx": "web/js/dm.js:205"
+ },
+ {
+  "s": "Écris en {0}…",
+  "ctx": "web/js/dm.js:219"
+ },
+ {
+  "s": "Arrêter l'écoute",
+  "ctx": "web/js/dm.js:224"
+ },
+ {
+  "s": "Couper la parole et répondre",
+  "ctx": "web/js/dm.js:224"
+ },
+ {
+  "s": "(Nouvelle partie de ce jeu de rôle. Ouvre la scène toi-même en variant la situation par rapport aux fois précédentes, en une ou deux phrases et une question.)",
+  "ctx": "web/js/dm.js:239"
+ },
+ {
+  "s": "(L'élève revient te parler. Ouvre la conversation naturellement en reprenant un fil de vos échanges précédents",
+  "ctx": "web/js/dm.js:240 (morceau)"
+ },
+ {
+  "s": ", sans te présenter à nouveau. Une ou deux phrases et une question.)",
+  "ctx": "web/js/dm.js:240 (morceau)"
+ },
+ {
+  "s": "(L'élève revient te parler. Ouvre la conversation naturellement en reprenant un fil de vos échanges précédents{0}, sans te présenter à nouveau. Une ou deux phrases et une question.)",
+  "ctx": "web/js/dm.js:240"
+ },
+ {
+  "s": "(Début de la conversation.)",
+  "ctx": "web/js/dm.js:241"
+ },
+ {
+  "s": "Astuce : touche un mot pour voir sa traduction et l'ajouter au carnet.",
+  "ctx": "web/js/dm.js:244"
+ },
+ {
+  "s": "Réécouter",
+  "ctx": "web/js/dm.js:254"
+ },
+ {
+  "s": "{0} écrit",
+  "ctx": "web/js/dm.js:326"
+ },
+ {
+  "s": "(L'élève ouvre la conversation. Salue-le et pose ta première question.)",
+  "ctx": "web/js/dm.js:327"
+ },
+ {
+  "s": "Parle… touche ■ quand tu as fini",
+  "ctx": "web/js/dm.js:380"
+ },
+ {
+  "s": "J'écoute…",
+  "ctx": "web/js/dm.js:380"
+ },
+ {
+  "s": "Le micro n'a capté aucune voix. Vérifie qu'aucune autre app ne l'utilise, puis réessaie.",
+  "ctx": "web/js/dm.js:396"
+ },
+ {
+  "s": "Je n'ai rien compris. Touche le micro, parle, puis touche ■.",
+  "ctx": "web/js/dm.js:396"
+ },
+ {
+  "s": "Je mets en pause. Touche la voiture pour reprendre.",
+  "ctx": "web/js/dm.js:401"
+ },
+ {
+  "s": "Mains libres : je t'écoute après chaque réponse. Dis « basta » pour arrêter.",
+  "ctx": "web/js/dm.js:406"
+ },
+ {
+  "s": "pour un élève francophone (",
+  "ctx": "web/js/dm.js:414 (morceau)"
+ },
+ {
+  "s": ". Une par ligne, sans numéro, sans traduction, sans autre texte.",
+  "ctx": "web/js/dm.js:414 (morceau)"
+ },
+ {
+  "s": "(note en français) ",
+  "ctx": "web/js/dm.js:427"
+ },
+ {
+  "s": "Conversation avec {0}",
+  "ctx": "web/js/dm.js:429"
+ },
+ {
+  "s": "), \"fr\": traduction française courte et naturelle, adaptée à cette phrase",
+  "ctx": "web/js/dm.js:457 (morceau)"
+ },
+ {
+  "s": "Traduction de {0}",
+  "ctx": "web/js/dm.js:467"
+ },
+ {
+  "s": "Déjà dans ton carnet",
+  "ctx": "web/js/dm.js:484"
+ },
+ {
+  "s": "Ajouté au carnet",
+  "ctx": "web/js/dm.js:486"
+ },
+ {
+  "s": "Pas de traduction trouvée.",
+  "ctx": "web/js/dm.js:491"
+ },
+ {
+  "s": "Au carnet :",
+  "ctx": "web/js/dm.js:492 (morceau)"
+ },
+ {
+  "s": "Au carnet : {0}",
+  "ctx": "web/js/dm.js:492"
+ },
+ {
+  "s": "Ta traduction",
+  "ctx": "web/js/dm.js:499"
+ },
+ {
+  "s": "Traduction en français",
+  "ctx": "web/js/dm.js:499"
+ },
+ {
+  "s": "Le micro est refusé. Sur iPhone : Réglages > Safari (ou l'app) > Micro, et active aussi la dictée dans Réglages > Général > Clavier.",
+  "ctx": "web/js/voice.js:219"
+ },
+ {
+  "s": "Le micro est refusé. Autorise-le dans les réglages du site, puis réessaie.",
+  "ctx": "web/js/voice.js:219"
+ },
+ {
+  "s": "Aucun micro détecté.",
+  "ctx": "web/js/voice.js:220"
+ },
+ {
+  "s": "La reconnaissance vocale a besoin du réseau. Réessaie quand tu captes.",
+  "ctx": "web/js/voice.js:221"
+ },
+ {
+  "s": "Sur iPhone, l'app installée n'a pas accès à la reconnaissance vocale d'Apple. Ouvre l'app dans Safari pour utiliser le micro, ou demande au propriétaire d'activer la transcription par le serveur.",
+  "ctx": "web/js/voice.js:222"
+ },
+ {
+  "s": "Plafond de transcription du jour atteint.",
+  "ctx": "web/js/voice.js:223"
+ },
+ {
+  "s": "L'écoute a échoué. Réessaie.",
+  "ctx": "web/js/voice.js:224"
+ },
+ {
+  "s": "Répondre à voix haute",
+  "ctx": "web/js/voice.js:303"
+ },
+ {
+  "s": "Je n'ai rien entendu. Touche « Dire » et parle juste après.",
+  "ctx": "web/js/voice.js:312"
+ },
+ {
+  "s": ". Après le bip, réponds à voix haute : je te dis si c'est juste.",
+  "ctx": "web/js/voice.js:329 (morceau)"
+ },
+ {
+  "s": "pour réentendre, «",
+  "ctx": "web/js/voice.js:329 (morceau)"
+ },
+ {
+  "s": "pour passer, «",
+  "ctx": "web/js/voice.js:329 (morceau)"
+ },
+ {
+  "s": "pour faire une pause.",
+  "ctx": "web/js/voice.js:329 (morceau)"
+ },
+ {
+  "s": "Leçon : {0}. Après le bip, réponds à voix haute : je te dis si c'est juste. Dis « {1} pour réentendre, « {2} pour passer, « {3} pour faire une pause.",
+  "ctx": "web/js/voice.js:329"
+ },
+ {
+  "s": "D'abord, le vocabulaire. Répète chaque mot après le bip.",
+  "ctx": "web/js/voice.js:330"
+ },
+ {
+  "s": "Maintenant, à toi de construire les phrases.",
+  "ctx": "web/js/voice.js:332"
+ },
+ {
+  "s": "Complète la phrase",
+  "ctx": "web/js/voice.js:338 (morceau)"
+ },
+ {
+  "s": "Complète la phrase{0}.",
+  "ctx": "web/js/voice.js:338"
+ },
+ {
+  "s": "Pour finir, le dialogue. Répète chaque réplique après le bip.",
+  "ctx": "web/js/voice.js:341"
+ },
+ {
+  "s": "mots de ton carnet. Je dis le mot en français : après le bip, dis-le en",
+  "ctx": "web/js/voice.js:345 (morceau)"
+ },
+ {
+  "s": "{0} mots de ton carnet. Je dis le mot en français : après le bip, dis-le en {1}.",
+  "ctx": "web/js/voice.js:345"
+ },
+ {
+  "s": "Je n'ai rien entendu. Encore une fois.",
+  "ctx": "web/js/voice.js:352"
+ },
+ {
+  "s": "Écoute bien.",
+  "ctx": "web/js/voice.js:352"
+ },
+ {
+  "s": "La réponse :",
+  "ctx": "web/js/voice.js:352"
+ },
+ {
+  "s": "Pas tout à fait. On dit :",
+  "ctx": "web/js/voice.js:352"
+ },
+ {
+  "s": "Répète.",
+  "ctx": "web/js/voice.js:352"
+ },
+ {
+  "s": " réponses justes",
+  "ctx": "web/js/voice.js:438"
+ },
+ {
+  "s": " réponse juste",
+  "ctx": "web/js/voice.js:438"
+ },
+ {
+  "s": "Séance terminée. {0}{1} sur {2}. Brava, bravo !",
+  "ctx": "web/js/voice.js:438"
+ },
+ {
+  "s": "À toi, je t'écoute",
+  "ctx": "web/js/voice.js:449"
+ },
+ {
+  "s": "Écoute",
+  "ctx": "web/js/voice.js:449"
+ },
+ {
+  "s": "Je ne sais pas : voir la réponse",
+  "ctx": "web/js/voice.js:462"
+ },
+ {
+  "s": "{0} juste{1} sur {2}",
+  "ctx": "web/js/voice.js:465"
+ },
+ {
+  "s": "La lecture s'est arrêtée parce que l'écran s'est éteint ou que tu as changé d'app. Touche « Reprendre » une fois à l'arrêt.",
+  "ctx": "web/js/voice.js:474"
+ },
+ {
+  "s": "Ce navigateur ne sait pas lire le texte à voix haute : le mode voiture ne peut pas fonctionner ici.",
+  "ctx": "web/js/voice.js:483"
+ },
+ {
+  "s": "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher :",
+  "ctx": "web/js/voice.js:485 (morceau)"
+ },
+ {
+  "s": "L'app te parle, puis t'écoute après un bip et te dit si ta réponse est juste. Rien à toucher : dis « {0} pour réentendre, « {1} pour passer, « {2} pour faire une pause.",
+  "ctx": "web/js/voice.js:485"
+ },
+ {
+  "s": "Ce navigateur ne peut pas écouter : l'app laisse des silences pour répondre à voix haute, sans vérifier ta réponse.",
+  "ctx": "web/js/voice.js:485"
+ },
+ {
+  "s": "Parler librement avec Claude",
+  "ctx": "web/js/voice.js:488"
+ },
+ {
+  "s": "Jeu de rôle :",
+  "ctx": "web/js/voice.js:493 (morceau)"
+ },
+ {
+  "s": "Jeu de rôle : {0}",
+  "ctx": "web/js/voice.js:493"
+ },
+ {
+  "s": "Téléphone sur son support, écran allumé, app ouverte : si l'écran s'éteint ou si tu changes d'app, tout s'arrête. Le son passe par la voiture si le téléphone y est connecté en Bluetooth.",
+  "ctx": "web/js/voice.js:502"
+ },
+ {
+  "s": "più piano",
+  "ctx": "web/js/voice.js:519"
+ },
+ {
+  "s": "le présent des verbes courants",
+  "ctx": "web/js/voice.js:525"
+ },
+ {
+  "s": "Conversation à voix haute",
+  "ctx": "web/js/voice.js:531"
+ },
+ {
+  "s": "Parler avec Claude",
+  "ctx": "web/js/voice.js:532"
+ },
+ {
+  "s": "La conversation passe par Claude, indisponible pour l'instant. Vérifie le réseau.",
+  "ctx": "web/js/voice.js:533"
+ },
+ {
+  "s": "Claude te parle en",
+  "ctx": "web/js/voice.js:535 (morceau)"
+ },
+ {
+  "s": "à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis «",
+  "ctx": "web/js/voice.js:535 (morceau)"
+ },
+ {
+  "s": "» pour réentendre, «",
+  "ctx": "web/js/voice.js:535 (morceau)"
+ },
+ {
+  "s": "» pour ralentir, «",
+  "ctx": "web/js/voice.js:535 (morceau)"
+ },
+ {
+  "s": "» pour terminer.",
+  "ctx": "web/js/voice.js:535 (morceau)"
+ },
+ {
+  "s": "Claude te parle en {0} à ton niveau, t'écoute et te relance. Il te corrige en français, brièvement, quand une erreur compte. Tout se fait à la voix : dis « {1} » pour réentendre, « {2} » pour ralentir, « {3} » pour terminer.",
+  "ctx": "web/js/voice.js:535"
+ },
+ {
+  "s": "Ce que j'apprends",
+  "ctx": "web/js/voice.js:537"
+ },
+ {
+  "s": "la leçon en cours (",
+  "ctx": "web/js/voice.js:537 (morceau)"
+ },
+ {
+  "s": ") : fais-le pratiquer ce point dans une conversation naturelle",
+  "ctx": "web/js/voice.js:537 (morceau)"
+ },
+ {
+  "s": "la leçon en cours ({0}) : fais-le pratiquer ce point dans une conversation naturelle",
+  "ctx": "web/js/voice.js:537"
+ },
+ {
+  "s": "Ou un sujet à toi (en français)",
+  "ctx": "web/js/voice.js:541"
+ },
+ {
+  "s": "Parler de ça",
+  "ctx": "web/js/voice.js:541"
+ },
+ {
+  "s": "Jeux de rôle à l'oral",
+  "ctx": "web/js/voice.js:545"
+ },
+ {
+  "s": ". Tu as une conversation à voix haute avec un élève francophone (niveau",
+  "ctx": "web/js/voice.js:553 (morceau)"
+ },
+ {
+  "s": "), qui ne regarde pas l'écran : il conduit ou marche. Ce qu'il dit t'arrive par une reconnaissance vocale réglée sur l'",
+  "ctx": "web/js/voice.js:553 (morceau)"
+ },
+ {
+  "s": ". Points qu'il étudie en ce moment :",
+  "ctx": "web/js/voice.js:554 (morceau)"
+ },
+ {
+  "s": "simple, puis une seule question ouverte. Parle comme à l'oral, avec des mots fréquents.",
+  "ctx": "web/js/voice.js:556 (morceau)"
+ },
+ {
+  "s": ". »). Au plus une correction par tour, et laisse passer les petites fautes.",
+  "ctx": "web/js/voice.js:557 (morceau)"
+ },
+ {
+  "s": "S'il parle français ou demande comment dire quelque chose, donne la phrase en",
+  "ctx": "web/js/voice.js:558 (morceau)"
+ },
+ {
+  "s": "et invite-le à la répéter.",
+  "ctx": "web/js/voice.js:558 (morceau)"
+ },
+ {
+  "s": "Jeu de rôle à voix haute pour un francophone qui apprend l'",
+  "ctx": "web/js/voice.js:563 (morceau)"
+ },
+ {
+  "s": "Jeu de rôle à l'oral",
+  "ctx": "web/js/voice.js:583"
+ },
+ {
+  "s": "Claude réfléchit…",
+  "ctx": "web/js/voice.js:587"
+ },
+ {
+  "s": "Conversation terminée",
+  "ctx": "web/js/voice.js:587"
+ },
+ {
+  "s": " Mains libres : j'écoute dès que Claude a fini",
+  "ctx": "web/js/voice.js:596"
+ },
+ {
+  "s": "Répéter",
+  "ctx": "web/js/voice.js:597"
+ },
+ {
+  "s": "(L'élève vient de lancer la conversation. Commence : salue-le et pose ta première question.)",
+  "ctx": "web/js/voice.js:612"
+ },
+ {
+  "s": "(Début du jeu de rôle.)",
+  "ctx": "web/js/voice.js:642"
+ },
+ {
+  "s": "D'accord. Touche « Terminer » pour voir le bilan, ou « Reprendre » pour continuer.",
+  "ctx": "web/js/voice.js:653"
+ },
+ {
+  "s": "Je mets en pause. Touche « Reprendre » quand tu veux.",
+  "ctx": "web/js/voice.js:658"
+ },
+ {
+  "s": "Claude ne répond pas.",
+  "ctx": "web/js/voice.js:670"
+ },
+ {
+  "s": "Claude ne répond pas pour l'instant.",
+  "ctx": "web/js/voice.js:671"
+ },
+ {
+  "s": "(en français) ",
+  "ctx": "web/js/voice.js:678"
+ },
+ {
+  "s": "Claude relit ce que tu as dit. Cela peut prendre jusqu'à une minute.",
+  "ctx": "web/js/voice.js:685"
+ },
+ {
+  "s": ". Voici une conversation orale (transcrite par reconnaissance vocale, donc sans ponctuation fiable) entre une professeure et un élève francophone. Sujet :",
+  "ctx": "web/js/voice.js:687 (morceau)"
+ },
+ {
+  "s": "Points étudiés :",
+  "ctx": "web/js/voice.js:687 (morceau)"
+ },
+ {
+  "s": " Parla un po' più lentamente del normale, scandendo bene.",
+  "ctx": "web/js/tts.js:58"
+ },
+ {
+  "s": "Plafond de voix du jour atteint : la voix du téléphone prend le relais.",
+  "ctx": "web/js/tts.js:162"
+ },
+ {
+  "s": "Parli italiano da madrelingua in un dialogo di tutti i giorni: tono naturale e spontaneo, come in una vera conversazione, pronuncia chiara.",
+  "ctx": "web/js/tts.js:274"
+ },
+ {
+  "s": "Habla español de España como nativo en un diálogo cotidiano: tono natural y espontáneo, como en una conversación real, pronunciación clara.",
+  "ctx": "web/js/tts.js:275"
+ },
+ {
+  "s": " Voz madura y cálida, ritmo un poco más lento.",
+  "ctx": "web/js/tts.js:289"
+ },
+ {
+  "s": " Voce matura e calda, ritmo un po' più lento.",
+  "ctx": "web/js/tts.js:289"
+ },
+ {
+  "s": "Écouter tout le dialogue",
+  "ctx": "web/js/tts.js:307"
+ },
+ {
+  "s": "Ce n'est pas la réponse prévue : je vérifie si la tienne marche aussi…",
+  "ctx": "web/js/quiz.js:40"
+ },
+ {
+  "s": "pour un francophone. Phrase :",
+  "ctx": "web/js/quiz.js:43 (morceau)"
+ },
+ {
+  "s": "Réponse prévue :",
+  "ctx": "web/js/quiz.js:43 (morceau)"
+ },
+ {
+  "s": "Ce que l'exercice fait travailler :",
+  "ctx": "web/js/quiz.js:43 (morceau)"
+ },
+ {
+  "s": "Mise dans le trou, sa réponse donne-t-elle une phrase correcte et naturelle, qui respecte aussi le point travaillé (même accord, même temps, même personne) ? Un autre mot que celui prévu est accepté s'il convient. Ignore majuscules et ponctuation.",
+  "ctx": "web/js/quiz.js:44 (morceau)"
+ },
+ {
+  "s": "Je bloque : voir les",
+  "ctx": "web/js/quiz.js:62 (morceau)"
+ },
+ {
+  "s": "Je bloque : voir les {0} propositions",
+  "ctx": "web/js/quiz.js:62"
+ },
+ {
+  "s": "Attention aux lettres finales : ",
+  "ctx": "web/js/quiz.js:81"
+ },
+ {
+  "s": "Attention à l'accent : ",
+  "ctx": "web/js/quiz.js:81"
+ },
+ {
+  "s": "Presque, attention à l'orthographe :",
+  "ctx": "web/js/quiz.js:81 (morceau)"
+ },
+ {
+  "s": "Presque, attention à l'orthographe : {0}.",
+  "ctx": "web/js/quiz.js:81"
+ },
+ {
+  "s": "Trouvé avec les propositions.",
+  "ctx": "web/js/quiz.js:105 (morceau)"
+ },
+ {
+  "s": "Trouvé avec les propositions. {0}",
+  "ctx": "web/js/quiz.js:105"
+ },
+ {
+  "s": ", ou dis-le avec le micro.",
+  "ctx": "web/js/quiz.js:126 (morceau)"
+ },
+ {
+  "s": "Écris-le en {0}, ou dis-le avec le micro.",
+  "ctx": "web/js/quiz.js:126"
+ },
+ {
+  "s": "Écris sa traduction en français.",
+  "ctx": "web/js/quiz.js:126"
+ },
+ {
+  "s": "Juste, avec un coup de pouce.",
+  "ctx": "web/js/quiz.js:140"
+ },
+ {
+  "s": "Le mot reste dans ton carnet pour la prochaine révision.",
+  "ctx": "web/js/quiz.js:142"
+ },
+ {
+  "s": " Aucun mot raté.",
+  "ctx": "web/js/quiz.js:152"
+ },
+ {
+  "s": "hébreu",
+  "ctx": "web/js/quiz.js:184"
+ },
+ {
+  "s": "et le mette à la bonne forme.",
+  "ctx": "web/js/quiz.js:184 (morceau)"
+ },
+ {
+  "s": "chaînes, dans l'ordre, sans parenthèses.",
+  "ctx": "web/js/quiz.js:186 (morceau)"
+ },
+ {
+  "s": "Questions sur le dialogue",
+  "ctx": "web/js/quiz.js:242"
+ },
+ {
+  "s": " écrans",
+  "ctx": "web/js/quiz.js:255"
+ },
+ {
+  "s": " écran",
+  "ctx": "web/js/quiz.js:255"
+ },
+ {
+  "s": "Les mots de la leçon",
+  "ctx": "web/js/quiz.js:255"
+ },
+ {
+  "s": "Lire et écouter",
+  "ctx": "web/js/quiz.js:255"
+ },
+ {
+  "s": "Par où reprendre ?",
+  "ctx": "web/js/quiz.js:269"
+ },
+ {
+  "s": "Mettre la leçon en pratique à l'oral",
+  "ctx": "web/js/quiz.js:282"
+ },
+ {
+  "s": "Tout refaire depuis le début",
+  "ctx": "web/js/quiz.js:283"
+ },
+ {
+  "s": "La leçon complète",
+  "ctx": "web/js/quiz.js:283"
+ },
+ {
+  "s": "Revoir une partie de la leçon",
+  "ctx": "web/js/quiz.js:309"
+ },
+ {
+  "s": "S'il est en français, traduis-le en",
+  "ctx": "web/js/words.js:13 (morceau)"
+ },
+ {
+  "s": ", traduis-le en français. Corrige une faute de frappe évidente.",
+  "ctx": "web/js/words.js:13 (morceau)"
+ },
+ {
+  "s": "à mettre dans un carnet (",
+  "ctx": "web/js/words.js:14 (morceau)"
+ },
+ {
+  "s": "\"fr\": la traduction française courte",
+  "ctx": "web/js/words.js:15 (morceau)"
+ },
+ {
+  "s": ", \"note\": une précision utile en français (genre, irrégularité, faux ami…), 12 mots au plus, ou une chaîne vide,",
+  "ctx": "web/js/words.js:15 (morceau)"
+ },
+ {
+  "s": "\"ex\": [une phrase d'exemple courte et naturelle en",
+  "ctx": "web/js/words.js:16 (morceau)"
+ },
+ {
+  "s": "Chercher ou ajouter un mot",
+  "ctx": "web/js/words.js:36"
+ },
+ {
+  "s": "En français ou en",
+  "ctx": "web/js/words.js:40 (morceau)"
+ },
+ {
+  "s": ": les mots déjà vus s'affichent, et « Traduire » range un nouveau mot dans ton carnet.",
+  "ctx": "web/js/words.js:40 (morceau)"
+ },
+ {
+  "s": "En français ou en {0} : les mots déjà vus s'affichent, et « Traduire » range un nouveau mot dans ton carnet.",
+  "ctx": "web/js/words.js:40"
+ },
+ {
+  "s": "Ajouté à ton carnet",
+  "ctx": "web/js/words.js:54"
+ },
+ {
+  "s": "Traduction de «",
+  "ctx": "web/js/words.js:65 (morceau)"
+ },
+ {
+  "s": "Traduction de « {0} »…",
+  "ctx": "web/js/words.js:65"
+ },
+ {
+  "s": "Écris-le dans les deux langues pour l'ajouter quand même :",
+  "ctx": "web/js/words.js:77"
+ },
+ {
+  "s": "et l'ajouter à ton carnet",
+  "ctx": "web/js/words.js:91"
+ },
+ {
+  "s": "Aucun mot de tes leçons ne correspond.",
+  "ctx": "web/js/words.js:92 (morceau)"
+ },
+ {
+  "s": " Ajoute-le à la main avec Entrée.",
+  "ctx": "web/js/words.js:92"
+ },
+ {
+  "s": "Aucun mot de tes leçons ne correspond.{0}",
+  "ctx": "web/js/words.js:92"
+ },
+ {
+  "s": "Ajouter {0} au carnet",
+  "ctx": "web/js/words.js:98"
+ },
+ {
+  "s": "Ton carnet est vide.",
+  "ctx": "web/js/words.js:153"
+ },
+ {
+  "s": "une",
+  "ctx": "web/js/news.js:7"
+ },
+ {
+  "s": "À la une",
+  "ctx": "web/js/news.js:7"
+ },
+ {
+  "s": "Économie",
+  "ctx": "web/js/news.js:7"
+ },
+ {
+  "s": "Cinéma",
+  "ctx": "web/js/news.js:8"
+ },
+ {
+  "s": "Santé",
+  "ctx": "web/js/news.js:9"
+ },
+ {
+  "s": "Société",
+  "ctx": "web/js/news.js:13"
+ },
+ {
+  "s": "Mots, phrases à remettre en ordre, phrases courtes à traduire",
+  "ctx": "web/js/news.js:34"
+ },
+ {
+  "s": "Traductions, dictée, phrases à transformer, une réponse rédigée",
+  "ctx": "web/js/news.js:34"
+ },
+ {
+  "s": "Longues traductions, dictée, transformations, résumé et avis rédigés",
+  "ctx": "web/js/news.js:34"
+ },
+ {
+  "s": "D'après une dépêche ANSA",
+  "ctx": "web/js/news.js:70"
+ },
+ {
+  "s": "une dépêche de l'agence ANSA",
+  "ctx": "web/js/news.js:70"
+ },
+ {
+  "s": "La notizia del giorno",
+  "ctx": "web/js/news.js:70"
+ },
+ {
+  "s": "Tu periódico",
+  "ctx": "web/js/news.js:71"
+ },
+ {
+  "s": "D'après un article d'El País",
+  "ctx": "web/js/news.js:71"
+ },
+ {
+  "s": "un article du quotidien espagnol El País",
+  "ctx": "web/js/news.js:71"
+ },
+ {
+  "s": "La noticia del día",
+  "ctx": "web/js/news.js:71"
+ },
+ {
+  "s": "D'après un article de ynet",
+  "ctx": "web/js/news.js:72"
+ },
+ {
+  "s": "une brève du site d'information israélien ynet",
+  "ctx": "web/js/news.js:72"
+ },
+ {
+  "s": "Hébreu israélien moderne.",
+  "ctx": "web/js/news.js:84 (morceau)"
+ },
+ {
+  "s": "Écris TOUT l'hébreu (titre, texte, mots-clés, exemples, exercices) AVEC le niqqud complet, sur chaque mot : la prononciation est calculée à partir des voyelles.",
+  "ctx": "web/js/news.js:84 (morceau)"
+ },
+ {
+  "s": "à partir d'",
+  "ctx": "web/js/news.js:116 (morceau)"
+ },
+ {
+  "s": ", pour un francophone adulte qui apprend l'",
+  "ctx": "web/js/news.js:116 (morceau)"
+ },
+ {
+  "s": "Ce qu'il a déjà appris, et donc la seule grammaire permise dans l'article ET dans tous les exercices :",
+  "ctx": "web/js/news.js:117 (morceau)"
+ },
+ {
+  "s": "Écris ta propre courte notizia en",
+  "ctx": "web/js/news.js:119 (morceau)"
+ },
+ {
+  "s": ", simple\", \"title_fr\": \"titre en français\", \"text\": [\"3 ou 4 paragraphes en",
+  "ctx": "web/js/news.js:121 (morceau)"
+ },
+ {
+  "s": "\"keywords\": [[\"mot ou expression du texte, les noms avec article\", \"traduction\", \"note courte en français ou chaîne vide\"]] (8),",
+  "ctx": "web/js/news.js:122 (morceau)"
+ },
+ {
+  "s": "|variante acceptée\"]] (3),",
+  "ctx": "web/js/news.js:124 (morceau)"
+ },
+ {
+  "s": "\"translate\": [[\"phrase française de longueur moyenne, sur le sujet\", \"traduction|variante\"]] (4), \"translate_hard\": [[\"phrase française longue, avec une subordonnée\", \"traduction|variante\"]] (3),",
+  "ctx": "web/js/news.js:125 (morceau)"
+ },
+ {
+  "s": "\"dictation\": [\"phrase du texte, de 6 à 14 mots\"] (3), \"transform\": [[\"consigne en français (ex. : Mets au passé composé, Mets à la forme négative, Remplace par un pronom)\", \"phrase de départ en",
+  "ctx": "web/js/news.js:126 (morceau)"
+ },
+ {
+  "s": "sur le texte\", \"sa traduction\", \"une réponse possible en",
+  "ctx": "web/js/news.js:127 (morceau)"
+ },
+ {
+  "s": "Mes thèmes",
+  "ctx": "web/js/news.js:155"
+ },
+ {
+  "s": "Les actualités en",
+  "ctx": "web/js/news.js:168 (morceau)"
+ },
+ {
+  "s": "s'ouvrent quand tu sais lire : termine d'abord l'alef-bet",
+  "ctx": "web/js/news.js:168 (morceau)"
+ },
+ {
+  "s": " leçons).",
+  "ctx": "web/js/news.js:168"
+ },
+ {
+  "s": " leçon).",
+  "ctx": "web/js/news.js:168"
+ },
+ {
+  "s": "Les actualités en {0} s'ouvrent quand tu sais lire : termine d'abord l'alef-bet{1}",
+  "ctx": "web/js/news.js:168"
+ },
+ {
+  "s": "Choisis les sujets qui t'intéressent (8 au plus). Chaque dépêche devient une petite leçon à ton niveau : article, traduction, mots-clés et exercices d'écriture.",
+  "ctx": "web/js/news.js:177"
+ },
+ {
+  "s": "Voir les nouvelles",
+  "ctx": "web/js/news.js:180"
+ },
+ {
+  "s": "Choisis au moins un thème.",
+  "ctx": "web/js/news.js:180"
+ },
+ {
+  "s": "· Écrit pour ton niveau :",
+  "ctx": "web/js/news.js:187 (morceau)"
+ },
+ {
+  "s": "{0} · Écrit pour ton niveau : {1}",
+  "ctx": "web/js/news.js:187"
+ },
+ {
+  "s": "Chargement des nouvelles…",
+  "ctx": "web/js/news.js:190"
+ },
+ {
+  "s": "Aucune nouvelle pour ces thèmes en ce moment. Réessaie plus tard ou ajoute un thème.",
+  "ctx": "web/js/news.js:194"
+ },
+ {
+  "s": "Le fil",
+  "ctx": "web/js/news.js:206"
+ },
+ {
+  "s": "mis à jour à",
+  "ctx": "web/js/news.js:208 (morceau)"
+ },
+ {
+  "s": "mis à jour à {0}",
+  "ctx": "web/js/news.js:208"
+ },
+ {
+  "s": "Ton article : environ",
+  "ctx": "web/js/news.js:225 (morceau)"
+ },
+ {
+  "s": "mots écrits pour ton niveau, 8 mots-clés, une structure de phrase, puis des exercices d'écriture.",
+  "ctx": "web/js/news.js:225 (morceau)"
+ },
+ {
+  "s": "Ton article : environ {0} mots écrits pour ton niveau, 8 mots-clés, une structure de phrase, puis des exercices d'écriture.",
+  "ctx": "web/js/news.js:225"
+ },
+ {
+  "s": "Lire et s'entraîner",
+  "ctx": "web/js/news.js:226"
+ },
+ {
+  "s": ", naturellement et brièvement (12 mots au plus chacun), sans guillemets autour :",
+  "ctx": "web/js/news.js:248 (morceau)"
+ },
+ {
+  "s": "chaînes, dans l'ordre.",
+  "ctx": "web/js/news.js:248 (morceau)"
+ },
+ {
+  "s": "% aux exercices",
+  "ctx": "web/js/news.js:263 (morceau)"
+ },
+ {
+  "s": "Lue · {0} % aux exercices",
+  "ctx": "web/js/news.js:263"
+ },
+ {
+  "s": "Actualités",
+  "ctx": "web/js/news.js:270"
+ },
+ {
+  "s": "Lecture de la dépêche",
+  "ctx": "web/js/news.js:273"
+ },
+ {
+  "s": "Écriture de ton article et des exercices",
+  "ctx": "web/js/news.js:273"
+ },
+ {
+  "s": "Partage avec les autres membres",
+  "ctx": "web/js/news.js:273"
+ },
+ {
+  "s": "Retour à l'historique",
+  "ctx": "web/js/news.js:279"
+ },
+ {
+  "s": "Retour aux notizie",
+  "ctx": "web/js/news.js:279"
+ },
+ {
+  "s": "Écouter l'article",
+  "ctx": "web/js/news.js:293"
+ },
+ {
+  "s": "Touche un mot pour sa traduction.",
+  "ctx": "web/js/news.js:300"
+ },
+ {
+  "s": "Mots-clés",
+  "ctx": "web/js/news.js:302"
+ },
+ {
+  "s": "Tout ajouter au carnet",
+  "ctx": "web/js/news.js:311"
+ },
+ {
+  "s": "La structure à retenir",
+  "ctx": "web/js/news.js:316"
+ },
+ {
+  "s": "Tes réponses{0}",
+  "ctx": "web/js/news.js:323"
+ },
+ {
+  "s": "Exercices d'écriture",
+  "ctx": "web/js/news.js:333"
+ },
+ {
+  "s": "Commencer les exercices",
+  "ctx": "web/js/news.js:336"
+ },
+ {
+  "s": "En parler avec Giulia",
+  "ctx": "web/js/news.js:338"
+ },
+ {
+  "s": "l'actualité : «",
+  "ctx": "web/js/news.js:338 (morceau)"
+ },
+ {
+  "s": "l'actualité : « {0} ». {1}",
+  "ctx": "web/js/news.js:338"
+ },
+ {
+  "s": "d'un francophone (niveau",
+  "ctx": "web/js/news.js:375 (morceau)"
+ },
+ {
+  "s": "Une réponse correcte possible :",
+  "ctx": "web/js/news.js:375 (morceau)"
+ },
+ {
+  "s": "Une réponse correcte possible : {0} ",
+  "ctx": "web/js/news.js:375"
+ },
+ {
+  "s": "Il ne connaît que :",
+  "ctx": "web/js/news.js:375 (morceau)"
+ },
+ {
+  "s": ". Ne lui reproche pas de ne pas employer d'autres temps.",
+  "ctx": "web/js/news.js:375 (morceau)"
+ },
+ {
+  "s": "Voir le résultat",
+  "ctx": "web/js/news.js:395"
+ },
+ {
+  "s": "(je ne sais pas)",
+  "ctx": "web/js/news.js:408"
+ },
+ {
+  "s": "Une petite faute d'orthographe.",
+  "ctx": "web/js/news.js:417"
+ },
+ {
+  "s": "Réponse attendue. (",
+  "ctx": "web/js/news.js:419 (morceau)"
+ },
+ {
+  "s": "Réponse attendue. ({0})",
+  "ctx": "web/js/news.js:419"
+ },
+ {
+  "s": "Mot-clé · écris-le en",
+  "ctx": "web/js/news.js:422 (morceau)"
+ },
+ {
+  "s": "Mot-clé · écris-le en {0}",
+  "ctx": "web/js/news.js:422"
+ },
+ {
+  "s": "traduire un mot",
+  "ctx": "web/js/news.js:422"
+ },
+ {
+  "s": "Traduis en {0} : {1}",
+  "ctx": "web/js/news.js:422"
+ },
+ {
+  "s": "Traduis en {0}",
+  "ctx": "web/js/news.js:423"
+ },
+ {
+  "s": "La phrase transformée",
+  "ctx": "web/js/news.js:424"
+ },
+ {
+  "s": "Dictée · écoute et écris la phrase",
+  "ctx": "web/js/news.js:426"
+ },
+ {
+  "s": "Une petite faute.",
+  "ctx": "web/js/news.js:431"
+ },
+ {
+  "s": "Remets les mots dans l'ordre",
+  "ctx": "web/js/news.js:434"
+ },
+ {
+  "s": ", par une phrase complète",
+  "ctx": "web/js/news.js:442 (morceau)"
+ },
+ {
+  "s": "réponse à une question sur l'article",
+  "ctx": "web/js/news.js:443"
+ },
+ {
+  "s": "Résume l'article en",
+  "ctx": "web/js/news.js:446 (morceau)"
+ },
+ {
+  "s": ", en 2 ou 3 phrases",
+  "ctx": "web/js/news.js:446 (morceau)"
+ },
+ {
+  "s": "Résume l'article en {0}, en 2 ou 3 phrases",
+  "ctx": "web/js/news.js:446"
+ },
+ {
+  "s": "Ton résumé",
+  "ctx": "web/js/news.js:447"
+ },
+ {
+  "s": "résumé de l'article en 2 ou 3 phrases",
+  "ctx": "web/js/news.js:447"
+ },
+ {
+  "s": "Résume en {0} cet article : {1}",
+  "ctx": "web/js/news.js:447"
+ },
+ {
+  "s": "Donne ton avis en",
+  "ctx": "web/js/news.js:450 (morceau)"
+ },
+ {
+  "s": ", en 3 ou 4 phrases",
+  "ctx": "web/js/news.js:450 (morceau)"
+ },
+ {
+  "s": "Donne ton avis en {0}, en 3 ou 4 phrases",
+  "ctx": "web/js/news.js:450"
+ },
+ {
+  "s": "Ton avis",
+  "ctx": "web/js/news.js:451"
+ },
+ {
+  "s": "avis personnel argumenté (le fond est libre : juge seulement la langue)",
+  "ctx": "web/js/news.js:451"
+ },
+ {
+  "s": "Exercices terminés ·",
+  "ctx": "web/js/news.js:462 (morceau)"
+ },
+ {
+  "s": "Exercices terminés · {0}",
+  "ctx": "web/js/news.js:462"
+ },
+ {
+  "s": "Les mots-clés ratés sont rangés dans ton carnet.",
+  "ctx": "web/js/news.js:463"
+ },
+ {
+  "s": "Belle série d'écriture.",
+  "ctx": "web/js/news.js:463"
+ },
+ {
+  "s": "Niveau au-dessus",
+  "ctx": "web/js/news.js:466"
+ },
+ {
+  "s": "Le journal du jour",
+  "ctx": "web/js/news.js:476"
+ },
+ {
+  "s": "réécrite à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets.",
+  "ctx": "web/js/news.js:480 (morceau)"
+ },
+ {
+  "s": "L'actualité {0} réécrite à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets.",
+  "ctx": "web/js/news.js:480"
+ },
+ {
+  "s": "Pas de nouvelle pour l'instant.",
+  "ctx": "web/js/news.js:485"
+ },
+ {
+  "s": "Tout le journal",
+  "ctx": "web/js/news.js:492"
+ },
+ {
+  "s": "Rien pour l'instant. Tes leçons terminées, les actualités que tu lis (avec tes réponses aux exercices) et tes conversations s'afficheront ici.",
+  "ctx": "web/js/news.js:512"
+ },
+ {
+  "s": "Cet élément n'est plus disponible.",
+  "ctx": "web/js/news.js:525"
+ },
+ {
+  "s": "fait par un élève francophone (niveau",
+  "ctx": "web/js/train.js:43 (morceau)"
+ },
+ {
+  "s": "Ce que l'exercice fait travailler : {0} ",
+  "ctx": "web/js/train.js:44"
+ },
+ {
+  "s": "Juge le sens et la grammaire, jamais la ressemblance avec la traduction proposée : toute traduction correcte et naturelle est juste, même avec d'autres mots, un synonyme, un autre ordre ou une tournure plus simple. Ignore les majuscules et la ponctuation.",
+  "ctx": "web/js/train.js:46 (morceau)"
+ },
+ {
+  "s": "Ignore les voyelles (niqqud) et l'orthographe pleine ou défective. « Tu » et « vous » peuvent se traduire au masculin comme au féminin, sauf si la phrase française précise le genre. ",
+  "ctx": "web/js/train.js:47"
+ },
+ {
+  "s": "Un pronom sujet ajouté ou omis est juste. ",
+  "ctx": "web/js/train.js:48"
+ },
+ {
+  "s": "« presque » : le sens et la grammaire sont justes, il ne reste qu'un détail (un accent, une lettre, une faute de frappe). « faux » : un contresens, un mot qui manque, ou une erreur de grammaire (accord, conjugaison, temps, préposition, article).",
+  "ctx": "web/js/train.js:49 (morceau)"
+ },
+ {
+  "s": ", avec le niqqud complet",
+  "ctx": "web/js/train.js:50"
+ },
+ {
+  "s": "Traduis en {0} :",
+  "ctx": "web/js/train.js:60"
+ },
+ {
+  "s": "Je bloque : mettre les mots dans l'ordre",
+  "ctx": "web/js/train.js:68"
+ },
+ {
+  "s": "Claude corrige ta traduction…",
+  "ctx": "web/js/train.js:78"
+ },
+ {
+  "s": "Traduction proposée : <b>",
+  "ctx": "web/js/train.js:84 (morceau)"
+ },
+ {
+  "s": "Traduction proposée : ",
+  "ctx": "web/js/train.js:84 (morceau) (fragment)"
+ },
+ {
+  "s": "{0}{1} Traduction proposée : <b>{2}</b>.",
+  "ctx": "web/js/train.js:84"
+ },
+ {
+  "s": "{0}{1} Traduction proposée : ",
+  "ctx": "web/js/train.js:84 (fragment)"
+ },
+ {
+  "s": "Presque mot pour mot. ",
+  "ctx": "web/js/train.js:88"
+ },
+ {
+  "s": " (Correction détaillée indisponible pour l'instant : compare avec ta réponse.)",
+  "ctx": "web/js/train.js:88"
+ },
+ {
+  "s": "{0}Traduction proposée : <b>{1}</b>.{2}",
+  "ctx": "web/js/train.js:88"
+ },
+ {
+  "s": "{0}Traduction proposée : ",
+  "ctx": "web/js/train.js:88 (fragment)"
+ },
+ {
+  "s": " Bonne réponse : ",
+  "ctx": "web/js/train.js:112"
+ },
+ {
+  "s": "À l'oral (",
+  "ctx": "web/js/train.js:114 (morceau)"
+ },
+ {
+  "s": "À l'oral ({0})",
+  "ctx": "web/js/train.js:114"
+ },
+ {
+  "s": "← Mots",
+  "ctx": "web/js/train.js:119"
+ },
+ {
+  "s": "À retravailler",
+  "ctx": "web/js/train.js:121"
+ },
+ {
+  "s": " fautes récentes",
+  "ctx": "web/js/train.js:122"
+ },
+ {
+  "s": " faute récente",
+  "ctx": "web/js/train.js:122"
+ },
+ {
+  "s": "Aucune faute en attente. Celles des leçons, des quiz et des conversations viendront s'y ranger.",
+  "ctx": "web/js/train.js:122"
+ },
+ {
+  "s": " fautes corrigées",
+  "ctx": "web/js/train.js:123"
+ },
+ {
+  "s": " faute corrigée",
+  "ctx": "web/js/train.js:123"
+ },
+ {
+  "s": "en révision depuis le début.",
+  "ctx": "web/js/train.js:123 (morceau)"
+ },
+ {
+  "s": "{0}{1} en révision depuis le début.",
+  "ctx": "web/js/train.js:123"
+ },
+ {
+  "s": "Réviser ces fautes avec Claude",
+  "ctx": "web/js/train.js:124"
+ },
+ {
+  "s": "Bonne réponse",
+  "ctx": "web/js/train.js:130"
+ },
+ {
+  "s": "Retirer cette faute",
+  "ctx": "web/js/train.js:131"
+ },
+ {
+  "s": "pour un élève francophone de niveau",
+  "ctx": "web/js/train.js:154 (morceau)"
+ },
+ {
+  "s": "Ses fautes récentes, à retravailler en priorité avec d'autres phrases que celles d'origine (même règle, autre contexte) :",
+  "ctx": "web/js/train.js:155 (morceau)"
+ },
+ {
+  "s": "— il avait répondu :",
+  "ctx": "web/js/train.js:155 (morceau)"
+ },
+ {
+  "s": "{0}{1}. {2} — il avait répondu : {3}",
+  "ctx": "web/js/train.js:155"
+ },
+ {
+  "s": "Ses fautes récentes, à retravailler en priorité avec d'autres phrases que celles d'origine (même règle, autre contexte) : {0} ",
+  "ctx": "web/js/train.js:155"
+ },
+ {
+  "s": "Pas de faute récente enregistrée. ",
+  "ctx": "web/js/train.js:155"
+ },
+ {
+  "s": "Grammaire de ses leçons terminées :",
+  "ctx": "web/js/train.js:156 (morceau)"
+ },
+ {
+  "s": "les bases",
+  "ctx": "web/js/train.js:156"
+ },
+ {
+  "s": "Mots à revoir :",
+  "ctx": "web/js/train.js:157 (morceau)"
+ },
+ {
+  "s": "Mots à revoir : {0} ",
+  "ctx": "web/js/train.js:157"
+ },
+ {
+  "s": "Répartition : 5 traductions du français vers l'",
+  "ctx": "web/js/train.js:158 (morceau)"
+ },
+ {
+  "s": "(phrases de la vie courante de 5 à 12 mots, qui obligent à employer une règle travaillée ou un mot à revoir), 4 phrases à trous, 3 questions à choix.",
+  "ctx": "web/js/train.js:158 (morceau)"
+ },
+ {
+  "s": "Concentre-toi sur ses fautes : au moins 8 exercices doivent en reprendre une. ",
+  "ctx": "web/js/train.js:159"
+ },
+ {
+  "s": "Commence par ses fautes, puis la grammaire, puis les mots. ",
+  "ctx": "web/js/train.js:159"
+ },
+ {
+  "s": "Reste à son niveau : ni temps ni structure qu'il n'a pas encore étudiés. Vérifie chaque exercice avant de l'écrire : une seule bonne réponse possible pour les questions à choix, un seul trou par phrase, et des explications nettes et définitives (la règle, sans hésitation ni correction en cours de phrase).",
+  "ctx": "web/js/train.js:160 (morceau)"
+ },
+ {
+  "s": "Hébreu : écris tout l'hébreu avec le niqqud complet, en hébreu israélien de tous les jours.",
+  "ctx": "web/js/train.js:161 (morceau)"
+ },
+ {
+  "s": " L'élève est une femme : formes au féminin quand il parle de lui-même.",
+  "ctx": "web/js/train.js:161"
+ },
+ {
+  "s": " L'élève est un homme.",
+  "ctx": "web/js/train.js:161"
+ },
+ {
+  "s": " Hébreu : écris tout l'hébreu avec le niqqud complet, en hébreu israélien de tous les jours.{0}",
+  "ctx": "web/js/train.js:161"
+ },
+ {
+  "s": "mot",
+  "ctx": "web/js/train.js:178"
+ },
+ {
+  "s": "Ta faute",
+  "ctx": "web/js/train.js:183"
+ },
+ {
+  "s": "Mot à revoir",
+  "ctx": "web/js/train.js:183"
+ },
+ {
+  "s": "Tes fautes, avec d'autres phrases",
+  "ctx": "web/js/train.js:188"
+ },
+ {
+  "s": "Claude prépare 12 exercices à partir de tes fautes, de la grammaire de tes leçons et de tes mots à revoir…",
+  "ctx": "web/js/train.js:189"
+ },
+ {
+  "s": "Claude met trop de temps à répondre. Réessaie dans un moment.",
+  "ctx": "web/js/train.js:193"
+ },
+ {
+  "s": "La révision n'a pas pu être préparée.",
+  "ctx": "web/js/train.js:193"
+ },
+ {
+  "s": "Révision terminée",
+  "ctx": "web/js/train.js:233"
+ },
+ {
+  "s": " fautes corrigées sortent",
+  "ctx": "web/js/train.js:234"
+ },
+ {
+  "s": " faute corrigée sort",
+  "ctx": "web/js/train.js:234"
+ },
+ {
+  "s": "Une autre série",
+  "ctx": "web/js/train.js:236"
+ },
+ {
+  "s": "Série du jour terminée ·",
+  "ctx": "web/js/train.js:244 (morceau)"
+ },
+ {
+  "s": "Série du jour terminée · {0} %",
+  "ctx": "web/js/train.js:244"
+ },
+ {
+  "s": "Série en cours ·",
+  "ctx": "web/js/train.js:244 (morceau)"
+ },
+ {
+  "s": "Série en cours · {0} / {1}",
+  "ctx": "web/js/train.js:244"
+ },
+ {
+  "s": "Tes fautes, ta grammaire, tes mots",
+  "ctx": "web/js/train.js:244"
+ },
+ {
+  "s": "Tu peux en demander une autre quand tu veux.",
+  "ctx": "web/js/train.js:245"
+ },
+ {
+  "s": "Claude prépare 12 exercices rien que pour toi, dont des traductions libres.",
+  "ctx": "web/js/train.js:245"
+ },
+ {
+  "s": "Préparer ma révision",
+  "ctx": "web/js/train.js:248"
+ },
+ {
+  "s": "Habitué",
+  "ctx": "web/js/train.js:272"
+ },
+ {
+  "s": "Du coin",
+  "ctx": "web/js/train.js:272"
+ },
+ {
+  "s": "Premier pas",
+  "ctx": "web/js/train.js:290"
+ },
+ {
+  "s": "Terminer une leçon",
+  "ctx": "web/js/train.js:290"
+ },
+ {
+  "s": "Bon élève",
+  "ctx": "web/js/train.js:291"
+ },
+ {
+  "s": "10 leçons terminées",
+  "ctx": "web/js/train.js:291"
+ },
+ {
+  "s": "25 leçons terminées",
+  "ctx": "web/js/train.js:292"
+ },
+ {
+  "s": "Ça chauffe",
+  "ctx": "web/js/train.js:293"
+ },
+ {
+  "s": "3 jours d'affilée",
+  "ctx": "web/js/train.js:293"
+ },
+ {
+  "s": "Une semaine pile",
+  "ctx": "web/js/train.js:294"
+ },
+ {
+  "s": "7 jours d'affilée",
+  "ctx": "web/js/train.js:294"
+ },
+ {
+  "s": "Inarrêtable",
+  "ctx": "web/js/train.js:295"
+ },
+ {
+  "s": "30 jours d'affilée",
+  "ctx": "web/js/train.js:295"
+ },
+ {
+  "s": "100 mots vus",
+  "ctx": "web/js/train.js:296"
+ },
+ {
+  "s": "300 mots vus",
+  "ctx": "web/js/train.js:297"
+ },
+ {
+  "s": "Une première conversation",
+  "ctx": "web/js/train.js:298"
+ },
+ {
+  "s": "Sur mesure",
+  "ctx": "web/js/train.js:300"
+ },
+ {
+  "s": "Une révision sur mesure",
+  "ctx": "web/js/train.js:300"
+ },
+ {
+  "s": "Méthodique",
+  "ctx": "web/js/train.js:301"
+ },
+ {
+  "s": "7 révisions sur mesure",
+  "ctx": "web/js/train.js:301"
+ },
+ {
+  "s": "Tête dure, mais pas trop",
+  "ctx": "web/js/train.js:302"
+ },
+ {
+  "s": "10 fautes corrigées",
+  "ctx": "web/js/train.js:302"
+ },
+ {
+  "s": "Objectif du jour atteint 5 fois",
+  "ctx": "web/js/train.js:303"
+ },
+ {
+  "s": "Évalué",
+  "ctx": "web/js/train.js:304"
+ },
+ {
+  "s": "Passer le test de niveau",
+  "ctx": "web/js/train.js:304"
+ },
+ {
+  "s": "{0} sur {1}",
+  "ctx": "web/js/train.js:319"
+ },
+ {
+  "s": "Nouveaux trophées !",
+  "ctx": "web/js/train.js:324"
+ },
+ {
+  "s": "Nouveau trophée !",
+  "ctx": "web/js/train.js:324"
+ },
+ {
+  "s": "points pour devenir «",
+  "ctx": "web/js/train.js:340 (morceau)"
+ },
+ {
+  "s": "Encore {0} points pour devenir « {1} »",
+  "ctx": "web/js/train.js:340"
+ },
+ {
+  "s": "jours de série",
+  "ctx": "web/js/train.js:355"
+ },
+ {
+  "s": "jour de série",
+  "ctx": "web/js/train.js:355"
+ },
+ {
+  "s": "mots vus",
+  "ctx": "web/js/train.js:355"
+ },
+ {
+  "s": "fautes corrigées",
+  "ctx": "web/js/train.js:355"
+ },
+ {
+  "s": "faute corrigée",
+  "ctx": "web/js/train.js:355"
+ },
+ {
+  "s": "Trophées",
+  "ctx": "web/js/train.js:360"
+ },
+ {
+  "s": "Voir tous les trophées",
+  "ctx": "web/js/train.js:362"
+ },
+ {
+  "s": "nouveaux trophées !",
+  "ctx": "web/js/train.js:364 (morceau)"
+ },
+ {
+  "s": "{0} nouveaux trophées !",
+  "ctx": "web/js/train.js:364"
+ },
+ {
+  "s": "Nouveau trophée :",
+  "ctx": "web/js/train.js:364 (morceau)"
+ },
+ {
+  "s": "Nouveau trophée : {0}",
+  "ctx": "web/js/train.js:364"
+ },
+ {
+  "s": "Tes 5 dernières semaines",
+  "ctx": "web/js/train.js:366"
+ },
+ {
+  "s": "Objectif du jour atteint",
+  "ctx": "web/js/train.js:375 (morceau)"
+ },
+ {
+  "s": "fois ces 5 dernières semaines",
+  "ctx": "web/js/train.js:375 (morceau)"
+ },
+ {
+  "s": "Objectif du jour atteint {0} fois ces 5 dernières semaines",
+  "ctx": "web/js/train.js:375"
+ },
+ {
+  "s": "Tu sais déjà",
+  "ctx": "web/js/train.js:381"
+ },
+ {
+  "s": "Bientôt : {0}",
+  "ctx": "web/js/train.js:383"
+ },
+ {
+  "s": "Progression enregistrée dans ton compte",
+  "ctx": "web/js/web.js:7"
+ },
+ {
+  "s": "Hors ligne : la progression reste sur ce téléphone et s'enregistrera au retour du réseau.",
+  "ctx": "web/js/web.js:8"
+ },
+ {
+  "s": "Enregistrement impossible pour l'instant : la progression reste sur ce téléphone.",
+  "ctx": "web/js/web.js:9"
+ },
+ {
+  "s": "Tu as atteint le plafond du jour pour l'assistant. Il se remet à zéro à minuit.",
+  "ctx": "web/js/web.js:11"
+ },
+ {
+  "s": "Ta session a expiré : reconnecte-toi, puis réessaie.",
+  "ctx": "web/js/web.js:12"
+ },
+ {
+  "s": "L'assistant n'est pas encore configuré sur le serveur de l'app.",
+  "ctx": "web/js/web.js:13"
+ },
+ {
+  "s": "Claude est très demandé en ce moment. Réessaie dans un moment.",
+  "ctx": "web/js/web.js:14"
+ },
+ {
+  "s": "Pas de réseau. L'assistant a besoin d'une connexion.",
+  "ctx": "web/js/web.js:15"
+ },
+ {
+  "s": "Demande annulée.",
+  "ctx": "web/js/web.js:16"
+ },
+ {
+  "s": "Claude ne répond pas : la connexion a peut-être sauté. Réessaie.",
+  "ctx": "web/js/web.js:17"
+ },
+ {
+  "s": "Claude a renvoyé une réponse vide. Réessaie.",
+  "ctx": "web/js/web.js:18"
+ },
+ {
+  "s": "Claude a préféré ne pas répondre à ce message. Reformule-le autrement.",
+  "ctx": "web/js/web.js:19"
+ },
+ {
+  "s": "Erreur du serveur. Réessaie dans un moment.",
+  "ctx": "web/js/web.js:20"
+ },
+ {
+  "s": "Ce compte n'a pas été invité : l'assistant lui est fermé. Demande une invitation au propriétaire de l'app.",
+  "ctx": "web/js/web.js:21"
+ },
+ {
+  "s": "Le serveur ne connaît pas encore le propriétaire de l'app : il faut ajouter le secret OWNER_EMAIL dans Supabase.",
+  "ctx": "web/js/web.js:22"
+ },
+ {
+  "s": "Vérifie dans Mon compte → Vérifier la configuration.",
+  "ctx": "web/js/web.js:28 (morceau)"
+ },
+ {
+  "s": "{0} Vérifie dans Mon compte → Vérifier la configuration.",
+  "ctx": "web/js/web.js:28"
+ },
+ {
+  "s": "Compte et amis",
+  "ctx": "web/js/web.js:36"
+ },
+ {
+  "s": "Connexion interrompue : je reprends où j'en étais",
+  "ctx": "web/js/web.js:50 (morceau)"
+ },
+ {
+  "s": " (essai {0} sur 3)",
+  "ctx": "web/js/web.js:50"
+ },
+ {
+  "s": "Connexion interrompue : je reprends où j'en étais{0}…",
+  "ctx": "web/js/web.js:50"
+ },
+ {
+  "s": "Passer à l'oral",
+  "ctx": "web/js/web.js:60"
+ },
+ {
+  "s": "Ajoute l'app à ton écran d'accueil : elle s'ouvre en plein écran, comme une vraie app.",
+  "ctx": "web/js/web.js:72"
+ },
+ {
+  "s": "Dans Safari, touche le bouton Partager (le carré avec une flèche), puis « Sur l'écran d'accueil ». L'app s'ouvre ensuite en plein écran. Après l'installation, connecte-toi une fois dans l'app avec ton e-mail et ton mot de passe.",
+  "ctx": "web/js/web.js:76"
+ },
+ {
+  "s": "Dans le menu du navigateur, choisis « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
+  "ctx": "web/js/web.js:78"
+ },
+ {
+  "s": "Copié",
+  "ctx": "web/js/web.js:88"
+ },
+ {
+  "s": "Copie impossible : sélectionne le texte",
+  "ctx": "web/js/web.js:88"
+ },
+ {
+  "s": "reconnaissance du téléphone",
+  "ctx": "web/js/web.js:112"
+ },
+ {
+  "s": "transcription par le serveur",
+  "ctx": "web/js/web.js:112"
+ },
+ {
+  "s": "Prénom enregistré.",
+  "ctx": "web/js/web.js:119"
+ },
+ {
+  "s": "Tester le micro",
+  "ctx": "web/js/web.js:130"
+ },
+ {
+  "s": "Touche le bouton et dis une phrase en",
+  "ctx": "web/js/web.js:131 (morceau)"
+ },
+ {
+  "s": "Touche le bouton et dis une phrase en {0}, par exemple « Buongiorno, come stai ? ».",
+  "ctx": "web/js/web.js:131"
+ },
+ {
+  "s": "Rien entendu. Vérifie que l'app a accès au micro.",
+  "ctx": "web/js/web.js:135"
+ },
+ {
+  "s": "Les personnages et les leçons parlent avec des voix naturelles, produites par le serveur. Sans réseau, la voix du téléphone prend le relais.",
+  "ctx": "web/js/web.js:146"
+ },
+ {
+  "s": "Les voix naturelles ne sont pas encore activées sur le serveur : c'est la voix du téléphone qui parle.",
+  "ctx": "web/js/web.js:146"
+ },
+ {
+  "s": "Parler plus lentement",
+  "ctx": "web/js/web.js:153"
+ },
+ {
+  "s": "Pour bien entendre chaque mot",
+  "ctx": "web/js/web.js:153"
+ },
+ {
+  "s": "Couper la parole à la voix",
+  "ctx": "web/js/web.js:154"
+ },
+ {
+  "s": "En mains libres, parle pendant que le personnage parle : il s'arrête et t'écoute",
+  "ctx": "web/js/web.js:154 (morceau)"
+ },
+ {
+  "s": " (déconseillé sur iPhone : le son sort moins fort)",
+  "ctx": "web/js/web.js:154"
+ },
+ {
+  "s": "En mains libres, parle pendant que le personnage parle : il s'arrête et t'écoute{0}",
+  "ctx": "web/js/web.js:154"
+ },
+ {
+  "s": "Pause avant l'envoi, en mains libres",
+  "ctx": "web/js/web.js:155"
+ },
+ {
+  "s": "Hors mains libres, le micro écoute jusqu'à ce que tu touches ■, même si tu fais des pauses, puis envoie ta phrase.",
+  "ctx": "web/js/web.js:157"
+ },
+ {
+  "s": "Écouter les personnages",
+  "ctx": "web/js/web.js:159"
+ },
+ {
+  "s": "¡Hola! ¿Qué tal? Cuéntame un poco de tu día.",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "¡Ay, cariño! Siéntate, que la paella ya está casi lista.",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "Ciao! Allora, come è andata la giornata? Raccontami un po'.",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "Buongiorno! Un caffè al volo o ti siedi un attimo?",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "Dai, sabato andiamo a quella mostra in centro? Poi un aperitivo!",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "Tesoro mio, hai mangiato? Vieni qua, assaggia questo ragù.",
+  "ctx": "web/js/web.js:160"
+ },
+ {
+  "s": "Ce que les personnages savent de toi",
+  "ctx": "web/js/web.js:168"
+ },
+ {
+  "s": "Rien pour l'instant. Après chaque conversation,",
+  "ctx": "web/js/web.js:170 (morceau)"
+ },
+ {
+  "s": " et $1",
+  "ctx": "web/js/web.js:170"
+ },
+ {
+  "s": "retiennent ce que tu leur as raconté, pour reprendre la discussion là où vous l'aviez laissée.",
+  "ctx": "web/js/web.js:170 (morceau)"
+ },
+ {
+  "s": "Rien pour l'instant. Après chaque conversation, {0} retiennent ce que tu leur as raconté, pour reprendre la discussion là où vous l'aviez laissée.",
+  "ctx": "web/js/web.js:170"
+ },
+ {
+  "s": "Retenu au fil de tes conversations, pour que chacun reprenne le fil et aille plus loin. Ça reste dans ton compte.",
+  "ctx": "web/js/web.js:172"
+ },
+ {
+  "s": "jeux de rôle",
+  "ctx": "web/js/web.js:174"
+ },
+ {
+  "s": "Effacer la mémoire",
+  "ctx": "web/js/web.js:175"
+ },
+ {
+  "s": "Pour te connecter sur un autre appareil ou dans l'app installée : ton e-mail et ce mot de passe. Ton téléphone peut le retenir.",
+  "ctx": "web/js/web.js:183"
+ },
+ {
+  "s": "Enregistrer le mot de passe",
+  "ctx": "web/js/web.js:187"
+ },
+ {
+  "s": "Mot de passe enregistré.",
+  "ctx": "web/js/web.js:192"
+ },
+ {
+  "s": "Reprendre ma progression de l'app Claude",
+  "ctx": "web/js/web.js:198"
+ },
+ {
+  "s": "Dans l'app « Italiano passo passo » de Claude, touche « Transférer ma progression » en bas de l'accueil : le texte est copié. Colle-le ici. Ta progression actuelle est conservée : les deux sont fusionnées.",
+  "ctx": "web/js/web.js:199"
+ },
+ {
+  "s": "Colle ici le texte copié",
+  "ctx": "web/js/web.js:200"
+ },
+ {
+  "s": "Progression à importer",
+  "ctx": "web/js/web.js:200"
+ },
+ {
+  "s": "Ce texte n'est pas une progression reconnue. Recopie-le depuis l'app Claude, en entier.",
+  "ctx": "web/js/web.js:208"
+ },
+ {
+  "s": "Progression importée :",
+  "ctx": "web/js/web.js:212 (morceau)"
+ },
+ {
+  "s": "dans ton carnet.",
+  "ctx": "web/js/web.js:212 (morceau)"
+ },
+ {
+  "s": "Progression importée : {0} leçon{1} terminée{2}{3}, {4}{5} dans ton carnet.",
+  "ctx": "web/js/web.js:212"
+ },
+ {
+  "s": "Vérifier la configuration",
+  "ctx": "web/js/web.js:218"
+ },
+ {
+  "s": "Essaie chaque clé du serveur (Claude, voix, dictée, cache) et dit ce qui manque.",
+  "ctx": "web/js/web.js:219"
+ },
+ {
+  "s": "Voix hébraïques",
+  "ctx": "web/js/web.js:225"
+ },
+ {
+  "s": "Dictée (micro)",
+  "ctx": "web/js/web.js:225"
+ },
+ {
+  "s": "Cache des voix",
+  "ctx": "web/js/web.js:225"
+ },
+ {
+  "s": "Membres : suivre et gérer",
+  "ctx": "web/js/web.js:232"
+ },
+ {
+  "s": "Se déconnecter de cet appareil",
+  "ctx": "web/js/web.js:236"
+ },
+ {
+  "s": "Pas de réseau : tes derniers progrès ne sont pas encore enregistrés. Toucher encore pour te déconnecter quand même (ils seront perdus)",
+  "ctx": "web/js/web.js:240"
+ },
+ {
+  "s": "Supprimer mon compte et mes données",
+  "ctx": "web/js/web.js:242"
+ },
+ {
+  "s": "Confirmer : supprimer définitivement mon compte, ma progression et mes leçons",
+  "ctx": "web/js/web.js:244"
+ },
+ {
+  "s": "! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude.",
+  "ctx": "web/js/web.js:254 (morceau)"
+ },
+ {
+  "s": "2. Touche « Première connexion », entre ton e-mail et ce code :",
+  "ctx": "web/js/web.js:256 (morceau)"
+ },
+ {
+  "s": "(valable environ une heure), puis choisis ton mot de passe",
+  "ctx": "web/js/web.js:256 (morceau)"
+ },
+ {
+  "s": "3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.",
+  "ctx": "web/js/web.js:257 (morceau)"
+ },
+ {
+  "s": "Ciao{0} ! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude. 1. Ouvre {1}?e={2} 2. Touche « Première connexion », entre ton e-mail et ce code : {3} (valable environ une heure), puis choisis ton mot de passe 3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.",
+  "ctx": "web/js/web.js:254"
+ },
+ {
+  "s": "Propriétaire de l'app",
+  "ctx": "web/js/web.js:261"
+ },
+ {
+  "s": "Tes amis créent leur compte eux-mêmes en ouvrant le lien de l'app. Tu peux aussi préparer un compte pour quelqu'un : tu reçois un code de connexion à lui envoyer.",
+  "ctx": "web/js/web.js:263"
+ },
+ {
+  "s": "Préparer un compte",
+  "ctx": "web/js/web.js:264"
+ },
+ {
+  "s": "Prénom",
+  "ctx": "web/js/web.js:266"
+ },
+ {
+  "s": "Créer l'invitation",
+  "ctx": "web/js/web.js:268"
+ },
+ {
+  "s": "Copier le message",
+  "ctx": "web/js/web.js:274"
+ },
+ {
+  "s": "Envoie ce message à",
+  "ctx": "web/js/web.js:275 (morceau)"
+ },
+ {
+  "s": "Envoie ce message à {0} :",
+  "ctx": "web/js/web.js:275"
+ },
+ {
+  "s": "min de micro",
+  "ctx": "web/js/web.js:292 (morceau)"
+ },
+ {
+  "s": ", {0} min de micro",
+  "ctx": "web/js/web.js:292"
+ },
+ {
+  "s": "Aujourd'hui : {0} demande{1} · 30 jours : {2} demandes, {3} jour{4} actif{5}, {6} jetons lus, {7} écrits{8}",
+  "ctx": "web/js/web.js:292"
+ },
+ {
+  "s": "Plafond quotidien de demandes pour",
+  "ctx": "web/js/web.js:296 (morceau)"
+ },
+ {
+  "s": "Plafond quotidien de demandes pour {0}",
+  "ctx": "web/js/web.js:296"
+ },
+ {
+  "s": "Enregistré",
+  "ctx": "web/js/web.js:297"
+ },
+ {
+  "s": "Confirmer le retrait",
+  "ctx": "web/js/web.js:301"
+ },
+ {
+  "s": "Plafond vide : valeur par défaut (",
+  "ctx": "web/js/web.js:306 (morceau)"
+ },
+ {
+  "s": "demandes par jour,",
+  "ctx": "web/js/web.js:306 (morceau)"
+ },
+ {
+  "s": "pour toi). Modèles :",
+  "ctx": "web/js/web.js:306 (morceau)"
+ },
+ {
+  "s": "pour la conversation,",
+  "ctx": "web/js/web.js:306 (morceau)"
+ },
+ {
+  "s": "pour écrire les leçons.",
+  "ctx": "web/js/web.js:306 (morceau)"
+ },
+ {
+  "s": "Plafond vide : valeur par défaut ({0} demandes par jour, {1} pour toi). Modèles : {2} pour la conversation, {3} pour écrire les leçons.",
+  "ctx": "web/js/web.js:306"
+ },
+ {
+  "s": "La conversation s'est mise en pause parce que l'écran s'est éteint ou que tu as changé d'app.",
+  "ctx": "web/js/web.js:321"
+ },
+ {
+  "s": "La clé de Claude n'est pas encore configurée sur le serveur.",
+  "ctx": "supabase/functions/api/index.ts:149"
+ },
+ {
+  "s": "Requête illisible.",
+  "ctx": "supabase/functions/api/index.ts:151"
+ },
+ {
+  "s": "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.",
+  "ctx": "supabase/functions/api/index.ts:163"
+ },
+ {
+  "s": "L'app a atteint son plafond du jour pour tout le monde. Il se remet à zéro à minuit.",
+  "ctx": "supabase/functions/api/index.ts:166"
+ },
+ {
+  "s": "thinking refusé",
+  "ctx": "supabase/functions/api/index.ts:194"
+ },
+ {
+  "s": "Claude ne répond pas pour l'instant. Réessaie dans un moment.",
+  "ctx": "supabase/functions/api/index.ts:205"
+ },
+ {
+  "s": "La clé de Claude est refusée : vérifie-la sur le serveur.",
+  "ctx": "supabase/functions/api/index.ts:212"
+ },
+ {
+  "s": "Claude a refusé la demande.",
+  "ctx": "supabase/functions/api/index.ts:212"
+ },
+ {
+  "s": "Claude s'est interrompu. Réessaie.",
+  "ctx": "supabase/functions/api/index.ts:252"
+ },
+ {
+  "s": "Impossible de créer un code pour l'instant.",
+  "ctx": "supabase/functions/api/index.ts:304"
+ },
+ {
+  "s": "Suppression impossible pour l'instant.",
+  "ctx": "supabase/functions/api/index.ts:309"
+ },
+ {
+  "s": "Réservé au propriétaire de l'app.",
+  "ctx": "supabase/functions/api/index.ts:312"
+ },
+ {
+  "s": "Création du compte impossible pour l'instant.",
+  "ctx": "supabase/functions/api/index.ts:321"
+ },
+ {
+  "s": "Compte introuvable après sa création. Réessaie.",
+  "ctx": "supabase/functions/api/index.ts:324"
+ },
+ {
+  "s": "Compte créé, mais le code n'a pas pu être généré. Réessaie.",
+  "ctx": "supabase/functions/api/index.ts:329"
+ },
+ {
+  "s": "Le secret ANTHROPIC_API_KEY est absent.",
+  "ctx": "supabase/functions/api/index.ts:337"
+ },
+ {
+  "s": "ANTHROPIC_API_KEY contient une clé OpenAI (elle commence par sk- mais pas par sk-ant-). Remets-y ta clé Anthropic, et mets la clé OpenAI dans OPENAI_API_KEY.",
+  "ctx": "supabase/functions/api/index.ts:338"
+ },
+ {
+  "s": "La clé Anthropic est refusée (révoquée ou mal copiée). Crée-en une nouvelle sur console.anthropic.com et remplace ANTHROPIC_API_KEY.",
+  "ctx": "supabase/functions/api/index.ts:341"
+ },
+ {
+  "s": "La clé Anthropic n'a pas les droits nécessaires.",
+  "ctx": "supabase/functions/api/index.ts:341"
+ },
+ {
+  "s": "Anthropic injoignable depuis le serveur.",
+  "ctx": "supabase/functions/api/index.ts:341"
+ },
+ {
+  "s": "Réponse inattendue d'Anthropic (",
+  "ctx": "supabase/functions/api/index.ts:341 (morceau)"
+ },
+ {
+  "s": "Réponse inattendue d'Anthropic ({0}).",
+  "ctx": "supabase/functions/api/index.ts:341"
+ },
+ {
+  "s": "Aucune clé OpenAI : ajoute le secret OPENAI_API_KEY pour les voix naturelles et le micro sur iPhone.",
+  "ctx": "supabase/functions/api/index.ts:345"
+ },
+ {
+  "s": "contient une clé Anthropic : il faut une clé OpenAI (platform.openai.com).",
+  "ctx": "supabase/functions/api/index.ts:346 (morceau)"
+ },
+ {
+  "s": "{0} contient une clé Anthropic : il faut une clé OpenAI (platform.openai.com).",
+  "ctx": "supabase/functions/api/index.ts:346"
+ },
+ {
+  "s": "La clé OpenAI (",
+  "ctx": "supabase/functions/api/index.ts:349 (morceau)"
+ },
+ {
+  "s": ") est refusée.",
+  "ctx": "supabase/functions/api/index.ts:349 (morceau)"
+ },
+ {
+  "s": "La clé OpenAI ({0}) est refusée.",
+  "ctx": "supabase/functions/api/index.ts:349"
+ },
+ {
+  "s": "Le compte OpenAI n'a plus de crédit ou est limité.",
+  "ctx": "supabase/functions/api/index.ts:349"
+ },
+ {
+  "s": "Réponse inattendue d'OpenAI (",
+  "ctx": "supabase/functions/api/index.ts:349 (morceau)"
+ },
+ {
+  "s": "Réponse inattendue d'OpenAI ({0}).",
+  "ctx": "supabase/functions/api/index.ts:349"
+ },
+ {
+  "s": "La clé ElevenLabs n'a pas la permission Speech to Text : sur elevenlabs.io, modifie la clé (API Keys) et coche Speech to Text.",
+  "ctx": "supabase/functions/api/index.ts:367 (morceau)"
+ },
+ {
+  "s": " En attendant, OpenAI transcrit.",
+  "ctx": "supabase/functions/api/index.ts:367"
+ },
+ {
+  "s": "La clé ElevenLabs n'a pas la permission Speech to Text : sur elevenlabs.io, modifie la clé (API Keys) et coche Speech to Text.{0}",
+  "ctx": "supabase/functions/api/index.ts:367"
+ },
+ {
+  "s": "La clé ElevenLabs (ELEVENLABS_API_KEY) est refusée.",
+  "ctx": "supabase/functions/api/index.ts:367 (morceau)"
+ },
+ {
+  "s": "La clé ElevenLabs (ELEVENLABS_API_KEY) est refusée.{0}",
+  "ctx": "supabase/functions/api/index.ts:367"
+ },
+ {
+  "s": "ElevenLabs injoignable depuis le serveur.",
+  "ctx": "supabase/functions/api/index.ts:368 (morceau)"
+ },
+ {
+  "s": " OpenAI prend le relais.",
+  "ctx": "supabase/functions/api/index.ts:368"
+ },
+ {
+  "s": "ElevenLabs injoignable depuis le serveur.{0}",
+  "ctx": "supabase/functions/api/index.ts:368"
+ },
+ {
+  "s": "ElevenLabs a répondu",
+  "ctx": "supabase/functions/api/index.ts:370 (morceau)"
+ },
+ {
+  "s": " : crédits épuisés.",
+  "ctx": "supabase/functions/api/index.ts:370"
+ },
+ {
+  "s": "ElevenLabs a répondu {0}{1}{2}",
+  "ctx": "supabase/functions/api/index.ts:370"
+ },
+ {
+  "s": "Aucune clé de transcription : ajoute ELEVENLABS_API_KEY ou OPENAI_API_KEY.",
+  "ctx": "supabase/functions/api/index.ts:371"
+ },
+ {
+  "s": "Aucune voix italienne trouvée sur ElevenLabs (",
+  "ctx": "supabase/functions/api/index.ts:374 (morceau)"
+ },
+ {
+  "s": "). Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:374 (morceau)"
+ },
+ {
+  "s": "Aucune voix italienne trouvée sur ElevenLabs ({0}). Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:374"
+ },
+ {
+  "s": " et des voix françaises",
+  "ctx": "supabase/functions/api/index.ts:377"
+ },
+ {
+  "s": "Crédits ElevenLabs épuisés : les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:378"
+ },
+ {
+  "s": "Les voix de la bibliothèque ElevenLabs demandent un abonnement payant. Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:378"
+ },
+ {
+  "s": "ElevenLabs refuse la voix (",
+  "ctx": "supabase/functions/api/index.ts:378 (morceau)"
+ },
+ {
+  "s": "ElevenLabs refuse la voix ({0}). Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:378"
+ },
+ {
+  "s": "{0} voix israéliennes",
+  "ctx": "supabase/functions/api/index.ts:384"
+ },
+ {
+  "s": "voix italiennes (aucune voix israélienne trouvée)",
+  "ctx": "supabase/functions/api/index.ts:384"
+ },
+ {
+  "s": "ElevenLabs ne lit pas l'hébreu (",
+  "ctx": "supabase/functions/api/index.ts:385 (morceau)"
+ },
+ {
+  "s": "ElevenLabs ne lit pas l'hébreu ({0}). Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:385"
+ },
+ {
+  "s": "voix italiennes (aucune voix espagnole trouvée)",
+  "ctx": "supabase/functions/api/index.ts:390"
+ },
+ {
+  "s": "ElevenLabs ne lit pas l'espagnol (",
+  "ctx": "supabase/functions/api/index.ts:391 (morceau)"
+ },
+ {
+  "s": "ElevenLabs ne lit pas l'espagnol ({0}). Les voix OpenAI prennent le relais.",
+  "ctx": "supabase/functions/api/index.ts:391"
+ },
+ {
+  "s": "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même.",
+  "ctx": "supabase/functions/api/index.ts:394"
+ },
+ {
+  "s": "La transcription par le serveur n'est pas configurée.",
+  "ctx": "supabase/functions/api/index.ts:433"
+ },
+ {
+  "s": "Transcripción fiel en español, palabra por palabra.",
+  "ctx": "supabase/functions/api/index.ts:477"
+ },
+ {
+  "s": "La transcription a échoué. Réessaie.",
+  "ctx": "supabase/functions/api/index.ts:501"
+ },
+ {
+  "s": "bibliothèque {0} {1}",
+  "ctx": "supabase/functions/api/index.ts:550"
+ },
+ {
+  "s": "bibliothèque injoignable",
+  "ctx": "supabase/functions/api/index.ts:560"
+ },
+ {
+  "s": "aucune voix italienne dans la bibliothèque (",
+  "ctx": "supabase/functions/api/index.ts:591 (morceau)"
+ },
+ {
+  "s": "aucune voix italienne dans la bibliothèque ({0} voix vues)",
+  "ctx": "supabase/functions/api/index.ts:591"
+ },
+ {
+  "s": "el voices: échec",
+  "ctx": "supabase/functions/api/index.ts:591"
+ },
+ {
+  "s": "Les voix naturelles ne sont pas configurées.",
+  "ctx": "supabase/functions/api/index.ts:678"
+ },
+ {
+  "s": "Texte trop long pour une phrase.",
+  "ctx": "supabase/functions/api/index.ts:682"
+ },
+ {
+  "s": "Voix indisponible pour l'instant.",
+  "ctx": "supabase/functions/api/index.ts:709"
+ },
+ {
+  "s": "Service de voix injoignable.",
+  "ctx": "supabase/functions/api/index.ts:715"
+ },
+ {
+  "s": "Méthode non autorisée.",
+  "ctx": "supabase/functions/api/index.ts:791"
+ },
+ {
+  "s": "Serveur incomplet : SUPABASE_URL ou la clé serveur manquent.",
+  "ctx": "supabase/functions/api/index.ts:792"
+ },
+ {
+  "s": "Connecte-toi pour continuer.",
+  "ctx": "supabase/functions/api/index.ts:796"
+ },
+ {
+  "s": "Le serveur ne connaît pas encore le propriétaire de l'app : ajoute le secret OWNER_EMAIL (ton adresse e-mail) dans Supabase, Edge Functions, Secrets.",
+  "ctx": "supabase/functions/api/index.ts:805"
+ },
+ {
+  "s": "Ton adresse n'est pas confirmée dans Supabase : dans Authentication, Users, confirme ton compte.",
+  "ctx": "supabase/functions/api/index.ts:806"
+ },
+ {
+  "s": "Ce compte (",
+  "ctx": "supabase/functions/api/index.ts:807 (morceau)"
+ },
+ {
+  "s": ") n'est ni invité ni le propriétaire déclaré dans OWNER_EMAIL.",
+  "ctx": "supabase/functions/api/index.ts:807 (morceau)"
+ },
+ {
+  "s": "Ce compte ({0}) n'est ni invité ni le propriétaire déclaré dans OWNER_EMAIL.",
+  "ctx": "supabase/functions/api/index.ts:807"
+ }
+]

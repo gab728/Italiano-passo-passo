@@ -84,6 +84,7 @@ const NEWS = (() => {
   const heNews = () => C().id !== "he" ? "" : "Hébreu israélien moderne. " + "Écris TOUT l'hébreu (titre, texte, mots-clés, exemples, exercices) AVEC le niqqud complet, sur chaque mot : la prononciation est calculée à partir des voyelles. " +
     "Dans les mots-clés, ajoute la prononciation entre crochets à la fin de la traduction : « gouvernement [memshala] ». Les consignes en français ; les phrases en hébreu.\n";
   const ago = (iso) => { if (!iso) return ""; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? "il y a " + Math.max(m, 1) + " min" : m < 1440 ? "il y a " + Math.round(m / 60) + " h" : "il y a " + Math.round(m / 1440) + " j"; };
+  const UIX = () => (window.I18N && I18N.ui !== "fr" ? I18N.ui : ""), NKEY = (k) => k + (UIX() ? "-" + UIX() : "");
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* plein */ } } };
 
   /* --- Dépêches, gardées 30 minutes --- */
@@ -105,9 +106,10 @@ const NEWS = (() => {
   }
 
   /* --- La notizia : lue dans la base partagée, sinon écrite par Claude puis partagée --- */
-  const docId = (it, lv) => "n-" + it.id + "-" + lv;
+  const docId = (it, lv) => "n-" + it.id + "-" + lv + (UIX() ? "-" + UIX() : "");
+  // Élève anglophone ou hispanophone : ses notizie (traductions, consignes) sont écrites et partagées à part.
   async function loadDoc(it, onStep) {
-    const lv = lvl(), id = docId(it, lv), local = ls.get("ipp-news-docs") || {};
+    const lv = lvl(), id = docId(it, lv), local = ls.get(NKEY("ipp-news-docs")) || {};
     if (local[id]) return local[id];
     try { const { data } = await W.sb.from("news_lessons").select("doc").eq("id", id).maybeSingle(); if (data && data.doc) return keep(id, data.doc); } catch (e) { /* hors ligne : on écrit */ }
     if (!AI) throw { code: "offline" };
@@ -134,7 +136,7 @@ const NEWS = (() => {
     try { await W.sb.from("news_lessons").insert({ id, theme: it.theme, level: lv, title: d.title.slice(0, 200), link: it.link, published: it.date, doc: d, created_by: W.user && W.user.id }); } catch (e) { /* déjà écrite par un autre membre, ou hors ligne : on garde la nôtre */ }
     return keep(id, d);
   }
-  function keep(id, d) { const local = ls.get("ipp-news-docs") || {}; local[id] = d; const ks = Object.keys(local); ks.slice(0, Math.max(0, ks.length - 12)).forEach((k) => delete local[k]); ls.set("ipp-news-docs", local); return d; }
+  function keep(id, d) { const local = ls.get(NKEY("ipp-news-docs")) || {}; local[id] = d; const ks = Object.keys(local); ks.slice(0, Math.max(0, ks.length - 12)).forEach((k) => delete local[k]); ls.set(NKEY("ipp-news-docs"), local); return d; }
   const S_ = (x) => (typeof x === "string" ? x.trim() : "");
   function tidy(d) {
     if (!d || typeof d !== "object") return null;
@@ -184,7 +186,7 @@ const NEWS = (() => {
     const top = el("div", "nwj-top"); top.append(txt("span", "nwj-label", "Actu"));
     const ed = el("button", "link"); ed.type = "button"; ed.textContent = "Mes thèmes"; ed.onclick = () => again(true); top.append(ed); host.append(top);
     const mast = el("div", "nwj-mast"), mt = txt("h1", "nwj-title", SR.mast); if (C().rtl) mt.dir = "rtl";
-    mast.append(mt, txt("p", "nwj-sub", cap(new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })) + " · Écrit pour ton niveau : " + stage().name));
+    mast.append(mt, txt("p", "nwj-sub", cap(new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "long", day: "numeric", month: "long" })) + " · Écrit pour ton niveau : " + stage().name));
     host.append(mast);
     const tabs = el("div", "nwj-tabs"); tabs.setAttribute("role", "tablist"); host.append(tabs);
     const list = el("div", "nw-list nwj"); list.append(txt("p", "muted", "Chargement des nouvelles…")); host.append(list);
@@ -205,7 +207,7 @@ const NEWS = (() => {
       if (fil.length) {
         const hd = el("div", "nwj-filh"); hd.append(txt("h3", null, "Le fil"));
         const last = its.map((x) => Date.parse(x.date || "") || 0).reduce((a, b) => Math.max(a, b), 0);
-        if (last) hd.append(txt("span", null, "mis à jour à " + new Date(last).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", " h ")));
+        if (last) hd.append(txt("span", null, "mis à jour à " + new Date(last).toLocaleTimeString(window.I18N ? I18N.locale() : "fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", " h ")));
         list.append(hd); fil.forEach((x) => list.append(filRow(x)));
       }
       translate(sel, list);
@@ -234,12 +236,12 @@ const NEWS = (() => {
   function filRow(it) {
     const done = (S.nw || {})[it.id], a = el("button", "nw-row nwj-fil" + (done ? " done" : "")); a.type = "button";
     const d = it.date ? new Date(it.date) : null, today = d && d.toDateString() === new Date().toDateString();
-    a.append(txt("span", "nwj-time", d ? (today ? d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })) : ""));
+    a.append(txt("span", "nwj-time", d ? (today ? d.toLocaleTimeString(window.I18N ? I18N.locale() : "fr-FR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { day: "numeric", month: "short" })) : ""));
     const t = el("span", "nwj-filt"); t.append(txt("span", "nwj-kick", (NAME[it.theme] || it.theme).toUpperCase()), hed("nwj-h4", it.title), frLine("nwj-frs", it)); if (done) t.append(doneTxt(done));
     a.append(t); a.onclick = () => open(it); return a;
   }
   /* Titres traduits en français : demandés une fois pour toute la liste, gardés sur l'appareil. */
-  const TR = () => ls.get("ipp-news-tr") || {};
+  const TR = () => ls.get(NKEY("ipp-news-tr")) || {};
   let trBusy = false;
   async function translate(list, host) {
     const have = TR(), todo = list.filter((x) => !have[x.id]).slice(0, 30);
@@ -249,7 +251,7 @@ const NEWS = (() => {
       const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));
       if (Array.isArray(arr) && arr.length === todo.length) {
         const m = TR(); todo.forEach((x, i) => { if (typeof arr[i] === "string") m[x.id] = arr[i].trim().slice(0, 160); });
-        const ks = Object.keys(m); ks.slice(0, Math.max(0, ks.length - 300)).forEach((k) => delete m[k]); ls.set("ipp-news-tr", m);
+        const ks = Object.keys(m); ks.slice(0, Math.max(0, ks.length - 300)).forEach((k) => delete m[k]); ls.set(NKEY("ipp-news-tr"), m);
         host.querySelectorAll("[data-trid]").forEach((e) => { if (m[e.dataset.trid]) e.textContent = m[e.dataset.trid]; });
       }
     } catch (e) { /* sans traduction : les titres restent lisibles */ } finally { trBusy = false; }
@@ -276,7 +278,7 @@ const NEWS = (() => {
     if (WEB && WEB.keepAwake) WEB.keepAwake();
     let d;
     try { d = await loadDoc(it, (k) => { s1.textContent = "fait"; if (k === "write") s2.textContent = "en cours…"; if (k === "save") { s2.textContent = "fait"; s3.textContent = "en cours…"; } }); }
-    catch (e) { if (view !== "news") return; s1.textContent = s1.textContent === "en cours…" ? "échec" : s1.textContent; note.textContent = aiFail(e); const r = el("div", "rowb"), a = btn("Réessayer", "primary"); a.onclick = () => open(it); const h = btn(fromHist ? "Retour à l'historique" : "Retour aux notizie"); h.onclick = backList; r.append(a, h); body.append(r); return; }
+    catch (e) { if (view !== "news") return; s1.textContent = (s1.textContent === "en cours…" || s1.textContent === T("en cours…")) ? "échec" : s1.textContent; note.textContent = aiFail(e); const r = el("div", "rowb"), a = btn("Réessayer", "primary"); a.onclick = () => open(it); const h = btn(fromHist ? "Retour à l'historique" : "Retour aux notizie"); h.onclick = backList; r.append(a, h); body.append(r); return; }
     if (view !== "news") return;
     CUR = { it, d, fromHist: !!fromHist };
     HIST.add({ id: "news:" + it.id, k: "news", title: d.title, sub: NAME[it.theme] || it.theme, it: { id: it.id, theme: it.theme, title: it.title, link: it.link, date: it.date, summary: (it.summary || "").slice(0, 300) }, sc: ((S.nw || {})[it.id] || {}).sc, diff: ((S.nw || {})[it.id] || {}).diff });
@@ -287,7 +289,7 @@ const NEWS = (() => {
     stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + ((STAGES.find((x) => x.id === d.level) || stage()).name)));
     body.append(txt("h2", "nw-title", d.title)); if (d.title_fr) body.append(txt("p", "muted nw-title-fr", d.title_fr));
-    const src = el("p", "nw-src"); src.append(txt("span", null, SR.from + (it.date ? " · " + new Date(it.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
+    const src = el("p", "nw-src"); src.append(txt("span", null, SR.from + (it.date ? " · " + new Date(it.date).toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { day: "numeric", month: "long" }) : "") + " · "));
     const a = el("a"); a.href = it.link; a.target = "_blank"; a.rel = "noopener"; a.textContent = "lire l'original"; src.append(a); body.append(src);
     const tools = el("div", "nw-tools");
     const play = el("button", "pill-btn"); play.type = "button"; play.textContent = "Écouter l'article";
@@ -475,7 +477,7 @@ const NEWS = (() => {
   function homeCard() {
     const c = el("section", "card nwe"); c.setAttribute("aria-label", "Le journal du jour");
     const h = el("div", "nwe-h"), t = txt("b", "nwe-title", SR.mast); if (C().rtl) t.dir = "rtl";
-    h.append(t, el("span", "nwe-rule"), txt("span", "nwe-date", new Date().toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }))); c.append(h);
+    h.append(t, el("span", "nwe-rule"), txt("span", "nwe-date", new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "short", day: "numeric", month: "short" }))); c.append(h);
     if (!themes().length) {
       c.append(txt("p", "nwe-empty", "L'actualité " + LXC().adj + " réécrite à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
       const b = btn("Choisir mes sujets", "primary nwe-pick"); b.onclick = () => hub(true); c.append(b); return c;
@@ -505,7 +507,7 @@ if (typeof view !== "undefined" && view === "home" && typeof home === "function"
 const HIST = (() => {
   const txt = (t, c, s) => { const e = el(t, c); if (s != null) e.textContent = s; return e; };
   function add(e) { S.hist = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.id !== e.id); S.hist.unshift(Object.assign({ t: Date.now(), c: C().id }, e)); S.hist = S.hist.slice(0, 150); }
-  const label = (t) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0); const n = Math.round((d0 - d) / 864e5); return n === 0 ? "Aujourd'hui" : n === 1 ? "Hier" : d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
+  const label = (t) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d = new Date(t); d.setHours(0, 0, 0, 0); const n = Math.round((d0 - d) / 864e5); return n === 0 ? "Aujourd'hui" : n === 1 ? "Hier" : d.toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
   const KIND = { news: "Actu", lesson: "Leçon", conv: "Conversation" };
   function renderInto(host) {
     const list = (Array.isArray(S.hist) ? S.hist : []).filter((x) => x && x.k && (x.c || "it") === C().id);

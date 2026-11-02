@@ -861,7 +861,7 @@ let S={}; try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
 const local=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 /* Base centrale de cours. Les dix arrêts d'italien sont embarqués (ils marchent hors ligne) ; les autres leçons et cours vivent dans la
    base partagée de la page (collections "courses" et "lessons"), où Claude les dépose. Chaque leçon a un identifiant stable. */
-const BUILTIN=M.length,BKEY=KEY+"-base",GOOD=["Esatto!","Bravo!","Giusto!","Perfetto!","Benissimo!"];
+const BUILTIN=M.length,UIL=(window.I18N&&I18N.ui!=="fr")?I18N.ui:"",BKEY=KEY+"-base"+(UIL?"-"+UIL:""),GOOD=["Esatto!","Bravo!","Giusto!","Perfetto!","Benissimo!"];
 const COURSES={it:{id:"it",title:"Italiano",name:"italien",speech:"it-IT",keys:"àèéìòù",level:"A2 vers B1",cheers:GOOD,route:"Torino P.N. → Reggio C. C.le",
   desc:"De Turin à Reggio de Calabre : tu montes au niveau A2, tu descends avec un pied dans le B1."}};
 M.forEach((m,i)=>{m.id=i;m.course="it"});
@@ -900,8 +900,13 @@ function toLesson(id,d){try{let c=JSON.parse(d.json);if(!c||typeof c!=="object")
   const sc=c.scenario,okSc=sc&&["title","role","goal","focus","open"].every(k=>isS(sc[k]));
   return{id:"L."+id,course:d.course,st:d.title,topic:isS(d.topic)?d.topic:"",order:+d.order||0,req:isS(d.req)?d.req:null,custom:true,
     lessons:c.lessons.map(clean),vocab:c.vocab.map(v=>[v[0],v[1]]),ex:c.ex.map(ex),dlg:c.dlg.map(l=>l.slice(0,3)),dq:c.dq.map(ex),scenario:okSc?sc:null}}catch(e){return null}}
+/* Élève anglophone ou hispanophone : les dix leçons embarquées sont remplacées par leur traduction (pseudo-cours « _builtin »). */
+const BUILTIN_FR=M.slice(0,BUILTIN).map(m=>Object.assign({},m));
+function applyBuiltin(t){if(!t||typeof t!=="object")return;Object.keys(t).forEach(k=>{const i=+k,x=t[k];if(!(i>=0&&i<BUILTIN)||!x)return;
+  try{const c=typeof x.json==="string"?JSON.parse(x.json):x.json;if(!c||!Array.isArray(c.lessons)||!Array.isArray(c.ex)||c.ex.length!==BUILTIN_FR[i].ex.length)return;
+    Object.assign(M[i],{lessons:c.lessons,vocab:c.vocab,ex:c.ex,dlg:c.dlg,dq:c.dq},isS(x.title)?{st:x.title}:{},isS(x.topic)?{topic:x.topic}:{})}catch(e){}})}
 function applyBase(b){if(!b)return;M.splice(BUILTIN);
-  (b.courses||[]).forEach(c=>{if(!c||!isS(c.id))return;let plan=null;try{plan=typeof c.plan==="string"?JSON.parse(c.plan):c.plan}catch(e){}
+  (b.courses||[]).forEach(c=>{if(!c||!isS(c.id))return;if(c.id==="_builtin"){if(UIL)applyBuiltin(c.builtin);return}let plan=null;try{plan=typeof c.plan==="string"?JSON.parse(c.plan):c.plan}catch(e){}
     if(!plan||!Array.isArray(plan.levels))plan=null;if(c.id==="it"){if(plan)COURSES.it.plan=plan;return}
     if(isS(c.name))COURSES[c.id]={plan,id:c.id,title:isS(c.title)?c.title:c.id,name:c.name,speech:isS(c.speech)?c.speech:"",
     keys:typeof c.keys==="string"?c.keys.slice(0,40):"",level:isS(c.level)?c.level:"",desc:isS(c.desc)?c.desc:"",route:"",guide:isS(c.guide)?c.guide.slice(0,4000):"",rtl:c.rtl===true,
@@ -982,9 +987,9 @@ async function connect(){try{
     const ref=db.doc("data/users/"+uid+"/progress"),snap=await ref.get();let remote=null;
     if(snap.exists){try{remote=JSON.parse(snap.data().json)}catch(e){}}
     cloud=ref;
-    if(remote&&typeof remote==="object"){S=merge(S,remote);local();if(view==="home")home();
+    if(remote&&typeof remote==="object"){S=merge(S,remote);local();if(window.UISYNC&&UISYNC(remote))return;if(view==="home")home();
       if(JSON.stringify(S)!==JSON.stringify(remote))push();else setSync("ok")}
-    else if(Object.keys(S).length)push();else setSync("ok")
+    else{if(window.UISYNC)UISYNC(null);if(Object.keys(S).length)push();else setSync("ok")}
   }catch(e){setSync(cloud?"err":"local")}}
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
 const btn=(txt,c)=>{const b=el("button","btn"+(c?" "+c:""));b.type="button";b.textContent=txt;return b};
@@ -1456,7 +1461,7 @@ function audioSteps(src){const T=C().speech||"it-IT",sl=t=>String(t).replace(/ \
 function sayPart(part,token){return new Promise(res=>{
   if(part.p!=null){AUD.timer=setTimeout(res,part.p*1000*AUD.pace);return}
   let done=false;const fin=()=>{if(done)return;done=true;clearTimeout(AUD.guard);res()};
-  try{const u=new SpeechSynthesisUtterance(part.t),isFr=part.l.startsWith("fr");u.lang=part.l;u.rate=isFr?1:AUD.rate;const v=pickVoice(part.l);if(v)u.voice=v;
+  try{const sp=window.I18N?I18N.sp(part.t,part.l):[part.t,part.l],u=new SpeechSynthesisUtterance(sp[0]),isFr=part.l.startsWith("fr");u.lang=sp[1];u.rate=isFr?1:AUD.rate;const v=pickVoice(sp[1]);if(v)u.voice=v;
     u.onend=fin;u.onerror=fin;UTT=u;AUD.guard=setTimeout(fin,2500+part.t.length*95/u.rate);try{speechSynthesis.resume()}catch(e){}speechSynthesis.speak(u)}catch(e){fin()}})}
 async function audioPlay(){if(!AUD)return;const token=AUD.token=Date.now()+Math.random();AUD.playing=true;audioRender();
   while(AUD.i<AUD.steps.length){for(const part of AUD.steps[AUD.i]){if(!AUD||AUD.token!==token||view!=="audio")return;await sayPart(part,token)}

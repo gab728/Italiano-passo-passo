@@ -49,17 +49,21 @@ const TTS = (() => {
   let down = false, fails = 0;
   const on = () => !!(window.WEBAUTH && WEBAUTH.me && WEBAUTH.me.tts) && !pref().off && !down && navigator.onLine !== false;
 
+  const NATIVE_INSTR = { en: "Read like a kind teacher, in English, with a natural, calm voice.", es: "Lee como una profesora amable, en español, con una voz natural y pausada." };
   function spec(text, lang, o) {
     o = o || {};
     const w = typeof o.who === "object" && o.who ? o.who : WHO[o.who] || WHO.narrator;
     const fr = /^fr/i.test(lang || "");
+    // Élève anglophone ou hispanophone : ce qui était dit en français l'est dans sa langue.
+    const ui = window.I18N && I18N.ui !== "fr" ? I18N.ui : "";
+    if (fr && ui) text = I18N.T(String(text || ""));
     const slow = !!pref().slow;
-    let instr = fr ? (w.fr || WHO.narrator.fr) : w.it;
+    let instr = fr ? (ui ? NATIVE_INSTR[ui] : (w.fr || WHO.narrator.fr)) : w.it;
     if (slow && !fr) instr += /^Speak/.test(instr) ? " Speak a little slower than usual, articulating clearly." : " Parla un po' più lentamente del normale, scandendo bene.";
     let speed = o.rate ? 0.55 + 0.45 * o.rate : 1;
     if (slow && !fr) speed *= 0.92;
     speed = Math.round(Math.min(Math.max(speed, 0.7), 1.25) * 100) / 100;
-    return { text: String(text || "").replace(/ \/ /g, ", ").replace(/\s+/g, " ").trim(), voice: w.voice, instructions: instr, speed, cache: !!o.cache, lang: fr ? "fr" : String(lang || "it").slice(0, 2).toLowerCase() };
+    return { text: String(text || "").replace(/ \/ /g, ", ").replace(/\s+/g, " ").trim(), voice: w.voice, instructions: instr, speed, cache: !!o.cache, lang: fr ? (ui || "fr") : String(lang || "it").slice(0, 2).toLowerCase() };
   }
   // Le moteur (ElevenLabs ou OpenAI) fait partie de la clé : en changer ne rejoue pas l'ancienne voix gardée sur l'appareil.
   const engine = () => (window.WEBAUTH && WEBAUTH.me && WEBAUTH.me.tts_engine) || "";
@@ -222,8 +226,20 @@ const TTS = (() => {
   const FRW = /\b(le|les|des|est|une|du|au|aux|pour|avec|dans|vous|nous|pas|ce|cette|qui|que|sur|mais|ou|donc|être|avoir|c'est|il y a)\b/gi;
   const ITW = /\b(il|lo|gli|è|una|per|con|nel|della|del|non|sono|che|di|ho|hai|ha|siamo|questo|questa|anche|perché|molto)\b/gi;
   const ESW = /\b(el|la|los|las|es|está|están|un|una|unos|por|para|con|en|del|de|no|muy|también|pero|yo|tú|soy|estoy|tengo|hay|qué|cómo|dónde)\b/gi;
-  const looksFr = (t) => { const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s);
+  const looksFrFr = (t) => { const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s);
     if (C().id === "es") { if (/[ñ¿¡]/.test(s)) return false; if (/[çêôîœûè]/i.test(s)) return true; return (s.replace(/\b(le|les|que)\b/gi, "").match(FRW) || []).length > (s.match(ESW) || []).length + 1; } if (/[çêôîœû]/i.test(s)) return true; return (s.match(FRW) || []).length > (s.match(ITW) || []).length + 1; };
+  // Élève anglophone ou hispanophone : l'explication est dans sa langue, pas en français.
+  const ENW = /\b(the|a|an|is|are|you|your|and|of|to|with|for|this|that|it|was|be|have|what|how|where|not|do|does|my|we)\b/gi;
+  const ESX = /\b(el|los|las|es|está|están|unos|por|para|en|del|muy|también|pero|yo|tú|soy|estoy|tengo|hay|qué|cómo|dónde|y|lo que)\b/gi;
+  const ITX = /\b(il|lo|gli|è|per|nel|della|non|sono|che|di|ho|hai|ha|siamo|questo|questa|anche|perché|molto|e)\b/gi;
+  const cnt = (s, re) => (s.match(re) || []).length;
+  const looksFr = (t) => {
+    const ui = window.I18N ? I18N.ui : "fr"; if (ui === "fr") return looksFrFr(t);
+    const s = String(t || ""); if (HEB.test(s)) return false; if (C().id === "he") return /[a-zà-ÿ]/i.test(s);
+    if (ui === "en") return cnt(s, ENW) > cnt(s, C().id === "es" ? ESW : ITW) + 1;
+    if (/[ñ¿¡áíóú]/i.test(s)) return true; if (/[àèìòù]/i.test(s)) return false;
+    return cnt(s, ESX) > cnt(s, ITX) + 1;
+  };
   speak = function (t, rate) {
     if (!TTS.on()) return devSpeak(t, rate);
     devStop(); TTS.stop();

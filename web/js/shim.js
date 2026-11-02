@@ -8,7 +8,18 @@
   const okCfg = (c) => !!(c && c.supabaseUrl && c.supabaseKey && !/TON-PROJET/.test(c.supabaseUrl));
   const CFG = okCfg(window.APP_CONFIG) ? window.APP_CONFIG : okCfg(window.APP_CONFIG_BUILT) ? window.APP_CONFIG_BUILT : (window.APP_CONFIG || {});
   const gate = document.getElementById("gate");
-  const APP_KEYS = ["italiano-in-treno-v1", "italiano-in-treno-v1-base"];
+  const APP_KEYS = ["italiano-in-treno-v1", "italiano-in-treno-v1-base", "italiano-in-treno-v1-base-en", "italiano-in-treno-v1-base-es"];
+  // Langue de l'élève (interface) : fr, en ou es. Les leçons écrites pour un anglophone ou un hispanophone sont rangées à part dans la
+  // base (identifiant préfixé « uen- » / « ues- ») : elles ne se mélangent pas aux leçons écrites pour les francophones.
+  const UI = () => (window.I18N && I18N.ui) || "fr";
+  const DBP = () => (UI() === "fr" ? "" : "u" + UI() + "-");
+  const UIPRE = /^u[a-z]{2}-/;
+  // Consigne ajoutée à chaque demande à Claude : les consignes de l'app sont écrites pour des francophones.
+  const NATIVE = {
+    en: "LEARNER'S LANGUAGE (this overrides everything below): the learner is a native English speaker and does not read French. The instructions below were written for French speakers. Wherever they ask for French — explanations, translations, glosses, hints, corrections, feedback, summaries, instructions to the learner, any text the learner reads that is not in the language being studied, including JSON fields whose names contain \"fr\" or \"_fr\" — write it in natural English instead, and compare with English (not French) when you explain. Lines that the instructions tag \"FR:\" keep that tag but contain English. Keep JSON field names, formats, lengths and the language being studied exactly as requested.",
+    es: "IDIOMA DEL ALUMNO (esto prevalece sobre todo lo que sigue): el alumno es hispanohablante nativo y no lee francés. Las instrucciones siguientes se escribieron para francófonos. Siempre que pidan francés — explicaciones, traducciones, glosas, pistas, correcciones, comentarios, resúmenes, consignas para el alumno, cualquier texto que el alumno lea y que no esté en la lengua que estudia, incluidos los campos JSON cuyo nombre contenga \"fr\" o \"_fr\" — escríbelo en un español natural y neutro (tuteo), y compara con el español (no con el francés) cuando expliques. Las líneas que las instrucciones marcan con \"FR:\" conservan esa marca pero van en español. Conserva exactamente los nombres de los campos JSON, los formatos, las longitudes y la lengua estudiada.",
+  };
+  const sysFor = (s) => { const n = NATIVE[UI()]; return n ? n + (typeof s === "string" && s ? "\n\n" + s : "") : (typeof s === "string" ? s : undefined); };
   const OWNER_KEY = "ipp-local-owner";
   const SLOT = /^[a-z]{2}-u\d{2}-l\d{1,2}$/;
   const $ = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.textContent = h; return e; };
@@ -105,7 +116,7 @@
     try {
       res = await call("claude", {
         input, tier: opts.modelTier === "quick" ? "quick" : "default", stream: true,
-        system: typeof opts.system === "string" ? opts.system : undefined,
+        system: sysFor(opts.system),
         max_tokens: opts.maxTokens || undefined,
       }, { signal: ac.signal });
     } catch (e) { clearTimeout(timer); if (stalled) throw err("stalled", "Pas de réponse."); throw e; }
@@ -142,7 +153,7 @@
   let catalog = null;
   async function loadCatalog() {
     if (catalog) return catalog;
-    const r = await fetch("content/catalog.json", { cache: "no-cache" }).catch(() => null);
+    const r = await fetch("content/catalog" + (UI() === "fr" ? "" : "-" + UI()) + ".json", { cache: "no-cache" }).catch(() => null);
     catalog = r && r.ok ? await r.json() : { courses: {}, lessons: {} };
     return catalog;
   }
@@ -175,12 +186,12 @@
       async get() {
         const c = await loadCatalog();
         if (c.lessons[id]) return snap(id, c.lessons[id]);
-        const { data, error } = await sb.from("lessons").select("doc").eq("id", id).maybeSingle();
+        const { data, error } = await sb.from("lessons").select("doc").eq("id", DBP() + id).maybeSingle();
         if (error) throw dbErr(error);
         return snap(id, data ? data.doc : null);
       },
       async set(doc) {
-        const row = { id, course: (doc && doc.course) || "it", shared: SLOT.test(id), doc };
+        const row = { id: DBP() + id, course: (doc && doc.course) || "it", shared: SLOT.test(id), doc };
         const { error } = await sb.from("lessons").upsert(row, { onConflict: "id" });
         if (error) throw dbErr(error);
       },
@@ -206,7 +217,12 @@
             if (error) throw dbErr(error);
             // Leçons des autres membres : seulement celles qui occupent une place du programme.
             const plan = planIds(c);
-            (data || []).forEach((r) => { if (!c.lessons[r.id] && (r.owner === uid || (r.shared && plan.has(r.id)))) docs.push(snap(r.id, r.doc)); });
+            const P = DBP();
+            (data || []).forEach((r) => {
+              let id = r.id;
+              if (P) { if (!id.startsWith(P)) return; id = id.slice(P.length); } else if (UIPRE.test(id)) return;
+              if (!c.lessons[id] && (r.owner === uid || (r.shared && plan.has(id)))) docs.push(snap(id, r.doc));
+            });
             return { docs };
           }
           return { docs: [] };
@@ -304,7 +320,7 @@
     return "Ça n'a pas marché. Réessaie dans un moment.";
   }
   let holdStart = RECOVERY;
-  const OB = { course: "", why: [], lv: 0, start: "", g: "", goal: 20, name: "" };
+  const OB = { ui: "", course: "", why: [], lv: 0, start: "", g: "", goal: 20, name: "" };
   const LANGN = () => (OB.course === "he" ? "l'hébreu" : OB.course === "es" ? "l'espagnol" : "l'italien");
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const field = (id, label, type, extra) => {
@@ -320,7 +336,7 @@
     if (opts.back || opts.step) {
       const top = $("div", "g-top");
       if (opts.back) { const b = $("button", "g-back"); b.type = "button"; b.setAttribute("aria-label", "Retour"); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.onclick = opts.back; top.append(b); }
-      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 6"); for (let k = 1; k <= 6; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
+      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 7"); for (let k = 1; k <= 7; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
       box.append(top);
     }
     gate.append(box); return box;
@@ -337,7 +353,7 @@
     box.append(art);
     const h = $("h1", "g-hello", "Ciao. ¡Hola! "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
     box.append($("p", "g-lead", "L'italien, l'espagnol ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."));
-    const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepLang();
+    const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepNative();
     const have = $("button", "g-link", "J'ai déjà un compte"); have.type = "button"; have.onclick = () => login();
     box.append(go, have);
   }
@@ -351,17 +367,31 @@
     });
     box.append(list); return list;
   }
-  // Étape 0 : la langue. L'hébreu s'écrit avec un autre alphabet : son parcours commence par les lettres.
-  function stepLang() {
+  // Étape 1 : la langue de l'élève. L'app s'affiche aussitôt dans cette langue (français, anglais ou espagnol).
+  function stepNative() {
     const box = frame({ back: welcome, step: 1 });
+    const cur = OB.ui || (window.I18N ? I18N.ui : "fr");
+    box.append($("h1", null, "Quelle est ta langue ?"), $("p", "g-sub", "L'app, les explications et les traductions seront dans cette langue."));
+    const go = $("button", "g-cta", "Continuer"); go.type = "button";
+    const list = choice(box, [["fr", "Français", "Je parle français"], ["en", "English", "I speak English"], ["es", "Español", "Hablo español"]], false, cur, (v) => {
+      OB.ui = v; if (OB.course === v) OB.course = "";
+      if (window.I18N && I18N.ui !== v) I18N.use(v).then(stepNative);
+    });
+    list.classList.add("g-langs"); list.setAttribute("data-no-i18n", "");
+    go.onclick = () => { OB.ui = cur; if (OB.course === cur) OB.course = ""; stepLang(); }; box.append(go);
+  }
+  // Étape 2 : la langue à apprendre. L'hébreu s'écrit avec un autre alphabet : son parcours commence par les lettres.
+  // Un hispanophone n'apprend pas l'espagnol : sa langue n'est pas proposée.
+  function stepLang() {
+    const box = frame({ back: stepNative, step: 2 });
     box.append($("h1", null, "Quelle langue veux-tu apprendre ?"), $("p", "g-sub", "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.course;
-    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]], false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
+    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"]].filter(([v]) => v !== (OB.ui || (window.I18N ? I18N.ui : "fr"))), false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
     list.classList.add("g-langs");
     go.onclick = stepWhy; box.append(go);
   }
   function stepWhy() {
-    const box = frame({ back: stepLang, step: 2 });
+    const box = frame({ back: stepLang, step: 3 });
     box.append($("h1", null, "Pourquoi " + LANGN() + " ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
     choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
@@ -369,7 +399,7 @@
     go.onclick = stepLevel; box.append(go);
   }
   function stepLevel() {
-    const box = frame({ back: stepWhy, step: 3 });
+    const box = frame({ back: stepWhy, step: 4 });
     box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", OB.ptest && OB.ptest.c === OB.course ? "Résultat du test : " + OB.ptest.label + ". Tu peux encore choisir toi-même." : "Fais le test, ou choisis toi-même. Tu pourras changer de niveau à tout moment."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
     if (!(OB.ptest && OB.ptest.c === OB.course)) {
@@ -463,14 +493,14 @@
     },
   };
   function stepGoal() {
-    const box = frame({ back: stepLevel, step: 4 });
+    const box = frame({ back: stepLevel, step: 5 });
     box.append($("h1", null, "Combien de temps par jour ?"), $("p", "g-sub", "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
     choice(box, [[8, "5 minutes", "Tranquille"], [12, "10 minutes", "Régulier"], [20, "20 minutes", "Sérieux"], [30, "30 minutes et plus", "Intense"]], false, OB.goal, (v) => { OB.goal = v; });
     go.onclick = stepName; box.append(go);
   }
   function stepName() {
-    const box = frame({ back: stepGoal, step: 5 });
+    const box = frame({ back: stepGoal, step: 6 });
     box.append($("h1", null, "Comment tu t'appelles ?"), $("p", "g-sub", "C'est le prénom que verront tes amis dans l'app."));
     const f = document.createElement("form"); f.className = "g-form";
     const [w, i] = field("g-name", "Ton prénom", "text", { autocomplete: "given-name", maxLength: 40, value: OB.name });
@@ -480,7 +510,7 @@
     box.append(f); setTimeout(() => softFocus(i), 60);
   }
   function signup() {
-    const box = frame({ back: stepName, step: 6 });
+    const box = frame({ back: stepName, step: 7 });
     box.append($("h1", null, "Crée ton compte, " + OB.name), $("p", "g-sub", "Pour retrouver ta progression sur tous tes appareils."));
     const f = document.createElement("form"); f.className = "g-form";
     const [we, ie] = field("g-email", "Adresse e-mail", "email", { autocomplete: "email", value: params.get("e") || "" });
@@ -512,7 +542,7 @@
     const [wp, ip] = field("gate-pass", "Mot de passe", "password", { autocomplete: "current-password" });
     const go = $("button", "g-cta", "Se connecter"); go.type = "submit"; const m = msgEl(); if (note) say(m, note);
     const forgot = $("button", "g-link", "Mot de passe oublié ?"); forgot.type = "button"; forgot.onclick = () => recover(ie.value.trim().toLowerCase());
-    const create = $("button", "g-link", "Créer un compte"); create.type = "button"; create.onclick = () => stepLang();
+    const create = $("button", "g-link", "Créer un compte"); create.type = "button"; create.onclick = () => stepNative();
     f.append(we, wp, m, go, forgot, create);
     f.onsubmit = async (e) => {
       e.preventDefault(); const v = ie.value.trim().toLowerCase();

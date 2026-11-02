@@ -84,7 +84,7 @@
     const b = btn(label || "Copier");
     b.onclick = async () => {
       let ok = false;
-      try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { /* refus */ }
+      try { await navigator.clipboard.writeText(window.T ? T(text) : text); ok = true; } catch (e) { /* refus */ }
       b.textContent = ok ? "Copié" : "Copie impossible : sélectionne le texte";
       setTimeout(() => { b.textContent = label || "Copier"; }, 2500);
     };
@@ -93,7 +93,7 @@
   function shareBtn(text) {
     if (!navigator.share) return null;
     const b = btn("Partager", "primary");
-    b.onclick = () => { navigator.share({ text }).catch(() => {}); };
+    b.onclick = () => { navigator.share({ text: window.T ? T(text) : text }).catch(() => {}); };
     return b;
   }
   const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, "");

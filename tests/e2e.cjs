@@ -36,13 +36,13 @@ const MOCKS = `
 
   console.log("0. Réseau faible : config.js absent ou remplacé par une page");
   {
-    const cx = await br.newContext({ viewport: { width: 390, height: 844 } });
+    const cx = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } });
     await cx.route("**/config.js*", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><html></html>" }));
     const z = await cx.newPage(); await z.goto(O + "/");
     await z.waitForSelector(".g-hello", { timeout: 8000 }).catch(() => {});
     ok(await z.isVisible(".g-hello") && !(await z.textContent("#gate")).includes("config.js"), "l'app démarre quand même avec la configuration recopiée dans la page");
     await cx.close();
-    const cy = await br.newContext({ viewport: { width: 390, height: 844 } });
+    const cy = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } });
     await cy.route("**/js/supabase.js*", (r) => r.abort());
     const y = await cy.newPage(); await y.goto(O + "/");
     await y.waitForSelector("#gate button:has-text('Réessayer')", { timeout: 10000 }).catch(() => {});
@@ -51,7 +51,7 @@ const MOCKS = `
   }
 
   console.log("1. Connexion");
-  const ctxA = await br.newContext({ viewport: { width: 390, height: 844 }, permissions: ["clipboard-read", "clipboard-write"] });
+  const ctxA = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 }, permissions: ["clipboard-read", "clipboard-write"] });
   await ctxA.addInitScript(MOCKS);
   const a = await newPage(ctxA);
   await a.goto(O + "/");
@@ -131,7 +131,7 @@ const MOCKS = `
   ok((await a.$$eval(".members li", (l) => l.length)) === 2, "deux membres listés");
 
   console.log("4. L'ami se connecte avec son code, ses données sont séparées");
-  const ctxB = await br.newContext({ viewport: { width: 390, height: 844 } });
+  const ctxB = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } });
   await ctxB.addInitScript(MOCKS);
   const b = await newPage(ctxB);
   await b.goto(O + "/?e=luca%40example.com");
@@ -286,7 +286,7 @@ const MOCKS = `
   ok(!!(await b.waitForSelector(".feed-hd", { timeout: 10000 }).catch(() => null)), "reconnexion avec e-mail et mot de passe");
 
   console.log("12. Un compte à l'adresse non confirmée n'a pas accès à Claude");
-  const ctxC = await br.newContext(); await ctxC.addInitScript(MOCKS);
+  const ctxC = await br.newContext({ locale: "fr-FR" }); await ctxC.addInitScript(MOCKS);
   const c = await newPage(ctxC);
   await post("/__seed", { email: "intrus@example.com", password: "intrus123", unconfirmed: true });
   await c.goto(O + "/"); await c.click("text=J'ai déjà un compte"); await c.fill("#gate-email", "intrus@example.com"); await c.fill("#gate-pass", "intrus123"); await c.click("button:has-text('Se connecter')"); await c.waitForSelector(".feed-hd", { timeout: 10000 }).catch(async (e) => { console.log("DIAG " + await c.evaluate(() => document.body.innerText.slice(0, 400))); throw e; });
@@ -298,9 +298,11 @@ const MOCKS = `
   ok(!members.includes("intrus@example.com"), "le compte non invité n'apparaît pas parmi les membres");
 
   console.log("13. Inscription classique avec l'accueil");
-  const ctxD = await br.newContext({ viewport: { width: 390, height: 844 } }); await ctxD.addInitScript(MOCKS);
+  const ctxD = await br.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 } }); await ctxD.addInitScript(MOCKS);
   const d = await newPage(ctxD);
   await d.goto(O + "/"); await d.click("button:has-text('Commencer')");
+  ok(await d.isVisible("h1:has-text('Quelle est ta langue')") && await d.isVisible(".g-choice:has-text('English')") && await d.isVisible(".g-choice:has-text('Español')"), "d'abord la langue de l'élève : français, anglais ou espagnol");
+  await d.click("button:has-text('Continuer')");
   ok(await d.isDisabled("button:has-text('Continuer')"), "il faut d'abord choisir une langue");
   ok(await d.isVisible(".g-choice:has-text('Italien')") && await d.isVisible(".g-choice:has-text('Hébreu')"), "choix de la langue : italien ou hébreu");
   await d.click(".g-choice:has-text('Italien')"); await d.click("button:has-text('Continuer')");
@@ -314,7 +316,7 @@ const MOCKS = `
   await d.fill("#g-email", "luca@example.com"); await d.fill("#g-pass", "chiara2026"); await d.click("button:has-text('Créer mon compte')");
   await d.waitForFunction(() => /existe déjà/.test(document.querySelector(".g-msg").textContent));
   ok(true, "adresse déjà utilisée signalée");
-  await d.waitForSelector("#gate-pass", { timeout: 5000 }); await d.click(".g-back"); await d.click("button:has-text('Commencer')");
+  await d.waitForSelector("#gate-pass", { timeout: 5000 }); await d.click(".g-back"); await d.click("button:has-text('Commencer')"); await d.click("button:has-text('Continuer')");
   ok(await d.isVisible(".g-choice[aria-pressed=true]:has-text('Italien')"), "langue gardée après le détour par la connexion"); await d.click("button:has-text('Continuer')");
   ok(await d.isVisible(".g-choice[aria-pressed=true]:has-text('Pour le travail')"), "réponses gardées après le détour par la connexion");
   await d.click("button:has-text('Continuer')"); await d.click(".g-choice:has-text('Je me débrouille')"); await d.click("button:has-text('Continuer')");

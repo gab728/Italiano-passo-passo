@@ -61,6 +61,7 @@ globalThis.fetch = async (url, init) => {
     const mk = (id, age, use, n, extra) => Object.assign({ voice_id: id, public_owner_id: "o-" + id, name: id, gender: g, age, use_case: use, descriptive: "calm", usage_character_count_1y: n, language: "it" }, extra || {});
     if (q.get("language") === "he") return new Response(JSON.stringify({ voices: g === "female" ? [mk("he-f1", "young", "conversational", 3e8, { language: "he" }), mk("he-f2", "old", "narrative_story", 1e8, { language: "he" })] : [mk("he-m1", "middle_aged", "conversational", 2e8, { language: "he" })] }), { headers: { "content-type": "application/json" } });
     if (q.get("language") === "es") return new Response(JSON.stringify({ voices: g === "female" ? [mk("es-mx-f1", "young", "conversational", 9e8, { language: "es", accent: "mexican" }), mk("es-f1", "young", "conversational", 3e8, { language: "es", accent: "peninsular" }), mk("es-f2", "old", "narrative_story", 1e8, { language: "es", accent: "castilian" })] : [mk("es-m1", "middle_aged", "conversational", 2e8, { language: "es", accent: "peninsular" })] }), { headers: { "content-type": "application/json" } });
+    if (q.get("language") === "en") return new Response(JSON.stringify({ voices: g === "female" ? [mk("en-f1", "young", "conversational", 5e8, { language: "en", accent: "american" }), mk("en-sc-f1", "young", "conversational", 9e8, { language: "en", accent: "scottish" })] : [mk("en-m1", "middle_aged", "narrative_story", 4e8, { language: "en", accent: "american" })] }), { headers: { "content-type": "application/json" } });
     if (q.get("language") === "fr") return new Response(JSON.stringify({ voices: g === "female" ? [mk("fr-f1", "middle_aged", "narrative_story", 7e8), mk("fr-f2", "young", "conversational", 3e8)] : [mk("fr-m1", "middle_aged", "narrative_story", 6e8)] }), { headers: { "content-type": "application/json" } });
     const voices = g === "female" ? [mk("it-f-pricey", "young", "conversational", 9e9, { fiat_rate: 2 }), mk("it-f-rate1", "young", "conversational", 8e8, { rate: 1 }), mk("it-f1", "young", "conversational", 5e8), mk("it-f2", "middle_aged", "narrative_story", 4e8), mk("it-f3", "young", "social_media", 3e8), mk("it-f4", "young", "informative_educational", 1e8), mk("it-f-old", "old", "narrative_story", 5e7), mk("it-f-game", "young", "characters_animation", 9e8)]
       : [mk("it-m1", "middle_aged", "conversational", 6e8), mk("it-m2", "young", "narrative_story", 4e8), mk("it-m3", "young", "conversational", 2e8), mk("it-m4", "middle_aged", "advertisement", 1e8), mk("it-m-old", "old", "narrative_story", 4e7)];
@@ -293,7 +294,7 @@ createServer(async (req, res) => {
         if (req.method === "GET") { if (!member(w)) return rows(res, req, url, []); return rows(res, req, url, [...state.news.values()].filter(match)); }
         if (req.method === "POST") {
           const b = JSON.parse((await readBody(req)).toString()); const r = Array.isArray(b) ? b[0] : b;
-          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1|s[1-6])$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
+          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1|s[1-6]|h[0-4]|e[1-6])(-(en|es))?$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
           if (state.news.has(r.id)) return send(res, 409, { code: "23505", message: "duplicate key" });
           state.news.set(r.id, r); return send(res, 201);
         }
@@ -304,7 +305,7 @@ createServer(async (req, res) => {
         if (req.method === "POST") {
           const b = JSON.parse((await readBody(req)).toString()); const arr = Array.isArray(b) ? b : [b];
           for (const r of arr) {
-            const old = state.lessons.get(r.id); const owner = w.uid, slot = /^[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$/.test(r.id);
+            const old = state.lessons.get(r.id); const owner = w.uid, slot = /^(u[a-z]{2}-)?[a-z]{2}-u[0-9]{2}-l[0-9]{1,2}$/.test(r.id);
             if (old && (old.owner !== owner || old.shared || r.shared || slot)) return send(res, 403, { code: "42501", message: "new row violates row-level security policy (USING expression)" });
             if (!!r.shared !== slot) return send(res, 403, { code: "42501", message: "new row violates row-level security policy" });
             if (!(state.profiles.get(owner) || {}).invited) return send(res, 403, { code: "42501", message: "new row violates row-level security policy (is_member)" });

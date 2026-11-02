@@ -57,22 +57,56 @@ for (const c of readdirSync(join(ROOT, "content"))) {
 }
 mkdirSync(join(WEB, "content"), { recursive: true });
 const catJSON = JSON.stringify(catalog);
+
+// Élèves anglophones et hispanophones : l'interface est traduite à l'affichage (dictionnaires i18n/<langue>.json, sans les textes laissés
+// en français), et chaque langue a son catalogue, avec les leçons et les programmes traduits (content/<cours>/i18n/<langue>/), le
+// français servant de secours. Un hispanophone n'a pas de cours d'espagnol. Les dix leçons embarquées de l'italien voyagent dans un
+// pseudo-cours « _builtin ».
+const UIS = ["en", "es"];
+mkdirSync(join(WEB, "i18n"), { recursive: true });
+const uiFiles = [];
+const readJ = (p) => JSON.parse(readFileSync(p, "utf8"));
+for (const u of UIS) {
+  const d = {};
+  for (const f of [u + ".json", u + "-content.json", u + "-extra.json", u + "-fix.json"]) {
+    const p = join(ROOT, "i18n", f); if (!existsSync(p)) continue;
+    for (const [k, v] of Object.entries(readJ(p))) if (typeof v === "string" && v.trim() && v !== k) d[k] = v;
+  }
+  writeFileSync(join(WEB, "i18n", u + ".json"), JSON.stringify(d)); uiFiles.push("i18n/" + u + ".json");
+  const cat = { courses: {}, lessons: {}, ui: u };
+  for (const [c, co] of Object.entries(catalog.courses)) {
+    if (c === u) continue;
+    const tp = join(ROOT, "content", c, "i18n", u, "course.json"), t = existsSync(tp) ? readJ(tp) : null;
+    cat.courses[c] = t ? Object.assign({}, co, { plan: t.plan || co.plan, desc: t.desc || co.desc, level: t.level != null ? t.level : co.level }) : co;
+  }
+  for (const [id, l] of Object.entries(catalog.lessons)) {
+    if (l.course === u) continue;
+    const tp = join(ROOT, "content", l.course, "i18n", u, id + ".json");
+    cat.lessons[id] = existsSync(tp) ? readJ(tp) : l;
+  }
+  const bd = join(ROOT, "content", "it", "i18n", u), builtin = {};
+  if (u !== "it") for (let k = 0; k < 10; k++) { const p = join(bd, "b" + k + ".json"); if (existsSync(p)) { const t = readJ(p); builtin[k] = { title: t.title, topic: t.topic, json: t.json }; } }
+  cat.courses._builtin = { builtin };
+  writeFileSync(join(WEB, "content", "catalog-" + u + ".json"), JSON.stringify(cat)); uiFiles.push("content/catalog-" + u + ".json");
+  catalog["ui_" + u] = cat;
+}
 // Les cours autres que l'italien (programme seulement, pas les leçons) sont aussi recopiés dans app.js : au démarrage, l'app ouvre
 // directement la langue choisie, sans afficher l'italien le temps que le catalogue arrive.
 {
   const start = "try{applyBase(JSON.parse(localStorage.getItem(BKEY)))}catch(e){}";
-  const emb = { courses: Object.entries(catalog.courses).filter(([id]) => id !== "it").map(([id, c]) => Object.assign({}, c, { id })),
-    lessons: [] };
+  const pick = (cs) => Object.entries(cs).filter(([id]) => id !== "it" && id !== "_builtin").map(([id, c]) => Object.assign({}, c, { id }));
+  const emb = { fr: pick(catalog.courses) }; for (const u of UIS) emb[u] = pick(catalog["ui_" + u].courses);
   if (js.split(start).length !== 2) throw new Error("accroche de démarrage introuvable");
-  js = js.replace(start, () => "{const EMB=" + JSON.stringify(emb).replace(/<\//g, "<\\/") + ";let cb=null;try{cb=JSON.parse(localStorage.getItem(BKEY))}catch(e){}cb=cb&&typeof cb===\"object\"?cb:{};cb.courses=Array.isArray(cb.courses)?cb.courses:[];cb.lessons=Array.isArray(cb.lessons)?cb.lessons:[];" +
+  js = js.replace(start, () => "{const EMBS=" + JSON.stringify(emb).replace(/<\//g, "<\\/") + ",EMB={courses:EMBS[(window.I18N&&I18N.ui)||\"fr\"]||EMBS.fr,lessons:[]};let cb=null;try{cb=JSON.parse(localStorage.getItem(BKEY))}catch(e){}cb=cb&&typeof cb===\"object\"?cb:{};cb.courses=Array.isArray(cb.courses)?cb.courses:[];cb.lessons=Array.isArray(cb.lessons)?cb.lessons:[];" +
     "EMB.courses.forEach(c=>{if(!cb.courses.some(x=>x&&x.id===c.id))cb.courses.push(c)});EMB.lessons.forEach(l=>{if(!cb.lessons.some(x=>x&&x.id===l.id))cb.lessons.push(l)});try{applyBase(cb)}catch(e){}}");
 }
+for (const u of UIS) delete catalog["ui_" + u];
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
+const files = ["js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 const hash = createHash("sha256");
-for (const f of files) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
+for (const f of files.concat(uiFiles)) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
 // Photos des thèmes (crédits) et portraits des personnages : ils font partie de la version.
 const CRED = join(WEB, "img", "photos", "credits.json");
@@ -112,7 +146,7 @@ const html = `<!doctype html>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${fonts}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&family=Noto+Serif+Hebrew:wght@400;700&family=Noto+Sans+Hebrew:wght@400;600&display=swap">
-<style>${css}</style>
+<style>html.i18n-wait body{visibility:hidden}${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">
 </head>
@@ -121,6 +155,7 @@ ${fonts}
 <div id="app" hidden></div>
 <noscript>Cette app a besoin de JavaScript.</noscript>
 <script>window.APP_BUILD="${BUILD}";window.PHOTOS=${JSON.stringify(PHOTOS).replace(/</g, "\\u003c")};window.APP_CONFIG_BUILT=${INLINE_CFG};</script>
+<script src="js/i18n.js?v=${BUILD}"></script>
 <script src="config.js?v=${BUILD}"></script>
 <script src="js/supabase.js?v=${BUILD}"></script>
 <script src="js/shim.js?v=${BUILD}"></script>
