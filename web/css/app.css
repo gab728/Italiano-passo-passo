@@ -1214,72 +1214,140 @@ body.pw-open { overflow: hidden; }
 .pw-tier.sel { background: var(--surface); color: var(--brand-deep); box-shadow: 0 2px 8px rgba(18, 18, 24, .12); }
 .pw-feat .pw-feat-h { font-weight: 900; color: var(--muted); font-size: 13.5px; }
 
-/* ---------- Animations : Lino dans son avion (démarrage, attentes), étincelles, séries, objectif du jour ---------- */
-:root { --lp-sky1: #DCE7FF; --lp-sky2: #F4F7FF; --lp-cloud: #FFFFFF; --lp-wind: rgba(59, 91, 255, .28); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --lp-sky1: #1A2344; --lp-sky2: #141A2E; --lp-cloud: #2A3358; --lp-wind: rgba(255, 255, 255, .22); } }
-.boot { position: fixed; inset: 0; z-index: 3000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: opacity .4s ease, transform .4s ease; }
-.boot.boot-out { opacity: 0; pointer-events: none; transform: scale(1.03); }
-.boot .lp { width: min(320px, 82vw); height: 200px; border-radius: 32px; }
-.boot .lp-plane { width: 200px; }
-.boot-name { margin: 16px 0 0; font: 800 20px/1.2 var(--body, system-ui); letter-spacing: -.01em; color: var(--ink); }
-.boot-dots { display: flex; gap: 7px; margin-top: 6px; }
-.boot-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--brand, #3B5BFF); animation: lp-dot 1s ease-in-out infinite; }
-.boot-dots i:nth-child(2) { animation-delay: .15s; } .boot-dots i:nth-child(3) { animation-delay: .3s; }
-html.i18n-wait body .boot { visibility: visible; }
-.lp-wrap { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 6px; transition: opacity .45s ease; }
-.lp-wrap.lp-gone { opacity: 0; }
-.lp-wrap.lp-gone .lp-plane { animation: lp-away .5s cubic-bezier(.5, 0, .9, .5) forwards; }
-.lp-wrap + .rv-prep { padding-top: 0; }
-.lp { position: relative; height: 150px; overflow: hidden; border-radius: 24px; background: linear-gradient(180deg, var(--lp-sky1), var(--lp-sky2)); }
-.lp-plane { position: absolute; left: 50%; top: 50%; width: 176px; transform: translate(-50%, -50%); animation: lp-fly 2.8s ease-in-out infinite; }
-.lp-plane .lino { margin: 0 auto; }
-.lp-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.lp-prop { transform-box: fill-box; transform-origin: center; animation: lp-spin .14s linear infinite; }
-.lp-scarf, .lp-scarf2 { transform-box: fill-box; transform-origin: 100% 40%; animation: lp-scarf .45s ease-in-out infinite alternate; }
+/* ---------- Animations immersives : ciel plein écran et Lino pilote, Lino qui réagit au-dessus de la correction,
+   séries, grands écrans de fête (objectif du jour, série de jours). Sons dans js/fx.js. ---------- */
+:root { --sky1: #6FB0FF; --sky2: #B5D8FF; --sky3: #EEF6FF; --skyp1: #BFDDFF; --skyp2: #E4F1FF; --cloud: #FFFFFF; --cloud-sh: #DCEBFF; --wind: rgba(255, 255, 255, .85);
+  --cel-ok1: #2FCB7A; --cel-ok2: #15A35F; --cel-st1: #FFB23F; --cel-st2: #FF6B35; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sky1: #0A1230; --sky2: #18244F; --sky3: #263266; --skyp1: #121C40; --skyp2: #0E0E13; --cloud: #33407A; --cloud-sh: #28336A; --wind: rgba(255, 255, 255, .25);
+  --cel-ok1: #1E8E57; --cel-ok2: #106A40; --cel-st1: #C9761F; --cel-st2: #B3401C; } }
+/* Le ciel : nuages à trois profondeurs, soleil, traits de vent. */
+.sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.sky .sun { position: absolute; right: -60px; top: -70px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 226, 130, .7), rgba(255, 226, 130, 0) 68%); animation: sky-sun 6s ease-in-out infinite alternate; }
+.sky .cl { position: absolute; left: 110%; top: var(--t); width: 96px; height: 30px; border-radius: 999px; background: var(--cloud); box-shadow: inset 0 -6px 0 var(--cloud-sh); opacity: var(--o, 1); transform: scale(var(--s, 1)); animation: sky-cl var(--d, 20s) linear var(--del, 0s) infinite; }
+.sky .cl::before, .sky .cl::after { content: ""; position: absolute; border-radius: 50%; background: var(--cloud); }
+.sky .cl::before { width: 44px; height: 44px; left: 14px; top: -24px; }
+.sky .cl::after { width: 34px; height: 34px; left: 46px; top: -15px; }
+.sky .cl.near { z-index: 3; }
+.sky .wd { position: absolute; height: 3px; width: 46px; border-radius: 3px; background: var(--wind); top: var(--t); animation: sky-wd 1.2s linear var(--del, 0s) infinite; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sky .sun { background: radial-gradient(circle, rgba(220, 230, 255, .28), rgba(220, 230, 255, 0) 65%); } }
+@keyframes sky-cl { from { left: 110%; } to { left: -40%; } }
+@keyframes sky-wd { from { left: 78%; opacity: 0; } 20% { opacity: 1; } to { left: 4%; opacity: 0; } }
+@keyframes sky-sun { from { transform: scale(1); opacity: .85; } to { transform: scale(1.12); opacity: 1; } }
+/* L'avion et Lino */
+.lp-plane { position: relative; width: 230px; animation: lp-fly 3s ease-in-out infinite; z-index: 2; }
+.lp-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 14px 14px rgba(20, 40, 120, .18)); }
+.lp-prop { transform-box: fill-box; transform-origin: center; animation: lp-spin .12s linear infinite; }
+.lp-scarf, .lp-scarf2 { transform-box: fill-box; transform-origin: 100% 40%; animation: lp-scarf .4s ease-in-out infinite alternate; }
 .lp-scarf2 { animation-delay: -.2s; }
 .lp-arm { transform-box: view-box; transform-origin: 128px 50px; animation: lp-wave 1.8s ease-in-out infinite; }
 .lp-blink { transform-box: fill-box; transform-origin: center; animation: ln-blink 4s infinite; }
-.lp-sky i { position: absolute; display: block; }
-.lp-cloud { width: 62px; height: 20px; border-radius: 999px; background: var(--lp-cloud); animation: lp-cloud 8s linear infinite; }
-.lp-cloud::before, .lp-cloud::after { content: ""; position: absolute; border-radius: 50%; background: inherit; }
-.lp-cloud::before { width: 28px; height: 28px; left: 10px; top: -14px; }
-.lp-cloud::after { width: 22px; height: 22px; left: 30px; top: -9px; }
-.lp-cloud.c1 { top: 22%; }
-.lp-cloud.c2 { top: 70%; transform: scale(.7); animation-duration: 10s; animation-delay: -5s; }
-.lp-cloud.c3 { top: 44%; transform: scale(.55); opacity: .7; animation-duration: 13s; animation-delay: -9s; }
-.lp-wind { height: 2px; width: 38px; border-radius: 2px; background: var(--lp-wind); animation: lp-wind 1.1s linear infinite; }
-.lp-wind.w1 { top: 38%; } .lp-wind.w2 { top: 56%; width: 26px; animation-delay: -.4s; } .lp-wind.w3 { top: 68%; animation-delay: -.75s; }
-@keyframes lp-fly { 0%, 100% { transform: translate(-50%, -56%) rotate(-2.5deg); } 50% { transform: translate(-50%, -42%) rotate(2deg); } }
+@keyframes lp-fly { 0%, 100% { transform: translate(-10px, -8px) rotate(-3deg); } 25% { transform: translate(6px, 4px) rotate(1deg); } 50% { transform: translate(12px, 10px) rotate(3deg); } 75% { transform: translate(-4px, 2px) rotate(-1deg); } }
+@keyframes lp-in { from { transform: translate(-110vw, 60px) rotate(8deg); } to { transform: none; } }
 @keyframes lp-spin { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.1); } }
-@keyframes lp-scarf { from { transform: skewY(-7deg); } to { transform: skewY(9deg) scaleX(1.08); } }
-@keyframes lp-wave { 0%, 55%, 100% { transform: rotate(0); } 15% { transform: rotate(-22deg); } 35% { transform: rotate(10deg); } }
-@keyframes lp-cloud { from { left: 108%; } to { left: -30%; } }
-@keyframes lp-wind { from { left: 72%; opacity: 0; } 20% { opacity: 1; } to { left: 6%; opacity: 0; } }
-@keyframes lp-away { to { transform: translate(120%, -110%) rotate(-14deg) scale(.7); } }
-@keyframes lp-dot { 0%, 100% { transform: translateY(0); opacity: .45; } 40% { transform: translateY(-6px); opacity: 1; } }
+@keyframes lp-scarf { from { transform: skewY(-8deg); } to { transform: skewY(10deg) scaleX(1.1); } }
+@keyframes lp-wave { 0%, 55%, 100% { transform: rotate(0); } 15% { transform: rotate(-24deg); } 35% { transform: rotate(10deg); } }
+@keyframes lp-away { to { transform: translate(110vw, -160px) rotate(-16deg) scale(.8); } }
+/* Démarrage : tout l'écran est le ciel. */
+.boot { position: fixed; inset: 0; z-index: 3000; background: linear-gradient(180deg, var(--sky1), var(--sky2) 55%, var(--sky3)); transition: opacity .45s ease, transform .45s ease; }
+.boot.boot-out { opacity: 0; pointer-events: none; transform: scale(1.04); }
+.boot-c { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding-bottom: 6vh; }
+.boot-c .lp-plane-in { animation: lp-in 1s cubic-bezier(.2, .9, .3, 1) both; }
+.boot .lp-plane { width: min(270px, 72vw); }
+.boot-name { margin: 26px 0 0; font: 900 24px/1.2 "Nunito", var(--body, system-ui); letter-spacing: -.01em; color: #fff; text-shadow: 0 2px 12px rgba(20, 50, 140, .35); }
+.boot-dots { display: flex; gap: 8px; margin-top: 10px; }
+.boot-dots i { width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: lp-dot 1s ease-in-out infinite; }
+.boot-dots i:nth-child(2) { animation-delay: .15s; } .boot-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes lp-dot { 0%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-7px); opacity: 1; } }
+html.i18n-wait body .boot { visibility: visible; }
+/* Attentes de l'IA : la page devient le ciel, l'avion vole en grand, les étapes restent lisibles sur une carte. */
+.fx-sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, var(--skyp1), var(--skyp2) 70%, var(--bg)); opacity: 0; transition: opacity .5s ease; }
+html.fx-sky-on .fx-sky { opacity: 1; }
+html.fx-sky-on { background: var(--bg); }
+html.fx-sky-on body { background: transparent; overflow-x: clip; }
+html.fx-sky-on .bar { background: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.lp-wrap { position: relative; height: 190px; margin: -6px calc(50% - 50vw) 0; display: flex; align-items: center; justify-content: center; transition: opacity .5s ease; }
+.lp-wrap .sky { overflow: hidden; }
+.lp-wrap.lp-gone .lp-plane { animation: lp-away .7s cubic-bezier(.5, 0, .9, .5) forwards; }
+.lp-wrap.lp-gone { opacity: 0; transition-delay: .35s; }
+html.fx-sky-on main ul.req, html.fx-sky-on main .ai-wait, html.fx-sky-on main .rv-prep { background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 22px; padding: 14px 16px; box-shadow: 0 10px 30px -18px rgba(20, 40, 120, .35); }
+html.fx-sky-on main .rv-prep { padding: 16px; }
+/* Couche d'effets */
 .fx-layer { position: fixed; inset: 0; z-index: 2500; pointer-events: none; overflow: hidden; }
 .fx-p { position: absolute; display: block; border-radius: 50%; will-change: transform, opacity; }
 .fx-p.star { border-radius: 0; }
-.fx-conf { position: absolute; top: 0; display: block; width: 9px; height: 14px; border-radius: 2px; will-change: transform; }
-.fx-conf.round { width: 10px; height: 10px; border-radius: 50%; }
-.fx-toast { position: fixed; left: 50%; width: max-content; box-sizing: border-box; top: calc(env(safe-area-inset-top) + 14px); z-index: 2600; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 10px 18px; border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 16px; box-shadow: 0 12px 32px -12px rgba(18, 18, 24, .45); border: 2px solid var(--brand-soft, #E3E8FF); pointer-events: none; animation: fx-in .45s cubic-bezier(.2, 1.4, .4, 1); transition: opacity .3s, transform .3s; }
-.fx-toast.out { opacity: 0; transform: translate(-50%, -14px); }
-.fx-toast.goal { border-color: var(--ok-fill); }
-.fx-toast.combo, .fx-toast.streak { border-color: #FFC93C; }
+.fx-conf { position: absolute; top: 0; display: block; width: 10px; height: 16px; border-radius: 3px; will-change: transform; }
+.fx-conf.round { width: 11px; height: 11px; border-radius: 50%; }
+/* Correction : feuille verte ou rouge, Lino debout sur le bord qui saute de joie ou s'inquiète. */
+.fb.ok { background: var(--ok-bg) !important; }
+.fb.ko { background: var(--ko-bg) !important; }
+.fb.ok > strong { color: var(--ok) !important; }
+.fb.ko > strong { color: var(--ko) !important; }
+.fb.ok .btn.primary { background: var(--ok-fill) !important; border-color: var(--ok-fill) !important; color: #fff !important; box-shadow: 0 4px 0 color-mix(in srgb, var(--ok-fill) 70%, #000) !important; }
+.fb.ko .btn.primary { background: var(--ko-fill) !important; border-color: var(--ko-fill) !important; color: #fff !important; box-shadow: 0 4px 0 color-mix(in srgb, var(--ko-fill) 70%, #000) !important; }
+.fb .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, .25) !important; }
+.fx-peek { position: fixed; right: 18px; z-index: 17; width: 96px; height: 96px; pointer-events: none; transform-origin: 50% 100%; }
+.fx-peek .lino { width: 96px; height: 96px; animation: none !important; }
+.fx-peek.in { animation: peek-in .45s cubic-bezier(.2, 1.5, .4, 1) both; }
+.fx-peek.ok.in .lino { animation: peek-jump .9s cubic-bezier(.3, .7, .4, 1) .35s 2 both !important; transform-origin: 50% 100%; }
+.fx-peek.ko.in .lino { animation: peek-no .7s ease-in-out .3s both !important; transform-origin: 50% 90%; }
+.fx-peek .ln-sweat { transform-box: fill-box; animation: peek-sweat 1.4s ease-in .5s infinite; }
+.fx-peek.out { animation: peek-out .25s ease-in forwards; }
+@keyframes peek-in { from { transform: translateY(70px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes peek-out { to { transform: translateY(60px) scale(.7); opacity: 0; } }
+@keyframes peek-jump { 0% { transform: none; } 18% { transform: scale(1.12, .86); } 45% { transform: translateY(-34px) scale(.94, 1.08) rotate(-6deg); } 70% { transform: translateY(0) scale(1.1, .9); } 85% { transform: translateY(-6px); } 100% { transform: none; } }
+@keyframes peek-no { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-8deg); } 80% { transform: rotate(5deg); } }
+@keyframes peek-sweat { 0% { transform: translateY(0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+.lino .ln-sweat { opacity: .95; }
+/* Barre de progression : reflet à chaque bonne réponse, en feu pendant une série. */
+.prog i { position: relative; overflow: hidden; transition: width .45s cubic-bezier(.3, 1.4, .5, 1), background .4s; }
+.prog.fx-shine i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, .75) 50%, transparent 80%); animation: fx-shine .7s ease-out; }
+html.fx-hot .prog i { background: linear-gradient(90deg, #FFC93C, #FF6B35) !important; box-shadow: 0 0 12px rgba(255, 107, 53, .6); }
+@keyframes fx-shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+/* Boutons à choix : un peu de relief, enfoncés au toucher. */
+.opt { box-shadow: 0 3px 0 var(--line); transition: transform .08s ease, box-shadow .08s ease; }
+.opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.opt.ok { box-shadow: 0 3px 0 var(--ok-fill); } .opt.ko { box-shadow: 0 3px 0 var(--ko-fill); }
+/* Messages de série (bandeau en haut) */
+.fx-toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); z-index: 2600; width: max-content; max-width: calc(100vw - 32px); box-sizing: border-box; transform: translateX(-50%); padding: 10px 20px 10px 12px; border-radius: 999px; background: linear-gradient(90deg, var(--cel-st1), var(--cel-st2)); color: #fff; font-size: 17px; box-shadow: 0 14px 32px -12px rgba(255, 107, 53, .7); pointer-events: none; animation: fx-in .5s cubic-bezier(.2, 1.5, .4, 1); transition: opacity .3s, transform .3s; }
+.fx-toast.out { opacity: 0; transform: translate(-50%, -16px); }
 .fx-row { display: flex; align-items: center; gap: 8px; }
-.fx-row b { font-weight: 800; }
-.fx-row .lino { flex: none; }
-.fx-flame { display: inline-block; font-size: 22px; line-height: 1; animation: fx-flame .5s ease-in-out infinite alternate; }
-@keyframes fx-in { from { opacity: 0; transform: translate(-50%, -24px) scale(.85); } to { opacity: 1; transform: translateX(-50%); } }
-@keyframes fx-flame { from { transform: scale(1) rotate(-6deg); } to { transform: scale(1.2) rotate(6deg); } }
-.fb strong.fx-shake { animation: fx-shake .45s ease-in-out; }
+.fx-row b { font-weight: 900; }
+.fx-flame { display: inline-block; font-size: 26px; line-height: 1; animation: fx-flame .45s ease-in-out infinite alternate; }
+@keyframes fx-in { from { opacity: 0; transform: translate(-50%, -30px) scale(.7); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes fx-flame { from { transform: scale(1) rotate(-8deg); } to { transform: scale(1.25) rotate(8deg); } }
+/* Grands écrans de fête */
+.fx-cel { position: fixed; inset: 0; z-index: 2400; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #fff; background: radial-gradient(circle at 50% 40%, var(--cel-ok1), var(--cel-ok2)); animation: cel-in .35s ease-out both; }
+.fx-cel.cel-streak { background: radial-gradient(circle at 50% 40%, var(--cel-st1), var(--cel-st2)); }
+.fx-cel.out { animation: cel-out .3s ease-in forwards; }
+.fx-rays { position: absolute; left: 50%; top: 40%; width: 180vmax; height: 180vmax; margin: -90vmax 0 0 -90vmax; background: repeating-conic-gradient(rgba(255, 255, 255, .13) 0 10deg, transparent 10deg 20deg); animation: cel-rays 18s linear infinite; }
+.fx-cel-c { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; text-align: center; max-width: 420px; }
+.fx-cel-c .lino { width: 170px; height: 170px; filter: drop-shadow(0 16px 20px rgba(0, 0, 0, .2)); animation: cel-lino 1s cubic-bezier(.3, .7, .4, 1) .3s infinite both !important; transform-origin: 50% 100%; }
+.fx-cel-n { display: flex; align-items: center; gap: 6px; font: 900 64px/1 "Nunito", var(--body); text-shadow: 0 4px 0 rgba(0, 0, 0, .15); animation: cel-pop .6s cubic-bezier(.2, 1.6, .4, 1) .5s both; }
+.fx-cel-n .fx-flame { font-size: 58px; }
+.fx-cel h2 { margin: 6px 0 0; font: 900 30px/1.1 "Nunito", var(--body); letter-spacing: -.02em; color: #fff; animation: cel-up .5s ease-out .6s both; }
+.fx-cel p { margin: 0; font-size: 17px; font-weight: 700; opacity: .95; animation: cel-up .5s ease-out .75s both; }
+.fx-cel .btn { margin-top: 22px; min-width: 220px; background: #fff !important; color: var(--cel-ok2) !important; border: 0 !important; font-weight: 900; font-size: 17px; box-shadow: 0 5px 0 rgba(0, 0, 0, .18); animation: cel-up .5s ease-out .9s both; }
+.fx-cel.cel-streak .btn { color: var(--cel-st2) !important; }
+@keyframes cel-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cel-out { to { opacity: 0; transform: scale(1.05); } }
+@keyframes cel-rays { to { transform: rotate(360deg); } }
+@keyframes cel-lino { 0%, 100% { transform: none; } 20% { transform: scale(1.1, .88); } 50% { transform: translateY(-40px) scale(.95, 1.06); } 78% { transform: scale(1.06, .94); } }
+@keyframes cel-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes cel-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Fin de leçon : rayons qui tournent derrière Lino */
+.end-halo { overflow: hidden; }
+.end-halo::before { content: ""; position: absolute; inset: -30%; background: repeating-conic-gradient(rgba(255, 201, 60, .45) 0 12deg, transparent 12deg 24deg); animation: cel-rays 14s linear infinite; }
+/* Secousse et éclat des propositions */
+.fb > strong.fx-shake { animation: fx-shake .45s ease-in-out; }
 @keyframes fx-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
-@keyframes fx-pop { 0% { transform: scale(1); } 40% { transform: scale(1.06); box-shadow: 0 0 0 6px color-mix(in srgb, var(--ok-fill) 25%, transparent); } 100% { transform: scale(1); } }
+@keyframes fx-pop { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: no-preference) {
   .opt.ok, .chip.ok { animation: fx-pop .4s ease-out; }
   .opt.ko, .chip.ko { animation: fx-shake .42s ease-in-out; }
 }
+/* Réglage du son, dans le profil */
+.fx-set .switch-row { margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) {
-  .lp-plane, .lp *, .boot-dots i, .fx-flame, .fx-toast { animation: none !important; }
-  .lp-cloud.c1 { left: 12%; } .lp-cloud.c2 { left: 70%; } .lp-cloud.c3 { left: 42%; } .lp-wind { display: none !important; }
+  .sky *, .lp-plane, .lp-svg *, .boot-dots i, .fx-flame, .fx-toast, .fx-peek, .fx-peek *, .fx-cel, .fx-cel *, .fx-rays, .end-halo::before, .prog.fx-shine i::after { animation: none !important; }
+  .sky .cl { left: calc(var(--t) * 2.2); } .sky .wd { display: none; }
 }

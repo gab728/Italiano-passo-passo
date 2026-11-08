@@ -355,10 +355,11 @@
       joy: '<path class="ln-cheerL ln-arm" d="M22 56 C12 48 10 38 14 28"/><path class="ln-cheerR ln-arm" d="M78 56 C88 48 90 38 86 28"/>',
       hang: '<path d="M30 50 C24 36 28 20 36 6" class="ln-arm"/><path d="M70 50 C76 36 72 20 64 6" class="ln-arm"/>',
       think: '<path d="M22 62 C14 68 14 76 20 80" class="ln-arm"/><path d="M78 62 C70 66 64 62 62 56" class="ln-arm"/>',
+      sad: '<path d="M22 62 C16 70 16 78 19 86" class="ln-arm"/><path d="M78 62 C84 70 84 78 81 86" class="ln-arm"/>',
     }[mood] || "";
     const eyes = mood === "joy" ? '<path d="M37 58 q4 -5 8 0" class="ln-line"/><path d="M55 58 q4 -5 8 0" class="ln-line"/>'
       : '<ellipse class="ln-blink" cx="41" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/><ellipse class="ln-blink" cx="59" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/>';
-    const mouth = mood === "joy" ? '<path d="M42 66 Q50 78 58 66 Z" fill="#1E1B2E"/>' : mood === "think" ? '<ellipse cx="50" cy="70" rx="3" ry="2.6" fill="#1E1B2E"/>' : '<path d="M44 68 Q50 74 56 68" class="ln-line"/>';
+    const mouth = mood === "joy" ? '<path d="M42 66 Q50 78 58 66 Z" fill="#1E1B2E"/>' : mood === "sad" ? '<path d="M43 73 Q50 66 57 73" class="ln-line"/><path d="M34 50 L45 46" class="ln-line"/><path d="M66 50 L55 46" class="ln-line"/><path class="ln-sweat" d="M77 34 C81 41 83 44 80 47 C77 49 74 46 75 42 Z" fill="#7CC8FF"/>' : mood === "think" ? '<ellipse cx="50" cy="70" rx="3" ry="2.6" fill="#1E1B2E"/>' : '<path d="M44 68 Q50 74 56 68" class="ln-line"/>';
     return node('<svg class="lino lino-' + mood + '" width="' + s + '" height="' + s + '" viewBox="0 0 100 100" aria-hidden="true">'
       + '<path d="M50 30 C52 18 62 12 72 14 C68 24 60 30 50 30 Z" fill="#3DBE8B"/>' + arms
       + '<circle cx="17" cy="58" r="5" fill="#FFD84A"/><circle cx="83" cy="58" r="5" fill="#FFD84A"/>'
@@ -864,7 +865,7 @@
     const fb = root.querySelector(".fb"); if (!fb || fb === lastFb) return; lastFb = fb;
     try { if (navigator.vibrate) navigator.vibrate(fb.classList.contains("ok") ? 12 : [24, 40, 24]); } catch (e) { /* rien */ }
     const ab = root.querySelector(":scope > .actionbar"); if (ab) ab.innerHTML = "";
-    { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
+    if (!window.FX) { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
     if (window.FX) try { FX.answer(fb.classList.contains("ok"), fb); } catch (e) { /* rien */ }
     if (fb.classList.contains("ko")) { const s = fb.querySelector("strong"); if (s && cur && cur.q[cur.i] && !cur.q[cur.i].retry) s.after(txt("span", "fb-tag", "Reviendra en fin de leçon")); }
     const why = fb.querySelector(".why > .btn"); if (why) why.textContent = "Pourquoi ? Demander à " + PERSONAS.giulia.name;

@@ -256,5 +256,10 @@
  "Essayer gratuitement": "Probar gratis",
  "{0} bonnes réponses d'affilée !": "¡{0} respuestas correctas seguidas!",
  "Objectif du jour atteint !": "¡Objetivo del día cumplido!",
- "Série : {0} jours d'affilée !": "Racha: ¡{0} días seguidos!"
+ "Série : {0} jours d'affilée !": "Racha: ¡{0} días seguidos!",
+ "Reviens demain pour continuer ta série.": "Vuelve mañana para seguir con tu racha.",
+ "{0} réponses aujourd'hui. Bravo !": "{0} respuestas hoy. ¡Bravo!",
+ "Sons": "Sonidos",
+ "Petits sons des bonnes réponses, des séries et des fêtes": "Pequeños sonidos para los aciertos, las rachas y las celebraciones",
+ "Sons des exercices": "Sonidos de los ejercicios"
 }

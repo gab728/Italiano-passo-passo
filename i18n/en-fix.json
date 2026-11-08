@@ -191,5 +191,10 @@
  "Essayer gratuitement": "Try it free",
  "{0} bonnes réponses d'affilée !": "{0} correct answers in a row!",
  "Objectif du jour atteint !": "Daily goal reached!",
- "Série : {0} jours d'affilée !": "Streak: {0} days in a row!"
+ "Série : {0} jours d'affilée !": "Streak: {0} days in a row!",
+ "Reviens demain pour continuer ta série.": "Come back tomorrow to keep your streak going.",
+ "{0} réponses aujourd'hui. Bravo !": "{0} answers today. Well done!",
+ "Sons": "Sounds",
+ "Petits sons des bonnes réponses, des séries et des fêtes": "Little sounds for right answers, streaks and celebrations",
+ "Sons des exercices": "Exercise sounds"
 }

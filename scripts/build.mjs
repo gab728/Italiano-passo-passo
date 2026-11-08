@@ -134,7 +134,12 @@ const INLINE_CFG = (() => {
 })();
 // Lino dans son avion : écran de démarrage, et modèle repris par js/fx.js pour les attentes.
 const PLANE = read("src/plane.svg").replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
-const SKY = '<div class="lp-sky"><i class="lp-cloud c1"></i><i class="lp-cloud c2"></i><i class="lp-cloud c3"></i><i class="lp-wind w1"></i><i class="lp-wind w2"></i><i class="lp-wind w3"></i></div>';
+// Le ciel : nuages lointains (petits, lents), moyens, et proches qui passent devant l'avion ; soleil et traits de vent.
+const cloud = (t, sc, d, del, o, near) => `<i class="cl${near ? " near" : ""}" style="--t:${t}%;--s:${sc};--d:${d}s;--del:${del}s;--o:${o}"></i>`;
+const SKY = '<div class="sky"><i class="sun"></i>'
+  + [[10, .45, 40, -6, .6], [32, .4, 46, -28, .55], [80, .5, 42, -16, .55], [20, .8, 22, -9, .95], [62, .85, 25, -19, .95], [44, .7, 27, -3, .9], [88, .9, 24, -12, .95]].map((c) => cloud(...c)).join("")
+  + [[76, 1.3, 12, -4, 1, 1], [4, 1.1, 14, -10, 1, 1]].map((c) => cloud(...c)).join("")
+  + [[40, 0], [52, -.4], [64, -.8], [46, -.25]].map(([t, d]) => `<i class="wd" style="--t:${t}%;--del:${d}s"></i>`).join("") + "</div>";
 const html = `<!doctype html>
 <html lang="fr">
 <head>
@@ -159,7 +164,7 @@ ${fonts}
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">
 </head>
 <body>
-<div id="boot" class="boot" aria-hidden="true"><div class="lp lp-boot">${SKY}<div class="lp-plane">${PLANE}</div></div><p class="boot-name" data-no-i18n>${title}</p><div class="boot-dots"><i></i><i></i><i></i></div></div>
+<div id="boot" class="boot" aria-hidden="true">${SKY}<div class="boot-c"><div class="lp-plane-in"><div class="lp-plane">${PLANE}</div></div><p class="boot-name" data-no-i18n>${title}</p><div class="boot-dots"><i></i><i></i><i></i></div></div></div>
 <template id="lp-plane">${PLANE}</template>
 <div id="gate" class="gate" hidden></div>
 <div id="app" hidden></div>
