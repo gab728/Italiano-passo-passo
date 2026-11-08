@@ -53,6 +53,7 @@
   };
   function play(name, arg) {
     LOG.push(name); if (LOG.length > 50) LOG.shift();
+    if (W.__fxRec) W.__fxRec.push([name, arg || 0, performance.now()]); // enregistrement des démonstrations
     if (muted() || D.hidden) return;
     const c = ctx(); if (!c) return;
     if (c.state === "suspended") c.resume().catch(() => {});
@@ -94,8 +95,9 @@
   }
   // L'avion s'en va (réponse reçue, ou erreur affichée).
   function land(box, happy) {
-    if (!box || !box.isConnected || box.classList.contains("lp-gone")) return;
+    if (!box || box.classList.contains("lp-gone")) return;
     if (happy) play("whoosh");
+    if (!box.isConnected) return;
     if (still()) return box.remove();
     box.classList.add("lp-gone"); setTimeout(() => box.remove(), 900);
   }
