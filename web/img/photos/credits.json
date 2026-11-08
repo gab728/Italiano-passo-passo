@@ -283,6 +283,13 @@
    "author": "Akiry",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Gare_de_Lyon_-_Avril_2013_-_TGV_SE_carmillon.jpg"
+  },
+  "en": {
+   "src": "img/photos/treno-en.jpg",
+   "title": "File:Northbound Amtrak Acela Express approaching Readville March 2022.jpg",
+   "author": "4300streetcar",
+   "license": "CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Northbound_Amtrak_Acela_Express_approaching_Readville_March_2022.jpg"
   }
  },
  "cucina": {
@@ -399,10 +406,17 @@
   },
   "fr": {
    "src": "img/photos/amici-fr.jpg",
-   "title": "File:Champ de Mars - 55495801447.jpg",
+   "title": "File:Champ de Mars - 55496892768.jpg",
    "author": "xiquinhosilva",
    "license": "CC BY 4.0",
-   "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55495801447.jpg"
+   "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55496892768.jpg"
+  },
+  "en": {
+   "src": "img/photos/amici-en.jpg",
+   "title": "File:Memorial Day 2020 - San Francisco Under Quarantine (49935629483).jpg",
+   "author": "Christopher Michel from San Francisco, USA",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Memorial_Day_2020_-_San_Francisco_Under_Quarantine_(49935629483).jpg"
   }
  },
  "generico": {
@@ -459,10 +473,17 @@
   },
   "fr": {
    "src": "img/photos/mercato-fr.jpg",
-   "title": "File:Oysters Marché des Capucins Bordeaux (1).jpg",
+   "title": "File:Oysters Marché des Capucins Bordeaux (2).jpg",
    "author": "Benreis",
    "license": "CC BY-SA 4.0",
-   "page": "https://commons.wikimedia.org/wiki/File:Oysters_March%C3%A9_des_Capucins_Bordeaux_(1).jpg"
+   "page": "https://commons.wikimedia.org/wiki/File:Oysters_March%C3%A9_des_Capucins_Bordeaux_(2).jpg"
+  },
+  "en": {
+   "src": "img/photos/mercato-en.jpg",
+   "title": "File:Reading Terminal Market interior on west side.jpeg",
+   "author": "Dough4872",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Reading_Terminal_Market_interior_on_west_side.jpeg"
   }
  }
 }
