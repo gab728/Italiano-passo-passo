@@ -19,6 +19,10 @@
   "fr": {
    "files": [],
    "q": "Paris café terrace"
+  },
+  "en": {
+   "files": [],
+   "q": "diner counter interior United States"
   }
  },
  "ristorante": {
@@ -41,6 +45,10 @@
   "fr": {
    "files": [],
    "q": "bistrot Paris interior"
+  },
+  "en": {
+   "files": [],
+   "q": "restaurant interior New York City"
   }
  },
  "mercatino": {
@@ -63,6 +71,10 @@
   "fr": {
    "files": [],
    "q": "marché Aix-en-Provence stalls"
+  },
+  "en": {
+   "files": [],
+   "q": "Union Square Greenmarket New York"
   }
  },
  "strada": {
@@ -85,6 +97,10 @@
   "fr": {
    "files": [],
    "q": "Montmartre street Paris"
+  },
+  "en": {
+   "files": [],
+   "q": "Brooklyn brownstone street"
   }
  },
  "negozio": {
@@ -105,6 +121,10 @@
   "fr": {
    "files": [],
    "q": "boulangerie Paris shop front"
+  },
+  "en": {
+   "files": [],
+   "q": "storefronts Greenwich Village New York"
   }
  },
  "ufficio": {
@@ -127,6 +147,10 @@
   "fr": {
    "files": [],
    "q": "open space office"
+  },
+  "en": {
+   "files": [],
+   "q": "open plan office interior modern desks"
   }
  },
  "ricordi": {
@@ -147,6 +171,10 @@
   "fr": {
    "files": [],
    "q": "family photo album old photographs"
+  },
+  "en": {
+   "files": [],
+   "q": "family photo album old photographs"
   }
  },
  "festa": {
@@ -165,6 +193,10 @@
   "fr": {
    "files": [],
    "q": "Fête de la musique Paris"
+  },
+  "en": {
+   "files": [],
+   "q": "Fourth of July parade"
   }
  },
  "casa": {
@@ -187,6 +219,10 @@
   "fr": {
    "files": [],
    "q": "Haussmannian building Paris"
+  },
+  "en": {
+   "files": [],
+   "q": "house front porch United States"
   }
  },
  "treno": {
@@ -207,6 +243,10 @@
   "fr": {
    "files": [],
    "q": "TGV train Gare de Lyon"
+  },
+  "en": {
+   "files": [],
+   "q": "Amtrak train station platform"
   }
  },
  "cucina": {
@@ -229,6 +269,10 @@
   "fr": {
    "files": [],
    "q": "crêpes Bretagne"
+  },
+  "en": {
+   "files": [],
+   "q": "apple pie"
   }
  },
  "viaggio": {
@@ -251,6 +295,10 @@
   "fr": {
    "files": [],
    "q": "Mont-Saint-Michel"
+  },
+  "en": {
+   "files": [],
+   "q": "Golden Gate Bridge"
   }
  },
  "cultura": {
@@ -271,6 +319,10 @@
   "fr": {
    "files": [],
    "q": "Musée du Louvre pyramid"
+  },
+  "en": {
+   "files": [],
+   "q": "Metropolitan Museum of Art facade"
   }
  },
  "amici": {
@@ -291,6 +343,10 @@
   "fr": {
    "files": [],
    "q": "Champ de Mars picnic"
+  },
+  "en": {
+   "files": [],
+   "q": "Central Park picnic people"
   }
  },
  "generico": {
@@ -311,6 +367,10 @@
   "fr": {
    "files": [],
    "q": "Vieux Lyon rue Saint-Jean"
+  },
+  "en": {
+   "files": [],
+   "q": "Beacon Hill Boston street"
   }
  },
  "mercato": {
@@ -333,6 +393,10 @@
   "fr": {
    "files": [],
    "q": "Marché des Capucins Bordeaux"
+  },
+  "en": {
+   "files": [],
+   "q": "Pike Place Market Seattle"
   }
  }
 }
