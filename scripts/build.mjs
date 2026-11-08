@@ -106,7 +106,7 @@ for (const u of UIS) delete catalog["ui_" + u];
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
+const files = ["fonts/nunito-latin-wght-normal.woff2", "fonts/nunito-latin-ext-wght-normal.woff2", "fonts/nunito-latin-wght-italic.woff2", "fonts/nunito-latin-ext-wght-italic.woff2", "js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 const hash = createHash("sha256");
 for (const f of files.concat(uiFiles)) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
@@ -138,7 +138,8 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${title}</title>
 <meta name="description" content="Apprendre l'italien pas à pas, en lisant, en écrivant et en parlant avec Claude.">
-<meta name="theme-color" content="#11272B">
+<meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0E13" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -147,7 +148,8 @@ const html = `<!doctype html>
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${fonts}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&family=Noto+Serif+Hebrew:wght@400;700&family=Noto+Sans+Hebrew:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&family=Noto+Serif+Hebrew:wght@400;700&family=Noto+Sans+Hebrew:wght@400;600&display=swap">
+<link rel="preload" href="fonts/nunito-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>html.i18n-wait body{visibility:hidden}${css}</style>
 <link rel="stylesheet" href="css/web.css?v=${BUILD}">
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">

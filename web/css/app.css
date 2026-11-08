@@ -1,16 +1,24 @@
 /* ---------- Italiano passo passo : maquette « réseau social » ----------
-   Fond clair, police fine (Instrument Sans), italien en serif italique (Instrument Serif), pilules,
+   Fond gris clair, une seule police ronde (Nunito, hébergée dans l'app) : la langue étudiée en gras, pas de serif. Pilules,
    deux accents : Spritz (action, série) et Azzurro (parole, réponses). Mode sombre automatique. */
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: swap; src: url(../fonts/nunito-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Nunito"; font-style: normal; font-weight: 200 1000; font-display: swap; src: url(../fonts/nunito-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Nunito"; font-style: italic; font-weight: 200 1000; font-display: swap; src: url(../fonts/nunito-latin-wght-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Nunito"; font-style: italic; font-weight: 200 1000; font-display: swap; src: url(../fonts/nunito-latin-ext-wght-italic.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 :root {
-  --bg: #FAF7F2; --surface: #FFFFFF; --ink: #17140F; --muted: #6F6862; --line: #EAE3DA; --chip: #F2EDE6;
+  --bg: #F4F5F7; --surface: #FFFFFF; --ink: #1F2328; --muted: #6B7280; --line: #E1E4EA; --chip: #EBEDF1;
   --spritz: #FF5B2E; --spritz-ink: #121218; --spritz-soft: #FFF1EC; --spritz-text: #B33A14;
   --azzurro: #3B5BFF; --azzurro-ink: #FFFFFF; --azzurro-soft: #EEF1FF; --azzurro-text: #2A44D6;
   --cta: #121218; --cta-ink: #FFFFFF; --dark: #121218; --dark-ink: #FFFFFF; --dark-muted: #B9B9C6; --dark-field: #2A2A33;
   --note: #FFF4D6; --note-ink: #4A3A00;
   --ok: #11804A; --ok-fill: #19B26B; --ok-bg: #E6F7EE; --ko: #C21D3E; --ko-fill: #FF3B5C; --ko-bg: #FFEDF0;
   --brand: #3B5BFF; --brand-ink: #FFFFFF; --brand-soft: #EEF1FF; --brand-deep: #2A44D6;
-  --display: "Nunito", "Instrument Sans", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif; --body: "Nunito", "Instrument Sans", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif;
-  --it: "Instrument Serif", Georgia, serif; --tab-h: 84px;
+  --display: "Nunito", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif; --body: "Nunito", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif;
+  --it: "Nunito", "Noto Sans Hebrew", system-ui, -apple-system, sans-serif; --serif: var(--it); --tab-h: 84px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0E0E13; --surface: #1A1A22; --ink: #F2F2F7; --muted: #A1A1AF; --line: #2A2A35; --chip: #24242E;
@@ -837,7 +845,7 @@ button.who { border: 0; background: none; padding: 0; margin: 0; text-align: lef
 
 /* Hébreu : la police à voyelles prend le relais pour les lettres hébraïques ; pas d'italique simulé ;
    chaque texte hébreu prend son sens de lecture (droite à gauche) sans renverser les phrases françaises. */
-html[data-course="he"] { --it: "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+html[data-course="he"] { --it: "Nunito", "Noto Serif Hebrew", system-ui, sans-serif; }
 html[data-course="he"] body { font-synthesis: weight; }
 html[data-course="he"] :is(.it, .word, .opt, .q, .bub, .ws-word, .wt-it, .nw-title, .nw-card-t, .car-heard, .dict, .it-line, .big-it, .q-it, .quote .it, .corr .better, .lesson .ex, .daily-t b, .fb p, .miss b, .lmap-row b, input, textarea, .chip) { unicode-bidi: plaintext; }
 html[data-course="he"] :is(.tray, .pool) { direction: rtl; }
@@ -854,7 +862,7 @@ html[data-course="he"] .lhero.start { box-shadow: 0 0 0 2px var(--spritz), 0 14p
 .course-flash.out { opacity: 0; pointer-events: none; }
 .course-flash .flag { width: 72px; height: 72px; margin-bottom: 8px; box-shadow: inset 0 0 0 1px rgba(23, 20, 15, .12), 0 10px 30px -12px rgba(23, 20, 15, .35); }
 .course-flash b { font: 900 32px/1.1 var(--display); color: var(--ink); }
-.cf-nat { font: 400 28px/1.2 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; color: var(--spritz-text); }
+.cf-nat { font: 400 28px/1.2 var(--it); color: var(--spritz-text); }
 .course-flash small { color: var(--muted); font-size: 14px; margin-top: 6px; }
 @keyframes cf-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .course-flash { animation: none; transition: none; } }
@@ -879,7 +887,7 @@ html[data-course="he"] .dlg .ln .tr { display: block; }
 .nwj-label { font-size: 13px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 .nwj-top .link { font-size: 14px; font-weight: 800; color: var(--spritz-text); }
 .nwj-mast { border-top: 3px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 10px 0 8px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
-.nwj-title { margin: 0; font: 400 44px/1 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif !important; letter-spacing: -.01em; }
+.nwj-title { margin: 0; font: 400 44px/1 var(--it) !important; letter-spacing: -.01em; }
 .nwj-sub { margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); }
 .nwj-tabs { display: flex; gap: 18px; padding: 12px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .nwj-tabs::-webkit-scrollbar { display: none; }
@@ -889,8 +897,8 @@ html[data-course="he"] .dlg .ln .tr { display: block; }
 .nwj .nw-row { background: none; border-radius: 0; box-shadow: none; padding: 0; text-align: left; color: var(--ink); font: inherit; width: 100%; }
 .nwj-lead { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 10px !important; padding: 18px 0 20px !important; border-bottom: 1px solid var(--ink) !important; }
 .nwj-kick { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; color: var(--spritz-text); }
-.nwj-h1 { font: 400 32px/1.06 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
-.nwj-fr { font: italic 400 16px/1.35 "Instrument Serif", Georgia, serif; color: var(--muted); }
+.nwj-h1 { font: 400 32px/1.06 var(--it); }
+.nwj-fr { font: italic 400 16px/1.35 var(--it); color: var(--muted); }
 .nwj-fr:empty, .nwj-frs:empty { display: none; }
 .nwj-dek { font-size: 15px; line-height: 1.5; color: #3A342D; }
 .nwj-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 6px; }
@@ -901,28 +909,28 @@ html[data-course="he"] .dlg .ln .tr { display: block; }
 .nwj-briefs > :only-child { grid-column: 1 / -1; }
 .nwj-brief { display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px !important; }
 .nwj-brief:first-child:not(:only-child) { border-right: 1px solid var(--line) !important; padding-right: 12px !important; }
-.nwj-h3 { font: 400 20px/1.12 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwj-h3 { font: 400 20px/1.12 var(--it); }
 .nwj-frs { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
 .nwj-filh { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 6px; }
-.nwj-filh h3 { margin: 0; font: 400 26px/1 "Instrument Serif", Georgia, serif; }
+.nwj-filh h3 { margin: 0; font: 400 26px/1 var(--it); }
 .nwj-filh span { font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .nwj-fil { display: grid !important; grid-template-columns: 52px minmax(0, 1fr); gap: 12px !important; padding: 14px 0 !important; border-bottom: 1px solid var(--line) !important; align-items: start !important; }
 .nwj-time { font-size: 13px; font-weight: 800; color: var(--muted); padding-top: 3px; }
 .nwj-filt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.nwj-h4 { font: 400 19px/1.15 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwj-h4 { font: 400 19px/1.15 var(--it); }
 .nwj .nw-row.done :is(.nwj-h1, .nwj-h3, .nwj-h4) { color: #3A342D; }
 html[data-course="he"] :is(.nwj-h1, .nwj-h3, .nwj-h4) { unicode-bidi: plaintext; }
 /* Carte « journal » de l'accueil (kiosque) */
 .nwe { padding: 16px 18px 8px !important; display: flex; flex-direction: column; }
 .nwe-h { display: flex; align-items: center; gap: 10px; }
-.nwe-title { font: 400 19px/1 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; white-space: nowrap; }
+.nwe-title { font: 400 19px/1 var(--it); white-space: nowrap; }
 .nwe-rule { flex: 1; height: 1px; background: var(--line); }
 .nwe-date { font-size: 12px; font-weight: 700; color: var(--muted); }
 .nwe-empty { margin: 12px 0 8px; font-size: 14px; color: var(--muted); line-height: 1.45; }
 .nwe-pick { align-self: flex-start; margin-bottom: 10px; }
 .nwe-lead { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 12px; align-items: end; padding: 14px 0; border: 0; background: none; text-align: left; color: var(--ink); font: inherit; }
 .nwe-lt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.nwe-h1 { font: 400 21px/1.12 "Instrument Serif", "Noto Serif Hebrew", Georgia, serif; }
+.nwe-h1 { font: 400 21px/1.12 var(--it); }
 .nwe-go { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #FFFFFF; display: grid; place-items: center; }
 .nwe-line { display: flex; gap: 10px; align-items: baseline; padding: 11px 0; border: 0; border-top: 1px solid var(--chip); background: none; text-align: left; color: var(--ink); font: inherit; min-width: 0; white-space: nowrap; overflow: hidden; }
 .nwe-k { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--muted); }
@@ -945,7 +953,7 @@ html[data-course="he"] :is(.nwe-h1, .nwe-t) { unicode-bidi: plaintext; }
 .pcard { flex: none; width: 262px; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; display: flex; flex-direction: column; scroll-snap-align: start; }
 .pc-top { position: relative; border: 0; padding: 0; display: block; background: var(--chip); cursor: pointer; }
 .pc-top img { width: 100%; height: auto; aspect-ratio: 240 / 200; display: block; }
-.pc-badge { position: absolute; top: 12px; right: 12px; padding: 5px 10px; border-radius: 999px; background: #FFFFFF; color: #17140F; font-size: 11.5px; font-weight: 900; }
+.pc-badge { position: absolute; top: 12px; right: 12px; padding: 5px 10px; border-radius: 999px; background: #FFFFFF; color: #1F2328; font-size: 11.5px; font-weight: 900; }
 .pc-b { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
 .pc-n { display: flex; flex-direction: column; gap: 1px; }
 .pc-n b { font: 400 26px/1.05 var(--it); }
@@ -977,7 +985,7 @@ html[data-course="he"] :is(.nwe-h1, .nwe-t) { unicode-bidi: plaintext; }
 .tc-t b { font-size: 16px; line-height: 1.15; font-weight: 900; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tcard.lead .tc-t b { font-size: 22px; }
 .tc-t small { font-size: 12px; font-weight: 600; opacity: .92; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tc-tag { align-self: flex-start; max-width: 100%; padding: 3px 8px; border-radius: 999px; background: #FFFFFF; color: #17140F; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-tag { align-self: flex-start; max-width: 100%; padding: 3px 8px; border-radius: 999px; background: #FFFFFF; color: #1F2328; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-tag.now { background: var(--spritz); color: #FFFFFF; }
 .tcard.later .tc-tag { background: rgba(255, 255, 255, .22); color: #FFFFFF; }
 .tcard.later img { filter: saturate(.55); }
@@ -988,7 +996,7 @@ html[data-course="he"] .tcard, html[data-course="he"] .pcard { direction: ltr; }
 /* Fiche personnage */
 .pp-hero { position: relative; border-radius: 26px; overflow: hidden; flex: none; }
 .pp-hero img { width: 100%; height: auto; aspect-ratio: 240 / 200; display: block; max-height: 380px; object-fit: cover; }
-.pp-back { position: absolute; top: 14px; left: 14px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #17140F; z-index: 1; }
+.pp-back { position: absolute; top: 14px; left: 14px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #1F2328; z-index: 1; }
 .pp-hd { display: flex; flex-direction: column; gap: 4px; padding-top: 14px; }
 .pp-hd h1 { margin: 0; font: 400 44px/1 var(--it); }
 .pp-who { font-weight: 700; color: var(--muted); }
@@ -1018,13 +1026,13 @@ html[data-course="he"] .tr-inp { font-family: "Noto Sans Hebrew", var(--body); t
 .rv-top { display: flex; gap: 12px; align-items: center; }
 .rv-t { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .rv-t small { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--spritz-text); }
-.rv-t b { font-size: 18px; line-height: 1.2; color: #17140F; }
+.rv-t b { font-size: 18px; line-height: 1.2; color: #1F2328; }
 .rv-t .muted { font-size: 13px; color: #5D5650; }
 .rv-ic { flex: none; }
 .rv-acts { display: flex; gap: 8px; }
-.rv-go { flex: 1; min-height: 48px; border: 0; border-radius: 999px; background: #17140F; color: #FFFFFF; font-weight: 800; font-size: 15px; }
+.rv-go { flex: 1; min-height: 48px; border: 0; border-radius: 999px; background: #1F2328; color: #FFFFFF; font-weight: 800; font-size: 15px; }
 .rv-go:disabled { opacity: .45; }
-.rv-faults { min-height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #17140F; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.rv-faults { min-height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #1F2328; font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
 .rv-faults b { min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px; background: var(--spritz); color: #FFFFFF; display: inline-grid; place-items: center; font-size: 12.5px; box-sizing: border-box; }
 .rv-prep { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 0; text-align: center; }
 .rv-src { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: 0; text-transform: none; vertical-align: 1px; background: var(--chip); color: var(--ink); }
@@ -1042,7 +1050,7 @@ html[data-course="he"] .tr-inp { font-family: "Noto Sans Hebrew", var(--body); t
 .fi-x svg { width: 16px; height: 16px; }
 
 /* ---------- Progression (profil) ---------- */
-.pg-hero { background: #17140F; color: #FFFFFF; border-radius: 26px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.pg-hero { background: #1F2328; color: #FFFFFF; border-radius: 26px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
 .pg-top { display: flex; justify-content: space-between; align-items: flex-end; }
 .pg-rank, .pg-xp { display: flex; flex-direction: column; }
 .pg-rank small, .pg-xp small { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
@@ -1053,7 +1061,7 @@ html[data-course="he"] .tr-inp { font-family: "Noto Sans Hebrew", var(--body); t
 .pg-next { font-size: 13px; opacity: .8; }
 .pg-lv { display: flex; align-items: center; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .14); }
 .pg-ring { --p: 0; flex: none; width: 56px; height: 56px; border-radius: 50%; background: conic-gradient(#5BE08F calc(var(--p) * 1%), rgba(255, 255, 255, .16) 0); display: grid; place-items: center; position: relative; }
-.pg-ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #17140F; }
+.pg-ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #1F2328; }
 .pg-ring b { position: relative; font-size: 15px; font-weight: 900; }
 .pg-lv-t { display: flex; flex-direction: column; gap: 2px; } .pg-lv-t b { font-size: 15.5px; } .pg-lv-t small { font-size: 12.5px; opacity: .75; }
 .pg-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -1126,3 +1134,15 @@ html[data-course="he"] .tr-inp { font-family: "Noto Sans Hebrew", var(--body); t
 @keyframes ipp-pop { 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fr-cheer.pop { animation: none; } }
 .fr-more { align-self: center; padding: 8px 0 10px; font-weight: 800; font-size: 13.5px; }
+
+/* ---------- Nunito partout : la langue étudiée en gras (sans serif ni italique), titres très gras ---------- */
+h1, h2, h3 { font-weight: 800; }
+.q-it, .lesson .ex b, .flash .it, .dlg .it, .bub.it, .big-it, .it-line, .quote .it, .corr .better, .nb .it, .dict, .lesson .ex, .opts.grid2 .opt, .pool .chip, .tray .chip, .keys button, .field input { font-weight: 700; font-style: normal; }
+.pc-n b { font-weight: 800; }
+.av { font-style: normal; font-weight: 800; }
+.nwj-title, .nwj-h1, .nwj-h3, .nwj-h4, .nwe-title, .nwe-h1, .nwj-filh h3, .cf-nat { font-weight: 800 !important; letter-spacing: -.02em; }
+.nwj-fr { font-style: normal; font-weight: 600; }
+.g-hello { font: 900 52px/1.05 var(--it) !important; letter-spacing: -.025em !important; }
+.ws-word, .wt-it { font-style: normal; font-weight: 800; }
+.wt-li-t .it, .nw-kw-t .it { font-style: normal; font-weight: 700; }
+.lhero.over .lh-title { font-style: normal; font-weight: 800; }
