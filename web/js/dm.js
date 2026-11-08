@@ -22,6 +22,22 @@ const PERSONA_SETS = {
       role: "Mamie Jeanne, une grand-mère bretonne affectueuse et un peu théâtrale, qui parle de cuisine, de sa famille et de Saint-Malo",
       mission: "Apprends une recette avec Mamie Jeanne." },
   },
+  en: {
+    giulia: { name: "Olivia", sub: "Prof à Boston", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
+      hello: "Conversation libre à ton niveau", mission: "" },
+    marco: { name: "Danny", sub: "Diner à New York", bg: "#FFE3D6", fg: "#B33A14", img: "cafe",
+      open: "Hey there! What can I get you?",
+      role: "Danny, the friendly, chatty owner of a classic diner in Queens, New York, who loves baseball, good coffee and stories about his neighborhood",
+      mission: "Commande au diner, puis bavarde un peu avec Danny." },
+    sofia: { name: "Zoe", sub: "Amie à San Francisco", bg: "#DCE6FF", fg: "#2A44D6", img: "amici",
+      open: "Hey! Any plans for the weekend?",
+      role: "Zoe, a 27-year-old friend from San Francisco, a graphic designer who loves going out, concerts, art shows and hiking near the bay",
+      mission: "Organise ton week-end avec Zoe." },
+    rosa: { name: "Grandma Ruth", sub: "Cuisine à Chicago", bg: "#DDF3E6", fg: "#11804A", img: "cucina",
+      open: "Hi, sweetheart! Have you eaten? Today I'm teaching you my famous apple pie.",
+      role: "Grandma Ruth, a warm and slightly theatrical grandmother from Chicago who talks about cooking, her family and her city",
+      mission: "Apprends une recette avec Grandma Ruth." },
+  },
   es: {
     giulia: { name: "Lucía", sub: "Prof à Madrid", bg: "#E6E0FF", fg: "#4B32C9", img: "amici", tutor: true,
       hello: "Conversation libre à ton niveau", mission: "" },
@@ -83,6 +99,16 @@ const PERSONA_BIO = {
     rosa: { face: "jeanne", who: "78 ans · cuisine en Bretagne", status: "Les crêpes sont sur le feu", quote: "Mon petit, tu as mangé ?", tags: ["Théâtrale", "Recettes", "Famille"],
       bio: "Mamie Jeanne a élevé quatre enfants à Saint-Malo. Elle parle avec les mains, raconte sa famille et t'apprend ses recettes… à condition que tu manges.", voice: "Chaleureuse, lente" },
   },
+  en: {
+    giulia: { face: "olivia", who: "34 ans · prof à Boston", status: "Corrige tes fautes en douceur", quote: "Mistakes are totally fine: that's how you learn.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
+      bio: "Olivia enseigne l'anglais aux étrangers à Boston depuis dix ans. Elle adore le cinéma, les balades le long de la Charles River et les librairies de Cambridge, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
+    marco: { face: "danny", who: "45 ans · diner à New York", status: "Derrière le comptoir jusqu'à 15 h", quote: "Coffee? I'll top you off, no charge.", tags: ["Parle vite", "Fan des Mets", "Blagueur"],
+      bio: "Danny tient le diner de son quartier, dans le Queens, depuis vingt ans. Il connaît tout le monde, parle de baseball à la moindre occasion et t'appelle « buddy » dès le deuxième café.", voice: "New-yorkais, débit rapide" },
+    sofia: { face: "zoe", who: "27 ans · graphiste à San Francisco", status: "Sort du studio à 19 h", quote: "There's a concert in Golden Gate Park tonight, wanna come?", tags: ["Sorties", "Expos", "Randonnée"],
+      bio: "Zoe est graphiste dans un studio de San Francisco. Toujours un concert, une expo ou une randonnée à proposer : avec elle, on parle de sorties, de projets et de la vie en ville.", voice: "Jeune, spontanée, souriante" },
+    rosa: { face: "ruth", who: "78 ans · cuisine à Chicago", status: "La tarte aux pommes est au four", quote: "Sweetheart, have you eaten?", tags: ["Théâtrale", "Recettes", "Famille"],
+      bio: "Grandma Ruth a élevé quatre enfants à Chicago. Elle parle avec les mains, raconte sa famille et t'apprend ses recettes… à condition que tu manges.", voice: "Chaleureuse, lente" },
+  },
   es: {
     giulia: { face: "lucia", who: "34 ans · prof à Madrid", status: "Corrige tes fautes en douceur", quote: "Equivocarse es normal: así se aprende.", tags: ["Patiente", "Cinéphile", "À ton niveau"],
       bio: "Lucía enseigne l'espagnol aux étrangers à Madrid depuis dix ans. Elle adore le cinéma, les terrasses de Lavapiés, et elle reformule tes phrases sans jamais te faire sentir que tu t'es trompé.", voice: "Voix posée, débit adapté à ton niveau" },
@@ -136,7 +162,7 @@ function personaAvatar(p, size) {
   const a = el("span", "av"); a.setAttribute("aria-hidden", "true");
   a.style.background = p.bg; a.style.color = p.fg; if (size) { a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * 0.55) + "px"; }
   if (p.face) { a.classList.add("face"); const i = document.createElement("img"); i.src = "img/personas/" + p.face + ".svg"; i.alt = ""; i.decoding = "async"; a.append(i); return a; }
-  a.textContent = p.name.replace(/^(Nonna|Savta|Abuela)\s+/, "").charAt(0); return a;
+  a.textContent = p.name.replace(/^(Nonna|Savta|Abuela|Mamie|Grandma)\s+/, "").charAt(0); return a;
 }
 /* ---------- Mémoire des conversations ----------
    Chaque personnage se souvient de vos échanges (résumé, piste pour la prochaine fois), et tous partagent

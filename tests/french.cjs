@@ -100,12 +100,12 @@ const MOCKS = `
   await q.goto(O + "/"); await q.waitForSelector(".g-hello"); await q.waitForFunction(() => window.I18N && I18N.loaded());
   await q.click(".g-cta"); await q.waitForSelector(".g-langs"); await q.click(".g-cta"); await q.waitForSelector(".g-langs");
   const e1 = await q.evaluate(() => [...document.querySelectorAll(".g-choice b")].map((b) => b.textContent));
-  ok(e1.join() === "Italiano,Hebreo,Francés", "hispanophone : italien, hébreu ou français : " + e1.join(", "));
+  ok(e1.join() === "Italiano,Hebreo,Francés,Inglés", "hispanophone : italien, hébreu, français ou anglais : " + e1.join(", "));
   const r = await newCtx("fr-FR");
   await r.goto(O + "/"); await r.waitForSelector(".g-hello");
   await r.click(".g-cta"); await r.waitForSelector(".g-langs"); await r.click(".g-cta"); await r.waitForSelector(".g-langs");
   const f1 = await r.evaluate(() => [...document.querySelectorAll(".g-choice b")].map((b) => b.textContent));
-  ok(f1.join() === "Italien,Espagnol,Hébreu", "francophone : pas de cours de français : " + f1.join(", "));
+  ok(f1.join() === "Italien,Espagnol,Hébreu,Anglais", "francophone : pas de cours de français : " + f1.join(", "));
   const cat = await (await fetch(O + "/content/catalog.json")).json();
   ok(!cat.courses.fr && !Object.values(cat.lessons).some((l) => l.course === "fr"), "le catalogue des francophones n'a pas le français");
   const ces = await (await fetch(O + "/content/catalog-es.json")).json();

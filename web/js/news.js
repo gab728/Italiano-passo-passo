@@ -78,14 +78,27 @@ const NEWS = (() => {
     { id: "f6", name: "tous les temps du niveau B1", allow: "les temps et modes du niveau B1, y compris le plus-que-parfait, le conditionnel passé et les hypothèses (si + imparfait, si + plus-que-parfait)", words: 180, block: null },
   ];
   let MILESTONES_FR = ["fr-u07-l1", "fr-u08-l1", "fr-u11-l1", "fr-u15-l1", "fr-u16-l1"];
+  // Anglais langue apprise : les rubriques de NPR (radio publique américaine). Étapes de grammaire (g1…g6) d'après le programme d'anglais.
+  const THEMES_EN = [["une", "À la une"], ["monde", "Monde"], ["usa", "États-Unis"], ["politique", "Politique"], ["economie", "Économie"], ["sante", "Santé"],
+    ["sciences", "Sciences"], ["tech", "Tech"], ["planete", "Climat"], ["culture", "Culture"], ["sport", "Sport"]];
+  const STAGES_EN = [
+    { id: "g1", name: "présent", allow: "le présent simple et le présent continu (be + -ing), there is / there are, can, have got, l'impératif, going to + verbe pour le futur proche. AUCUN prétérit, present perfect, will, conditionnel ni passif", words: 90, block: /pr[ée]t[ée]rit|past simple|simple past|present perfect|past continuous|conditionnel|conditional|passif|passive|would have|had been/i },
+    { id: "g2", name: "présent et prétérit", allow: "le présent simple et continu, going to, le prétérit (past simple, verbes réguliers et irréguliers courants), used to et le past continuous (was / were + -ing). PAS de present perfect, de will, de conditionnel ni de passif", words: 110, block: /present perfect|past perfect|conditionnel|conditional|passif|passive|would have|had been/i },
+    { id: "g3", name: "présent, prétérit et present perfect", allow: "le présent, le prétérit, le past continuous et le present perfect (ever, never, already, yet, for, since). PAS de conditionnel, de passif, de past perfect ni de discours indirect", words: 130, block: /past perfect|plus-que-parfait|conditionnel|conditional|passif|passive|reported|discours indirect/i },
+    { id: "g4", name: "jusqu'au futur avec will et aux modaux", allow: "le présent, le prétérit, le past continuous, le present perfect, will, les modaux (should, must, have to, might), les comparatifs et le premier conditionnel (if + présent, will). PAS de second ni de troisième conditionnel, de passif ni de past perfect", words: 150, block: /second conditional|third conditional|deuxi[eè]me conditionnel|troisi[eè]me conditionnel|past perfect|passif|passive/i },
+    { id: "g5", name: "jusqu'au second conditionnel", allow: "tous les temps courants de l'indicatif, les modaux, les comparatifs, les relatives (who, which, that, where, whose), le gérondif et l'infinitif, le premier et le second conditionnel (if + prétérit, would), I wish + prétérit. PAS de troisième conditionnel, de past perfect, de discours indirect ni de passif", words: 170, block: /third conditional|troisi[eè]me conditionnel|past perfect|would have|passif|passive|reported|discours indirect/i },
+    { id: "g6", name: "tous les temps du niveau B1", allow: "les temps et structures du niveau B1, y compris le past perfect, le troisième conditionnel (if + past perfect, would have) et le discours indirect ; le passif seulement au présent et au prétérit, dans des phrases simples", words: 180, block: null },
+  ];
+  let MILESTONES_EN = ["en-u07-l1", "en-u10-l1", "en-u11-l1", "en-u16-l2", "en-u16-l3"];
   const SRC = {
     fr: { mast: "Ton journal", themes: THEMES_FR, stages: STAGES_FR, miles: MILESTONES_FR, badge: "Le Monde", from: "D'après un article du Monde", agency: "un article du quotidien Le Monde", word: "article", daily: "L'article du jour" },
     it: { mast: "Il tuo giornale", themes: THEMES_IT, stages: STAGES_IT, miles: MILESTONES_IT, badge: "ANSA", from: "D'après une dépêche ANSA", agency: "une dépêche de l'agence ANSA", word: "notizia", daily: "La notizia del giorno" },
     es: { mast: "Tu periódico", themes: THEMES_ES, stages: STAGES_ES, miles: MILESTONES_ES, badge: "El País", from: "D'après un article d'El País", agency: "un article du quotidien espagnol El País", word: "noticia", daily: "La noticia del día" },
+    en: { mast: "Your newspaper", themes: THEMES_EN, stages: STAGES_EN, miles: MILESTONES_EN, badge: "NPR", from: "D'après un article de NPR", agency: "un article de la radio publique américaine NPR", word: "story", daily: "Today's story" },
     he: { mast: "הָעִתּוֹן שֶׁלִּי", themes: THEMES_HE, stages: STAGES_HE, miles: MILESTONES_HE, badge: "ynet", from: "D'après un article de ynet", agency: "une brève du site d'information israélien ynet", word: "article", daily: "חֲדָשׁוֹת הַיּוֹם" },
   };
   let STAGES = STAGES_IT, MILESTONES = MILESTONES_IT, SR = SRC.it;
-  function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; if (window.I18N && C().id === "fr") I18N.protect([SR.mast, SR.daily]); }
+  function setLang() { SR = SRC[C().id] || SRC.it; THEMES = SR.themes; NAME = Object.fromEntries(THEMES); STAGES = SR.stages; MILESTONES = SR.miles; if (window.I18N && (C().id === "fr" || C().id === "en")) I18N.protect([SR.mast, SR.daily]); }
   setLang(); window.addEventListener("ipp-course", setLang);
   function stage() {
     const ss = slots(), k0 = fromN(ss), done = new Set(ss.filter((x) => isDone(x) || x.n < k0).map((x) => String(x.l.id)));

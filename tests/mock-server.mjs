@@ -38,6 +38,11 @@ globalThis.fetch = async (url, init) => {
     const item = (k) => `<item><title><![CDATA[Madrid estrena un nuevo carril bici ${th} ${k}]]></title><link>https://elpais.com/${th}/${k}.html</link><description><![CDATA[<p>El Ayuntamiento de Madrid ha presentado un nuevo carril bici (${th} ${k}).</p>]]></description><pubDate>${new Date(Date.now() - k * 3600e3).toUTCString()}</pubDate></item>`;
     return new Response(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>EL PAÍS</title>${item(1)}${item(2)}</channel></rss>`, { headers: { "content-type": "application/rss+xml" } });
   }
+  if (u.startsWith("https://feeds.npr.org/")) {
+    state.npr = (state.npr || 0) + 1; const th = u.replace("https://feeds.npr.org/", "").split("/")[0];
+    const item = (k) => `<item><title><![CDATA[Chicago opens a new bike lane ${th} ${k}]]></title><link>https://www.npr.org/${th}/${k}</link><description><![CDATA[The city of Chicago unveiled a new protected bike lane (${th} ${k}).]]></description><pubDate>${new Date(Date.now() - k * 3600e3).toUTCString()}</pubDate></item>`;
+    return new Response(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>NPR</title>${item(1)}${item(2)}</channel></rss>`, { headers: { "content-type": "application/rss+xml" } });
+  }
   if (u.startsWith("https://www.lemonde.fr/")) {
     state.lemonde = (state.lemonde || 0) + 1; const th = u.replace("https://www.lemonde.fr/", "").split("/")[0].replace(".xml", "");
     const item = (k) => `<item><title><![CDATA[Lyon inaugure une nouvelle piste cyclable ${th} ${k}]]></title><link>https://www.lemonde.fr/${th}/article/${k}.html</link><description><![CDATA[La métropole de Lyon a présenté une nouvelle piste cyclable (${th} ${k}).]]></description><pubDate>${new Date(Date.now() - k * 3600e3).toUTCString()}</pubDate></item>`;
@@ -195,7 +200,7 @@ createServer(async (req, res) => {
   if (req.method === "OPTIONS") return send(res, 204, undefined, { "access-control-allow-headers": "*", "access-control-allow-methods": "*" });
   try {
     // État pour les tests
-    if (p === "/__state") return send(res, 200, { trJudged: state.trJudged || 0, rvAsked: state.rvAsked || "", activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, lemonde: state.lemonde || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, elAdded: state.elAdded || [], storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__state") return send(res, 200, { trJudged: state.trJudged || 0, rvAsked: state.rvAsked || "", activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, lemonde: state.lemonde || 0, npr: state.npr || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, elAdded: state.elAdded || [], storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
     if (p === "/__ttsProvider") { ENV.TTS_PROVIDER = new URL(req.url, ORIGIN).searchParams.get("v") || "openai"; return send(res, 200, {}); }
     if (p === "/__sttEnglish") { state.sttEnglish = 1; state.sttModels = []; return send(res, 200, {}); }
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
@@ -299,7 +304,7 @@ createServer(async (req, res) => {
         if (req.method === "GET") { if (!member(w)) return rows(res, req, url, []); return rows(res, req, url, [...state.news.values()].filter(match)); }
         if (req.method === "POST") {
           const b = JSON.parse((await readBody(req)).toString()); const r = Array.isArray(b) ? b[0] : b;
-          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1|s[1-6]|h[0-4]|e[1-6])(-(en|es))?$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
+          if (!member(w) || r.created_by !== w.uid || !/^n-[0-9a-f]{16}-(a2|b1|s[1-6]|h[0-4]|e[1-6]|f[1-6]|g[1-6])(-(en|es))?$/.test(r.id)) return send(res, 403, { code: "42501", message: "row-level security" });
           if (state.news.has(r.id)) return send(res, 409, { code: "23505", message: "duplicate key" });
           state.news.set(r.id, r); return send(res, 201);
         }

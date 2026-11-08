@@ -95,7 +95,7 @@ const MOCKS = `
   const back = await p.evaluate((k) => ({ id: C().id, done: !!(S[k] && S[k].done), g: PERSONAS.giulia.name }), before);
   ok(back.id === "es" && back.done && back.g === "Lucía", "retour à l'espagnol : la progression espagnole est intacte");
   const langs = await p.evaluate(() => Object.keys(COURSES).sort().join(","));
-  ok(langs === "es,he,it", "trois langues disponibles : " + langs);
+  ok(langs === "en,es,he,it", "quatre langues disponibles pour un francophone : " + langs);
 
   ok(!errors.length, "aucune erreur JavaScript" + (errors.length ? " : " + errors.slice(0, 3).join(" | ") : ""));
   await br.close();

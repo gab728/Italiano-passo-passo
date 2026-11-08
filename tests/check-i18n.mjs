@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const [uiArg, courseArg, ...ids] = process.argv.slice(2);
-const UIS = uiArg ? [uiArg] : ["en", "es"], COURSES = courseArg ? [courseArg] : ["it", "he", "es", "fr"];
+const UIS = uiArg ? [uiArg] : ["en", "es"], COURSES = courseArg ? [courseArg] : ["it", "he", "es", "fr", "en"];
 const isS = (x) => typeof x === "string" && x.trim().length > 0;
 const OKTAG = /^(h2|h3|p|em|b|strong|i|sup|br|div|span|table|tbody|thead|tr|th|td|ul|ol|li)$/i;
 const FRW = courseArg === "fr" ? /\b(lesson|lessons|translation|answer|because|always|with)\b/gi : /\b(des|une|est|avec|dans|pour|sont|cette|leçon|leçons|mots|exemple|comme|aussi|toujours|quand|parce|réponse|traduction|français)\b/gi;

@@ -488,6 +488,7 @@ async function stt(req: Request, u: User): Promise<Response> {
     else if (lang === "he" && /gpt-4o|whisper/.test(model)) form.append("prompt", "תמלול נאמן בעברית, מילה במילה.");
     else if (lang === "es" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Transcripción fiel en español, palabra por palabra.");
     else if (lang === "fr" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Transcription fidèle en français, mot à mot.");
+    else if (lang === "en" && /gpt-4o|whisper/.test(model)) form.append("prompt", "Faithful transcription in English, word for word.");
     form.append("temperature", "0");
     form.append("response_format", "json");
     try {
@@ -776,7 +777,13 @@ export const NEWS_FEEDS_FR: Record<string, string> = {
   societe: LM + "societe/rss_full.xml", planete: LM + "planete/rss_full.xml", sciences: LM + "sciences/rss_full.xml", tech: LM + "pixels/rss_full.xml",
   culture: LM + "culture/rss_full.xml", sport: LM + "sport/rss_full.xml",
 };
-const FEEDS: Record<string, Record<string, string>> = { it: NEWS_FEEDS, he: NEWS_FEEDS_HE, es: NEWS_FEEDS_ES, fr: NEWS_FEEDS_FR };
+// Anglais (élèves francophones et hispanophones) : les rubriques de NPR, la radio publique américaine.
+const NPR = (n: number) => "https://feeds.npr.org/" + n + "/rss.xml";
+export const NEWS_FEEDS_EN: Record<string, string> = {
+  une: NPR(1002), monde: NPR(1004), usa: NPR(1003), politique: NPR(1014), economie: NPR(1006), sante: NPR(1128),
+  sciences: NPR(1007), tech: NPR(1019), planete: NPR(1025), culture: NPR(1008), sport: NPR(1055),
+};
+const FEEDS: Record<string, Record<string, string>> = { it: NEWS_FEEDS, he: NEWS_FEEDS_HE, es: NEWS_FEEDS_ES, fr: NEWS_FEEDS_FR, en: NEWS_FEEDS_EN };
 const unxml = (t: string) => t.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " ")
   .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
