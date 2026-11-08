@@ -27,6 +27,13 @@
    "author": "zoetnet",
    "license": "CC BY 2.0",
    "page": "https://commons.wikimedia.org/wiki/File:Terrace_cafe,_Rue_de_Buci,_Paris_July_2010.jpg"
+  },
+  "en": {
+   "src": "img/photos/cafe-en.jpg",
+   "title": "File:Lunch Counter (Roxy Diner).jpg",
+   "author": "Visitor7",
+   "license": "CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Lunch_Counter_(Roxy_Diner).jpg"
   }
  },
  "ristorante": {
@@ -57,6 +64,13 @@
    "author": "Tangopaso",
    "license": "Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:Bistrot_de_Paris_(Colombes).jpg"
+  },
+  "en": {
+   "src": "img/photos/ristorante-en.jpg",
+   "title": "File:Childs' Restaurant building interior (84200).jpg",
+   "author": "Rhododendrites",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Childs%27_Restaurant_building_interior_(84200).jpg"
   }
  },
  "mercatino": {
@@ -87,6 +101,13 @@
    "author": "Tmv",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:March%C3%A9_aux_Fruits_et_L%C3%A9gumes_%C3%A0_Aix-en-Provence.jpg"
+  },
+  "en": {
+   "src": "img/photos/mercatino-en.jpg",
+   "title": "File:Union Square Greenmarket, New York City (4027733522).jpg",
+   "author": "Jazz Guy from New Jersey, United States",
+   "license": "CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Union_Square_Greenmarket,_New_York_City_(4027733522).jpg"
   }
  },
  "strada": {
@@ -117,6 +138,13 @@
    "author": "Giò Terra (Terragio67)",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Paris_-_Basilique_du_Sacr%C3%A9-C%C5%93ur_de_Montmartre_-_2025-09-30_23-31-57_001.jpg"
+  },
+  "en": {
+   "src": "img/photos/strada-en.jpg",
+   "title": "File:BLOCK OF BROWNSTONE RESIDENCES IN PARK SLOPE OF BROOKLYN NEW YORK CITY. BROOKLYN REMAINS ONE OF AMERICA'S BEST... - NARA - 555920.jpg",
+   "author": "Danny Lyon",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:BLOCK_OF_BROWNSTONE_RESIDENCES_IN_PARK_SLOPE_OF_BROOKLYN_NEW_YORK_CITY._BROOKLYN_REMAINS_ONE_OF_AMERICA%27S_BEST..._-_NARA_-_555920.jpg"
   }
  },
  "negozio": {
@@ -147,6 +175,13 @@
    "author": "Utilisateur:Djampa - User:Djampa",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Pletzl_rue_des_Rosiers_Boulangerie_Juive_Vitrine.jpg"
+  },
+  "en": {
+   "src": "img/photos/negozio-en.jpg",
+   "title": "File:Uncommons Storefront 2021.jpg",
+   "author": "MainlyTwelve",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Uncommons_Storefront_2021.jpg"
   }
  },
  "ufficio": {
@@ -200,6 +235,13 @@
    "author": "Unknown authorUnknown author",
    "license": "Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:Hungarian_family_photo_album,_photo_88.jpg"
+  },
+  "en": {
+   "src": "img/photos/ricordi-en.jpg",
+   "title": "File:Hungarian family photo album, photo 34.jpg",
+   "author": "Unknown authorUnknown author",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Hungarian_family_photo_album,_photo_34.jpg"
   }
  },
  "festa": {
@@ -230,6 +272,13 @@
    "author": "Syced",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:F%C3%AAte_de_la_Musique_2008,_Paris_2.jpg"
+  },
+  "en": {
+   "src": "img/photos/festa-en.jpg",
+   "title": "File:Bristol Fourth of July Parade 2017.jpg",
+   "author": "Kenneth C. Zirkel",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Bristol_Fourth_of_July_Parade_2017.jpg"
   }
  },
  "casa": {
@@ -253,6 +302,13 @@
    "author": "Gary Todd from Xinzheng, China",
    "license": "CC0",
    "page": "https://commons.wikimedia.org/wiki/File:Haussmannian_building_(28285608446).jpg"
+  },
+  "en": {
+   "src": "img/photos/casa-en.jpg",
+   "title": "File:Front porch - James Bell House (34314947584).jpg",
+   "author": "Tim Evanson from Cleveland Heights, Ohio, USA",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Front_porch_-_James_Bell_House_(34314947584).jpg"
   }
  },
  "treno": {
@@ -283,6 +339,13 @@
    "author": "Akiry",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Gare_de_Lyon_-_Avril_2013_-_TGV_SE_carmillon.jpg"
+  },
+  "en": {
+   "src": "img/photos/treno-en.jpg",
+   "title": "File:Charlotte Amtrak platform sign.jpg",
+   "author": "HangingCurve",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Charlotte_Amtrak_platform_sign.jpg"
   }
  },
  "cucina": {
@@ -313,6 +376,13 @@
    "author": "Kamel15",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Roscoff_2008_PD_30.JPG"
+  },
+  "en": {
+   "src": "img/photos/cucina-en.jpg",
+   "title": "File:Apple cake with vanilla ice cream 2.jpg",
+   "author": "W.carter",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Apple_cake_with_vanilla_ice_cream_2.jpg"
   }
  },
  "viaggio": {
@@ -343,6 +413,13 @@
    "author": "Benh LIEU SONG",
    "license": "CC BY 2.5",
    "page": "https://commons.wikimedia.org/wiki/File:MSM_sunset_02.JPG"
+  },
+  "en": {
+   "src": "img/photos/viaggio-en.jpg",
+   "title": "File:Golden Gate Bridge as seen from Marshall’s Beach, March 2018.jpg",
+   "author": "Frank Schulenburg",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_as_seen_from_Marshall%E2%80%99s_Beach,_March_2018.jpg"
   }
  },
  "cultura": {
@@ -373,6 +450,13 @@
    "author": "Benh LIEU SONG (Flickr)",
    "license": "CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Louvre_Museum_Wikimedia_Commons.jpg"
+  },
+  "en": {
+   "src": "img/photos/cultura-en.jpg",
+   "title": "File:Metropolitan Museum of Art (The Met) - Central Park, NYC.jpg",
+   "author": "Hugo Schneider",
+   "license": "CC BY-SA 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Metropolitan_Museum_of_Art_(The_Met)_-_Central_Park,_NYC.jpg"
   }
  },
  "amici": {
@@ -403,6 +487,13 @@
    "author": "xiquinhosilva",
    "license": "CC BY 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55495801447.jpg"
+  },
+  "en": {
+   "src": "img/photos/amici-en.jpg",
+   "title": "File:Lunching under the trees by the lake, May Day party, Central Park, New York, U.S.A. LCCN2002736465.jpg",
+   "author": "Miscellaneous Items in High Demand, PPOC, Library of Congress",
+   "license": "Public domain",
+   "page": "https://commons.wikimedia.org/wiki/File:Lunching_under_the_trees_by_the_lake,_May_Day_party,_Central_Park,_New_York,_U.S.A._LCCN2002736465.jpg"
   }
  },
  "generico": {
@@ -433,6 +524,13 @@
    "author": "4net",
    "license": "CC BY 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Vieux_Lyon,_69005_Lyon,_France_-_panoramio.jpg"
+  },
+  "en": {
+   "src": "img/photos/generico-en.jpg",
+   "title": "File:114 Mount Vernon Street, Beacon Hill, Boston, 2007.jpg",
+   "author": "DimiTalen",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:114_Mount_Vernon_Street,_Beacon_Hill,_Boston,_2007.jpg"
   }
  },
  "mercato": {
@@ -463,6 +561,13 @@
    "author": "Benreis",
    "license": "CC BY-SA 4.0",
    "page": "https://commons.wikimedia.org/wiki/File:Oysters_March%C3%A9_des_Capucins_Bordeaux_(1).jpg"
+  },
+  "en": {
+   "src": "img/photos/mercato-en.jpg",
+   "title": "File:Maximilien Restaurant Sign in Pike Place Market, Seattle, Washington, 2025.jpg",
+   "author": "Julian Lupyan",
+   "license": "CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Maximilien_Restaurant_Sign_in_Pike_Place_Market,_Seattle,_Washington,_2025.jpg"
   }
  }
 }
