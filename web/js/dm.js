@@ -384,7 +384,7 @@ async function dmAsk(first, speakIt) {
   const feed = (text, final) => { if (!q || A.cut) return; const c = dmChunks(text, final); for (; sent < c.length; sent++) q.push(c[sent].t, c[sent].lang); };
   A.spoken = q ? q.done : null;
   try {
-    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, maxTokens: 400, onText: ({ text }) => {
+    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, maxTokens: 400, talk: true, onText: ({ text }) => {
       if (DM !== A) return; feed(text, false);
       const it = vParse(text).filter((l) => !NARR(l.lang)).map((l) => l.t).join(" ");
       if (it) { if (!liveB) { typing.remove(); liveB = el("div", "msg ai"); liveB.append(el("div", "bub it")); A.ui.log.append(liveB); } liveB.firstChild.textContent = it; dmScroll(); } } });

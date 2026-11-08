@@ -1206,3 +1206,10 @@ body.pw-open { overflow: hidden; }
 .talk-up-bar { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface); overflow: hidden; }
 .talk-up-bar i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
 .talk-up .pill-btn { grid-column: 1 / -1; }
+/* Choix de la formule dans l'offre */
+.pw-tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px; border-radius: 16px; background: var(--chip); }
+.pw-tier { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 9px 8px; border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: inherit; }
+.pw-tier b { font-size: 16px; font-weight: 900; color: var(--ink); }
+.pw-tier small { font-size: 12.5px; font-weight: 800; }
+.pw-tier.sel { background: var(--surface); color: var(--brand-deep); box-shadow: 0 2px 8px rgba(18, 18, 24, .12); }
+.pw-feat .pw-feat-h { font-weight: 900; color: var(--muted); font-size: 13.5px; }

@@ -640,7 +640,7 @@ async function vcAsk(token) {
   };
   let r;
   try {
-    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, signal: A.abort.signal, maxTokens: 400, onText: ({ text }) => { if (!VC || VC.token !== token) return; A.live = vParse(text).map((x) => x.t).join(" "); feed(text, false); vLive(".bub.live span", A.live, vcRender); } });
+    r = await AI(msgs, { system: A.system, modelTier: "quick", cache: false, signal: A.abort.signal, maxTokens: 400, talk: true, onText: ({ text }) => { if (!VC || VC.token !== token) return; A.live = vParse(text).map((x) => x.t).join(" "); feed(text, false); vLive(".bub.live span", A.live, vcRender); } });
   } catch (e) { if (e && e.code === "aborted") return null; throw e; }
   feed(r.text, true);
   await speaking;

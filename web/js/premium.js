@@ -10,8 +10,11 @@
   "use strict";
   const W = window.WEBAUTH; if (!W) return;
   const FREE = { lessons: 1 };
-  // Minutes de conversation par jour (réglées sur le serveur : FREE_TALK_MINUTES, PREMIUM_TALK_MINUTES).
-  const talkMin = () => { const t = PLAN && PLAN.talk || {}; return { free: t.free || 3, premium: t.premium || 60 }; };
+  // Minutes de conversation par jour et par formule (le serveur compte les caractères des répliques du prof : ~500 par minute).
+  const talkMin = () => { const t = (PLAN && PLAN.talk && PLAN.talk.minutes) || {}; return { free: t.free || 3, premium: t.premium || 20, expert: t.expert || 60 }; };
+  const elMin = () => { const t = (PLAN && PLAN.talk && PLAN.talk.el_minutes) || {}; return { premium: t.premium || 10, expert: t.expert || 30 }; };
+  const tier = () => (!PLAN || !PLAN.billing ? "expert" : PLAN.tier || (PLAN.premium ? "premium" : "free"));
+  const TIER_NAME = { premium: "Premium", expert: "Expert" };
   const txt = (tag, cls, s) => { const e = document.createElement(tag); if (cls) e.className = cls; if (s != null) e.textContent = s; return e; };
   const btn = (label, cls, fn) => { const b = txt("button", "pill-btn" + (cls ? " " + cls : "")); b.type = "button"; b.append(txt("span", null, label)); b.onclick = fn; return b; };
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* rien */ } } };
@@ -33,61 +36,91 @@
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const REASONS = {
     lesson: ["Ta leçon gratuite du jour est faite 🎉", "Reviens demain pour la suivante, ou continue tout de suite avec Premium."],
-    talk: ["Tes {0} minutes de conversation du jour sont écoulées 💬", "Avec Premium, parle jusqu'à {0} minutes par jour avec {1} et tous les personnages."],
-    more: ["Parle plus longtemps 🎙️", "Premium, c'est jusqu'à {0} minutes de conversation par jour : de quoi vraiment progresser à l'oral."],
+    talk: ["Tes {0} minutes de conversation du jour sont écoulées 💬", "Passe à une formule supérieure pour parler plus longtemps avec {1} et tous les personnages."],
+    more: ["Parle plus longtemps 🎙️", "Jusqu'à {0} minutes par jour avec Premium, et {1} avec Expert : de quoi vraiment progresser à l'oral."],
+    expert: ["Passe à Expert 🚀", "Jusqu'à {0} minutes de conversation par jour, avec les voix naturelles des personnages pendant {1} minutes."],
     first: ["Bravo pour ta première conversation ! 🎉", "Avec Premium, parle jusqu'à {0} minutes par jour avec les personnages et débloque toutes les leçons."],
     limit: ["L'assistant gratuit du jour est épuisé", "Il revient demain, ou tout de suite avec Premium."],
     car: ["Le mode voiture est réservé à Premium 🚗", "Révise à voix haute pendant tes trajets, sans toucher l'écran."],
     news: ["Ton article gratuit de la semaine est lu 📰", "Avec Premium, l'actualité à ton niveau, tous les jours."],
     review: ["Ton essai gratuit est fait ✨", "Avec Premium, les révisions sur mesure et la correction de tes traductions, chaque jour."],
     streak: ["7 jours d'affilée, chapeau ! 🔥", "Pour fêter ça, essaie Premium : tout est débloqué pendant l'essai."],
-    profile: ["Passe à Premium", "Toutes les leçons et toutes les conversations, dans toutes les langues."],
+    profile: ["Choisis ta formule", "Toutes les leçons et des conversations à voix haute, dans toutes les langues."],
   };
-  const FEATURES = ["Toutes les leçons, sans limite", "Jusqu'à {0} minutes de conversation par jour", "Le mode voiture, mains libres",
-    "L'actualité à ton niveau, chaque jour", "Révisions sur mesure et traductions corrigées", "Toutes les langues incluses"];
+  const FEATURES = {
+    premium: ["Toutes les leçons, sans limite", "{0} minutes de conversation par jour", "Voix naturelles des personnages ({1} min par jour)", "Le mode voiture, mains libres",
+      "L'actualité à ton niveau, chaque jour", "Révisions sur mesure et traductions corrigées", "Toutes les langues incluses"],
+    expert: ["Tout Premium, et en plus :", "{0} minutes de conversation par jour", "Voix naturelles des personnages ({1} min par jour)", "Pour parler chaque jour, longtemps"],
+  };
   let open = null;
   function close() { if (!open) return; const o = open; open = null; o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); }
-  // L'écran de l'offre. Rend true s'il s'est affiché (le payant est ouvert et l'élève n'a pas Premium).
-  function paywall(reason, onLater) {
-    if (!billing() || premium() || open) return false;
-    const p = PLAN.prices || { monthly: 999, yearly: 6999, trial_days: 7 }, trial = !PLAN.trial_used && p.trial_days > 0;
-    const tm = talkMin(), fill = (x) => x.replace("{0}", String(reason === "talk" && /^Tes/.test(x) ? tm.free : tm.premium)).replace("{1}", (window.PERSONAS && PERSONAS.giulia && PERSONAS.giulia.name) || "Giulia");
-    const [h, sub] = (REASONS[reason] || REASONS.profile).map(fill);
+  // L'écran de l'offre : Premium et Expert côte à côte pour la formule gratuite, Expert seul pour un abonné Premium.
+  // Rend true s'il s'est affiché.
+  function paywall(reason, opts) {
+    opts = opts || {};
+    const t0 = tier();
+    // Pas d'offre : paiement fermé, déjà Expert, ou Premium offert (fondateurs : rien à facturer).
+    if (!billing() || open || t0 === "expert" || (t0 === "premium" && (PLAN.founder || !PLAN.manage))) return false;
+    const upgrade = t0 === "premium"; // abonné Premium : passage à Expert, sans nouveau paiement à saisir
+    const P = PLAN.prices || { monthly: 999, yearly: 8999, trial_days: 7, expert: { monthly: 1999, yearly: 14999 } };
+    const priceOf = (tr, pl) => tr === "expert" ? (pl === "monthly" ? P.expert.monthly : P.expert.yearly) : (pl === "monthly" ? P.monthly : P.yearly);
+    const trial = !upgrade && !PLAN.trial_used && P.trial_days > 0;
+    const tm = talkMin(), em = elMin(), who = (window.PERSONAS && PERSONAS.giulia && PERSONAS.giulia.name) || "Giulia";
+    const key = upgrade && (reason === "talk" || reason === "more" || reason === "profile") ? "expert" : reason;
+    const fill = (x) => key === "talk" ? x.replace("{0}", String(t0 === "premium" ? tm.premium : tm.free)).replace("{1}", who)
+      : key === "more" ? x.replace("{0}", String(tm.premium)).replace("{1}", String(tm.expert))
+      : key === "expert" ? x.replace("{0}", String(tm.expert)).replace("{1}", String(em.expert)) : x.replace("{0}", String(tm.premium));
+    const [h, sub] = (REASONS[key] || REASONS.profile).map(fill);
+    let sel = upgrade ? "expert" : opts.tier === "expert" ? "expert" : "premium", plan = (PLAN.plan === "monthly" && upgrade) ? "monthly" : "yearly";
     const o = txt("div", "pw"); o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true"); o.setAttribute("aria-label", "Premium");
     const box = txt("div", "pw-box"); o.append(box);
     const x = txt("button", "icon-btn pw-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-    const later = () => { close(); if (onLater) onLater(); };
+    const later = () => { close(); if (opts.onLater) opts.onLater(); };
     x.onclick = later; box.append(x);
-    box.append(txt("span", "pw-badge", "Premium"), txt("h2", "pw-h", h), txt("p", "pw-sub", sub));
-    const ul = txt("ul", "pw-feat"); FEATURES.forEach((f) => { const li = txt("li"); li.innerHTML = CHECK; li.append(txt("span", null, f.replace("{0}", String(tm.premium)))); ul.append(li); }); box.append(ul);
-    let plan = "yearly";
+    const badge = txt("span", "pw-badge", upgrade ? "Expert" : "Premium");
+    box.append(badge, txt("h2", "pw-h", h), txt("p", "pw-sub", sub));
+    // Choix de la formule (formule gratuite seulement).
+    const tiers = txt("div", "pw-tiers"); tiers.setAttribute("role", "tablist");
+    if (!upgrade) ["premium", "expert"].forEach((tr) => { const b = txt("button", "pw-tier"); b.type = "button"; b.dataset.tier = tr; b.setAttribute("role", "tab");
+      b.append(txt("b", null, TIER_NAME[tr]), txt("small", null, "{0} min par jour".replace("{0}", String(tr === "expert" ? tm.expert : tm.premium))));
+      b.onclick = () => { sel = tr; draw(); }; tiers.append(b); });
+    if (!upgrade) box.append(tiers);
+    const ul = txt("ul", "pw-feat"); box.append(ul);
     const plans = txt("div", "pw-plans"); plans.setAttribute("role", "radiogroup");
-    const yearlyPerMonth = Math.floor(p.yearly / 12), off = Math.round(100 * (1 - p.yearly / (p.monthly * 12)));
-    const opt = (id, name, price, note, badge) => {
-      const b = txt("button", "pw-plan"); b.type = "button"; b.setAttribute("role", "radio"); b.dataset.plan = id;
-      const t = txt("span", "pw-plan-t"); t.append(txt("b", null, name), txt("span", null, price)); b.append(t);
-      if (note) b.append(txt("small", "pw-plan-n", note)); if (badge) b.append(txt("span", "pw-plan-b", badge));
-      b.onclick = () => { plan = id; sync(); }; plans.append(b); return b;
-    };
-    opt("yearly", "Annuel", "{0} par an".replace("{0}", money(p.yearly)), "soit {0} par mois".replace("{0}", money(yearlyPerMonth)), off > 0 ? "−{0} %".replace("{0}", String(off)) : "");
-    opt("monthly", "Mensuel", "{0} par mois".replace("{0}", money(p.monthly)), "", "");
-    box.append(plans);
+    const opt = (id) => { const b = txt("button", "pw-plan"); b.type = "button"; b.setAttribute("role", "radio"); b.dataset.plan = id; b.onclick = () => { plan = id; draw(); }; plans.append(b); return b; };
+    const yB = opt("yearly"), mB = opt("monthly");
+    if (!upgrade) box.append(plans);
     const then = txt("p", "pw-then"); box.append(then);
     const go = txt("button", "pw-cta"); go.type = "button"; box.append(go);
-    const no = txt("button", "pw-later"); no.type = "button"; no.textContent = "Continuer gratuitement"; no.onclick = later; box.append(no);
-    box.append(txt("p", "pw-legal", "Renouvellement automatique, résiliable à tout moment depuis ton profil. Paiement sécurisé par Stripe."));
-    function sync() {
+    const no = txt("button", "pw-later"); no.type = "button"; no.textContent = upgrade ? "Rester en Premium" : "Continuer gratuitement"; no.onclick = later; box.append(no);
+    box.append(txt("p", "pw-legal", upgrade ? "La différence est calculée au prorata et prélevée aujourd'hui. Tu peux revenir à Premium depuis ton profil." : "Renouvellement automatique, résiliable à tout moment depuis ton profil. Paiement sécurisé par Stripe."));
+    function planBtn(b, id) {
+      const pr = priceOf(sel, id), base = priceOf(sel, "monthly") * 12, off = id === "yearly" ? Math.round(100 * (1 - pr / base)) : 0;
+      b.replaceChildren();
+      const t = txt("span", "pw-plan-t"); t.append(txt("b", null, id === "yearly" ? "Annuel" : "Mensuel"), txt("span", null, (id === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr)))); b.append(t);
+      if (id === "yearly") b.append(txt("small", "pw-plan-n", "soit {0} par mois".replace("{0}", money(Math.floor(pr / 12)))));
+      if (off > 0) b.append(txt("span", "pw-plan-b", "−{0} %".replace("{0}", String(off))));
+    }
+    function draw() {
+      tiers.querySelectorAll(".pw-tier").forEach((b) => { const on = b.dataset.tier === sel; b.classList.toggle("sel", on); b.setAttribute("aria-selected", String(on)); });
+      badge.textContent = TIER_NAME[sel];
+      ul.replaceChildren(); FEATURES[sel].forEach((f, k) => { const li = txt("li", sel === "expert" && k === 0 ? "pw-feat-h" : null); if (!(sel === "expert" && k === 0)) li.innerHTML = CHECK;
+        li.append(txt("span", null, f.replace("{0}", String(sel === "expert" ? tm.expert : tm.premium)).replace("{1}", String(sel === "expert" ? em.expert : em.premium)))); ul.append(li); });
+      planBtn(yB, "yearly"); planBtn(mB, "monthly");
       plans.querySelectorAll(".pw-plan").forEach((b) => { const on = b.dataset.plan === plan; b.classList.toggle("sel", on); b.setAttribute("aria-checked", String(on)); });
-      const price = plan === "yearly" ? "puis {0} par an".replace("{0}", money(p.yearly)) : "puis {0} par mois".replace("{0}", money(p.monthly));
-      then.textContent = trial ? "{0} jours gratuits".replace("{0}", String(p.trial_days)) + " · " + price : (plan === "yearly" ? "{0} par an".replace("{0}", money(p.yearly)) : "{0} par mois".replace("{0}", money(p.monthly)));
-      go.textContent = trial ? "Essayer gratuitement {0} jours".replace("{0}", String(p.trial_days)) : "M'abonner";
+      const pr = priceOf(sel, plan), price = (plan === "yearly" ? "puis {0} par an" : "puis {0} par mois").replace("{0}", money(pr));
+      if (upgrade) { then.textContent = (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr)); go.textContent = "Passer à Expert"; return; }
+      then.textContent = trial ? "{0} jours gratuits".replace("{0}", String(P.trial_days)) + " · " + price : (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr));
+      go.textContent = trial ? "Essayer gratuitement {0} jours".replace("{0}", String(P.trial_days)) : (sel === "expert" ? "Choisir Expert" : "Choisir Premium");
     }
     go.onclick = async () => {
-      go.disabled = true; const was = go.textContent; go.textContent = "Ouverture du paiement…";
-      try { const r = await (await W.call("billing", { action: "checkout", plan, return_url: back(), ui: ui() })).json(); if (r.url) { location.href = r.url; return; } throw new Error("url"); }
-      catch (e) { go.disabled = false; go.textContent = was; speakNote(e && e.code === "already" ? "Tu as déjà Premium." : "Le paiement ne s'ouvre pas pour l'instant. Réessaie dans un moment."); if (e && e.code === "already") { close(); refresh(); } }
+      go.disabled = true; const was = go.textContent; go.textContent = upgrade ? "Un instant…" : "Ouverture du paiement…";
+      try {
+        if (upgrade) { PLAN = await (await W.call("billing", { action: "change", tier: "expert" })).json(); ls.set("ipp-plan", PLAN); close(); celebrate(); return; }
+        const r = await (await W.call("billing", { action: "checkout", plan, tier: sel, return_url: back(), ui: ui() })).json(); if (r.url) { location.href = r.url; return; } throw new Error("url");
+      } catch (e) { go.disabled = false; go.textContent = was; speakNote(e && e.code === "already" ? "Tu as déjà un abonnement : change de formule depuis ton profil." : "Le paiement ne s'ouvre pas pour l'instant. Réessaie dans un moment."); if (e && e.code === "already") { close(); refresh(); } }
     };
-    sync();
+    draw();
     document.body.append(o); document.body.classList.add("pw-open"); open = o; requestAnimationFrame(() => o.classList.add("in"));
     o.addEventListener("keydown", (e) => { if (e.key === "Escape") later(); });
     setTimeout(() => go.focus(), 50);
@@ -112,8 +145,8 @@
   }
   function celebrate() {
     const o = txt("div", "pw pw-yay"); const box = txt("div", "pw-box"); o.append(box);
-    box.append(txt("div", "pw-confetti", "🎉"), txt("h2", "pw-h", "Bienvenue dans Premium !"));
-    box.append(txt("p", "pw-sub", PLAN.status === "trialing" && PLAN.trial_end ? "Ton essai gratuit court jusqu'au {0}. On te prévient la veille de la fin.".replace("{0}", date(PLAN.trial_end)) : "Tout est débloqué : leçons, conversations, mode voiture et actualité."));
+    box.append(txt("div", "pw-confetti", "🎉"), txt("h2", "pw-h", tier() === "expert" ? "Bienvenue dans Expert !" : "Bienvenue dans Premium !"));
+    box.append(txt("p", "pw-sub", PLAN.status === "trialing" && PLAN.trial_end ? "Ton essai gratuit court jusqu'au {0}. On te prévient la veille de la fin.".replace("{0}", date(PLAN.trial_end)) : (tier() === "expert" ? "Tu peux parler jusqu'à {0} minutes par jour avec les personnages." : "Tout est débloqué : leçons, conversations, mode voiture et actualité.").replace("{0}", String(talkMin().expert))));
     const go = txt("button", "pw-cta"); go.type = "button"; go.textContent = "C'est parti !"; go.onclick = () => { o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); };
     box.append(go); document.body.append(o); document.body.classList.add("pw-open"); requestAnimationFrame(() => o.classList.add("in"));
     try { if (navigator.vibrate) navigator.vibrate([20, 40, 20]); } catch (e) { /* rien */ }
@@ -139,60 +172,53 @@
     }
     return go0.apply(this, arguments);
   };
-  // Conversation : des minutes par jour (3 en gratuit, 60 avec Premium). Le temps compte quand la conversation est vivante :
-  // Claude répond ou parle, le micro écoute, ou l'élève a agi il y a moins de 30 secondes. Une réponse commencée n'est jamais coupée.
-  const talkSec = () => { const o = (S.fq || {}).talkSec; return o && o.p === today() ? o.n : 0; };
-  const quota = () => 60 * (premium() ? talkMin().premium : talkMin().free);
-  const minsLeft = () => Math.max(0, Math.ceil((quota() - talkSec()) / 60));
-  let lastAct = 0, unsaved = 0;
-  const poke = () => { lastAct = Date.now(); };
-  document.addEventListener("keydown", () => { if (typeof view !== "undefined" && view === "dm") poke(); }, true);
-  document.addEventListener("pointerdown", () => { if (typeof view !== "undefined" && view === "dm") poke(); }, true);
-  setInterval(() => {
-    if (!billing() || typeof view === "undefined" || view !== "dm" || !DM || document.visibilityState !== "visible") return;
-    if (!(DM.busy || DM.speaking || DM.listening || DM.hands || Date.now() - lastAct < 30000)) return;
-    S.fq = Object.assign({}, S.fq || {}); const o = S.fq.talkSec && S.fq.talkSec.p === today() ? S.fq.talkSec : { p: today(), n: 0 };
-    S.fq.talkSec = { p: today(), n: o.n + 5 }; unsaved += 5; if (unsaved >= 30) { unsaved = 0; save(); }
-    quotaUi();
-  }, 5000);
+  // Conversation : minutes par jour selon la formule (3 / 20 / 60), comptées par le serveur en caractères des répliques du prof.
+  // Le compteur est mis à jour à chaque réplique (fin du flux de Claude). Une réponse commencée n'est jamais coupée.
+  const talk = () => (PLAN && PLAN.talk) || {};
+  const limited = () => billing() && !talk().unlimited && Number(talk().max) > 0;
+  const minsLeft = () => { const t = talk(); return Math.max(0, Math.ceil(((t.max || 0) - (t.used || 0)) / (t.per_min || 500))); };
+  window.addEventListener("ipp-talk", (e) => { if (!PLAN || !PLAN.talk || !e.detail) return; PLAN.talk.used = +e.detail.used || 0; if (e.detail.max) PLAN.talk.max = +e.detail.max; ls.set("ipp-plan", PLAN); quotaUi(); });
+  // Minutes écoulées : l'offre de la formule au-dessus, ou, en Expert, un mot pour dire à demain.
+  function talkOut() {
+    if (DM && DM.hands) dmHands(false);
+    const t = tier();
+    if (t === "expert") { speakNote("Tu as parlé {0} minutes aujourd'hui, bravo ! La conversation reprend demain.".replace("{0}", String(talkMin().expert))); return; }
+    if (!paywall("talk")) speakNote("Tes minutes de conversation du jour sont écoulées. Elles reviennent demain.");
+  }
   const send0 = dmSend;
   dmSend = function (text, voice) {
-    if (billing() && DM && !DM.busy && !(voice && VO.command(text))) {
-      poke();
-      if (talkSec() >= quota()) {
-        if (DM.hands) dmHands(false);
-        if (!premium()) { paywall("talk"); return; }
-        speakNote("Tu as parlé {0} minutes aujourd'hui, bravo ! La conversation reprend demain.".replace("{0}", String(talkMin().premium))); return;
-      }
-    }
+    if (limited() && DM && !DM.busy && !(voice && VO.command(text)) && minsLeft() <= 0) { talkOut(); return; }
     return send0.apply(this, arguments);
   };
-  // Dans la conversation (formule gratuite) : les minutes qui restent, et à une minute de la fin, une proposition douce.
+  // Dans la conversation : les minutes qui restent (toujours en gratuit, sur la fin en Premium), et à une minute de la fin, une proposition douce.
   function quotaUi() {
-    if (!gated() || !DM || !DM.ui || !DM.ui.wrap) return;
+    if (!limited() || !DM || !DM.ui || !DM.ui.wrap) return;
+    const t = tier(), left = minsLeft();
     let q = DM.ui.wrap.querySelector(".dm-quota");
+    if (t === "expert" || (t === "premium" && (left > 5 || PLAN.founder))) { if (q) q.remove(); return; }
+    const nxt = t === "free" ? "premium" : "expert";
     if (!q) {
-      q = txt("button", "dm-quota"); q.type = "button"; q.onclick = () => paywall("more"); q.setAttribute("aria-label", "Minutes de conversation gratuites restantes aujourd'hui. Premium : plus de minutes");
-      q.append(txt("span", "dm-quota-n"), txt("span", "dm-quota-up", "Premium : {0} min/j".replace("{0}", String(talkMin().premium))));
+      q = txt("button", "dm-quota"); q.type = "button"; q.onclick = () => paywall("more"); q.setAttribute("aria-label", "Minutes de conversation restantes aujourd'hui. Voir les formules");
+      q.append(txt("span", "dm-quota-n"), txt("span", "dm-quota-up", (nxt === "expert" ? "Expert : {0} min/j" : "Premium : {0} min/j").replace("{0}", String(talkMin()[nxt]))));
       if (DM.ui.sug) DM.ui.sug.prepend(q); else DM.ui.wrap.prepend(q); // dans la rangée fixe au-dessus de la saisie : toujours visible
     }
-    const left = minsLeft();
-    q.querySelector(".dm-quota-n").textContent = left > 0 ? "⏱ {0} min".replace("{0}", String(left)) : "⏱ 0 min";
+    q.querySelector(".dm-quota-n").textContent = "⏱ {0} min".replace("{0}", String(left));
     q.classList.toggle("low", left <= 1);
     if (left === 1 && (S.pw || {}).nudge !== today() && DM.ui.log) {
       S.pw = Object.assign({}, S.pw || {}, { nudge: today() });
       const n = txt("div", "dm-upsell");
-      n.append(txt("p", null, "⏳ Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.".replace("{0}", String(talkMin().premium))));
+      n.append(txt("p", null, (nxt === "expert" ? "⏳ Plus qu'une minute de conversation aujourd'hui. Avec Expert, parle jusqu'à {0} minutes par jour." : "⏳ Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.").replace("{0}", String(talkMin()[nxt]))));
       n.append(btn("Parler plus longtemps", "dark", () => paywall("more")));
       DM.ui.log.append(n); try { dmScroll(); } catch (e) { /* rien */ }
     }
   }
   const open0 = dmOpen;
-  dmOpen = function () { const r = open0.apply(this, arguments); poke(); quotaUi(); return r; };
+  dmOpen = function () { const r = open0.apply(this, arguments); quotaUi(); if (billing()) refresh().then(quotaUi); return r; };
   // Fin de la toute première conversation : la première proposition.
   const end0 = dmEnd, leave0 = dmLeave;
   const afterTalk = () => {
-    if (!gated()) return;
+    if (!billing() || tier() === "expert") return;
+    if (!gated()) { setTimeout(() => { if (typeof view === "undefined" || view === "dm" || !root || root.querySelector(".talk-up")) return; const c = talkCard(true); if (c) root.append(c); }, 600); return; }
     if ((S.dmn || 0) >= 1 && !(S.pw || {}).first) return setTimeout(() => paywall("first"), 900);
     // Après le bilan : combien de minutes aujourd'hui, et ce que Premium permet.
     setTimeout(() => { if (typeof view === "undefined" || view === "dm" || !root || root.querySelector(".talk-up")) return; const c = talkCard(true); if (c) root.append(c); }, 600);
@@ -217,7 +243,12 @@
   // Plafond gratuit atteint côté serveur : l'offre, une fois par jour.
   if (typeof AI_ERR === "object") AI_ERR.free_limit = "Tu as utilisé l'assistant gratuit du jour. Il revient demain, ou tout de suite avec Premium.";
   const fail0 = aiFail;
-  aiFail = function (e) { if (e && e.code === "free_limit" && (S.pw || {}).limit !== today()) setTimeout(() => paywall("limit"), 400); return fail0.apply(this, arguments); };
+  if (typeof AI_ERR === "object") AI_ERR.talk_limit = "Tes minutes de conversation du jour sont écoulées.";
+  aiFail = function (e) {
+    if (e && e.code === "free_limit" && (S.pw || {}).limit !== today()) setTimeout(() => paywall("limit"), 400);
+    if (e && e.code === "talk_limit") setTimeout(talkOut, 300);
+    return fail0.apply(this, arguments);
+  };
   // 7 jours d'affilée : une proposition, une seule fois.
   function streakOffer() { if (gated() && streak() >= 7 && !(S.pw || {}).streak && !PLAN.trial_used) paywall("streak"); }
 
@@ -322,33 +353,39 @@
   }
   // Onglet Parler et fin de conversation (formule gratuite) : les minutes du jour et l'offre de parler plus longtemps.
   function talkCard(after) {
-    if (!gated()) return null;
-    const tm = talkMin(), used = Math.min(tm.free, Math.round(talkSec() / 60));
-    const c = txt("section", "card talk-up"); const t = txt("div", "talk-up-t");
-    t.append(txt("b", null, after ? "Tu as parlé {0} min sur {1} aujourd'hui".replace("{0}", String(used)).replace("{1}", String(tm.free)) : "{0} minutes de conversation par jour en gratuit".replace("{0}", String(tm.free))));
-    t.append(txt("small", null, "Avec Premium, parle jusqu'à {0} minutes par jour avec tous les personnages.".replace("{0}", String(tm.premium))));
-    const bar = txt("div", "talk-up-bar"); const fillb = txt("i"); fillb.style.width = Math.round(100 * used / tm.free) + "%"; bar.append(fillb);
-    c.append(txt("span", "talk-up-ic", "🎙️"), t, bar, btn("Parler plus longtemps", "dark", () => paywall("more")));
+    if (!limited()) return null;
+    const t = tier(), tm = talkMin(), max = t === "premium" ? tm.premium : tm.free, used = Math.min(max, max - minsLeft());
+    if (t === "expert" || (t === "premium" && (PLAN.founder || used < max / 2))) return null;
+    const nxt = t === "free" ? "premium" : "expert";
+    const c = txt("section", "card talk-up"); const tt = txt("div", "talk-up-t");
+    tt.append(txt("b", null, after || t === "premium" ? "Tu as parlé {0} min sur {1} aujourd'hui".replace("{0}", String(used)).replace("{1}", String(max)) : "{0} minutes de conversation par jour en gratuit".replace("{0}", String(tm.free))));
+    tt.append(txt("small", null, nxt === "expert" ? "Avec Expert, parle jusqu'à {0} minutes par jour.".replace("{0}", String(tm.expert)) : "Premium : {0} minutes par jour. Expert : {1} minutes.".replace("{0}", String(tm.premium)).replace("{1}", String(tm.expert))));
+    const bar = txt("div", "talk-up-bar"); const fillb = txt("i"); fillb.style.width = Math.round(100 * used / max) + "%"; bar.append(fillb);
+    c.append(txt("span", "talk-up-ic", "🎙️"), tt, bar, btn("Parler plus longtemps", "dark", () => paywall("more")));
     return c;
   }
   // Carte du profil : l'abonnement.
   function planCard() {
     if (!billing()) return null;
     const c = txt("section", "card goal-c pw-card" + (premium() ? " on" : ""));
-    const s = PLAN, t = txt("div", "pw-card-t"); c.append(t);
-    if (s.owner) { t.append(txt("b", null, "Premium"), txt("small", "muted", "Créateur de l'app : tout est inclus.")); return c; }
-    if (s.founder) { t.append(txt("b", null, "Premium · membre fondateur"), txt("small", "muted", "Tout est offert, pour te remercier d'être là depuis le début 💛")); return c; }
+    const s0 = PLAN, t = txt("div", "pw-card-t"); c.append(t);
+    const tm = talkMin(), tr = tier(), name = TIER_NAME[tr] || "Premium";
+    if (s0.owner) { t.append(txt("b", null, "Expert"), txt("small", "muted", "Créateur de l'app : tout est inclus.")); return c; }
+    if (s0.founder) { t.append(txt("b", null, name + " · membre fondateur"), txt("small", "muted", "Tout est offert, pour te remercier d'être là depuis le début 💛")); return c; }
     if (premium()) {
-      const name = s.plan === "monthly" ? "Premium mensuel" : "Premium annuel";
-      t.append(txt("b", null, s.status === "trialing" ? "Premium · essai gratuit" : s.status === "past_due" ? "Premium · paiement à mettre à jour" : name));
-      t.append(txt("small", "muted", s.status === "trialing" && s.trial_end ? (s.cancel_at_period_end ? "Jusqu'au {0}, sans renouvellement." : "Jusqu'au {0}, puis abonnement automatique.").replace("{0}", date(s.trial_end))
-        : s.period_end ? (s.cancel_at_period_end ? "Se termine le {0}." : "Renouvelé le {0}.").replace("{0}", date(s.period_end)) : ""));
-      if (s.manage) { const a = txt("div", "acts"); a.append(btn("Gérer mon abonnement", "soft", portal)); c.append(a); }
+      t.append(txt("b", null, s0.status === "trialing" ? name + " · essai gratuit" : s0.status === "past_due" ? name + " · paiement à mettre à jour" : name + (s0.plan === "monthly" ? " · mensuel" : " · annuel")));
+      t.append(txt("small", "muted", "{0} minutes de conversation par jour.".replace("{0}", String(tr === "expert" ? tm.expert : tm.premium)) + " " + (s0.status === "trialing" && s0.trial_end ? (s0.cancel_at_period_end ? "Jusqu'au {0}, sans renouvellement." : "Jusqu'au {0}, puis abonnement automatique.").replace("{0}", date(s0.trial_end))
+        : s0.period_end ? (s0.cancel_at_period_end ? "Se termine le {0}." : "Renouvelé le {0}.").replace("{0}", date(s0.period_end)) : "")));
+      const a = txt("div", "acts");
+      if (tr === "premium" && s0.manage) a.append(btn("Passer à Expert · {0} min par jour".replace("{0}", String(tm.expert)), "dark", () => paywall("expert")));
+      if (tr === "expert" && s0.manage) a.append(btn("Revenir à Premium", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { PLAN = await (await W.call("billing", { action: "change", tier: "premium" })).json(); ls.set("ipp-plan", PLAN); speakNote("C'est fait : tu repasses en Premium ({0} minutes par jour).".replace("{0}", String(tm.premium))); if (window.UI) UI.go("profile"); } catch (e) { b.disabled = false; speakNote("Le changement n'a pas pu se faire. Réessaie dans un moment."); } }));
+      if (s0.manage) a.append(btn("Gérer mon abonnement", "soft", portal));
+      if (a.childNodes.length) c.append(a);
       return c;
     }
-    t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et jusqu'à {1} minutes de conversation par jour.".replace("{0}", String(talkMin().free)).replace("{1}", String(talkMin().premium))));
-    const a = txt("div", "acts"); a.append(btn(s.trial_used ? "Passer à Premium" : "Essayer Premium gratuitement", "dark", () => paywall("profile")));
-    if (s.manage) a.append(btn("Mes factures", "", portal)); c.append(a);
+    t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et {1} minutes par jour. Expert : {2} minutes par jour.".replace("{0}", String(tm.free)).replace("{1}", String(tm.premium)).replace("{2}", String(tm.expert))));
+    const a = txt("div", "acts"); a.append(btn(s0.trial_used ? "Voir les formules" : "Essayer gratuitement", "dark", () => paywall("profile")));
+    if (s0.manage) a.append(btn("Mes factures", "", portal)); c.append(a);
     return c;
   }
 

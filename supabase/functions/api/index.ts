@@ -121,7 +121,7 @@ async function limitsFor(u: User, prof?: any) {
   const p = prof !== undefined ? prof : await profile(u.id);
   const own = isOwner(u);
   // Formule gratuite (quand le payant est ouvert) : plafonds plus bas. Le plafond fixé à la main par le propriétaire reste prioritaire.
-  const pl = own ? { billing: billingOn(), premium: true, owner: true, sub: null } : await planOf(u);
+  const pl: Plan = own ? { billing: billingOn(), premium: true, owner: true, sub: null, tier: "expert" } : await planOf(u);
   const free = !pl.premium;
   const calls = p && p.daily_limit != null ? p.daily_limit : own ? int("OWNER_DAILY_CALLS", 1000) : free ? int("FREE_DAILY_CALLS", 40) : int("DAILY_CALLS", 150);
   return { calls, output_tokens: own ? int("OWNER_DAILY_OUTPUT_TOKENS", 4000000) : free ? int("FREE_DAILY_OUTPUT_TOKENS", 100000) : int("DAILY_OUTPUT_TOKENS", 400000),
@@ -166,6 +166,16 @@ async function claude(req: Request, u: User): Promise<Response> {
   const cap = quick ? 2048 : 16000;
   const maxTok = Math.min(Math.max(parseInt(b.max_tokens, 10) || (quick ? 1200 : 8000), 16), cap);
 
+  // Conversation avec un personnage : les caractères des répliques du prof sont comptés par jour, selon la formule.
+  const talk = b.talk === true;
+  let talkMax = 0, talkBefore = 0;
+  if (talk) {
+    const tp = isOwner(u) ? null : await planOf(u);
+    if (tp && tp.billing) {
+      talkMax = talkLimits(tp).max; talkBefore = await talkUsed(u.id);
+      if (talkBefore >= talkMax) return json(req, { code: "talk_limit", message: "Tes minutes de conversation du jour sont écoulées.", tier: tp.tier, talk: { used: talkBefore, max: talkMax } }, 429);
+    }
+  }
   // Réservation atomique : l'appel et le maximum de texte qu'il peut produire sont comptés avant d'appeler Claude.
   const lim = await limitsFor(u);
   const okCall = await restJSON("rpc/take_call", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_max_calls: lim.calls, p_max_out: lim.output_tokens, p_max_in: lim.input_tokens, p_reserve: maxTok }) });
@@ -253,7 +263,12 @@ async function claude(req: Request, u: User): Promise<Response> {
   let settled = false;
   // Réponse sans texte : on note pourquoi (raison d'arrêt, types de contenu), sans rien de la conversation.
   const noteEmpty = () => { if (!text.trim()) console.error("claude vide", JSON.stringify({ model, stop, outTok, inTok, kinds: [...kinds], err: errMsg.slice(0, 120) })); };
-  const finish = () => { if (settled) return; settled = true; noteEmpty(); return addUsage(u.id, 0, inTok, stop ? outTok - maxTok : 0, 0); };
+  let talkAfter = talkBefore;
+  const finish = async () => {
+    if (settled) return; settled = true; noteEmpty();
+    if (talk && text) { try { const r = await restJSON("rpc/add_talk", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_chars: text.length }) }); talkAfter = Number(r) || talkBefore + text.length; } catch (e) { console.error("talk", e); } }
+    return addUsage(u.id, 0, inTok, stop ? outTok - maxTok : 0, 0);
+  };
   const truncated = () => stop === "max_tokens" || !stop || !!errMsg;
 
   if (!wantStream) {
@@ -269,7 +284,7 @@ async function claude(req: Request, u: User): Promise<Response> {
       if (errMsg) send({ error: { code: "unavailable", message: "Claude s'est interrompu. Réessaie." } });
       else if (stop === "refusal" && !text.trim()) send({ error: { code: "refusal", message: "Claude a préféré ne pas répondre à ce message. Reformule-le autrement." } });
       else if (!text.trim()) send({ error: { code: "empty", message: "Réponse vide." } });
-      else send({ done: true, truncated: truncated() });
+      else { if (talk) await finish(); send({ done: true, truncated: truncated(), ...(talk && talkMax ? { talk: { used: talkAfter, max: talkMax } } : {}) }); }
       ctrl.close();
       await finish();
     },
@@ -302,7 +317,7 @@ async function admin(req: Request, u: User): Promise<Response> {
   if (act === "me") {
     const lim = await limitsFor(u), used = await usageToday(u.id);
     ensureCron();
-    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, premium: statusOut(lim.plan as any), limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!(ttsKey() || elOn()), tts_engine: elOn() ? "elevenlabs" : "openai" });
+    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, premium: statusOut(lim.plan as Plan), limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!(ttsKey() || elOn()), tts_engine: elOn() ? "elevenlabs" : "openai" });
   }
   if (act === "rename") {
     const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
@@ -433,7 +448,7 @@ async function admin(req: Request, u: User): Promise<Response> {
   }
   if (act === "members") {
     const people = await restJSON("profiles?invited=eq.true&select=user_id,email,name,daily_limit,created_at&order=created_at.asc") || [];
-    const subs = await restJSON("subscriptions?select=user_id,plan,status,period_end").catch(() => []) || [];
+    const subs = await restJSON("subscriptions?select=user_id,plan,tier,status,period_end").catch(() => []) || [];
     const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
     const rows = await restJSON("usage?day=gte." + since + "&select=user_id,day,calls,input_tokens,output_tokens,stt_seconds") || [];
     const d = today();
@@ -442,7 +457,7 @@ async function admin(req: Request, u: User): Promise<Response> {
       const sum = (k: string, rs: any[]) => rs.reduce((a: number, r: any) => a + Number(r[k] || 0), 0);
       const td = mine.filter((r: any) => r.day === d);
       const sb = subs.find((x: any) => x.user_id === p.user_id) || null;
-      return { ...p, owner: owners().includes((p.email || "").toLowerCase()), plan: sb ? { plan: sb.plan, status: sb.status, premium: premiumSub(sb) } : { plan: "free", status: "none", premium: false },
+      return { ...p, owner: owners().includes((p.email || "").toLowerCase()), plan: sb ? { plan: sb.plan, tier: sb.tier || "premium", status: sb.status, premium: premiumSub(sb) } : { plan: "free", status: "none", premium: false },
         today: { calls: sum("calls", td), output_tokens: sum("output_tokens", td) },
         month: { calls: sum("calls", mine), input_tokens: sum("input_tokens", mine), output_tokens: sum("output_tokens", mine), stt_seconds: sum("stt_seconds", mine), days: new Set(mine.map((r: any) => r.day)).size } };
     });
@@ -453,7 +468,7 @@ async function admin(req: Request, u: User): Promise<Response> {
     const id = String(b.user_id || ""); if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(req, 400, "input", "Membre inconnu.");
     const cur = await subOf(id);
     if (cur && ["trialing", "active", "past_due"].includes(cur.status) && cur.subscription) return fail(req, 409, "paid", "Ce membre a un abonnement payant en cours.");
-    const row = b.on ? { plan: "founder", status: "comp" } : { plan: "free", status: "none" };
+    const row = b.on ? { plan: "founder", status: "comp", tier: b.tier === "expert" ? "expert" : "premium" } : { plan: "free", status: "none" };
     await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: id, ...row, updated_at: new Date().toISOString() }) });
     return json(req, { ok: true, ...row });
   }
@@ -742,14 +757,12 @@ async function tts(req: Request, u: User): Promise<Response> {
   const model = env("TTS_MODEL", "gpt-4o-mini-tts");
   // Phrases des leçons : même texte, même voix, même fichier pour tout le monde. Une phrase déjà produite ne coûte plus rien.
   const cache = !!b.cache;
-  // Les phrases des leçons (en cache, partagées) gardent les voix ElevenLabs pour tous. En direct : voix OpenAI pour la formule gratuite,
-  // et pour un abonné au-delà de PREMIUM_VOICE_MONTH_CHARS dans le mois (le propriétaire et les fondateurs ne sont pas concernés).
+  // Les phrases des leçons (en cache, partagées) gardent les voix ElevenLabs pour tous (sauf la production d'une phrase nouvelle en gratuit).
+  // En conversation : ElevenLabs tant que les répliques du jour restent sous la part prévue par la formule (0 en gratuit), puis voix OpenAI.
   const elName = elOn(); // le nom du fichier en cache suit le service des voix configuré
   const pl = isOwner(u) ? null : await planOf(u);
   let useEl = elName && (!pl || pl.premium);
-  if (useEl && !cache && pl && pl.billing && pl.sub && pl.sub.status !== "comp") {
-    try { const rows = await restJSON("usage?user_id=eq." + u.id + "&day=gte." + today().slice(0, 8) + "01&select=tts_chars") || []; if (rows.reduce((n: number, r: any) => n + (Number(r.tts_chars) || 0), 0) > int("PREMIUM_VOICE_MONTH_CHARS", 150000)) useEl = false; } catch { /* on garde la voix */ }
-  }
+  if (useEl && !cache && pl && pl.billing) { const tl = talkLimits(pl); if (tl.el < 1e9 && await talkUsed(u.id) >= tl.el) useEl = false; }
   const name = cache ? "tts/" + (await sha256((elName ? ["el2", voice, speed, lang, text] : [model, voice, speed, instructions, text]).join("\u0001"))) + ".mp3" : "";
   if (cache) {
     try {
@@ -864,23 +877,54 @@ async function news(req: Request): Promise<Response> {
 // ---------- Premium : abonnement Stripe (paiement sur le web) ----------
 // Secrets : STRIPE_SECRET_KEY (clé secrète Stripe, sk_live_… ou sk_test_…) et STRIPE_WEBHOOK_SECRET (whsec_…, l'adresse du webhook
 // est …/functions/v1/api/stripe). Sans STRIPE_SECRET_KEY, le payant dort : tout le monde a accès à tout, comme avant.
-// Facultatifs : PRICE_MONTHLY (999, en centimes), PRICE_YEARLY (6999), CURRENCY (eur), TRIAL_DAYS (7),
-//   STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY (identifiants price_… si les prix sont créés dans Stripe), BILLING (off pour couper),
-//   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300), PREMIUM_VOICE_MONTH_CHARS (150000 : au-delà, voix OpenAI),
-//   FREE_TALK_MINUTES (3) et PREMIUM_TALK_MINUTES (60) : minutes de conversation par jour avec les personnages.
+// Trois formules : gratuit, Premium, Expert. Facultatifs (prix en centimes) : PRICE_MONTHLY (999), PRICE_YEARLY (8999),
+//   EXPERT_PRICE_MONTHLY (1999), EXPERT_PRICE_YEARLY (14999), CURRENCY (eur), TRIAL_DAYS (7), BILLING (off pour couper),
+//   STRIPE_PRICE_PREMIUM_MONTHLY… STRIPE_PRICE_EXPERT_YEARLY (identifiants price_… si les prix sont créés dans Stripe).
+// Conversation : on compte les caractères des répliques du prof (par jour) : FREE_TALK_CHARS (1500 ≈ 3 min), PREMIUM_TALK_CHARS
+//   (10000 ≈ 20 min), EXPERT_TALK_CHARS (30000 ≈ 60 min), dont en voix ElevenLabs PREMIUM_EL_CHARS (5000) et EXPERT_EL_CHARS (15000),
+//   puis voix OpenAI ; TALK_CHARS_PER_MIN (500) pour afficher des minutes.
+//   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300).
 const billingOn = () => !!env("STRIPE_SECRET_KEY") && !/^(off|false|0|non|no)$/i.test(env("BILLING", "on"));
-type Sub = { user_id: string; plan: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null };
+type Tier = "free" | "premium" | "expert";
+type Sub = { user_id: string; plan: string; tier?: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null };
 async function subOf(uid: string): Promise<Sub | null> {
   try { const rows = await restJSON("subscriptions?user_id=eq." + uid + "&select=*"); return rows && rows[0] || null; } catch { return null; }
 }
 // Accès Premium : offert (fondateurs), essai, abonnement en cours, ou paiement en retard pendant que Stripe relance (3 jours de grâce).
 const premiumSub = (s: Sub | null) => !!s && (s.status === "comp" ||
   (["trialing", "active", "past_due"].includes(s.status) && (!s.period_end || Date.parse(s.period_end) > Date.now() - 3 * 864e5)));
-async function planOf(u: User): Promise<{ billing: boolean; premium: boolean; owner: boolean; sub: Sub | null }> {
+type Plan = { billing: boolean; premium: boolean; owner: boolean; sub: Sub | null; tier: Tier };
+async function planOf(u: User): Promise<Plan> {
   const sub = await subOf(u.id), owner = isOwner(u), billing = billingOn();
-  return { billing, owner, sub, premium: !billing || owner || premiumSub(sub) };
+  const paid = premiumSub(sub), tier: Tier = !billing || owner ? "expert" : paid ? (sub && sub.tier === "expert" ? "expert" : "premium") : "free";
+  return { billing, owner, sub, premium: !billing || owner || paid, tier };
 }
-const prices = () => ({ monthly: int("PRICE_MONTHLY", 999), yearly: int("PRICE_YEARLY", 6999), currency: env("CURRENCY", "eur").toLowerCase(), trial_days: int("TRIAL_DAYS", 7) });
+const prices = () => ({ monthly: int("PRICE_MONTHLY", 999), yearly: int("PRICE_YEARLY", 8999), currency: env("CURRENCY", "eur").toLowerCase(), trial_days: int("TRIAL_DAYS", 7),
+  expert: { monthly: int("EXPERT_PRICE_MONTHLY", 1999), yearly: int("EXPERT_PRICE_YEARLY", 14999) } });
+const priceOf = (tier: string, plan: string) => { const p = prices(); return tier === "expert" ? (plan === "monthly" ? p.expert.monthly : p.expert.yearly) : (plan === "monthly" ? p.monthly : p.yearly); };
+// Conversation : caractères des répliques du prof par jour, et part dite par ElevenLabs. Sans paiement ouvert ou pour le propriétaire : sans limite.
+const talkLimits = (p: Plan) => {
+  const open = !p.billing || p.owner, t = p.tier;
+  return { max: open ? 1e9 : t === "expert" ? int("EXPERT_TALK_CHARS", 30000) : t === "premium" ? int("PREMIUM_TALK_CHARS", 10000) : int("FREE_TALK_CHARS", 1500),
+    el: open ? 1e9 : t === "expert" ? int("EXPERT_EL_CHARS", 15000) : t === "premium" ? int("PREMIUM_EL_CHARS", 5000) : 0 };
+};
+async function talkUsed(uid: string): Promise<number> {
+  try { const rows = await restJSON("usage?user_id=eq." + uid + "&day=eq." + today() + "&select=talk_chars"); return Number(rows && rows[0] && rows[0].talk_chars) || 0; } catch { return 0; }
+}
+// Produit Stripe de chaque formule (créé une fois, gardé dans app_config, séparément en mode test et en mode réel).
+async function stripeProduct(tier: string): Promise<string> {
+  const k = "stripe_products_" + (env("STRIPE_SECRET_KEY").startsWith("sk_live") ? "live" : "test");
+  const cur = (await config(k).catch(() => null)) || {};
+  if (cur[tier]) return cur[tier];
+  const pr = await stripe("products", { name: tier === "expert" ? "Expert" : "Premium", metadata: { tier } });
+  await addConfig(k, { ...cur, [tier]: pr.id }, true);
+  return pr.id;
+}
+async function priceParams(tier: string, plan: string): Promise<any> {
+  const id = env("STRIPE_PRICE_" + tier.toUpperCase() + "_" + plan.toUpperCase()) || (tier === "premium" ? env(plan === "monthly" ? "STRIPE_PRICE_MONTHLY" : "STRIPE_PRICE_YEARLY") : "");
+  if (id) return { price: id };
+  return { price_data: { currency: prices().currency, unit_amount: priceOf(tier, plan), recurring: { interval: plan === "monthly" ? "month" : "year" }, product: await stripeProduct(tier) } };
+}
 // Appel à l'API Stripe (formulaire encodé, objets imbriqués « a[b][c] »).
 function form(o: any, pre = "", out: string[] = []): string[] {
   for (const [k, v] of Object.entries(o)) {
@@ -912,7 +956,8 @@ async function saveStripeSub(s: any, uidHint?: string): Promise<Sub | null> {
   const it = s.items && s.items.data && s.items.data[0] || {};
   const interval = it.price && it.price.recurring && it.price.recurring.interval || it.plan && it.plan.interval;
   const st = ["trialing", "active", "past_due", "canceled"].includes(s.status) ? s.status : s.status === "unpaid" || s.status === "incomplete_expired" ? "canceled" : "none";
-  const row: Sub = { user_id: uid, plan: interval === "year" ? "yearly" : "monthly", status: st, trial_end: iso(s.trial_end), period_end: iso(s.current_period_end ?? it.current_period_end),
+  const tier = (s.metadata && s.metadata.tier) || (it.price && it.price.metadata && it.price.metadata.tier) || (old && old.tier) || "premium";
+  const row: Sub = { user_id: uid, plan: interval === "year" ? "yearly" : "monthly", tier: tier === "expert" ? "expert" : "premium", status: st, trial_end: iso(s.trial_end), period_end: iso(s.current_period_end ?? it.current_period_end),
     cancel_at_period_end: !!s.cancel_at_period_end, trial_used: !!(old && old.trial_used) || !!s.trial_end || st !== "none", customer: String(s.customer || ""), subscription: s.id };
   try { await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ ...row, updated_at: new Date().toISOString() }) }); }
   catch (e) { if (/23503|foreign key/i.test(String(e))) { console.error("stripe : compte supprimé", s.id); return null; } throw e; } // compte supprimé entre-temps : rien à garder
@@ -935,14 +980,16 @@ async function liveStripeSub(customer: string): Promise<any> {
   const l = await stripe("subscriptions?customer=" + encodeURIComponent(customer) + "&status=all&limit=20");
   return (l.data || []).find((x: any) => ["trialing", "active", "past_due"].includes(x.status)) || null;
 }
-function statusOut(p: { billing: boolean; premium: boolean; owner: boolean; sub: Sub | null }) {
-  const s = p.sub;
-  return { billing: p.billing, premium: p.premium, owner: p.owner, founder: !!s && s.status === "comp", plan: s ? s.plan : "free", status: s ? s.status : "none",
+function statusOut(p: Plan, used = 0) {
+  const s = p.sub, tl = talkLimits(p), per = int("TALK_CHARS_PER_MIN", 500);
+  return { billing: p.billing, premium: p.premium, owner: p.owner, tier: p.tier, founder: !!s && s.status === "comp", plan: s ? s.plan : "free", status: s ? s.status : "none",
     trial_end: s && s.trial_end || null, period_end: s && s.period_end || null, cancel_at_period_end: !!(s && s.cancel_at_period_end), trial_used: !!(s && s.trial_used),
     manage: !!(s && s.customer), prices: prices(),
     free: { calls: int("FREE_DAILY_CALLS", 40), tts_chars: int("FREE_TTS_DAILY_CHARS", 6000), stt_seconds: int("FREE_STT_DAILY_SECONDS", 300) },
-    // Minutes de conversation par jour avec les personnages (comptées par l'app) : gratuit, puis Premium.
-    talk: { free: int("FREE_TALK_MINUTES", 3), premium: int("PREMIUM_TALK_MINUTES", 60) } };
+    // Conversation du jour : caractères des répliques du prof (comptés par le serveur), affichés en minutes.
+    talk: { per_min: per, used, max: tl.max, el: tl.el, unlimited: tl.max >= 1e9,
+      minutes: { free: Math.round(int("FREE_TALK_CHARS", 1500) / per), premium: Math.round(int("PREMIUM_TALK_CHARS", 10000) / per), expert: Math.round(int("EXPERT_TALK_CHARS", 30000) / per) },
+      el_minutes: { premium: Math.round(int("PREMIUM_EL_CHARS", 5000) / per), expert: Math.round(int("EXPERT_EL_CHARS", 15000) / per) } } };
 }
 // Adresse de retour après le paiement : la page de l'app d'où vient la demande, jamais un autre site.
 function backUrl(req: Request, given: unknown): string | null {
@@ -966,13 +1013,13 @@ async function billing(req: Request, u: User): Promise<Response> {
     if (p.billing && s && s.subscription && s.status !== "comp" && s.status !== "canceled" && s.period_end && Date.parse(s.period_end) < Date.now()) {
       try { await saveStripeSub(await stripe("subscriptions/" + s.subscription), u.id); p = await planOf(u); } catch { /* on garde l'état connu */ }
     }
-    return json(req, statusOut(p));
+    return json(req, statusOut(p, await talkUsed(u.id)));
   }
   if (!p.billing) return fail(req, 409, "billing_off", "Le paiement n'est pas encore ouvert : tout est accessible gratuitement.");
   if (act === "checkout") {
-    if (p.premium && p.sub && p.sub.status !== "canceled") return fail(req, 409, "already", "Tu as déjà Premium.");
+    if (p.premium && p.sub && p.sub.status !== "canceled") return fail(req, 409, "already", "Tu as déjà un abonnement : change de formule depuis ton profil.");
     const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
-    const plan = b.plan === "monthly" ? "monthly" : "yearly", pr = prices();
+    const plan = b.plan === "monthly" ? "monthly" : "yearly", tier = b.tier === "expert" ? "expert" : "premium", pr = prices();
     let customer = p.sub && p.sub.customer || "";
     if (customer) {
       // Client créé en mode test (ou supprimé dans Stripe) : on en crée un nouveau. Abonnement déjà en cours : on le récupère.
@@ -984,19 +1031,29 @@ async function billing(req: Request, u: User): Promise<Response> {
       customer = c.id;
       await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: u.id, customer, updated_at: new Date().toISOString() }) });
     }
-    const priceId = env(plan === "monthly" ? "STRIPE_PRICE_MONTHLY" : "STRIPE_PRICE_YEARLY");
     const ui = ["fr", "en", "es"].includes(b.ui) ? b.ui : "auto";
-    const names: Record<string, string[]> = { fr: ["Premium — mensuel", "Premium — annuel"], en: ["Premium — monthly", "Premium — yearly"], es: ["Premium — mensual", "Premium — anual"] };
-    const nm = (names[ui] || names.fr)[plan === "monthly" ? 0 : 1];
     const trial = !(p.sub && p.sub.trial_used) && pr.trial_days > 0;
     const sess = await stripe("checkout/sessions", {
       mode: "subscription", customer, client_reference_id: u.id, locale: ui, allow_promotion_codes: "true",
-      line_items: { 0: priceId ? { price: priceId, quantity: 1 } : { quantity: 1, price_data: { currency: pr.currency, unit_amount: plan === "monthly" ? pr.monthly : pr.yearly, recurring: { interval: plan === "monthly" ? "month" : "year" }, product_data: { name: nm } } } },
-      subscription_data: { metadata: { user_id: u.id }, ...(trial ? { trial_period_days: pr.trial_days } : {}) },
-      metadata: { user_id: u.id },
+      line_items: { 0: { quantity: 1, ...(await priceParams(tier, plan)) } },
+      subscription_data: { metadata: { user_id: u.id, tier }, ...(trial ? { trial_period_days: pr.trial_days } : {}) },
+      metadata: { user_id: u.id, tier },
       success_url: back + "?billing=ok&session_id={CHECKOUT_SESSION_ID}", cancel_url: back + "?billing=cancel",
     });
     return json(req, { url: sess.url });
+  }
+  // Changer de formule (Premium ↔ Expert) en gardant l'abonnement : Stripe calcule la différence au prorata.
+  if (act === "change") {
+    const tier = b.tier === "expert" ? "expert" : "premium", s = p.sub;
+    if (!s || !s.subscription || !["trialing", "active", "past_due"].includes(s.status)) return fail(req, 404, "no_subscription", "Aucun abonnement à changer.");
+    if ((s.tier || "premium") === tier) return json(req, statusOut(p, await talkUsed(u.id)));
+    const cur = await stripe("subscriptions/" + s.subscription), item = cur.items && cur.items.data && cur.items.data[0];
+    if (!item) return fail(req, 502, "unavailable", "Abonnement illisible.");
+    const plan = (item.price && item.price.recurring && item.price.recurring.interval) === "year" ? "yearly" : "monthly";
+    const up = tier === "expert";
+    const ns = await stripe("subscriptions/" + s.subscription, { items: { 0: { id: item.id, ...(await priceParams(tier, plan)) } }, metadata: { user_id: u.id, tier }, proration_behavior: up ? "always_invoice" : "create_prorations", cancel_at_period_end: "false" });
+    await saveStripeSub(ns, u.id);
+    return json(req, statusOut(await planOf(u), await talkUsed(u.id)));
   }
   if (act === "portal") {
     const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
@@ -1011,7 +1068,7 @@ async function billing(req: Request, u: User): Promise<Response> {
       const sess = await stripe("checkout/sessions/" + id + "?expand[]=subscription");
       if (sess.client_reference_id === u.id && sess.subscription) await saveStripeSub(typeof sess.subscription === "string" ? await stripe("subscriptions/" + sess.subscription) : sess.subscription, u.id);
     } else if (p.sub && p.sub.subscription) await saveStripeSub(await stripe("subscriptions/" + p.sub.subscription), u.id);
-    return json(req, statusOut(await planOf(u)));
+    return json(req, statusOut(await planOf(u), await talkUsed(u.id)));
   }
   return fail(req, 400, "input", "Action inconnue.");
 }

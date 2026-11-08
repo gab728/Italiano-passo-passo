@@ -45,21 +45,42 @@ const parisDay = (off = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Euro
   console.log("2. Payant ouvert : formule gratuite, essai, paiement");
   await get("/__billing?on=1");
   st = await a.call("billing", { action: "status" });
-  ok(st.body.billing === true && st.body.premium === false && st.body.plan === "free", "un nouvel élève est en formule gratuite");
+  ok(st.body.billing === true && st.body.premium === false && st.body.plan === "free" && st.body.tier === "free", "un nouvel élève est en formule gratuite");
+  ok(st.body.prices.yearly === 8999 && st.body.prices.monthly === 999 && st.body.prices.expert.monthly === 1999 && st.body.prices.expert.yearly === 14999, "prix : Premium 9,99 €/mois ou 89,99 €/an, Expert 19,99 €/mois ou 149,99 €/an");
+  ok(st.body.talk.max === 1500 && st.body.talk.used === 0 && st.body.talk.minutes.free === 3 && st.body.talk.minutes.premium === 20 && st.body.talk.minutes.expert === 60, "conversation : 1 500 caractères par jour en gratuit (3 min), 20 min en Premium, 60 en Expert");
   const me = await a.call("admin", { action: "me" });
   ok(me.body.limits && me.body.limits.calls === 40 && me.body.premium && me.body.premium.premium === false, "plafonds de la formule gratuite : 40 appels par jour");
   ok((await a.call("billing", { action: "checkout", plan: "yearly", return_url: "https://evil.example/" })).status === 400, "adresse de retour d'un autre site refusée");
   const co = await a.call("billing", { action: "checkout", plan: "yearly", return_url: O + "/index.html", ui: "es" });
   ok(co.status === 200 && /\/__stripe\/pay\/cs_test_/.test(co.body.url || ""), "page de paiement Stripe créée");
   const ss = (await get("/__stripeState")).sessions.pop();
-  ok(ss.params["subscription_data[trial_period_days]"] === "7" && ss.params["line_items[0][price_data][unit_amount]"] === "6999" && ss.params["line_items[0][price_data][recurring][interval]"] === "year", "annuel à 69,99 € avec 7 jours d'essai");
+  ok(ss.params["subscription_data[trial_period_days]"] === "7" && ss.params["line_items[0][price_data][unit_amount]"] === "8999" && /^prod_premium/.test(ss.params["line_items[0][price_data][product]"] || "") && ss.params["line_items[0][price_data][recurring][interval]"] === "year", "Premium annuel à 89,99 € avec 7 jours d'essai (produit Stripe « Premium »)");
   ok(ss.params.locale === "es" && ss.params.success_url === O + "/?billing=ok&session_id={CHECKOUT_SESSION_ID}".replace("/?", "/index.html?") && ss.params["subscription_data[metadata][user_id]"] === a.id, "langue de l'élève, retour vers l'app, élève rattaché à l'abonnement");
   const back = await fetch(co.body.url, { redirect: "manual" });
   const sid = new URL(back.headers.get("location")).searchParams.get("session_id");
   st = await a.call("billing", { action: "sync", session_id: sid });
   ok(st.body.premium === true && st.body.status === "trialing" && st.body.plan === "yearly" && st.body.trial_end, "retour du paiement : essai Premium actif tout de suite");
-  ok((await a.call("admin", { action: "me" })).body.limits.calls === 50, "plafonds Premium rétablis");
+  ok((await a.call("admin", { action: "me" })).body.limits.calls === 50 && st.body.tier === "premium" && st.body.talk.max === 10000, "plafonds Premium : 10 000 caractères de conversation par jour (20 min)");
   ok((await a.call("billing", { action: "checkout", plan: "monthly", return_url: O + "/" })).body.code === "already", "pas de second abonnement");
+  // Conversation comptée par le serveur : caractères des répliques du prof, seulement quand l'app le signale.
+  await a.call("claude", { input: "Ciao", tier: "quick" });
+  let tk = (await a.call("billing", { action: "status" })).body.talk.used;
+  ok(tk === 0, "un appel hors conversation ne compte pas dans les minutes");
+  const cr = await post("/functions/v1/api/claude", { input: "Ciao Giulia", tier: "quick", stream: true, talk: true }, { authorization: "Bearer " + a.token, apikey: "sb_publishable_test", "content-type": "application/json", origin: O });
+  const raw = await cr.text(), done = raw.split("\n\n").map((l) => l.replace(/^data:\s*/, "")).filter(Boolean).map((l) => { try { return JSON.parse(l); } catch (e) { return {}; } }).find((x) => x.done);
+  const reply = raw.split("\n\n").map((l) => { try { return JSON.parse(l.replace(/^data:\s*/, "")).d || ""; } catch (e) { return ""; } }).join("");
+  tk = (await a.call("billing", { action: "status" })).body.talk.used;
+  ok(tk === reply.length && done && done.talk && done.talk.used === tk && done.talk.max === 10000, "réplique comptée en caractères (" + tk + ") et renvoyée à l'app");
+  // Passage à Expert sans nouveau paiement : Stripe change le prix au prorata.
+  const ch = await a.call("billing", { action: "change", tier: "expert" });
+  const upd = (await get("/__stripeState")).calls.filter((c) => c.method === "POST" && /^subscriptions\/sub_/.test(c.path)).pop();
+  ok(ch.body.tier === "expert" && ch.body.talk.max === 30000 && upd && upd.params["items[0][price_data][unit_amount]"] === "14999" && upd.params.proration_behavior === "always_invoice", "passage à Expert : 149,99 €/an au prorata, 60 min par jour");
+  await post("/__setTalk", { user_id: a.id, chars: 30000 });
+  const lim = await a.call("claude", { input: "Ancora?", tier: "quick", talk: true });
+  ok(lim.status === 429 && lim.body.code === "talk_limit" && lim.body.talk.max === 30000, "minutes du jour écoulées : la réplique suivante est refusée (« talk_limit »)");
+  await post("/__setTalk", { user_id: a.id, chars: 0 });
+  const back2 = await a.call("billing", { action: "change", tier: "premium" });
+  ok(back2.body.tier === "premium" && back2.body.talk.max === 10000, "retour à Premium");
   const portal = await a.call("billing", { action: "portal", return_url: O + "/" });
   ok(/__stripe\/portal/.test(portal.body.url || ""), "accès à la gestion de l'abonnement (portail Stripe)");
 
@@ -84,7 +105,9 @@ const parisDay = (off = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Euro
   const founder = await signup("ami" + Date.now() + "@example.com");
   await post("/__setRow", { table: "subscriptions", row: { user_id: founder.id, plan: "founder", status: "comp" } });
   st = await founder.call("billing", { action: "status" });
-  ok(st.body.premium === true && st.body.founder === true, "membre fondateur : Premium offert");
+  ok(st.body.premium === true && st.body.founder === true && st.body.tier === "premium", "membre fondateur : Premium offert");
+  const fx = await f.call("claude", { input: "x", tier: "quick", talk: true });
+  void fx;
 
   console.log("5. Rappels : abonnement du téléphone, message, chiffrement");
   const uaKeys = await sub.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);

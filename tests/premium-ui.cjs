@@ -53,7 +53,7 @@ const MOCKS = `
   ok(await p.evaluate(() => PREM.billing() && !PREM.premium()), "payant ouvert, formule gratuite");
   await p.evaluate(() => UI.go("profile")); await p.waitForSelector(".pw-card");
   const pc = await p.textContent(".pw-card");
-  ok(/Formule gratuite/.test(pc) && /Essayer Premium gratuitement/.test(pc), "profil : « Formule gratuite », bouton « Essayer Premium gratuitement »");
+  ok(/Formule gratuite/.test(pc) && /Essayer gratuitement/.test(pc) && /Expert : 60 minutes/.test(pc), "profil : « Formule gratuite », Premium 20 min, Expert 60 min, bouton « Essayer gratuitement »");
   ok(/Rappels/.test(await p.textContent(".rm-set")), "profil : réglage des rappels");
 
   console.log("2. Leçons : l'unité 1 est libre, puis une nouvelle leçon par jour");
@@ -66,9 +66,14 @@ const MOCKS = `
   ok(!(await p.$(".pw")), "la même leçon se rouvre sans limite");
   await p.evaluate((mi) => { home(); go(mi); }, ids.later[1]);
   await p.waitForSelector(".pw.in");
-  const pw = await p.evaluate(() => ({ h: document.querySelector(".pw-h").textContent, plans: [...document.querySelectorAll(".pw-plan")].map((b) => b.textContent), sel: document.querySelector(".pw-plan.sel").dataset.plan, then: document.querySelector(".pw-then").textContent, cta: document.querySelector(".pw-cta").textContent, lesson: !!document.querySelector(".lesson") }));
+  const pw = await p.evaluate(() => ({ tiers: [...document.querySelectorAll(".pw-tier")].map((b) => b.textContent), h: document.querySelector(".pw-h").textContent, plans: [...document.querySelectorAll(".pw-plan")].map((b) => b.textContent), sel: document.querySelector(".pw-plan.sel").dataset.plan, then: document.querySelector(".pw-then").textContent, cta: document.querySelector(".pw-cta").textContent, lesson: !!document.querySelector(".lesson") }));
   ok(/leçon gratuite du jour/.test(pw.h), "deuxième nouvelle leçon : l'offre s'affiche (« " + pw.h + " »)");
-  ok(/69,99\s€ par an/.test(pw.plans[0]) && /5,83\s€ par mois/.test(pw.plans[0]) && /9,99\s€ par mois/.test(pw.plans[1]) && pw.sel === "yearly", "annuel mis en avant (5,83 € par mois), mensuel à 9,99 €");
+  ok(/Premium/.test(pw.tiers[0]) && /20 min/.test(pw.tiers[0]) && /Expert/.test(pw.tiers[1]) && /60 min/.test(pw.tiers[1]), "deux formules proposées : Premium (20 min par jour) et Expert (60 min)");
+  ok(/89,99\s€ par an/.test(pw.plans[0]) && /7,49\s€ par mois/.test(pw.plans[0]) && /9,99\s€ par mois/.test(pw.plans[1]) && pw.sel === "yearly", "Premium annuel à 89,99 € (7,49 € par mois), mensuel à 9,99 €");
+  await p.click(".pw-tier[data-tier=expert]");
+  const ex = await p.evaluate(() => ({ plans: [...document.querySelectorAll(".pw-plan")].map((b) => b.textContent), feat: document.querySelector(".pw-feat").textContent }));
+  ok(/149,99\s€ par an/.test(ex.plans[0]) && /19,99\s€ par mois/.test(ex.plans[1]) && /60 minutes de conversation par jour/.test(ex.feat) && /30 min par jour/.test(ex.feat), "Expert : 149,99 €/an ou 19,99 €/mois, 60 minutes par jour dont 30 en voix naturelles");
+  await p.click(".pw-tier[data-tier=premium]");
   ok(/7 jours gratuits/.test(pw.then) && /Essayer gratuitement 7 jours/.test(pw.cta), "essai de 7 jours annoncé : " + pw.then);
   await p.waitForTimeout(450); await p.screenshot({ path: "tests/shot-paywall.png" });
   await p.click(".pw-later"); await p.waitForTimeout(300);
@@ -90,28 +95,36 @@ const MOCKS = `
   await p.evaluate((mi) => { home(); go(mi); }, ids.later[1]);
   ok(await p.isVisible(".lesson") && !(await p.$(".pw")), "les leçons sont débloquées");
   await p.evaluate(() => UI.go("profile")); await p.waitForSelector(".pw-card.on");
-  ok(/Premium · essai gratuit/.test(await p.textContent(".pw-card")) && /Gérer mon abonnement/.test(await p.textContent(".pw-card")), "profil : « Premium · essai gratuit », « Gérer mon abonnement »");
+  ok(/Premium · essai gratuit/.test(await p.textContent(".pw-card")) && /20 minutes de conversation par jour/.test(await p.textContent(".pw-card")) && /Passer à Expert/.test(await p.textContent(".pw-card")), "profil : « Premium · essai gratuit », 20 minutes par jour, « Passer à Expert »");
+  await p.click(".pw-card .pill-btn.dark"); await p.waitForSelector(".pw.in");
+  ok(/Passe à Expert/.test(await p.textContent(".pw-h")) && /Passer à Expert/.test(await p.textContent(".pw-cta")) && /prorata/.test(await p.textContent(".pw-legal")), "abonné Premium : offre Expert, au prorata, sans repasser par le paiement");
+  await p.click(".pw-cta"); await p.waitForSelector(".pw-yay.in");
+  ok(/Bienvenue dans Expert/.test(await p.textContent(".pw-yay")) && await p.evaluate(() => PREM.plan.tier === "expert"), "passage à Expert : « Bienvenue dans Expert ! »");
+  await p.click(".pw-yay .pw-cta"); await p.waitForTimeout(300);
   await p.screenshot({ path: "tests/shot-premium-profile.png" });
 
-  console.log("4. Conversation gratuite : des minutes par jour, et l'offre de parler plus longtemps");
+  console.log("4. Conversation gratuite : minutes comptées par le serveur, et l'offre de parler plus longtemps");
   const q = await newPage();
   await signup(q, "Pablo");
+  const qid = await q.evaluate(() => WEBAUTH.user.id);
   await q.evaluate(() => UI.go("talk")); await q.waitForSelector(".talk-up");
   const tu = await q.textContent(".talk-up");
-  ok(/3 minutes de conversation par jour en gratuit/.test(tu) && /jusqu'à 60 minutes par jour/.test(tu), "onglet Parler : « 3 minutes par jour en gratuit · Premium jusqu'à 60 minutes »");
+  ok(/3 minutes de conversation par jour en gratuit/.test(tu) && /Premium : 20 minutes par jour/.test(tu) && /Expert : 60 minutes/.test(tu), "onglet Parler : « 3 minutes par jour en gratuit · Premium 20 · Expert 60 »");
   await q.evaluate(() => openPersona("giulia")); await q.waitForSelector(".dm-quota");
-  ok(/⏱ 3 min/.test(await q.textContent(".dm-quota")) && /Premium : 60 min\/j/.test(await q.textContent(".dm-quota")), "conversation, au-dessus de la saisie : « ⏱ 3 min · Premium : 60 min/j »");
+  ok(/⏱ 3 min/.test(await q.textContent(".dm-quota")) && /Premium : 20 min\/j/.test(await q.textContent(".dm-quota")), "conversation, au-dessus de la saisie : « ⏱ 3 min · Premium : 20 min/j »");
   await q.waitForFunction(() => DM && !DM.busy, null, { timeout: 10000 });
-  // Le temps passe pendant qu'on parle : à 2 min 30, il reste une minute.
-  await q.evaluate(async () => { S.fq = Object.assign({}, S.fq || {}, { talkSec: { p: day(), n: 150 } }); await dmSend("Ciao Giulia, come stai?", false); });
-  await q.waitForTimeout(5600);
-  ok(/⏱ 1 min/.test(await q.textContent(".dm-quota")) && await q.$(".dm-quota.low") && await q.$(".dm-upsell"), "à une minute de la fin : compteur en orange, proposition dans la conversation");
+  // 1 100 caractères déjà dits par le prof aujourd'hui : il reste moins d'une minute après la réplique.
+  await fetch(O + "/__setTalk", { method: "POST", body: JSON.stringify({ user_id: qid, chars: 1100 }) });
+  await q.evaluate(async () => { await dmSend("Ciao Giulia, come stai?", false); for (let k = 0; k < 100 && DM && DM.busy; k++) await new Promise((r) => setTimeout(r, 100)); });
+  await q.waitForTimeout(400);
+  ok(/⏱ 1 min/.test(await q.textContent(".dm-quota")) && await q.$(".dm-quota.low") && await q.$(".dm-upsell"), "compteur mis à jour par le serveur après la réplique, proposition à une minute de la fin");
   await q.screenshot({ path: "tests/shot-talk-quota.png" });
-  await q.evaluate(async () => { for (let k = 0; k < 100 && DM && DM.busy; k++) await new Promise((r) => setTimeout(r, 100)); S.fq.talkSec = { p: day(), n: 181 }; await dmSend("Andiamo al cinema?", false); });
+  await fetch(O + "/__setTalk", { method: "POST", body: JSON.stringify({ user_id: qid, chars: 1600 }) });
+  await q.evaluate(async () => { await PREM.refresh(); await dmSend("Andiamo al cinema?", false); });
   await q.waitForSelector(".pw.in");
   const ph = await q.textContent(".pw-h"), ps2 = await q.textContent(".pw-sub"), feat = await q.textContent(".pw-feat");
-  ok(/3 minutes de conversation du jour sont écoulées/.test(ph) && /jusqu'à 60 minutes par jour avec Giulia/.test(ps2), "minutes écoulées : « " + ph + " » — « " + ps2 + " »");
-  ok(/Jusqu'à 60 minutes de conversation par jour/.test(feat), "l'offre détaille « Jusqu'à 60 minutes de conversation par jour »");
+  ok(/3 minutes de conversation du jour sont écoulées/.test(ph) && /parler plus longtemps avec Giulia/.test(ps2), "minutes écoulées : « " + ph + " »");
+  ok(/20 minutes de conversation par jour/.test(feat), "l'offre détaille « 20 minutes de conversation par jour »");
   await q.click(".pw-later"); await q.waitForTimeout(300);
   ok(await q.evaluate(() => DM && DM.turns.filter((t) => t.role === "user" && /cinema/.test(t.content)).length === 0), "la réplique n'est pas envoyée au-delà des minutes gratuites");
   await q.evaluate(() => dmLeave()); await q.waitForTimeout(1300);

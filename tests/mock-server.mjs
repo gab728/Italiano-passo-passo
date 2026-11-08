@@ -34,7 +34,10 @@ globalThis.fetch = async (url, init) => {
     if (path.startsWith("checkout/sessions/")) { const ss = state.stripe.sessions.get(path.split("/").pop()); if (!ss) return ok({ error: { message: "No such session" } }, 404); return ok({ ...ss, subscription: ss.subscription ? state.stripe.subs.get(ss.subscription) : null }); }
     if (path === "subscriptions" && method === "GET") { const cu = new URL(u).searchParams.get("customer"); return ok({ data: [...state.stripe.subs.values()].filter((x) => x.customer === cu) }); }
     if (path === "balance") return ok({ livemode: false });
-    if (path.startsWith("subscriptions/")) { const id = path.split("/").pop(), sb = state.stripe.subs.get(id); if (!sb) return ok({ error: { message: "No such subscription" } }, 404); if (method === "DELETE") { sb.status = "canceled"; } return ok(sb); }
+    if (path === "products" && method === "POST") return ok({ id: "prod_" + (P["metadata[tier]"] || "x") + "_" + randomUUID().slice(0, 6), name: P.name });
+    if (path.startsWith("subscriptions/")) { const id = path.split("/").pop(), sb = state.stripe.subs.get(id); if (!sb) return ok({ error: { message: "No such subscription" } }, 404); if (method === "DELETE") { sb.status = "canceled"; }
+      if (method === "POST") { if (P["metadata[tier]"]) sb.metadata.tier = P["metadata[tier]"]; if (P["items[0][price_data][unit_amount]"]) sb.items.data[0].price.unit_amount = +P["items[0][price_data][unit_amount]"]; sb.last_update = P; }
+      return ok(sb); }
     if (path === "billing_portal/sessions") return ok({ url: ORIGIN + "/__stripe/portal?c=" + P.customer + "&back=" + encodeURIComponent(P.return_url) });
     return ok({ error: { message: "unknown " + path } }, 404);
   }
@@ -227,13 +230,14 @@ createServer(async (req, res) => {
     if (p === "/__pushes") return send(res, 200, state.pushes);
     if (p === "/__stripeState") return send(res, 200, { calls: state.stripe.calls, sessions: [...state.stripe.sessions.values()], subs: [...state.stripe.subs.values()] });
     if (p === "/__setStripeSub") { const b = JSON.parse((await readBody(req)).toString()); Object.assign(state.stripe.subs.get(b.id), b); return send(res, 200, {}); }
+    if (p === "/__setTalk") { const b = JSON.parse((await readBody(req)).toString()); const day = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date()); const k = b.user_id + "|" + day; const r = state.usage.get(k) || { user_id: b.user_id, day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0, tts_chars: 0 }; r.talk_chars = b.chars; state.usage.set(k, r); return send(res, 200, r); }
     if (p === "/__setRow") { const b = JSON.parse((await readBody(req)).toString()); const m = state.tables[b.table]; const k = b.row[PK[b.table]]; m.set(k, Object.assign(m.get(k) || {}, b.row)); return send(res, 200, m.get(k)); }
     // Paiement simulé : la page Stripe « payée » crée l'abonnement (avec essai si demandé) et renvoie vers l'app.
     if (p.startsWith("/__stripe/pay/")) {
       const ss = state.stripe.sessions.get(p.split("/").pop()); if (!ss) return send(res, 404, {});
       const trial = +(ss.params["subscription_data[trial_period_days]"] || 0), now = Math.floor(Date.now() / 1000);
       const interval = ss.params["line_items[0][price_data][recurring][interval]"] || "year";
-      const sb = { id: "sub_" + randomUUID().slice(0, 8), customer: ss.customer, status: trial ? "trialing" : "active", trial_end: trial ? now + trial * 86400 : null, current_period_end: now + (trial ? trial * 86400 : interval === "month" ? 30 * 86400 : 365 * 86400), cancel_at_period_end: false, metadata: { user_id: ss.params["subscription_data[metadata][user_id]"] }, items: { data: [{ price: { recurring: { interval } } }] } };
+      const sb = { id: "sub_" + randomUUID().slice(0, 8), customer: ss.customer, status: trial ? "trialing" : "active", trial_end: trial ? now + trial * 86400 : null, current_period_end: now + (trial ? trial * 86400 : interval === "month" ? 30 * 86400 : 365 * 86400), cancel_at_period_end: false, metadata: { user_id: ss.params["subscription_data[metadata][user_id]"], tier: ss.params["subscription_data[metadata][tier]"] }, items: { data: [{ id: "si_" + randomUUID().slice(0, 6), price: { unit_amount: +ss.params["line_items[0][price_data][unit_amount]"], recurring: { interval } } }] } };
       state.stripe.subs.set(sb.id, sb); ss.subscription = sb.id;
       res.writeHead(303, { location: ss.params.success_url.replace("{CHECKOUT_SESSION_ID}", ss.id) }); return res.end();
     }
@@ -311,6 +315,7 @@ createServer(async (req, res) => {
         if (r.calls < b.p_max_calls && r.output_tokens + b.p_reserve <= b.p_max_out && r.input_tokens < b.p_max_in) { r.calls++; r.output_tokens += b.p_reserve; return send(res, 200, true); } return send(res, 200, false); }
       if (table === "rpc/take_tts") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.tts_chars = r.tts_chars || 0; state.usage.set(k, r);
         if (r.tts_chars + b.p_chars <= b.p_max) { r.tts_chars += b.p_chars; return send(res, 200, true); } return send(res, 200, false); }
+      if (table === "rpc/add_talk") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0, tts_chars: 0 }; r.talk_chars = (r.talk_chars || 0) + Math.max(0, b.p_chars); state.usage.set(k, r); return send(res, 200, r.talk_chars); }
       if (table === "rpc/rappels_cron_ok") { if (!w.service) return send(res, 403, { message: "permission denied" }); return send(res, 200, true); }
       if (table === "rpc/members") { if (!member(w)) return send(res, 200, []); return send(res, 200, [...state.profiles.values()].filter((p) => p.invited).map((p) => ({ user_id: p.user_id, name: p.name || "" }))); }
       const match = filters(url);
@@ -345,7 +350,7 @@ createServer(async (req, res) => {
             const k = r[key], old = m.get(k);
             if (old && /ignore-duplicates/.test(pref)) continue;
             if (old && !/merge-duplicates/.test(pref)) return send(res, 409, { code: "23505", message: "duplicate key" });
-            const defaults = table === "reminders" ? { enabled: true, hour: 19, tz: "Europe/Paris", ui: "fr", course: "it", streak: 0, paused: false, sent: "", created_at: new Date().toISOString() } : table === "subscriptions" ? { plan: "free", status: "none", cancel_at_period_end: false, trial_used: false } : {};
+            const defaults = table === "reminders" ? { enabled: true, hour: 19, tz: "Europe/Paris", ui: "fr", course: "it", streak: 0, paused: false, sent: "", created_at: new Date().toISOString() } : table === "subscriptions" ? { plan: "free", tier: "premium", status: "none", cancel_at_period_end: false, trial_used: false } : {};
             m.set(k, Object.assign(old || defaults, r));
           }
           return send(res, 201);

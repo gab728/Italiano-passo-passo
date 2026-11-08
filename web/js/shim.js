@@ -96,7 +96,9 @@
     if (!res.ok) {
       let j = {}; try { j = await res.json(); } catch (e) { /* corps vide */ }
       const code = res.status === 401 ? "session_expired" : res.status === 429 ? (j.code === "free_limit" ? "free_limit" : "daily_limit") : j.code || (res.status >= 500 ? "unavailable" : "upstream_error");
-      throw err(code, j.message || "Erreur " + res.status);
+      const x = err(code, j.message || "Erreur " + res.status); x.data = j;
+      if (j.talk) { try { window.dispatchEvent(new CustomEvent("ipp-talk", { detail: j.talk })); } catch (e2) { /* rien */ } }
+      throw x;
     }
     return res;
   }
@@ -121,7 +123,7 @@
     let res;
     try {
       res = await call("claude", {
-        input, tier: opts.modelTier === "quick" ? "quick" : "default", stream: true,
+        input, tier: opts.modelTier === "quick" ? "quick" : "default", stream: true, talk: opts.talk ? true : undefined,
         system: sysFor(opts.system),
         max_tokens: opts.maxTokens || undefined,
       }, { signal: ac.signal });
@@ -141,7 +143,7 @@
           let ev; try { ev = JSON.parse(line); } catch (e) { continue; }
           if (ev.d) { text += ev.d; if (opts.onText) { try { opts.onText({ text, delta: ev.d }); } catch (e) { /* affichage */ } } }
           else if (ev.error) { const x = err(ev.error.code || "unavailable", ev.error.message); x.text = text; throw x; }
-          else if (ev.done) { truncated = !!ev.truncated; done = true; }
+          else if (ev.done) { truncated = !!ev.truncated; done = true; if (ev.talk) { try { window.dispatchEvent(new CustomEvent("ipp-talk", { detail: ev.talk })); } catch (e) { /* rien */ } } }
         }
       }
     } catch (e) {
