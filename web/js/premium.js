@@ -9,7 +9,9 @@
 (function () {
   "use strict";
   const W = window.WEBAUTH; if (!W) return;
-  const FREE = { lessons: 1, talk: 8 };
+  const FREE = { lessons: 1 };
+  // Minutes de conversation par jour (réglées sur le serveur : FREE_TALK_MINUTES, PREMIUM_TALK_MINUTES).
+  const talkMin = () => { const t = PLAN && PLAN.talk || {}; return { free: t.free || 3, premium: t.premium || 60 }; };
   const txt = (tag, cls, s) => { const e = document.createElement(tag); if (cls) e.className = cls; if (s != null) e.textContent = s; return e; };
   const btn = (label, cls, fn) => { const b = txt("button", "pill-btn" + (cls ? " " + cls : "")); b.type = "button"; b.append(txt("span", null, label)); b.onclick = fn; return b; };
   const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* rien */ } } };
@@ -31,8 +33,9 @@
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const REASONS = {
     lesson: ["Ta leçon gratuite du jour est faite 🎉", "Reviens demain pour la suivante, ou continue tout de suite avec Premium."],
-    talk: ["Tu as bien parlé aujourd'hui 💬", "La conversation gratuite revient demain. Avec Premium, parle autant que tu veux."],
-    first: ["Bravo pour ta première conversation ! 🎉", "Avec Premium, parle avec les personnages autant que tu veux et débloque toutes les leçons."],
+    talk: ["Tes {0} minutes de conversation du jour sont écoulées 💬", "Avec Premium, parle jusqu'à {0} minutes par jour avec {1} et tous les personnages."],
+    more: ["Parle plus longtemps 🎙️", "Premium, c'est jusqu'à {0} minutes de conversation par jour : de quoi vraiment progresser à l'oral."],
+    first: ["Bravo pour ta première conversation ! 🎉", "Avec Premium, parle jusqu'à {0} minutes par jour avec les personnages et débloque toutes les leçons."],
     limit: ["L'assistant gratuit du jour est épuisé", "Il revient demain, ou tout de suite avec Premium."],
     car: ["Le mode voiture est réservé à Premium 🚗", "Révise à voix haute pendant tes trajets, sans toucher l'écran."],
     news: ["Ton article gratuit de la semaine est lu 📰", "Avec Premium, l'actualité à ton niveau, tous les jours."],
@@ -40,7 +43,7 @@
     streak: ["7 jours d'affilée, chapeau ! 🔥", "Pour fêter ça, essaie Premium : tout est débloqué pendant l'essai."],
     profile: ["Passe à Premium", "Toutes les leçons et toutes les conversations, dans toutes les langues."],
   };
-  const FEATURES = ["Toutes les leçons, sans limite", "Conversations illimitées avec les personnages", "Le mode voiture, mains libres",
+  const FEATURES = ["Toutes les leçons, sans limite", "Jusqu'à {0} minutes de conversation par jour", "Le mode voiture, mains libres",
     "L'actualité à ton niveau, chaque jour", "Révisions sur mesure et traductions corrigées", "Toutes les langues incluses"];
   let open = null;
   function close() { if (!open) return; const o = open; open = null; o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); }
@@ -48,14 +51,15 @@
   function paywall(reason, onLater) {
     if (!billing() || premium() || open) return false;
     const p = PLAN.prices || { monthly: 999, yearly: 6999, trial_days: 7 }, trial = !PLAN.trial_used && p.trial_days > 0;
-    const [h, sub] = REASONS[reason] || REASONS.profile;
+    const tm = talkMin(), fill = (x) => x.replace("{0}", String(reason === "talk" && /^Tes/.test(x) ? tm.free : tm.premium)).replace("{1}", (window.PERSONAS && PERSONAS.giulia && PERSONAS.giulia.name) || "Giulia");
+    const [h, sub] = (REASONS[reason] || REASONS.profile).map(fill);
     const o = txt("div", "pw"); o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true"); o.setAttribute("aria-label", "Premium");
     const box = txt("div", "pw-box"); o.append(box);
     const x = txt("button", "icon-btn pw-x"); x.type = "button"; x.setAttribute("aria-label", "Fermer"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     const later = () => { close(); if (onLater) onLater(); };
     x.onclick = later; box.append(x);
     box.append(txt("span", "pw-badge", "Premium"), txt("h2", "pw-h", h), txt("p", "pw-sub", sub));
-    const ul = txt("ul", "pw-feat"); FEATURES.forEach((f) => { const li = txt("li"); li.innerHTML = CHECK; li.append(txt("span", null, f)); ul.append(li); }); box.append(ul);
+    const ul = txt("ul", "pw-feat"); FEATURES.forEach((f) => { const li = txt("li"); li.innerHTML = CHECK; li.append(txt("span", null, f.replace("{0}", String(tm.premium)))); ul.append(li); }); box.append(ul);
     let plan = "yearly";
     const plans = txt("div", "pw-plans"); plans.setAttribute("role", "radiogroup");
     const yearlyPerMonth = Math.floor(p.yearly / 12), off = Math.round(100 * (1 - p.yearly / (p.monthly * 12)));
@@ -135,18 +139,64 @@
     }
     return go0.apply(this, arguments);
   };
-  // Conversation : quelques répliques par jour.
+  // Conversation : des minutes par jour (3 en gratuit, 60 avec Premium). Le temps compte quand la conversation est vivante :
+  // Claude répond ou parle, le micro écoute, ou l'élève a agi il y a moins de 30 secondes. Une réponse commencée n'est jamais coupée.
+  const talkSec = () => { const o = (S.fq || {}).talkSec; return o && o.p === today() ? o.n : 0; };
+  const quota = () => 60 * (premium() ? talkMin().premium : talkMin().free);
+  const minsLeft = () => Math.max(0, Math.ceil((quota() - talkSec()) / 60));
+  let lastAct = 0, unsaved = 0;
+  const poke = () => { lastAct = Date.now(); };
+  document.addEventListener("keydown", () => { if (typeof view !== "undefined" && view === "dm") poke(); }, true);
+  document.addEventListener("pointerdown", () => { if (typeof view !== "undefined" && view === "dm") poke(); }, true);
+  setInterval(() => {
+    if (!billing() || typeof view === "undefined" || view !== "dm" || !DM || document.visibilityState !== "visible") return;
+    if (!(DM.busy || DM.speaking || DM.listening || DM.hands || Date.now() - lastAct < 30000)) return;
+    S.fq = Object.assign({}, S.fq || {}); const o = S.fq.talkSec && S.fq.talkSec.p === today() ? S.fq.talkSec : { p: today(), n: 0 };
+    S.fq.talkSec = { p: today(), n: o.n + 5 }; unsaved += 5; if (unsaved >= 30) { unsaved = 0; save(); }
+    quotaUi();
+  }, 5000);
   const send0 = dmSend;
   dmSend = function (text, voice) {
-    if (gated() && DM && !DM.busy && !(voice && VO.command(text))) {
-      if (count("talk", today()) >= FREE.talk) { if (DM.hands) dmHands(false); paywall("talk"); return; }
-      add("talk", today());
+    if (billing() && DM && !DM.busy && !(voice && VO.command(text))) {
+      poke();
+      if (talkSec() >= quota()) {
+        if (DM.hands) dmHands(false);
+        if (!premium()) { paywall("talk"); return; }
+        speakNote("Tu as parlé {0} minutes aujourd'hui, bravo ! La conversation reprend demain.".replace("{0}", String(talkMin().premium))); return;
+      }
     }
     return send0.apply(this, arguments);
   };
+  // Dans la conversation (formule gratuite) : les minutes qui restent, et à une minute de la fin, une proposition douce.
+  function quotaUi() {
+    if (!gated() || !DM || !DM.ui || !DM.ui.wrap) return;
+    let q = DM.ui.wrap.querySelector(".dm-quota");
+    if (!q) {
+      q = txt("button", "dm-quota"); q.type = "button"; q.onclick = () => paywall("more"); q.setAttribute("aria-label", "Minutes de conversation gratuites restantes aujourd'hui. Premium : plus de minutes");
+      q.append(txt("span", "dm-quota-n"), txt("span", "dm-quota-up", "Premium : {0} min/j".replace("{0}", String(talkMin().premium))));
+      if (DM.ui.sug) DM.ui.sug.prepend(q); else DM.ui.wrap.prepend(q); // dans la rangée fixe au-dessus de la saisie : toujours visible
+    }
+    const left = minsLeft();
+    q.querySelector(".dm-quota-n").textContent = left > 0 ? "⏱ {0} min".replace("{0}", String(left)) : "⏱ 0 min";
+    q.classList.toggle("low", left <= 1);
+    if (left === 1 && (S.pw || {}).nudge !== today() && DM.ui.log) {
+      S.pw = Object.assign({}, S.pw || {}, { nudge: today() });
+      const n = txt("div", "dm-upsell");
+      n.append(txt("p", null, "⏳ Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.".replace("{0}", String(talkMin().premium))));
+      n.append(btn("Parler plus longtemps", "dark", () => paywall("more")));
+      DM.ui.log.append(n); try { dmScroll(); } catch (e) { /* rien */ }
+    }
+  }
+  const open0 = dmOpen;
+  dmOpen = function () { const r = open0.apply(this, arguments); poke(); quotaUi(); return r; };
   // Fin de la toute première conversation : la première proposition.
   const end0 = dmEnd, leave0 = dmLeave;
-  const afterTalk = () => { if (gated() && (S.dmn || 0) >= 1 && !(S.pw || {}).first) setTimeout(() => paywall("first"), 900); };
+  const afterTalk = () => {
+    if (!gated()) return;
+    if ((S.dmn || 0) >= 1 && !(S.pw || {}).first) return setTimeout(() => paywall("first"), 900);
+    // Après le bilan : combien de minutes aujourd'hui, et ce que Premium permet.
+    setTimeout(() => { if (typeof view === "undefined" || view === "dm" || !root || root.querySelector(".talk-up")) return; const c = talkCard(true); if (c) root.append(c); }, 600);
+  };
   dmEnd = function () { const r = end0.apply(this, arguments); afterTalk(); return r; };
   dmLeave = function () { const r = leave0.apply(this, arguments); afterTalk(); return r; };
   // Mode voiture : Premium.
@@ -270,6 +320,17 @@
     a.append(tog, test); c.append(a); draw();
     return c;
   }
+  // Onglet Parler et fin de conversation (formule gratuite) : les minutes du jour et l'offre de parler plus longtemps.
+  function talkCard(after) {
+    if (!gated()) return null;
+    const tm = talkMin(), used = Math.min(tm.free, Math.round(talkSec() / 60));
+    const c = txt("section", "card talk-up"); const t = txt("div", "talk-up-t");
+    t.append(txt("b", null, after ? "Tu as parlé {0} min sur {1} aujourd'hui".replace("{0}", String(used)).replace("{1}", String(tm.free)) : "{0} minutes de conversation par jour en gratuit".replace("{0}", String(tm.free))));
+    t.append(txt("small", null, "Avec Premium, parle jusqu'à {0} minutes par jour avec tous les personnages.".replace("{0}", String(tm.premium))));
+    const bar = txt("div", "talk-up-bar"); const fillb = txt("i"); fillb.style.width = Math.round(100 * used / tm.free) + "%"; bar.append(fillb);
+    c.append(txt("span", "talk-up-ic", "🎙️"), t, bar, btn("Parler plus longtemps", "dark", () => paywall("more")));
+    return c;
+  }
   // Carte du profil : l'abonnement.
   function planCard() {
     if (!billing()) return null;
@@ -285,7 +346,7 @@
       if (s.manage) { const a = txt("div", "acts"); a.append(btn("Gérer mon abonnement", "soft", portal)); c.append(a); }
       return c;
     }
-    t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon par jour et quelques échanges avec les personnages. Premium débloque tout."));
+    t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et jusqu'à {1} minutes de conversation par jour.".replace("{0}", String(talkMin().free)).replace("{1}", String(talkMin().premium))));
     const a = txt("div", "acts"); a.append(btn(s.trial_used ? "Passer à Premium" : "Essayer Premium gratuitement", "dark", () => paywall("profile")));
     if (s.manage) a.append(btn("Mes factures", "", portal)); c.append(a);
     return c;
@@ -293,6 +354,7 @@
 
   window.PREM = {
     get plan() { return PLAN; }, premium, billing, paywall, refresh, portal, RM, report, gateNews, gateReview,
+    talkBanner(root) { const c = talkCard(false); if (c) root.append(c); },
     homeCards(root) { const r = remCard(); if (r) root.append(r); streakOffer(); },
     profileTop(root) { const p = planCard(); if (p) root.append(p); },
     profileSettings(root) { root.append(remSettings()); },

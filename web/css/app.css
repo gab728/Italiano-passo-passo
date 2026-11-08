@@ -1192,3 +1192,17 @@ body.pw-open { overflow: hidden; }
 .rm-card .rm-done { align-self: center; flex: 1; }
 .pw-open .speaknote { z-index: 2100; }
 .rm-card .chips, .rm-set .chips { flex-wrap: wrap; }
+/* Minutes de conversation (formule gratuite) */
+.dm-quota { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--brand-soft); color: var(--ink); font: inherit; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.dm-quota-up { flex: none; color: var(--brand-deep); font-weight: 900; }
+.dm-quota.low { background: #FFF1D6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dm-quota.low { background: #3A2E12; } :root:not([data-theme="light"]) .dm-quota-up { color: var(--azzurro-text); } }
+.dm-upsell { align-self: stretch; display: flex; flex-direction: column; gap: 10px; margin: 6px 0; padding: 14px 16px; border-radius: 18px; background: var(--brand-soft); }
+.dm-upsell p { margin: 0; font-weight: 700; font-size: 14.5px; line-height: 1.4; }
+.talk-up { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; background: var(--brand-soft); }
+.talk-up-ic { font-size: 28px; line-height: 1; }
+.talk-up-t { display: flex; flex-direction: column; gap: 3px; }
+.talk-up-t small { color: var(--muted); font-size: 13.5px; }
+.talk-up-bar { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface); overflow: hidden; }
+.talk-up-bar i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+.talk-up .pill-btn { grid-column: 1 / -1; }

@@ -93,23 +93,30 @@ const MOCKS = `
   ok(/Premium · essai gratuit/.test(await p.textContent(".pw-card")) && /Gérer mon abonnement/.test(await p.textContent(".pw-card")), "profil : « Premium · essai gratuit », « Gérer mon abonnement »");
   await p.screenshot({ path: "tests/shot-premium-profile.png" });
 
-  console.log("4. Conversation gratuite : quelques répliques par jour");
+  console.log("4. Conversation gratuite : des minutes par jour, et l'offre de parler plus longtemps");
   const q = await newPage();
   await signup(q, "Pablo");
-  await q.evaluate(() => openPersona("giulia")); await q.waitForSelector(".dm");
-  const sends = await q.evaluate(async () => {
-    let shown = -1;
-    for (let i = 0; i < 9; i++) {
-      for (let k = 0; k < 100 && DM && DM.busy; k++) await new Promise((r) => setTimeout(r, 100));
-      if (!DM) break;
-      await dmSend("Ciao, come stai? " + i, false);
-      if (document.querySelector(".pw")) { shown = i; break; }
-    }
-    return { shown, n: (S.fq || {}).talk && S.fq.talk.n };
-  });
-  ok(sends.shown === 8 && sends.n === 8, "8 répliques gratuites, l'offre à la 9e (" + JSON.stringify(sends) + ")");
-  ok(/bien parlé aujourd'hui/.test(await q.textContent(".pw-h")), "message adapté : « Tu as bien parlé aujourd'hui »");
+  await q.evaluate(() => UI.go("talk")); await q.waitForSelector(".talk-up");
+  const tu = await q.textContent(".talk-up");
+  ok(/3 minutes de conversation par jour en gratuit/.test(tu) && /jusqu'à 60 minutes par jour/.test(tu), "onglet Parler : « 3 minutes par jour en gratuit · Premium jusqu'à 60 minutes »");
+  await q.evaluate(() => openPersona("giulia")); await q.waitForSelector(".dm-quota");
+  ok(/⏱ 3 min/.test(await q.textContent(".dm-quota")) && /Premium : 60 min\/j/.test(await q.textContent(".dm-quota")), "conversation, au-dessus de la saisie : « ⏱ 3 min · Premium : 60 min/j »");
+  await q.waitForFunction(() => DM && !DM.busy, null, { timeout: 10000 });
+  // Le temps passe pendant qu'on parle : à 2 min 30, il reste une minute.
+  await q.evaluate(async () => { S.fq = Object.assign({}, S.fq || {}, { talkSec: { p: day(), n: 150 } }); await dmSend("Ciao Giulia, come stai?", false); });
+  await q.waitForTimeout(5600);
+  ok(/⏱ 1 min/.test(await q.textContent(".dm-quota")) && await q.$(".dm-quota.low") && await q.$(".dm-upsell"), "à une minute de la fin : compteur en orange, proposition dans la conversation");
+  await q.screenshot({ path: "tests/shot-talk-quota.png" });
+  await q.evaluate(async () => { for (let k = 0; k < 100 && DM && DM.busy; k++) await new Promise((r) => setTimeout(r, 100)); S.fq.talkSec = { p: day(), n: 181 }; await dmSend("Andiamo al cinema?", false); });
+  await q.waitForSelector(".pw.in");
+  const ph = await q.textContent(".pw-h"), ps2 = await q.textContent(".pw-sub"), feat = await q.textContent(".pw-feat");
+  ok(/3 minutes de conversation du jour sont écoulées/.test(ph) && /jusqu'à 60 minutes par jour avec Giulia/.test(ps2), "minutes écoulées : « " + ph + " » — « " + ps2 + " »");
+  ok(/Jusqu'à 60 minutes de conversation par jour/.test(feat), "l'offre détaille « Jusqu'à 60 minutes de conversation par jour »");
   await q.click(".pw-later"); await q.waitForTimeout(300);
+  ok(await q.evaluate(() => DM && DM.turns.filter((t) => t.role === "user" && /cinema/.test(t.content)).length === 0), "la réplique n'est pas envoyée au-delà des minutes gratuites");
+  await q.evaluate(() => dmLeave()); await q.waitForTimeout(1300);
+  ok(/première conversation/.test((await q.$(".pw-h")) ? await q.textContent(".pw-h") : ""), "en quittant la première conversation : « Bravo pour ta première conversation ! »");
+  if (await q.$(".pw")) { await q.click(".pw-later"); await q.waitForTimeout(300); }
 
   console.log("5. Rappels sur le téléphone");
   await q.evaluate(() => { S.d = Object.assign({}, S.d || {}, { [day()]: 5 }); save(); home(); });

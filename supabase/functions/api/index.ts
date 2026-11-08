@@ -866,7 +866,8 @@ async function news(req: Request): Promise<Response> {
 // est …/functions/v1/api/stripe). Sans STRIPE_SECRET_KEY, le payant dort : tout le monde a accès à tout, comme avant.
 // Facultatifs : PRICE_MONTHLY (999, en centimes), PRICE_YEARLY (6999), CURRENCY (eur), TRIAL_DAYS (7),
 //   STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY (identifiants price_… si les prix sont créés dans Stripe), BILLING (off pour couper),
-//   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300), PREMIUM_VOICE_MONTH_CHARS (150000 : au-delà, voix OpenAI).
+//   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300), PREMIUM_VOICE_MONTH_CHARS (150000 : au-delà, voix OpenAI),
+//   FREE_TALK_MINUTES (3) et PREMIUM_TALK_MINUTES (60) : minutes de conversation par jour avec les personnages.
 const billingOn = () => !!env("STRIPE_SECRET_KEY") && !/^(off|false|0|non|no)$/i.test(env("BILLING", "on"));
 type Sub = { user_id: string; plan: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null };
 async function subOf(uid: string): Promise<Sub | null> {
@@ -939,7 +940,9 @@ function statusOut(p: { billing: boolean; premium: boolean; owner: boolean; sub:
   return { billing: p.billing, premium: p.premium, owner: p.owner, founder: !!s && s.status === "comp", plan: s ? s.plan : "free", status: s ? s.status : "none",
     trial_end: s && s.trial_end || null, period_end: s && s.period_end || null, cancel_at_period_end: !!(s && s.cancel_at_period_end), trial_used: !!(s && s.trial_used),
     manage: !!(s && s.customer), prices: prices(),
-    free: { calls: int("FREE_DAILY_CALLS", 40), tts_chars: int("FREE_TTS_DAILY_CHARS", 6000), stt_seconds: int("FREE_STT_DAILY_SECONDS", 300) } };
+    free: { calls: int("FREE_DAILY_CALLS", 40), tts_chars: int("FREE_TTS_DAILY_CHARS", 6000), stt_seconds: int("FREE_STT_DAILY_SECONDS", 300) },
+    // Minutes de conversation par jour avec les personnages (comptées par l'app) : gratuit, puis Premium.
+    talk: { free: int("FREE_TALK_MINUTES", 3), premium: int("PREMIUM_TALK_MINUTES", 60) } };
 }
 // Adresse de retour après le paiement : la page de l'app d'où vient la demande, jamais un autre site.
 function backUrl(req: Request, given: unknown): string | null {

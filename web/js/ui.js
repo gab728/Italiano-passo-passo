@@ -584,6 +584,7 @@
     const h = el("header", "tab-hd"); h.append(txt("h1", null, "Parler"), langChip()); root.append(h);
     if (!AI) { root.append(txt("p", "muted", "Les conversations passent par Claude, indisponible pour l'instant. Vérifie le réseau.")); return sync(); }
     root.append(txt("p", "muted talk-sub", "Choisis quelqu'un à qui parler, ou un thème."));
+    if (window.PREM) PREM.talkBanner(root);
     const sec2 = el("div", "sec-h"); sec2.append(txt("h2", null, "Tes personnages")); root.append(sec2);
     const row = el("div", "pcards"); Object.keys(PERSONAS).forEach((id) => row.append(personaCard(id))); root.append(row);
 
