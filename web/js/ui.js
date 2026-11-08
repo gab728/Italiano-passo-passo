@@ -107,6 +107,8 @@
   const START = {
     fr: [["", "Je débute", "On commence par les bases, tout doucement"], ["fr-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
       ["fr-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["fr-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
+    en: [["", "Je débute", "On commence par les bases, tout doucement"], ["en-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
+      ["en-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["en-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
     es: [["", "Je débute", "On commence par les bases, tout doucement"], ["es-u03-l1", "Je connais les bases", "Je me présente, je parle de mon quotidien"],
       ["es-u07-l1", "Je me débrouille", "Je parle au présent, je veux raconter (A2)"], ["es-u13-l1", "Je suis à l'aise", "Je raconte au passé, je veux nuancer (B1)"]],
     he: [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
@@ -440,7 +442,7 @@
       const l = el("div", "vy-done");
       done.forEach((x) => {
         const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
-        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : C().id === "fr" ? "FAIT" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
+        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : C().id === "fr" ? "FAIT" : C().id === "en" ? "DONE" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
         b.onclick = () => openSlot(x); l.append(b);
       });
       wrap.append(l);
@@ -454,7 +456,7 @@
     const c = el("article", "vy-ticket" + (isCur ? " cur" : ""));
     if (isCur) { const l = el("div", "vy-sit"); l.append(lino("wave", 60)); c.append(l); }
     const top = el("div", "vy-t-top");
-    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", (C().id === "it" ? "BIGLIETTO" : C().id === "es" ? "BILLETE" : "BILLET") + " · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
+    const row = el("div", "vy-t-row"); row.append(txt("span", "vy-mono", (C().id === "it" ? "BIGLIETTO" : C().id === "es" ? "BILLETE" : C().id === "en" ? "TICKET" : "BILLET") + " · LEÇON " + k)); row.insertAdjacentHTML("beforeend", '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M6 11h12M9 21l1.5-4M15 21l-1.5-4"/></svg>');
     top.append(row, txt("h3", "vy-t-title", x.l.t));
     if (isS(x.l.g)) top.append(txt("span", "vy-t-sub", x.l.g));
     const p = m ? partOf(m, i) : null;
@@ -874,7 +876,7 @@
     const st = el("div", "end-stars"); st.setAttribute("aria-label", stars + (stars > 1 ? " étoiles" : " étoile") + " sur 3");
     for (let k = 0; k < 3; k++) st.insertAdjacentHTML("beforeend", '<svg class="star s' + (k + 1) + (k < stars ? " on" : "") + '" width="' + (k === 1 ? 52 : 40) + '" height="' + (k === 1 ? 52 : 40) + '" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z"/></svg>');
     e.insertBefore(st, e.firstChild); e.insertBefore(hero, e.firstChild);
-    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : C().id === "es" ? (pct >= 85 ? "¡Muy bien!" : pct >= 65 ? "¡Bien hecho!" : "¡Ánimo, sigue así!") : C().id === "fr" ? (pct >= 85 ? "Excellent !" : pct >= 65 ? "Bien joué !" : "Courage, continue comme ça !") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); if (C().id === "fr") b.lang = "fr"; h2.before(b); }
+    const h2 = e.querySelector("h2"); if (h2 && !e.querySelector(".end-bravo")) { const b = txt("p", "end-bravo", C().id === "he" ? (pct >= 85 ? "כָּל הַכָּבוֹד!" : pct >= 65 ? "יוֹפִי!" : "לְאַט לְאַט, מַמְשִׁיכִים!") : C().id === "es" ? (pct >= 85 ? "¡Muy bien!" : pct >= 65 ? "¡Bien hecho!" : "¡Ánimo, sigue así!") : C().id === "fr" ? (pct >= 85 ? "Excellent !" : pct >= 65 ? "Bien joué !" : "Courage, continue comme ça !") : C().id === "en" ? (pct >= 85 ? "Awesome!" : pct >= 65 ? "Nice work!" : "Keep going, you've got this!") : (pct >= 85 ? "Bravissimo !" : pct >= 65 ? "Bravo !" : "Ben fatto, continua !")); if (C().id === "fr" || C().id === "en") b.lang = C().id; h2.before(b); }
     const tiles = el("div", "end-tiles rise");
     const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
     if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
@@ -951,12 +953,12 @@
       S.ob = { why: Array.isArray(ob.why) ? ob.why.filter((x) => typeof x === "string").slice(0, 5) : [], lv: [0, 0.5, 1, 2].includes(ob.lv) ? ob.lv : 0, goal: [8, 12, 20, 30].includes(ob.goal) ? ob.goal : 20 };
       if (ob.g === "m" || ob.g === "f") S.ob.g = ob.g;
       // Langue choisie à l'inscription (le cours d'hébreu arrive avec le catalogue : l'accueil se redessine alors).
-      if (ob.course === "he" || ob.course === "it" || ob.course === "es" || ob.course === "fr") {
+      if (ob.course === "he" || ob.course === "it" || ob.course === "es" || ob.course === "fr" || ob.course === "en") {
         S.course = ob.course;
-        if (ob.course === "es" || ob.course === "fr") { S.ob.lvc = { [ob.course]: S.ob.lv }; S.ob.lv = 0; }
+        if (ob.course === "es" || ob.course === "fr" || ob.course === "en") { S.ob.lvc = { [ob.course]: S.ob.lv }; S.ob.lv = 0; }
         if (ob.course === "he") S.from = Object.assign({}, S.from || {}, { he: typeof ob.start === "string" && /^he-u\d\d-l\d+$/.test(ob.start) ? ob.start : "" });
       }
-      if (ob.ptest && ["it", "he", "es", "fr"].includes(ob.ptest.c)) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
+      if (ob.ptest && ["it", "he", "es", "fr", "en"].includes(ob.ptest.c)) S.ptest = Object.assign({}, S.ptest || {}, { [ob.ptest.c]: { lv: String(ob.ptest.lv || "").slice(0, 10), t: day() } });
       GOAL = S.ob.goal; save(); courseNow();
     }
     const nm = typeof ob.name === "string" ? ob.name.trim().slice(0, 40) : "";
@@ -971,8 +973,10 @@
       Object.values(S.cw || {}).forEach((w) => { if (w) out.push(w.it || ""); });
       Object.values(window.PERSONAS || {}).forEach((p) => { if (p) out.push(p.open || "", p.quote || ""); });
       if (C().id === "fr") out.push("FAIT", "BILLET", ...(C().cheers || []), ...(typeof LXC === "function" ? [LXC().hi].concat(LXC().hello) : []), "répète", "suivant", "stop", "plus lentement");
+      if (C().id === "en") out.push("DONE", "TICKET", ...(C().cheers || []), ...(typeof LXC === "function" ? [LXC().hi].concat(LXC().hello) : []), "repeat", "next", "stop", "slower", "Awesome!", "Nice work!", "Keep going, you've got this!");
     } catch (e) { /* rien */ }
     I18N.protect(out);
+    if (I18N.mute) I18N.mute(C().id === "en" ? window.PT_EN_KEYS || [] : []);
   }
   if (typeof applyBase === "function") { const ab0 = applyBase; applyBase = function (b) { const r = ab0.apply(this, arguments); protectAll(); return r; }; }
   window.addEventListener("ipp-course", () => setTimeout(protectAll, 0));

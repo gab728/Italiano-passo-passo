@@ -250,6 +250,16 @@ const VO = (() => {
   function command(text) {
     const t = toks(text); if (!t.length || t.length > 4) return null;
     const s = t.join(" ");
+    // Anglais (langue apprise) : seulement dans ce cours, avant les autres langues.
+    if (typeof C === "function" && C().id === "en") {
+      if (/^(repeat|repeat that|again|one more time|say that again|come again|can you repeat|could you repeat that)$/.test(s)) return "repeat";
+      if (/^(next|skip|pass|next one|move on)$/.test(s)) return "skip";
+      if (/^(stop|pause|that s enough|thats enough|i m done|im done)$/.test(s)) return "stop";
+      if (/^(i don t know|i dont know|dunno|no idea|i forgot|i don t remember|i dont remember|no clue)$/.test(s)) return "dunno";
+      if (/^(slower|more slowly|slow down)$/.test(s)) return "slower";
+      // Les mots italiens ou espagnols (« come », « fine », « para »…) sont des réponses possibles en anglais : seuls « je ne sais pas » et ses variantes restent.
+      return /^(je sais pas|je ne sais pas|j sais pas|sais pas|chais pas|aucune idee|j ai oublie|no se|no lo se|ni idea)$/.test(s) ? "dunno" : null;
+    }
     if (/^(ripeti|ripeta|ripetere|ancora|puoi ripetere|repete|repetes|come|cosa)$/.test(s) || /^(ripeti|puoi ripetere|ancora una volta)/.test(s)) return "repeat";
     if (/^(avanti|salta|passa|prossimo|prossima|dopo|suivant|next)$/.test(s)) return "skip";
     if (/^(basta|stop|fine|pausa|finito|ferma|fermati|arrivederci|ciao ciao)$/.test(s)) return "stop";
@@ -522,7 +532,7 @@ audioSetup = function () {
 /* ---------- Conversation à voix haute avec Claude ---------- */
 let VC = null;
 // Mots de commande à voix haute, selon la langue apprise.
-const VCMD = () => ({ he: { rep: "שׁוּב", repT: "shouv", skip: "הַבָּא", skipT: "haba", stop: "דַּי", stopT: "dai", slow: "לְאַט" }, es: { rep: "otra vez", skip: "siguiente", stop: "basta", slow: "más despacio" }, fr: { rep: "répète", skip: "suivant", stop: "stop", slow: "plus lentement" } }[C().id] || { rep: "ripeti", skip: "avanti", stop: "basta", slow: "più piano" });
+const VCMD = () => ({ he: { rep: "שׁוּב", repT: "shouv", skip: "הַבָּא", skipT: "haba", stop: "דַּי", stopT: "dai", slow: "לְאַט" }, es: { rep: "otra vez", skip: "siguiente", stop: "basta", slow: "más despacio" }, fr: { rep: "répète", skip: "suivant", stop: "stop", slow: "plus lentement" }, en: { rep: "repeat", skip: "next", stop: "stop", slow: "slower" } }[C().id] || { rep: "ripeti", skip: "avanti", stop: "basta", slow: "più piano" });
 const vcw = (k) => { const v = VCMD(); return v[k] + (v[k + "T"] ? " » (" + v[k + "T"] + ")" : " »"); };
 function vLevel() {
   const cu = current(), done = slots().filter(isDone);

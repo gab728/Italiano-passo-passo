@@ -40,9 +40,13 @@
   // un bouton « Tous » de l'interface reste traduit même si une leçon contient « Tous ».
   const CONTENT = "main.body, .msg, .bub, .pcard, .pp-hero, .pp-q, .feed-hd, .wsheet";
   let scoped = true;
+  // Textes jamais traduits, où qu'ils soient : quand l'élève apprend l'anglais, les clés anglaises du dictionnaire (consignes du test
+  // de niveau du cours de français) sont de l'anglais étudié, pas de l'interface.
+  let muted = new Set();
   function T(s, depth) {
     if (ui === "fr" || s == null) return s;
     const str = String(s); if (!str.trim()) return str;
+    if (muted.size && muted.has(str.trim())) return str;
     if (scoped && guard.size && guard.has(str.trim())) return str;
     let v = exact.get(str); if (v != null) return v;
     const m = str.match(/^(\s*)([\s\S]*?)(\s*)$/), core = m[2];
@@ -117,6 +121,7 @@
     locale: (u) => LOCALE[u || ui], loaded: () => loaded,
     // Clé de stockage propre à la langue (textes écrits par Claude pour cette langue) ; inchangée en français.
     protect(list) { (list || []).forEach((x) => { if (typeof x !== "string") return; const t = x.trim(); if (!t || t.length > 300) return; guard.add(t); if (t.includes("|")) t.split("|").forEach((y) => { if (y.trim()) guard.add(y.trim()); }); }); },
+    mute(list) { muted = new Set((list || []).filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean)); },
     key: (k) => (ui === "fr" ? k : k + "-" + ui),
     // Texte à dire « en français » : pour un anglophone ou un hispanophone, c'est sa langue (texte traduit, voix de sa langue).
     sp: (text, lang) => (ui !== "fr" && NARR(lang) ? [T(text), LOCALE[ui]] : [text, SPK(lang)]),

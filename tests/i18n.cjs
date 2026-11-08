@@ -138,7 +138,7 @@ async function onboard(p, ui, courseIdx) {
   ok(await q.isVisible(".g-choice[aria-pressed=true]:has-text('Español')"), "langue de l'élève devinée : Español");
   await q.click(".g-cta"); await q.waitForSelector(".g-langs");
   const e1 = await q.evaluate(() => [...document.querySelectorAll(".g-choice b")].map((b) => b.textContent));
-  ok(e1.join() === "Italiano,Hebreo,Francés", "un hispanophone choisit entre l'italien, l'hébreu et le français : " + e1.join(", "));
+  ok(e1.join() === "Italiano,Hebreo,Francés,Inglés", "un hispanophone choisit entre l'italien, l'hébreu, le français et l'anglais : " + e1.join(", "));
   await crawl(q, "es", "inscription");
   await q.click(".g-choice:nth-child(2)"); await q.click(".g-cta");   // hébreu
   for (let i = 0; i < 8 && !(await q.isVisible("#g-name")); i++) {
