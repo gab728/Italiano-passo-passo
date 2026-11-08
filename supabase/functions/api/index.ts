@@ -419,6 +419,16 @@ async function admin(req: Request, u: User): Promise<Response> {
     }
     const bk = await (async () => { try { const r = await fetch(SB + "/storage/v1/bucket/tts", { headers: svcHeaders() }); await r.body?.cancel(); return r.status; } catch { return 0; } })();
     out.cache = bk === 200 ? { ok: true } : { ok: false, why: "Le cache des voix n'est pas prêt (relance la mise en ligne). Les voix marchent quand même." };
+    // Paiement : clé Stripe valide et webhook déclaré. Rappels : clés de notification et réveil automatique par la base.
+    if (env("STRIPE_SECRET_KEY")) {
+      try { const a = await stripe("balance"); out.paiement = env("STRIPE_WEBHOOK_SECRET") ? { ok: true, from: a.livemode ? "mode réel" : "mode test" } : { ok: false, why: "Il manque le secret STRIPE_WEBHOOK_SECRET (webhook " + SB + "/functions/v1/api/stripe)." }; }
+      catch { out.paiement = { ok: false, why: "La clé STRIPE_SECRET_KEY est refusée par Stripe." }; }
+    } else out.paiement = { ok: false, why: "Paiement en sommeil : ajoute STRIPE_SECRET_KEY pour ouvrir Premium (en attendant, tout est gratuit)." };
+    try {
+      await vapid(); await ensureCron();
+      const recent = await restJSON("reminders?enabled=eq.true&select=sent_day&order=sent_day.desc.nullslast&limit=1").catch(() => []);
+      out.rappels = { ok: true, from: recent && recent[0] && recent[0].sent_day ? "dernier envoi le " + recent[0].sent_day : "prêts" };
+    } catch { out.rappels = { ok: false, why: "Les rappels ne sont pas prêts : relance la mise en ligne (la base doit avoir les tables des rappels)." }; }
     out.owner = { ok: true };
     return json(req, out);
   }
