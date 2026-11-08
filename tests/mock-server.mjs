@@ -11,10 +11,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = +(process.argv[2] || 8787);
 const ORIGIN = "http://127.0.0.1:" + PORT;
 const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
-export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map() };
+export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map(), tables: { subscriptions: new Map(), push_subs: new Map(), reminders: new Map(), app_config: new Map() }, stripe: { customers: new Map(), sessions: new Map(), subs: new Map(), calls: [] }, pushes: [] };
+const PK = { subscriptions: "user_id", push_subs: "endpoint", reminders: "user_id", app_config: "key" };
 
 // ---------- Environnement de la fonction ----------
-const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test", ELEVENLABS_API_KEY: process.env.NO_STT ? "" : "el-test", TTS_PROVIDER: "openai" };
+const ENV = { SUPABASE_URL: ORIGIN, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET }), anthropic_api_key: "test-key", OWNER_EMAIL: "bramigab@gmail.com", OPEN_SIGNUP: "true", GLOBAL_DAILY_CALLS: "2000", DAILY_CALLS: "50", STT_API_KEY: process.env.NO_STT ? "" : "stt-test", ELEVENLABS_API_KEY: process.env.NO_STT ? "" : "el-test", TTS_PROVIDER: "openai", PUSH_TEST_HOST: "push.example.test" };
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: () => {} };
 
 // Claude et la transcription simulés : on intercepte fetch vers ces services.
@@ -22,6 +23,26 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u === "https://api.anthropic.com/v1/models" || u === "https://api.openai.com/v1/models") return new Response(JSON.stringify({ data: [] }), { headers: { "content-type": "application/json" } });
+  // Stripe simulé : clients, pages de paiement, abonnements, portail.
+  if (u.startsWith("https://api.stripe.com/v1/")) {
+    const path = u.slice("https://api.stripe.com/v1/".length).split("?")[0], method = (init && init.method) || "GET";
+    const P = Object.fromEntries(new URLSearchParams(init && init.body ? String(init.body) : ""));
+    state.stripe.calls.push({ path, method, params: P, key: (init.headers || {}).authorization });
+    const ok = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { "content-type": "application/json" } });
+    if (path === "customers" && method === "POST") { const c = { id: "cus_" + randomUUID().slice(0, 8), email: P.email, metadata: { user_id: P["metadata[user_id]"] } }; state.stripe.customers.set(c.id, c); return ok(c); }
+    if (path === "checkout/sessions" && method === "POST") { const id = "cs_test_" + randomUUID().replace(/-/g, "").slice(0, 12); const ss = { id, params: P, url: ORIGIN + "/__stripe/pay/" + id, client_reference_id: P.client_reference_id, customer: P.customer, subscription: null }; state.stripe.sessions.set(id, ss); return ok(ss); }
+    if (path.startsWith("checkout/sessions/")) { const ss = state.stripe.sessions.get(path.split("/").pop()); if (!ss) return ok({ error: { message: "No such session" } }, 404); return ok({ ...ss, subscription: ss.subscription ? state.stripe.subs.get(ss.subscription) : null }); }
+    if (path === "subscriptions" && method === "GET") { const cu = new URL(u).searchParams.get("customer"); return ok({ data: [...state.stripe.subs.values()].filter((x) => x.customer === cu) }); }
+    if (path === "balance") return ok({ livemode: false });
+    if (path.startsWith("subscriptions/")) { const id = path.split("/").pop(), sb = state.stripe.subs.get(id); if (!sb) return ok({ error: { message: "No such subscription" } }, 404); if (method === "DELETE") { sb.status = "canceled"; } return ok(sb); }
+    if (path === "billing_portal/sessions") return ok({ url: ORIGIN + "/__stripe/portal?c=" + P.customer + "&back=" + encodeURIComponent(P.return_url) });
+    return ok({ error: { message: "unknown " + path } }, 404);
+  }
+  // Services de notifications simulés : chaque message chiffré est gardé pour les tests ; « /gone/ » = téléphone désabonné.
+  if (u.startsWith("https://push.example.test/")) {
+    const h = init.headers || {}; state.pushes.push({ endpoint: u, body: Buffer.from(init.body).toString("base64"), auth: h.authorization, enc: h["content-encoding"], ttl: h.ttl });
+    return new Response("", { status: u.includes("/gone/") ? 410 : 201 });
+  }
   if (u.startsWith("https://api.anthropic.com/")) {
     const b = JSON.parse(init.body);
     // Comme l'API réelle : Sonnet 5.5 refuse thinking « disabled » et indique la bonne valeur.
@@ -201,6 +222,22 @@ createServer(async (req, res) => {
   try {
     // État pour les tests
     if (p === "/__state") return send(res, 200, { trJudged: state.trJudged || 0, rvAsked: state.rvAsked || "", activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, lemonde: state.lemonde || 0, npr: state.npr || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, elAdded: state.elAdded || [], storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__billing") { const on = url.searchParams.get("on") === "1"; ENV.STRIPE_SECRET_KEY = on ? "sk_test_mock" : ""; ENV.STRIPE_WEBHOOK_SECRET = on ? "whsec_test" : ""; return send(res, 200, { on }); }
+    if (p === "/__tables") return send(res, 200, Object.fromEntries(Object.entries(state.tables).map(([k, m]) => [k, [...m.values()]])));
+    if (p === "/__pushes") return send(res, 200, state.pushes);
+    if (p === "/__stripeState") return send(res, 200, { calls: state.stripe.calls, sessions: [...state.stripe.sessions.values()], subs: [...state.stripe.subs.values()] });
+    if (p === "/__setStripeSub") { const b = JSON.parse((await readBody(req)).toString()); Object.assign(state.stripe.subs.get(b.id), b); return send(res, 200, {}); }
+    if (p === "/__setRow") { const b = JSON.parse((await readBody(req)).toString()); const m = state.tables[b.table]; const k = b.row[PK[b.table]]; m.set(k, Object.assign(m.get(k) || {}, b.row)); return send(res, 200, m.get(k)); }
+    // Paiement simulé : la page Stripe « payée » crée l'abonnement (avec essai si demandé) et renvoie vers l'app.
+    if (p.startsWith("/__stripe/pay/")) {
+      const ss = state.stripe.sessions.get(p.split("/").pop()); if (!ss) return send(res, 404, {});
+      const trial = +(ss.params["subscription_data[trial_period_days]"] || 0), now = Math.floor(Date.now() / 1000);
+      const interval = ss.params["line_items[0][price_data][recurring][interval]"] || "year";
+      const sb = { id: "sub_" + randomUUID().slice(0, 8), customer: ss.customer, status: trial ? "trialing" : "active", trial_end: trial ? now + trial * 86400 : null, current_period_end: now + (trial ? trial * 86400 : interval === "month" ? 30 * 86400 : 365 * 86400), cancel_at_period_end: false, metadata: { user_id: ss.params["subscription_data[metadata][user_id]"] }, items: { data: [{ price: { recurring: { interval } } }] } };
+      state.stripe.subs.set(sb.id, sb); ss.subscription = sb.id;
+      res.writeHead(303, { location: ss.params.success_url.replace("{CHECKOUT_SESSION_ID}", ss.id) }); return res.end();
+    }
+    if (p === "/__stripe/portal") { res.writeHead(303, { location: url.searchParams.get("back") }); return res.end(); }
     if (p === "/__ttsProvider") { ENV.TTS_PROVIDER = new URL(req.url, ORIGIN).searchParams.get("v") || "openai"; return send(res, 200, {}); }
     if (p === "/__sttEnglish") { state.sttEnglish = 1; state.sttModels = []; return send(res, 200, {}); }
     if (p === "/__empty") { const b = JSON.parse((await readBody(req)).toString() || "{}"); state.emptyNext = b.n || 0; return send(res, 200, {}); }
@@ -274,6 +311,7 @@ createServer(async (req, res) => {
         if (r.calls < b.p_max_calls && r.output_tokens + b.p_reserve <= b.p_max_out && r.input_tokens < b.p_max_in) { r.calls++; r.output_tokens += b.p_reserve; return send(res, 200, true); } return send(res, 200, false); }
       if (table === "rpc/take_tts") { if (!w.service) return send(res, 403, { message: "permission denied" }); const b = JSON.parse((await readBody(req)).toString()); const k = b.p_user + "|" + b.p_day; const r = state.usage.get(k) || { user_id: b.p_user, day: b.p_day, calls: 0, input_tokens: 0, output_tokens: 0, stt_seconds: 0 }; r.tts_chars = r.tts_chars || 0; state.usage.set(k, r);
         if (r.tts_chars + b.p_chars <= b.p_max) { r.tts_chars += b.p_chars; return send(res, 200, true); } return send(res, 200, false); }
+      if (table === "rpc/rappels_cron_ok") { if (!w.service) return send(res, 403, { message: "permission denied" }); return send(res, 200, true); }
       if (table === "rpc/members") { if (!member(w)) return send(res, 200, []); return send(res, 200, [...state.profiles.values()].filter((p) => p.invited).map((p) => ({ user_id: p.user_id, name: p.name || "" }))); }
       const match = filters(url);
       if (table === "activity") {
@@ -293,6 +331,25 @@ createServer(async (req, res) => {
         let list = [...state.profiles.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid);
         if (req.method === "GET") return rows(res, req, url, list);
         if (req.method === "PATCH") { if (!w.service) return send(res, 403, {}); const b = JSON.parse((await readBody(req)).toString()); list.forEach((r) => Object.assign(r, b)); return send(res, 204); }
+      }
+      if (state.tables[table]) {
+        const m = state.tables[table], key = PK[table];
+        if (!w.service && !(table === "subscriptions" && req.method === "GET")) return send(res, 403, { code: "42501", message: "permission denied for table " + table });
+        let list = [...m.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid);
+        if (req.method === "GET") { const lim = +(url.searchParams.get("limit") || 0); return rows(res, req, url, lim ? list.slice(0, lim) : list); }
+        if (req.method === "DELETE") { list.forEach((r) => m.delete(r[key])); return send(res, 204); }
+        if (req.method === "PATCH") { const b = JSON.parse((await readBody(req)).toString()); list.forEach((r) => Object.assign(r, b)); return send(res, 204); }
+        if (req.method === "POST") {
+          const b = JSON.parse((await readBody(req)).toString()), pref = req.headers.prefer || "";
+          for (const r of Array.isArray(b) ? b : [b]) {
+            const k = r[key], old = m.get(k);
+            if (old && /ignore-duplicates/.test(pref)) continue;
+            if (old && !/merge-duplicates/.test(pref)) return send(res, 409, { code: "23505", message: "duplicate key" });
+            const defaults = table === "reminders" ? { enabled: true, hour: 19, tz: "Europe/Paris", ui: "fr", course: "it", streak: 0, paused: false, sent: "", created_at: new Date().toISOString() } : table === "subscriptions" ? { plan: "free", status: "none", cancel_at_period_end: false, trial_used: false } : {};
+            m.set(k, Object.assign(old || defaults, r));
+          }
+          return send(res, 201);
+        }
       }
       if (table === "usage") { let list = [...state.usage.values()].filter(match); if (!w.service) list = list.filter((r) => r.user_id === w.uid); return rows(res, req, url, list); }
       if (table === "progress") {

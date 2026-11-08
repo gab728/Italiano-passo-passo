@@ -37,3 +37,21 @@ self.addEventListener("fetch", (e) => {
   }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; })));
 });
+// Rappels : la notification envoyée par le serveur (titre, texte, page à ouvrir), affichée même app fermée.
+self.addEventListener("push", (e) => {
+  let m = {}; try { m = e.data ? e.data.json() : {}; } catch (x) { m = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(m.title || "Italiano passo passo", {
+    body: m.body || "", tag: m.tag || "ipp", renotify: false, icon: "icons/icon-192.png", badge: "icons/icon-192.png", lang: m.lang || undefined,
+    data: { url: m.url || "./" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    // App déjà ouverte : on la remet devant et on lui dit où aller (sans recharger : une leçon en cours n'est pas perdue).
+    const w = list.find((c) => c.url.startsWith(self.registration.scope));
+    if (w) { const go = new URL(url).searchParams.get("go"); if (go) w.postMessage({ type: "ipp-go", go }); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});

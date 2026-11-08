@@ -395,7 +395,7 @@ async function dmAsk(first, speakIt) {
     const n = el("div", "dm-err"); n.append(el("p", null, aiFail(e)));
     const rb = el("button", "pill-btn", "Réessayer"); rb.type = "button";
     rb.onclick = async () => { if (A.busy) return; n.remove(); const l = await dmAsk(first, speakIt); if (l && DM === A && A.spoken) await A.spoken; if (l && DM === A && A.hands) dmListenOnce(true); };
-    if (!/^(daily_limit|not_invited|no_owner|session_expired)$/.test((e && e.code) || "")) n.append(rb);
+    if (!/^(daily_limit|free_limit|not_invited|no_owner|session_expired)$/.test((e && e.code) || "")) n.append(rb);
     A.ui.log.append(n); dmScroll(); A.busy = false; A.ui.setAct(); return null;
   }
   if (q) { feed(r.text, true); q.end(); }

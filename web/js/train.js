@@ -186,6 +186,7 @@
   async function rvOpen(faultsOnly) {
     const r = rvGet();
     if (r && !r.done && r.day === day() && !faultsOnly) return rvRun(r);
+    if (window.PREM && PREM.gateReview(faultsOnly ? "faults" : "rv")) return; // formule gratuite : un essai
     cur = null; qbar(null, null, "Révision sur mesure", "← Mots", () => UI.go("words"));
     body.append(el("div", "kind", "Révision sur mesure"), el("h2", null, faultsOnly ? "Tes fautes, avec d'autres phrases" : "Ta série du jour"));
     const st = el("div", "rv-prep"); st.append(lino("think", 72)); const sp = el("p", "fr"); sp.textContent = "Claude prépare 12 exercices à partir de tes fautes, de la grammaire de tes leçons et de tes mots à revoir…"; st.append(sp); body.append(st);

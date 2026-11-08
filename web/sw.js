@@ -1,8 +1,8 @@
 /* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
-const VERSION = "ipp-59e021973c";
-const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","img/personas/avi.svg","img/personas/camille.svg","img/personas/carmen.svg","img/personas/danny.svg","img/personas/giulia.svg","img/personas/jeanne.svg","img/personas/karim.svg","img/personas/lea.svg","img/personas/lucia.svg","img/personas/marco.svg","img/personas/marta.svg","img/personas/maya.svg","img/personas/noa.svg","img/personas/olivia.svg","img/personas/pablo.svg","img/personas/rivka.svg","img/personas/rosa.svg","img/personas/ruth.svg","img/personas/sofia.svg","img/personas/zoe.svg","fonts/nunito-latin-wght-normal.woff2?v=59e021973c","fonts/nunito-latin-ext-wght-normal.woff2?v=59e021973c","fonts/nunito-latin-wght-italic.woff2?v=59e021973c","fonts/nunito-latin-ext-wght-italic.woff2?v=59e021973c","js/i18n.js?v=59e021973c","js/app.js?v=59e021973c","js/voice.js?v=59e021973c","js/tts.js?v=59e021973c","js/web.js?v=59e021973c","js/dm.js?v=59e021973c","js/ui.js?v=59e021973c","js/quiz.js?v=59e021973c","js/words.js?v=59e021973c","js/news.js?v=59e021973c","js/train.js?v=59e021973c","css/app.css?v=59e021973c","js/shim.js?v=59e021973c","js/supabase.js?v=59e021973c","css/web.css?v=59e021973c","content/catalog.json?v=59e021973c","config.js?v=59e021973c","manifest.webmanifest?v=59e021973c","icons/apple-touch-icon.png?v=59e021973c","icons/icon-192.png?v=59e021973c","icons/icon-512.png?v=59e021973c","icons/icon-maskable-512.png?v=59e021973c"];
+const VERSION = "ipp-c00225d78f";
+const SHELL = ["./","index.html","manifest.webmanifest","icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","img/themes/amici.svg","img/themes/cafe.svg","img/themes/casa.svg","img/themes/cucina.svg","img/themes/cultura.svg","img/themes/festa.svg","img/themes/generico.svg","img/themes/mercatino.svg","img/themes/mercato.svg","img/themes/negozio.svg","img/themes/ricordi.svg","img/themes/ristorante.svg","img/themes/strada.svg","img/themes/treno.svg","img/themes/ufficio.svg","img/themes/viaggio.svg","img/personas/avi.svg","img/personas/camille.svg","img/personas/carmen.svg","img/personas/danny.svg","img/personas/giulia.svg","img/personas/jeanne.svg","img/personas/karim.svg","img/personas/lea.svg","img/personas/lucia.svg","img/personas/marco.svg","img/personas/marta.svg","img/personas/maya.svg","img/personas/noa.svg","img/personas/olivia.svg","img/personas/pablo.svg","img/personas/rivka.svg","img/personas/rosa.svg","img/personas/ruth.svg","img/personas/sofia.svg","img/personas/zoe.svg","fonts/nunito-latin-wght-normal.woff2?v=c00225d78f","fonts/nunito-latin-ext-wght-normal.woff2?v=c00225d78f","fonts/nunito-latin-wght-italic.woff2?v=c00225d78f","fonts/nunito-latin-ext-wght-italic.woff2?v=c00225d78f","js/i18n.js?v=c00225d78f","js/app.js?v=c00225d78f","js/voice.js?v=c00225d78f","js/tts.js?v=c00225d78f","js/web.js?v=c00225d78f","js/dm.js?v=c00225d78f","js/ui.js?v=c00225d78f","js/quiz.js?v=c00225d78f","js/words.js?v=c00225d78f","js/news.js?v=c00225d78f","js/train.js?v=c00225d78f","js/premium.js?v=c00225d78f","css/app.css?v=c00225d78f","js/shim.js?v=c00225d78f","js/supabase.js?v=c00225d78f","css/web.css?v=c00225d78f","content/catalog.json?v=c00225d78f","config.js?v=c00225d78f","manifest.webmanifest?v=c00225d78f","icons/apple-touch-icon.png?v=c00225d78f","icons/icon-192.png?v=c00225d78f","icons/icon-512.png?v=c00225d78f","icons/icon-maskable-512.png?v=c00225d78f"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -36,4 +36,22 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   e.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; })));
+});
+// Rappels : la notification envoyée par le serveur (titre, texte, page à ouvrir), affichée même app fermée.
+self.addEventListener("push", (e) => {
+  let m = {}; try { m = e.data ? e.data.json() : {}; } catch (x) { m = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(m.title || "Italiano passo passo", {
+    body: m.body || "", tag: m.tag || "ipp", renotify: false, icon: "icons/icon-192.png", badge: "icons/icon-192.png", lang: m.lang || undefined,
+    data: { url: m.url || "./" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    // App déjà ouverte : on la remet devant et on lui dit où aller (sans recharger : une leçon en cours n'est pas perdue).
+    const w = list.find((c) => c.url.startsWith(self.registration.scope));
+    if (w) { const go = new URL(url).searchParams.get("go"); if (go) w.postMessage({ type: "ipp-go", go }); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

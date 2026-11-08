@@ -432,7 +432,8 @@ const MOCKS = `
   await a.evaluate(() => { S.vx = {}; UI.go("profile"); WEB.account(); });
   await a.waitForSelector(".voices .switch-row");
   await a.click(".health button:has-text('Vérifier')"); await a.waitForSelector(".health-list li.ok >> nth=3", { timeout: 8000 });
-  ok((await a.$$eval(".health-list li.ok", (l) => l.length)) === 4, "vérification de la configuration : tout est en ordre (dictée comprise)");
+  await a.waitForSelector(".health-list li.ok >> nth=5", { timeout: 8000 }).catch(() => null);
+  ok((await a.$$eval(".health-list li.ok", (l) => l.length)) === 6 && !(await a.$(".health-list li.ko")), "vérification de la configuration : tout est en ordre (dictée, paiement en sommeil, rappels compris)");
   ok((await b.evaluate(async () => { try { await WEBAUTH.admin("health"); return "ok"; } catch (e) { return e.code; } })) === "forbidden", "vérification réservée au propriétaire");
   ok((await a.$$eval(".voices .switch-row", (r) => r.length)) === 3 && await a.isVisible(".voice-test button:has-text('Nonna Rosa')"), "réglages des voix dans le compte");
 

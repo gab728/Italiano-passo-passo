@@ -222,6 +222,7 @@ const VO = (() => {
     if (c === "network") return "La reconnaissance vocale a besoin du réseau. Réessaie quand tu captes.";
     if (c === "unsupported") return isIOS() && standalone() ? "Sur iPhone, l'app installée n'a pas accès à la reconnaissance vocale d'Apple. Ouvre l'app dans Safari pour utiliser le micro, ou demande au propriétaire d'activer la transcription par le serveur." : "Ce navigateur ne sait pas écouter. Sur iPhone, ouvre l'app dans Safari ; sur Android, dans Chrome.";
     if (c === "daily_limit") return "Plafond de transcription du jour atteint.";
+    if (c === "free_limit") return "Micro gratuit du jour épuisé : il revient demain, ou tout de suite avec Premium.";
     return "L'écoute a échoué. Réessaie.";
   }
 
