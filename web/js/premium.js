@@ -56,6 +56,7 @@
   function close() { if (!open) return; const o = open; open = null; o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); }
   // L'écran de l'offre : Premium et Expert côte à côte pour la formule gratuite, Expert seul pour un abonné Premium.
   // Rend true s'il s'est affiché.
+  const storeApp = () => !!(window.NATIVE && NATIVE.on && !NATIVE.iap);
   function paywall(reason, opts) {
     opts = opts || {};
     const t0 = tier();
@@ -121,6 +122,8 @@
       } catch (e) { go.disabled = false; go.textContent = was; speakNote(e && e.code === "already" ? "Tu as déjà un abonnement : change de formule depuis ton profil." : "Le paiement ne s'ouvre pas pour l'instant. Réessaie dans un moment."); if (e && e.code === "already") { close(); refresh(); } }
     };
     draw();
+    // Application mobile : le paiement passera par l'App Store et Google Play (pas encore branché) ; pas de paiement par carte ici.
+    if (storeApp()) { go.hidden = true; const lg = box.querySelector(".pw-legal"); if (lg) lg.hidden = true; go.after(txt("p", "pw-native", "Bientôt : l'abonnement directement dans l'app.")); }
     document.body.append(o); document.body.classList.add("pw-open"); open = o; requestAnimationFrame(() => o.classList.add("in"));
     o.addEventListener("keydown", (e) => { if (e.key === "Escape") later(); });
     setTimeout(() => go.focus(), 50);
@@ -149,7 +152,7 @@
     box.append(txt("p", "pw-sub", PLAN.status === "trialing" && PLAN.trial_end ? "Ton essai gratuit court jusqu'au {0}. On te prévient la veille de la fin.".replace("{0}", date(PLAN.trial_end)) : (tier() === "expert" ? "Tu peux parler jusqu'à {0} minutes par jour avec les personnages." : "Tout est débloqué : leçons, conversations, mode voiture et actualité.").replace("{0}", String(talkMin().expert))));
     const go = txt("button", "pw-cta"); go.type = "button"; go.textContent = "C'est parti !"; go.onclick = () => { o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); };
     box.append(go); document.body.append(o); document.body.classList.add("pw-open"); requestAnimationFrame(() => o.classList.add("in"));
-    try { if (navigator.vibrate) navigator.vibrate([20, 40, 20]); } catch (e) { /* rien */ }
+    try { if (window.NATIVE && NATIVE.haptic) NATIVE.haptic("success"); else if (navigator.vibrate) navigator.vibrate([20, 40, 20]); } catch (e) { /* rien */ }
   }
 
   /* ---------- Les limites de la formule gratuite ---------- */
@@ -253,11 +256,14 @@
   function streakOffer() { if (gated() && streak() >= 7 && !(S.pw || {}).streak && !PLAN.trial_used) paywall("streak"); }
 
   /* ---------- Les rappels ---------- */
+  // Application mobile : rappels programmés sur le téléphone (js/native.js), sans service worker ni notifications web.
+  const NR = () => (window.NATIVE && NATIVE.on && NATIVE.reminders) || null;
   const RM = {
-    supported: () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window,
+    supported: () => !!NR() || ("serviceWorker" in navigator && "PushManager" in window && "Notification" in window),
+    perm: () => (NR() ? NR().perm : ("Notification" in window ? Notification.permission : "default")),
     ios: () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1),
     standalone: () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true,
-    needsInstall: () => RM.ios() && !RM.standalone(),
+    needsInstall: () => !NR() && RM.ios() && !RM.standalone(),
     on: () => !!(S.rm && S.rm.on),
     hour: () => (S.rm && Number.isInteger(S.rm.hour) ? S.rm.hour : 19),
     async reg() {
@@ -271,6 +277,11 @@
       return { last: last >= 0 ? new Date(last * 864e5).toISOString().slice(0, 10) : undefined, streak: streak(), tz, ui: ui(), course: C().id, name: ((W.me && W.me.name) || "").split(/\s+/)[0] };
     },
     async enable(hour) {
+      if (NR()) {
+        const r = await NR().enable(hour, RM.state()); if (r !== "ok") return r;
+        S.rm = Object.assign({}, S.rm || {}, { on: true, hour }); save(); sent = JSON.stringify(RM.state());
+        return "ok";
+      }
       if (!RM.supported()) return "unsupported";
       let perm = Notification.permission;
       if (perm === "default") perm = await Notification.requestPermission();
@@ -284,6 +295,7 @@
       return "ok";
     },
     async disable() {
+      if (NR()) { await NR().disable().catch(() => {}); S.rm = Object.assign({}, S.rm || {}, { on: false }); save(); return; }
       try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); await W.call("push", { action: "unsubscribe", endpoint: sub ? sub.endpoint : "", all: !sub }); if (sub) await sub.unsubscribe(); } catch (e) { /* hors ligne */ }
       S.rm = Object.assign({}, S.rm || {}, { on: false }); save();
     },
@@ -294,6 +306,7 @@
   async function report(force) {
     if (!RM.on()) return;
     const s = JSON.stringify(RM.state()); if (!force && s === sent) return;
+    if (NR()) { sent = s; ls.set("ipp-rm-sent", s); try { await NR().refresh(RM.state(), RM.hour()); } catch (e) { /* plus tard */ } return; }
     try { await W.call("push", Object.assign({ action: "state" }, RM.state())); sent = s; ls.set("ipp-rm-sent", s); } catch (e) { /* plus tard */ }
   }
   setInterval(() => report(false), 60000);
@@ -312,7 +325,7 @@
     if (RM.on() || !(RM.supported() || RM.needsInstall())) return null;
     if (!Object.values(S.d || {}).some((n) => n > 0)) return null;
     const later = (S.rm && S.rm.later) || -99; if (day() - later < 7) return null;
-    if (RM.supported() && Notification.permission === "denied") return null;
+    if (RM.supported() && RM.perm() === "denied") return null;
     const c = txt("section", "card rm-card"); c.append(txt("span", "rm-bell", "🔔"));
     const t = txt("div", "rm-t"); t.append(txt("b", null, "Je te fais signe chaque jour ?"));
     let hour = RM.hour();
@@ -337,17 +350,17 @@
     c.append(txt("b", null, "Rappels"));
     const note = txt("small", "muted"); c.append(note);
     if (!RM.supported()) { note.textContent = RM.needsInstall() ? installNote : "Ce navigateur ne reçoit pas de notifications."; return c; }
-    if (Notification.permission === "denied") { note.textContent = deniedNote; return c; }
+    if (RM.perm() === "denied") { note.textContent = deniedNote; return c; }
     let hour = RM.hour();
     const draw = () => {
       note.textContent = RM.on() ? "Chaque jour à {0}, seulement si tu n'as pas encore pratiqué.".replace("{0}", hourLabel(hour)) : "Un petit signe chaque jour pour garder ta série, avec le sourire.";
       tog.querySelector("span").textContent = RM.on() ? "Désactiver" : "Activer les rappels";
       test.hidden = !RM.on();
     };
-    c.append(hourChips(hour, async (h) => { hour = h; if (RM.on()) { S.rm.hour = h; save(); try { await W.call("push", Object.assign({ action: "state", hour: h }, RM.state())); } catch (e) { /* plus tard */ } } draw(); }));
+    c.append(hourChips(hour, async (h) => { hour = h; if (RM.on()) { S.rm.hour = h; save(); try { if (NR()) await NR().refresh(RM.state(), h); else await W.call("push", Object.assign({ action: "state", hour: h }, RM.state())); } catch (e) { /* plus tard */ } } draw(); }));
     const a = txt("div", "acts two");
     const tog = btn("", "soft", async () => { tog.disabled = true; if (RM.on()) await RM.disable(); else { const r = await RM.enable(hour).catch(() => "error"); if (r !== "ok") speakNote(r === "denied" ? deniedNote : "Les rappels ne s'activent pas sur ce téléphone pour l'instant."); } tog.disabled = false; draw(); });
-    const test = btn("M'envoyer un essai", "", async () => { test.disabled = true; try { await W.call("push", { action: "test" }); speakNote("C'est parti : le rappel arrive dans quelques secondes."); } catch (e) { speakNote("Le rappel d'essai n'a pas pu partir. Désactive puis réactive les rappels."); } test.disabled = false; });
+    const test = btn("M'envoyer un essai", "", async () => { test.disabled = true; try { if (NR()) await NR().test(); else await W.call("push", { action: "test" }); speakNote("C'est parti : le rappel arrive dans quelques secondes."); } catch (e) { speakNote("Le rappel d'essai n'a pas pu partir. Désactive puis réactive les rappels."); } test.disabled = false; });
     a.append(tog, test); c.append(a); draw();
     return c;
   }
@@ -378,14 +391,14 @@
         : s0.period_end ? (s0.cancel_at_period_end ? "Se termine le {0}." : "Renouvelé le {0}.").replace("{0}", date(s0.period_end)) : "")));
       const a = txt("div", "acts");
       if (tr === "premium" && s0.manage) a.append(btn("Passer à Expert · {0} min par jour".replace("{0}", String(tm.expert)), "dark", () => paywall("expert")));
-      if (tr === "expert" && s0.manage) a.append(btn("Revenir à Premium", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { PLAN = await (await W.call("billing", { action: "change", tier: "premium" })).json(); ls.set("ipp-plan", PLAN); speakNote("C'est fait : tu repasses en Premium ({0} minutes par jour).".replace("{0}", String(tm.premium))); if (window.UI) UI.go("profile"); } catch (e) { b.disabled = false; speakNote("Le changement n'a pas pu se faire. Réessaie dans un moment."); } }));
-      if (s0.manage) a.append(btn("Gérer mon abonnement", "soft", portal));
+      if (tr === "expert" && s0.manage && !storeApp()) a.append(btn("Revenir à Premium", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { PLAN = await (await W.call("billing", { action: "change", tier: "premium" })).json(); ls.set("ipp-plan", PLAN); speakNote("C'est fait : tu repasses en Premium ({0} minutes par jour).".replace("{0}", String(tm.premium))); if (window.UI) UI.go("profile"); } catch (e) { b.disabled = false; speakNote("Le changement n'a pas pu se faire. Réessaie dans un moment."); } }));
+      if (s0.manage && !storeApp()) a.append(btn("Gérer mon abonnement", "soft", portal));
       if (a.childNodes.length) c.append(a);
       return c;
     }
     t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et {1} minutes par jour. Expert : {2} minutes par jour.".replace("{0}", String(tm.free)).replace("{1}", String(tm.premium)).replace("{2}", String(tm.expert))));
     const a = txt("div", "acts"); a.append(btn(s0.trial_used ? "Voir les formules" : "Essayer gratuitement", "dark", () => paywall("profile")));
-    if (s0.manage) a.append(btn("Mes factures", "", portal)); c.append(a);
+    if (s0.manage && !storeApp()) a.append(btn("Mes factures", "", portal)); c.append(a);
     return c;
   }
 
@@ -403,10 +416,11 @@
     if (g === "premium") { if (window.UI) UI.go("profile"); }
     else if (g === "lesson" && (typeof view === "undefined" || !/^(lesson|quiz|dm|audio)$/.test(view))) { const cu = typeof current === "function" && current(); if (cu) setTimeout(() => openSlot(cu), 300); }
   }
+  window.ippFollow = follow;
   try { navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", (e) => { const d = e.data || {}; if (d.type === "ipp-go") follow(d.go); }); } catch (e) { /* rien */ }
   // Déconnexion : ce téléphone ne reçoit plus les rappels de ce compte.
   const out0 = W.signOut;
-  W.signOut = async function (force) { if (RM.on()) { try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await W.call("push", { action: "unsubscribe", endpoint: sub.endpoint }); await sub.unsubscribe(); } } catch (e) { /* hors ligne */ } } return out0.apply(this, arguments); };
+  W.signOut = async function (force) { if (RM.on() && NR()) { await NR().disable().catch(() => {}); } else if (RM.on()) { try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await W.call("push", { action: "unsubscribe", endpoint: sub.endpoint }); await sub.unsubscribe(); } } catch (e) { /* hors ligne */ } } return out0.apply(this, arguments); };
   (async () => {
     try {
       await refresh();

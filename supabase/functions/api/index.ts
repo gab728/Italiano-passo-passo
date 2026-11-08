@@ -24,7 +24,7 @@
 //   TTS_DAILY_CHARS (25000, environ 25 minutes de voix) et OWNER_TTS_DAILY_CHARS (100000) : texte lu à voix haute par personne et par jour
 //   ALLOWED_ORIGINS : adresses autorisées à appeler la fonction (par défaut toutes, l'accès restant protégé par la connexion)
 
-import { newVapid, sendPush, pick, message, localNow, type Vapid, type Rem } from "./push.ts";
+import { newVapid, sendPush, pick, message, upcoming, localNow, type Vapid, type Rem } from "./push.ts";
 
 // Les noms de secrets sont lus sans tenir compte des majuscules (anthropic_api_key vaut ANTHROPIC_API_KEY).
 const env = (k: string, d = ""): string => (Deno.env.get(k) ?? Deno.env.get(k.toLowerCase()) ?? d).trim();
@@ -50,10 +50,12 @@ type User = { id: string; email?: string; confirmed?: boolean };
 type Json = Record<string, unknown>;
 
 // ---------- Réponses et CORS ----------
+const NATIVE_ORIGINS = ["https://localhost", "capacitor://localhost"];
 function cors(req: Request): Record<string, string> {
   const allowed = env("ALLOWED_ORIGINS").split(",").map((s) => s.trim()).filter(Boolean);
   const origin = req.headers.get("origin") || "";
-  const allow = !allowed.length ? "*" : allowed.includes(origin) ? origin : allowed[0];
+  // Les applications mobiles (Capacitor) appellent depuis https://localhost (Android) ou capacitor://localhost (iPhone).
+  const allow = !allowed.length ? "*" : allowed.includes(origin) || NATIVE_ORIGINS.includes(origin) ? origin : allowed[0];
   return {
     "access-control-allow-origin": allow,
     "access-control-allow-headers": "authorization, apikey, content-type, x-client-info, x-duration, x-context, x-peak",
@@ -1179,6 +1181,13 @@ async function push(req: Request, u: User): Promise<Response> {
     if (old && old.paused && o.last_day && (!old.last_day || String(o.last_day) > old.last_day)) o.paused = false; // il est revenu : les rappels reprennent
     await setRem(u.id, o);
     return json(req, { ok: true, enabled: old ? old.enabled : false });
+  }
+  // Application mobile : les rappels des prochains jours, à programmer sur le téléphone.
+  if (act === "upcoming") {
+    const o = state(b) as any, hour = Number.isInteger(+b.hour) && +b.hour >= 0 && +b.hour <= 23 ? +b.hour : 19;
+    const r: Rem = { enabled: true, hour, tz: o.tz || "Europe/Paris", ui: o.ui || "fr", course: o.course || "it", name: o.name || null,
+      last_day: o.last_day || null, streak: o.streak || 0, paused: false, sent: "" };
+    return json(req, { items: upcoming(r, 10), test: message("test", r) });
   }
   if (act === "get") {
     const r = await remOf(u.id), subs = await restJSON("push_subs?user_id=eq." + u.id + "&select=endpoint") || [];

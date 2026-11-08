@@ -1,0 +1,161 @@
+# Applications mobiles (Android et iPhone), construites avec Capacitor à partir du dossier web/.
+#  - Android : une version d'essai (APK) à chaque modification de main, publiée dans la page « Releases » du dépôt
+#    (version « android-test ») : on la télécharge et on l'installe directement sur le téléphone.
+#    Avec la clé de publication (secrets ci-dessous), on obtient aussi le paquet pour Google Play (.aab).
+#  - iPhone : vérification que l'app se construit ; avec les secrets d'App Store Connect, envoi sur TestFlight.
+#
+# Secrets facultatifs (Settings → Secrets and variables → Actions) :
+#   Android / Google Play : ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   iPhone / TestFlight   : APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64
+name: Applications mobiles
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "src/**"
+      - "scripts/**"
+      - "i18n/**"
+      - "content/**"
+      - "android/**"
+      - "ios/**"
+      - "assets/**"
+      - "capacitor.config.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/mobile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Configuration de l'app
+        env:
+          URL: ${{ vars.SUPABASE_URL }}
+          KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            node -e 'require("fs").writeFileSync("web/config.js", "window.APP_CONFIG = " + JSON.stringify({ supabaseUrl: process.env.URL, supabaseKey: process.env.KEY }) + ";\n")'
+          fi
+      - name: Numéro de version
+        run: |
+          echo "VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$(node -p "require('./package.json').version").$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+      - name: Construction de l'app web
+        run: |
+          npm ci --no-audit --no-fund
+          node scripts/build.mjs
+          npx cap sync android
+      - name: Version d'essai (APK)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Clé de publication présente ?
+        id: sign
+        run: echo "ok=${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}" >> "$GITHUB_OUTPUT"
+      - name: Paquet pour Google Play (AAB signé)
+        if: steps.sign.outputs.ok == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew bundleRelease --no-daemon
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - name: Fichiers produits
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/italiano-passo-passo.apk
+          if [ -f android/app/build/outputs/bundle/release/app-release.aab ]; then cp android/app/build/outputs/bundle/release/app-release.aab out/italiano-passo-passo.aab; fi
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/
+      - name: Publication de la version d'essai
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Version d'essai $VERSION_NAME pour Android (construite le $(date -u +%d/%m/%Y)).
+
+          Pour l'installer : ouvre cette page sur le téléphone Android, touche « italiano-passo-passo.apk », puis ouvre le fichier téléchargé.
+          Le téléphone demande d'autoriser l'installation depuis ce navigateur : accepte (c'est normal pour une app qui n'est pas encore sur Google Play).
+          Les versions suivantes s'installent par-dessus, la progression est gardée (elle est enregistrée dans ton compte)."
+          if gh release view android-test >/dev/null 2>&1; then
+            gh release edit android-test --title "Version d'essai Android" --notes "$NOTES" --prerelease
+          else
+            gh release create android-test --title "Version d'essai Android" --notes "$NOTES" --prerelease --target "$GITHUB_SHA"
+          fi
+          gh release upload android-test out/italiano-passo-passo.apk --clobber
+
+  ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Xcode le plus récent
+        run: |
+          X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1); echo "Xcode : $X"; sudo xcode-select -s "$X"; xcodebuild -version
+      - name: Configuration de l'app
+        env:
+          URL: ${{ vars.SUPABASE_URL }}
+          KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            node -e 'require("fs").writeFileSync("web/config.js", "window.APP_CONFIG = " + JSON.stringify({ supabaseUrl: process.env.URL, supabaseKey: process.env.KEY }) + ";\n")'
+          fi
+      - name: Construction de l'app web
+        run: |
+          npm ci --no-audit --no-fund
+          node scripts/build.mjs
+          npx cap sync ios
+      - name: Construction de l'app iPhone (simulateur, sans signature)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test "${PIPESTATUS[0]}" = "0"
+      - name: Secrets App Store Connect présents ?
+        id: asc
+        run: echo "ok=${{ secrets.ASC_KEY_P8_BASE64 != '' && secrets.APPLE_TEAM_ID != '' }}" >> "$GITHUB_OUTPUT"
+      - name: Envoi sur TestFlight
+        if: steps.asc.outputs.ok == 'true'
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"; echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 -d > "$KEY"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          VERSION=$(node -p "require('./package.json').version")
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive "${AUTH[@]}" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" archive | tail -30
+          sed "s/__TEAM__/$TEAM/" ios/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath build/export "${AUTH[@]}" | tail -30
+          rm -f "$KEY"

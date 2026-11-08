@@ -106,7 +106,7 @@ for (const u of UIS) delete catalog["ui_" + u];
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["fonts/nunito-latin-wght-normal.woff2", "fonts/nunito-latin-ext-wght-normal.woff2", "fonts/nunito-latin-wght-italic.woff2", "fonts/nunito-latin-ext-wght-italic.woff2", "js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js", "js/fx.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
+const files = ["fonts/nunito-latin-wght-normal.woff2", "fonts/nunito-latin-ext-wght-normal.woff2", "fonts/nunito-latin-wght-italic.woff2", "fonts/nunito-latin-ext-wght-italic.woff2", "js/native.js", "js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js", "js/fx.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 const hash = createHash("sha256");
 for (const f of files.concat(uiFiles)) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
@@ -170,6 +170,7 @@ ${fonts}
 <div id="app" hidden></div>
 <noscript>Cette app a besoin de JavaScript.</noscript>
 <script>window.APP_BUILD="${BUILD}";window.PHOTOS=${JSON.stringify(PHOTOS).replace(/</g, "\\u003c")};window.APP_CONFIG_BUILT=${INLINE_CFG};</script>
+<script src="js/native.js?v=${BUILD}"></script>
 <script src="js/i18n.js?v=${BUILD}"></script>
 <script src="config.js?v=${BUILD}"></script>
 <script src="js/supabase.js?v=${BUILD}"></script>

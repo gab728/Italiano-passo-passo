@@ -158,13 +158,13 @@ const T: Record<string, Record<string, Msg[]>> = {
     test: [["Recordatorios activados 🔔", "{p} te avisará cada día a las {hh}:00, con una sonrisa."]],
   },
 };
-export function message(kind: string, r: Rem, opts: { variant?: number } = {}): { title: string; body: string } {
+export function message(kind: string, r: Rem, opts: { variant?: number; since?: number } = {}): { title: string; body: string } {
   const ui = T[r.ui] ? r.ui : "fr", c = TEACHER[r.course] ? r.course : "it";
   const list = T[ui][kind] || T[ui].daily;
   const [a, b] = list[(opts.variant ?? 0) % list.length];
   const l = LANG[ui][c], first = String(r.name || "").trim().split(/\s+/)[0] || "";
   const t = localNow(r.tz);
-  const since = r.last_day ? Math.max(1, daysBetween(r.last_day, t.day)) : 1;
+  const since = opts.since ?? (r.last_day ? Math.max(1, daysBetween(r.last_day, t.day)) : 1);
   const hello = (c === "es" || ui === "es" ? "¡" : "") + HELLO[c];
   const fill = (s: string) => s
     .replace(/\{p\}/g, TEACHER[c]).replace(/\{dl\}/g, (/^[aeiouéèhê]/i.test(l) ? "d'" : "de ") + l).replace(/\{l\}/g, l)
@@ -172,4 +172,28 @@ export function message(kind: string, r: Rem, opts: { variant?: number } = {}): 
     .replace(/\{hh\}/g, String(r.hour)).replace(/\{h\}/g, hello).replace(/\{who\}/g, first ? " " + first : "")
     .replace(/\s+([!?])/g, ui === "fr" ? " $1" : "$1");
   return { title: fill(a), body: fill(b) };
+}
+
+// Applications mobiles : les rappels sont programmés sur le téléphone (notifications locales), sans passer par le serveur
+// à l'heure dite. Le téléphone demande ici les rappels des prochains jours, en supposant que l'élève ne s'entraîne pas
+// d'ici là ; dès qu'il s'entraîne, l'app reprogramme tout (les rappels du jour disparaissent).
+//   d : jour (0 = aujourd'hui), hour : heure locale, kind : type de rappel (mêmes règles que pick).
+export function upcoming(r: Rem, days = 10, now = new Date()): { d: number; hour: number; kind: string; title: string; body: string }[] {
+  const t = localNow(r.tz, now), out: { d: number; hour: number; kind: string; title: string; body: string }[] = [];
+  const add = (day: string, n: number) => new Date(Date.parse(day + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+  if (r.paused) return out;
+  for (let d = 0; d < days; d++) {
+    const day = add(t.day, d);
+    if (r.last_day && day <= r.last_day) continue;           // déjà fait ce jour-là
+    const since = r.last_day ? daysBetween(r.last_day, day) : d + 1;
+    let kind: string | null = null;
+    if (!r.last_day) kind = since <= 3 ? "first" : null;
+    else if (since === 1) kind = r.streak >= 2 ? "streak" : "daily";
+    else if (since === 2 || since === 3) kind = "miss";
+    else if ([5, 7, 14].includes(since)) kind = "comeback";
+    else if (since === 30) kind = "last";
+    if (kind) out.push({ d, hour: r.hour, kind, ...message(kind, r, { variant: d, since }) });
+    if (r.last_day && since === 1 && r.streak >= 3 && r.hour !== SAVER_HOUR) out.push({ d, hour: SAVER_HOUR, kind: "saver", ...message("saver", r, { variant: d, since }) });
+  }
+  return out;
 }

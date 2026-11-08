@@ -863,7 +863,7 @@
   let lastFb = null;
   function feedback() {
     const fb = root.querySelector(".fb"); if (!fb || fb === lastFb) return; lastFb = fb;
-    try { if (navigator.vibrate) navigator.vibrate(fb.classList.contains("ok") ? 12 : [24, 40, 24]); } catch (e) { /* rien */ }
+    try { if (window.NATIVE && NATIVE.haptic) NATIVE.haptic(fb.classList.contains("ok") ? "success" : "error"); else if (navigator.vibrate) navigator.vibrate(fb.classList.contains("ok") ? 12 : [24, 40, 24]); } catch (e) { /* rien */ }
     const ab = root.querySelector(":scope > .actionbar"); if (ab) ab.innerHTML = "";
     if (!window.FX) { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
     if (window.FX) try { FX.answer(fb.classList.contains("ok"), fb); } catch (e) { /* rien */ }

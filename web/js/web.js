@@ -65,7 +65,7 @@
   let deferred = null;
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
   function installBox() {
-    if (VO.standalone()) return null;
+    if (VO.standalone() || (window.NATIVE && NATIVE.on)) return null;
     const box = el("section", "panel");
     box.append(el("h2", null, "Installer l'app"));
     if (deferred) {

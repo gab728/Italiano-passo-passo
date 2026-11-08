@@ -1,0 +1,31 @@
+{
+  "name": "italiano-passo-passo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Italiano passo passo : app web et applications mobiles (Android, iOS) construites avec Capacitor à partir du dossier web/.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "mobile:sync": "node scripts/build.mjs && cap sync",
+    "mobile:android": "node scripts/build.mjs && cap sync android && cap open android",
+    "mobile:ios": "node scripts/build.mjs && cap sync ios && cap open ios",
+    "mobile:assets": "capacitor-assets generate --android --ios"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0"
+  }
+}
