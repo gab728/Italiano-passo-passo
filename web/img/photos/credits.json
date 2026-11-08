@@ -399,10 +399,17 @@
   },
   "fr": {
    "src": "img/photos/amici-fr.jpg",
-   "title": "File:Champ de Mars - 55495801447.jpg",
+   "title": "File:Champ de Mars - 55496892768.jpg",
    "author": "xiquinhosilva",
    "license": "CC BY 4.0",
-   "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55495801447.jpg"
+   "page": "https://commons.wikimedia.org/wiki/File:Champ_de_Mars_-_55496892768.jpg"
+  },
+  "en": {
+   "src": "img/photos/amici-en.jpg",
+   "title": "File:Central Park, N.Y.C. 1997 03.jpg",
+   "author": "LBM1948",
+   "license": "CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Central_Park,_N.Y.C._1997_03.jpg"
   }
  },
  "generico": {
