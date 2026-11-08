@@ -296,6 +296,7 @@ const NEWS = (() => {
   }
   const backList = () => (CUR && CUR.fromHist ? UI.lessons("hist") : hub());
   async function open(it, fromHist) {
+    if (window.PREM && PREM.gateNews(it, fromHist)) return;
     CUR = { it, fromHist: !!fromHist };
     stopSpeech(); qbar(null, null, "Actualités", CUR && CUR.fromHist ? "← Historique" : "← Actu", backList); view = "news";
     body.append(txt("div", "kind", (NAME[it.theme] || it.theme) + " · " + stage().name), txt("h2", null, it.title));

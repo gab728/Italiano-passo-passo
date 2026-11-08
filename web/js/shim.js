@@ -95,7 +95,7 @@
     }
     if (!res.ok) {
       let j = {}; try { j = await res.json(); } catch (e) { /* corps vide */ }
-      const code = res.status === 401 ? "session_expired" : res.status === 429 ? "daily_limit" : j.code || (res.status >= 500 ? "unavailable" : "upstream_error");
+      const code = res.status === 401 ? "session_expired" : res.status === 429 ? (j.code === "free_limit" ? "free_limit" : "daily_limit") : j.code || (res.status >= 500 ? "unavailable" : "upstream_error");
       throw err(code, j.message || "Erreur " + res.status);
     }
     return res;
@@ -297,7 +297,7 @@
     resolveReady(s);
     loadMe();
     try {
-      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
+      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
     } catch (e) {
       document.getElementById("app").textContent = "Impossible de charger l'app. Vérifie le réseau, puis recharge la page.";
     }

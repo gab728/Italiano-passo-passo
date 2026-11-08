@@ -4,6 +4,9 @@
 //   POST /api/stt     → transcription vocale de secours, si un service est configuré
 //   POST /api/news    → dernières dépêches de l'agence ANSA, par thème (titre, résumé, lien : jamais l'article entier)
 //   POST /api/tts     → voix naturelles (synthèse vocale OpenAI ou compatible), phrases des leçons gardées en cache pour tous
+//   POST /api/billing → abonnement Premium : état, page de paiement Stripe, gestion de l'abonnement
+//   POST /api/stripe  → webhook Stripe (sans connexion, signature vérifiée)
+//   POST /api/push    → rappels sur le téléphone : abonnement aux notifications, réglages ; appelé aussi toutes les 15 minutes par la base
 // Chaque appel exige une personne connectée. La consommation est comptée par personne et par jour, avec un plafond.
 //
 // Secrets à définir (Supabase → Edge Functions → Secrets) :
@@ -20,6 +23,8 @@
 //   TTS_API_KEY (sinon OPENAI_API_KEY, sinon STT_API_KEY si c'est une clé OpenAI), TTS_URL, TTS_MODEL (gpt-4o-mini-tts),
 //   TTS_DAILY_CHARS (25000, environ 25 minutes de voix) et OWNER_TTS_DAILY_CHARS (100000) : texte lu à voix haute par personne et par jour
 //   ALLOWED_ORIGINS : adresses autorisées à appeler la fonction (par défaut toutes, l'accès restant protégé par la connexion)
+
+import { newVapid, sendPush, pick, message, localNow, type Vapid, type Rem } from "./push.ts";
 
 // Les noms de secrets sont lus sans tenir compte des majuscules (anthropic_api_key vaut ANTHROPIC_API_KEY).
 const env = (k: string, d = ""): string => (Deno.env.get(k) ?? Deno.env.get(k.toLowerCase()) ?? d).trim();
@@ -115,9 +120,13 @@ async function addUsage(uid: string, calls: number, inTok: number, outTok: numbe
 async function limitsFor(u: User, prof?: any) {
   const p = prof !== undefined ? prof : await profile(u.id);
   const own = isOwner(u);
-  const calls = p && p.daily_limit != null ? p.daily_limit : own ? int("OWNER_DAILY_CALLS", 1000) : int("DAILY_CALLS", 150);
-  return { calls, output_tokens: own ? int("OWNER_DAILY_OUTPUT_TOKENS", 4000000) : int("DAILY_OUTPUT_TOKENS", 400000),
-    input_tokens: own ? int("OWNER_DAILY_INPUT_TOKENS", 20000000) : int("DAILY_INPUT_TOKENS", 3000000), stt_seconds: int("STT_DAILY_SECONDS", 3600), profile: p };
+  // Formule gratuite (quand le payant est ouvert) : plafonds plus bas. Le plafond fixé à la main par le propriétaire reste prioritaire.
+  const pl = own ? { billing: billingOn(), premium: true, owner: true, sub: null } : await planOf(u);
+  const free = !pl.premium;
+  const calls = p && p.daily_limit != null ? p.daily_limit : own ? int("OWNER_DAILY_CALLS", 1000) : free ? int("FREE_DAILY_CALLS", 40) : int("DAILY_CALLS", 150);
+  return { calls, output_tokens: own ? int("OWNER_DAILY_OUTPUT_TOKENS", 4000000) : free ? int("FREE_DAILY_OUTPUT_TOKENS", 100000) : int("DAILY_OUTPUT_TOKENS", 400000),
+    input_tokens: own ? int("OWNER_DAILY_INPUT_TOKENS", 20000000) : free ? int("FREE_DAILY_INPUT_TOKENS", 800000) : int("DAILY_INPUT_TOKENS", 3000000),
+    stt_seconds: free ? int("FREE_STT_DAILY_SECONDS", 300) : int("STT_DAILY_SECONDS", 3600), profile: p, free, plan: pl };
 }
 
 // ---------- /claude ----------
@@ -160,7 +169,8 @@ async function claude(req: Request, u: User): Promise<Response> {
   // Réservation atomique : l'appel et le maximum de texte qu'il peut produire sont comptés avant d'appeler Claude.
   const lim = await limitsFor(u);
   const okCall = await restJSON("rpc/take_call", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_max_calls: lim.calls, p_max_out: lim.output_tokens, p_max_in: lim.input_tokens, p_reserve: maxTok }) });
-  if (okCall !== true) return fail(req, 429, "rate_limited", "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.");
+  if (okCall !== true) return lim.free ? fail(req, 429, "free_limit", "Tu as utilisé l'assistant gratuit du jour. Il revient demain, ou tout de suite avec Premium.")
+    : fail(req, 429, "rate_limited", "Tu as atteint le plafond du jour. Il se remet à zéro à minuit.");
   if (!isOwner(u) && await globalCalls() > int("GLOBAL_DAILY_CALLS", 2000)) {
     await addUsage(u.id, -1, 0, -maxTok, 0);
     return fail(req, 429, "rate_limited", "L'app a atteint son plafond du jour pour tout le monde. Il se remet à zéro à minuit.");
@@ -291,7 +301,8 @@ async function admin(req: Request, u: User): Promise<Response> {
 
   if (act === "me") {
     const lim = await limitsFor(u), used = await usageToday(u.id);
-    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!(ttsKey() || elOn()), tts_engine: elOn() ? "elevenlabs" : "openai" });
+    ensureCron();
+    return json(req, { id: u.id, email: u.email, name: lim.profile?.name || "", owner: own, premium: statusOut(lim.plan as any), limits: { calls: lim.calls, output_tokens: lim.output_tokens, stt_seconds: lim.stt_seconds }, used, stt: !!(sttKey() || env("ELEVENLABS_API_KEY")), tts: !!(ttsKey() || elOn()), tts_engine: elOn() ? "elevenlabs" : "openai" });
   }
   if (act === "rename") {
     const name = String(b.name || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
@@ -304,6 +315,10 @@ async function admin(req: Request, u: User): Promise<Response> {
     return c ? json(req, { email: u.email, code: c.code }) : fail(req, 502, "unavailable", "Impossible de créer un code pour l'instant.");
   }
   if (act === "delete_me") {
+    const sub = await subOf(u.id);
+    if (sub && sub.subscription && billingOn() && ["trialing", "active", "past_due"].includes(sub.status)) {
+      try { await stripe("subscriptions/" + sub.subscription, undefined, "DELETE"); } catch { return fail(req, 502, "unavailable", "L'abonnement n'a pas pu être résilié : réessaie dans un moment."); }
+    }
     await rest("lessons?owner=eq." + u.id + "&shared=eq.false", { method: "DELETE" });
     const r = await authAdmin("users/" + u.id, { method: "DELETE" });
     return r.ok ? json(req, { ok: true }) : fail(req, 502, "unavailable", "Suppression impossible pour l'instant.");
@@ -409,6 +424,7 @@ async function admin(req: Request, u: User): Promise<Response> {
   }
   if (act === "members") {
     const people = await restJSON("profiles?invited=eq.true&select=user_id,email,name,daily_limit,created_at&order=created_at.asc") || [];
+    const subs = await restJSON("subscriptions?select=user_id,plan,status,period_end").catch(() => []) || [];
     const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
     const rows = await restJSON("usage?day=gte." + since + "&select=user_id,day,calls,input_tokens,output_tokens,stt_seconds") || [];
     const d = today();
@@ -416,11 +432,21 @@ async function admin(req: Request, u: User): Promise<Response> {
       const mine = rows.filter((r: any) => r.user_id === p.user_id);
       const sum = (k: string, rs: any[]) => rs.reduce((a: number, r: any) => a + Number(r[k] || 0), 0);
       const td = mine.filter((r: any) => r.day === d);
-      return { ...p, owner: owners().includes((p.email || "").toLowerCase()),
+      const sb = subs.find((x: any) => x.user_id === p.user_id) || null;
+      return { ...p, owner: owners().includes((p.email || "").toLowerCase()), plan: sb ? { plan: sb.plan, status: sb.status, premium: premiumSub(sb) } : { plan: "free", status: "none", premium: false },
         today: { calls: sum("calls", td), output_tokens: sum("output_tokens", td) },
         month: { calls: sum("calls", mine), input_tokens: sum("input_tokens", mine), output_tokens: sum("output_tokens", mine), stt_seconds: sum("stt_seconds", mine), days: new Set(mine.map((r: any) => r.day)).size } };
     });
-    return json(req, { members: out, defaults: { calls: int("DAILY_CALLS", 150), owner_calls: int("OWNER_DAILY_CALLS", 1000) }, models: { quick: env("MODEL_QUICK", "claude-haiku-5-5"), default: env("MODEL_DEFAULT", "claude-sonnet-5-5") } });
+    return json(req, { billing: billingOn(), members: out, defaults: { calls: int("DAILY_CALLS", 150), owner_calls: int("OWNER_DAILY_CALLS", 1000) }, models: { quick: env("MODEL_QUICK", "claude-haiku-5-5"), default: env("MODEL_DEFAULT", "claude-sonnet-5-5") } });
+  }
+  // Premium offert (ou retiré) à un membre par le propriétaire. Un abonnement payant en cours n'est pas touché.
+  if (act === "set_comp") {
+    const id = String(b.user_id || ""); if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(req, 400, "input", "Membre inconnu.");
+    const cur = await subOf(id);
+    if (cur && ["trialing", "active", "past_due"].includes(cur.status) && cur.subscription) return fail(req, 409, "paid", "Ce membre a un abonnement payant en cours.");
+    const row = b.on ? { plan: "founder", status: "comp" } : { plan: "free", status: "none" };
+    await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: id, ...row, updated_at: new Date().toISOString() }) });
+    return json(req, { ok: true, ...row });
   }
   if (act === "set_limit") {
     const id = String(b.user_id || "");
@@ -450,7 +476,7 @@ async function stt(req: Request, u: User): Promise<Response> {
   // Durée comptée : la plus grande entre celle annoncée et une estimation par la taille (le téléphone ne peut pas sous-déclarer).
   const secs = Math.min(Math.max(Math.ceil(Number(req.headers.get("x-duration")) || 0), Math.ceil(buf.byteLength / 6000), 1), 300);
   const lim = await limitsFor(u), used = await usageToday(u.id);
-  if (used.stt_seconds + secs > lim.stt_seconds) return fail(req, 429, "rate_limited", "Plafond de transcription du jour atteint.");
+  if (used.stt_seconds + secs > lim.stt_seconds) return fail(req, 429, lim.free ? "free_limit" : "rate_limited", "Plafond de transcription du jour atteint.");
   const lang = (new URL(req.url).searchParams.get("lang") || "it").slice(0, 2).toLowerCase();
   const ext = type.includes("mp4") || type.includes("m4a") || type.includes("aac") ? "m4a" : type.includes("ogg") ? "ogg" : type.includes("wav") ? "wav" : "webm";
   const file = () => new Blob([buf], { type });
@@ -706,7 +732,13 @@ async function tts(req: Request, u: User): Promise<Response> {
   const model = env("TTS_MODEL", "gpt-4o-mini-tts");
   // Phrases des leçons : même texte, même voix, même fichier pour tout le monde. Une phrase déjà produite ne coûte plus rien.
   const cache = !!b.cache;
-  const useEl = elOn();
+  // Les phrases des leçons (en cache, partagées) gardent les voix ElevenLabs pour tous. En direct : voix OpenAI pour la formule gratuite,
+  // et pour un abonné au-delà de PREMIUM_VOICE_MONTH_CHARS dans le mois (le propriétaire et les fondateurs ne sont pas concernés).
+  const pl = cache || isOwner(u) ? null : await planOf(u);
+  let useEl = elOn() && (!pl || pl.premium);
+  if (useEl && pl && pl.billing && pl.sub && pl.sub.status !== "comp") {
+    try { const rows = await restJSON("usage?user_id=eq." + u.id + "&day=gte." + today().slice(0, 8) + "01&select=tts_chars") || []; if (rows.reduce((n: number, r: any) => n + (Number(r.tts_chars) || 0), 0) > int("PREMIUM_VOICE_MONTH_CHARS", 150000)) useEl = false; } catch { /* on garde la voix */ }
+  }
   const name = cache ? "tts/" + (await sha256((useEl ? ["el2", voice, speed, lang, text] : [model, voice, speed, instructions, text]).join("\u0001"))) + ".mp3" : "";
   if (cache) {
     try {
@@ -715,7 +747,7 @@ async function tts(req: Request, u: User): Promise<Response> {
     } catch { /* cache indisponible : on produit la voix */ }
   }
   const lim = await limitsFor(u);
-  const max = isOwner(u) ? int("OWNER_TTS_DAILY_CHARS", 100000) : int("TTS_DAILY_CHARS", 25000);
+  const max = isOwner(u) ? int("OWNER_TTS_DAILY_CHARS", 100000) : lim.free ? int("FREE_TTS_DAILY_CHARS", 6000) : int("TTS_DAILY_CHARS", 25000);
   const okT = await restJSON("rpc/take_tts", { method: "POST", body: JSON.stringify({ p_user: u.id, p_day: today(), p_chars: text.length, p_max: max }) });
   if (okT !== true || lim.calls === 0) return fail(req, 429, "rate_limited", "Plafond de voix du jour atteint : la voix du téléphone prend le relais.");
   let up: Response | null = null, engine = "openai";
@@ -817,6 +849,268 @@ async function news(req: Request): Promise<Response> {
   return json(req, { items, themes });
 }
 
+// ---------- Premium : abonnement Stripe (paiement sur le web) ----------
+// Secrets : STRIPE_SECRET_KEY (clé secrète Stripe, sk_live_… ou sk_test_…) et STRIPE_WEBHOOK_SECRET (whsec_…, l'adresse du webhook
+// est …/functions/v1/api/stripe). Sans STRIPE_SECRET_KEY, le payant dort : tout le monde a accès à tout, comme avant.
+// Facultatifs : PRICE_MONTHLY (999, en centimes), PRICE_YEARLY (6999), CURRENCY (eur), TRIAL_DAYS (7),
+//   STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY (identifiants price_… si les prix sont créés dans Stripe), BILLING (off pour couper),
+//   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300), PREMIUM_VOICE_MONTH_CHARS (150000 : au-delà, voix OpenAI).
+const billingOn = () => !!env("STRIPE_SECRET_KEY") && !/^(off|false|0|non|no)$/i.test(env("BILLING", "on"));
+type Sub = { user_id: string; plan: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null };
+async function subOf(uid: string): Promise<Sub | null> {
+  try { const rows = await restJSON("subscriptions?user_id=eq." + uid + "&select=*"); return rows && rows[0] || null; } catch { return null; }
+}
+// Accès Premium : offert (fondateurs), essai, abonnement en cours, ou paiement en retard pendant que Stripe relance (3 jours de grâce).
+const premiumSub = (s: Sub | null) => !!s && (s.status === "comp" ||
+  (["trialing", "active", "past_due"].includes(s.status) && (!s.period_end || Date.parse(s.period_end) > Date.now() - 3 * 864e5)));
+async function planOf(u: User): Promise<{ billing: boolean; premium: boolean; owner: boolean; sub: Sub | null }> {
+  const sub = await subOf(u.id), owner = isOwner(u), billing = billingOn();
+  return { billing, owner, sub, premium: !billing || owner || premiumSub(sub) };
+}
+const prices = () => ({ monthly: int("PRICE_MONTHLY", 999), yearly: int("PRICE_YEARLY", 6999), currency: env("CURRENCY", "eur").toLowerCase(), trial_days: int("TRIAL_DAYS", 7) });
+// Appel à l'API Stripe (formulaire encodé, objets imbriqués « a[b][c] »).
+function form(o: any, pre = "", out: string[] = []): string[] {
+  for (const [k, v] of Object.entries(o)) {
+    if (v === undefined || v === null) continue;
+    const key = pre ? pre + "[" + k + "]" : k;
+    if (typeof v === "object") form(v, key, out); else out.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(v)));
+  }
+  return out;
+}
+async function stripe(path: string, params?: any, method = params ? "POST" : "GET"): Promise<any> {
+  const r = await fetch("https://api.stripe.com/v1/" + path, {
+    method, headers: { authorization: "Bearer " + env("STRIPE_SECRET_KEY"), "content-type": "application/x-www-form-urlencoded", "stripe-version": env("STRIPE_API_VERSION", "2024-06-20") },
+    body: params ? form(params).join("&") : undefined, signal: AbortSignal.timeout(20000),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { console.error("stripe", path, r.status, JSON.stringify(j).slice(0, 300)); throw new Error("stripe " + r.status + " " + (j.error && j.error.message || "")); }
+  return j;
+}
+const iso = (t: any) => (typeof t === "number" && t > 0 ? new Date(t * 1000).toISOString() : null);
+// Enregistre l'état d'un abonnement Stripe pour l'élève.
+async function saveStripeSub(s: any, uidHint?: string): Promise<Sub | null> {
+  let uid = (s.metadata && s.metadata.user_id) || uidHint || "";
+  if (!uid && s.customer) { const rows = await restJSON("subscriptions?customer=eq." + encodeURIComponent(String(s.customer)) + "&select=user_id"); uid = rows && rows[0] && rows[0].user_id || ""; }
+  if (!/^[0-9a-f-]{36}$/i.test(uid)) { console.error("stripe : abonnement sans élève", s.id); return null; }
+  const old = await subOf(uid);
+  if (old && old.status === "comp") return old; // un abonnement offert reste offert
+  const it = s.items && s.items.data && s.items.data[0] || {};
+  const interval = it.price && it.price.recurring && it.price.recurring.interval || it.plan && it.plan.interval;
+  const st = ["trialing", "active", "past_due", "canceled"].includes(s.status) ? s.status : s.status === "unpaid" || s.status === "incomplete_expired" ? "canceled" : "none";
+  const row: Sub = { user_id: uid, plan: interval === "year" ? "yearly" : "monthly", status: st, trial_end: iso(s.trial_end), period_end: iso(s.current_period_end ?? it.current_period_end),
+    cancel_at_period_end: !!s.cancel_at_period_end, trial_used: !!(old && old.trial_used) || !!s.trial_end || st !== "none", customer: String(s.customer || ""), subscription: s.id };
+  await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ ...row, updated_at: new Date().toISOString() }) });
+  return row;
+}
+function statusOut(p: { billing: boolean; premium: boolean; owner: boolean; sub: Sub | null }) {
+  const s = p.sub;
+  return { billing: p.billing, premium: p.premium, owner: p.owner, founder: !!s && s.status === "comp", plan: s ? s.plan : "free", status: s ? s.status : "none",
+    trial_end: s && s.trial_end || null, period_end: s && s.period_end || null, cancel_at_period_end: !!(s && s.cancel_at_period_end), trial_used: !!(s && s.trial_used),
+    manage: !!(s && s.customer), prices: prices(),
+    free: { calls: int("FREE_DAILY_CALLS", 40), tts_chars: int("FREE_TTS_DAILY_CHARS", 6000), stt_seconds: int("FREE_STT_DAILY_SECONDS", 300) } };
+}
+// Adresse de retour après le paiement : la page de l'app d'où vient la demande, jamais un autre site.
+function backUrl(req: Request, given: unknown): string | null {
+  const origin = req.headers.get("origin") || "";
+  try {
+    const u = new URL(String(given || ""));
+    if (!/^https?:$/.test(u.protocol)) return null;
+    if (origin && u.origin !== origin) return null;
+    const allowed = env("ALLOWED_ORIGINS").split(",").map((s) => s.trim()).filter(Boolean);
+    if (allowed.length && !allowed.includes(u.origin)) return null;
+    u.search = ""; u.hash = ""; return u.toString();
+  } catch { return null; }
+}
+async function billing(req: Request, u: User): Promise<Response> {
+  let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
+  const act = b && b.action;
+  let p = await planOf(u);
+  if (act === "status") {
+    // Abonnement Stripe dont la période est passée (webhook manqué) : on redemande son état.
+    const s = p.sub;
+    if (p.billing && s && s.subscription && s.status !== "comp" && s.period_end && Date.parse(s.period_end) < Date.now()) {
+      try { await saveStripeSub(await stripe("subscriptions/" + s.subscription), u.id); p = await planOf(u); } catch { /* on garde l'état connu */ }
+    }
+    return json(req, statusOut(p));
+  }
+  if (!p.billing) return fail(req, 409, "billing_off", "Le paiement n'est pas encore ouvert : tout est accessible gratuitement.");
+  if (act === "checkout") {
+    if (p.premium && p.sub && p.sub.status !== "canceled") return fail(req, 409, "already", "Tu as déjà Premium.");
+    const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
+    const plan = b.plan === "monthly" ? "monthly" : "yearly", pr = prices();
+    let customer = p.sub && p.sub.customer || "";
+    if (!customer) {
+      const c = await stripe("customers", { email: u.email || undefined, metadata: { user_id: u.id } });
+      customer = c.id;
+      await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: u.id, customer, updated_at: new Date().toISOString() }) });
+    }
+    const priceId = env(plan === "monthly" ? "STRIPE_PRICE_MONTHLY" : "STRIPE_PRICE_YEARLY");
+    const ui = ["fr", "en", "es"].includes(b.ui) ? b.ui : "auto";
+    const names: Record<string, string[]> = { fr: ["Premium — mensuel", "Premium — annuel"], en: ["Premium — monthly", "Premium — yearly"], es: ["Premium — mensual", "Premium — anual"] };
+    const nm = (names[ui] || names.fr)[plan === "monthly" ? 0 : 1];
+    const trial = !(p.sub && p.sub.trial_used) && pr.trial_days > 0;
+    const sess = await stripe("checkout/sessions", {
+      mode: "subscription", customer, client_reference_id: u.id, locale: ui, allow_promotion_codes: "true",
+      line_items: { 0: priceId ? { price: priceId, quantity: 1 } : { quantity: 1, price_data: { currency: pr.currency, unit_amount: plan === "monthly" ? pr.monthly : pr.yearly, recurring: { interval: plan === "monthly" ? "month" : "year" }, product_data: { name: nm } } } },
+      subscription_data: { metadata: { user_id: u.id }, ...(trial ? { trial_period_days: pr.trial_days } : {}) },
+      metadata: { user_id: u.id },
+      success_url: back + "?billing=ok&session_id={CHECKOUT_SESSION_ID}", cancel_url: back + "?billing=cancel",
+    });
+    return json(req, { url: sess.url });
+  }
+  if (act === "portal") {
+    const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
+    if (!p.sub || !p.sub.customer) return fail(req, 404, "no_subscription", "Aucun abonnement à gérer.");
+    const s = await stripe("billing_portal/sessions", { customer: p.sub.customer, return_url: back + "?billing=portal" });
+    return json(req, { url: s.url });
+  }
+  if (act === "sync") {
+    // Retour de la page de paiement : on lit tout de suite l'abonnement, sans attendre le webhook.
+    const id = String(b.session_id || "");
+    if (/^cs_[A-Za-z0-9_]+$/.test(id)) {
+      const sess = await stripe("checkout/sessions/" + id + "?expand[]=subscription");
+      if (sess.client_reference_id === u.id && sess.subscription) await saveStripeSub(typeof sess.subscription === "string" ? await stripe("subscriptions/" + sess.subscription) : sess.subscription, u.id);
+    } else if (p.sub && p.sub.subscription) await saveStripeSub(await stripe("subscriptions/" + p.sub.subscription), u.id);
+    return json(req, statusOut(await planOf(u)));
+  }
+  return fail(req, 400, "input", "Action inconnue.");
+}
+// Webhook Stripe : signature vérifiée (en-tête Stripe-Signature, HMAC-SHA256 du corps avec STRIPE_WEBHOOK_SECRET).
+async function stripeHook(req: Request): Promise<Response> {
+  const secret = env("STRIPE_WEBHOOK_SECRET"), raw = await req.text();
+  if (!secret || !env("STRIPE_SECRET_KEY")) return fail(req, 503, "not_configured", "Webhook non configuré.");
+  const sig = req.headers.get("stripe-signature") || "";
+  const t = (sig.match(/(?:^|,)t=(\d+)/) || [])[1], v1 = [...sig.matchAll(/(?:^|,)v1=([0-9a-f]+)/g)].map((m) => m[1]);
+  if (!t || !v1.length || Math.abs(Date.now() / 1000 - +t) > 600) return fail(req, 400, "signature", "Signature invalide.");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = [...new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(t + "." + raw)))].map((x) => x.toString(16).padStart(2, "0")).join("");
+  if (!v1.some((x) => x.length === mac.length && [...x].reduce((d, c, i) => d | (c.charCodeAt(0) ^ mac.charCodeAt(i)), 0) === 0)) return fail(req, 400, "signature", "Signature invalide.");
+  let ev: any; try { ev = JSON.parse(raw); } catch { return fail(req, 400, "input", "Corps illisible."); }
+  try {
+    const o = ev.data && ev.data.object || {};
+    if (ev.type === "checkout.session.completed" && o.subscription) await saveStripeSub(await stripe("subscriptions/" + o.subscription), o.client_reference_id || (o.metadata && o.metadata.user_id));
+    else if (/^customer\.subscription\.(created|updated|deleted|trial_will_end|paused|resumed)$/.test(ev.type)) await saveStripeSub(o.id ? await stripe("subscriptions/" + o.id).catch(() => o) : o);
+  } catch (e) { console.error("webhook", ev.type, e); return fail(req, 500, "server", "Erreur de traitement."); }
+  return json(req, { received: true });
+}
+
+// ---------- Rappels : notifications push ----------
+async function config(key: string): Promise<any> {
+  const rows = await restJSON("app_config?key=eq." + key + "&select=value"); return rows && rows[0] ? rows[0].value : null;
+}
+async function addConfig(key: string, value: unknown, replace = false) {
+  await restJSON("app_config?on_conflict=key", { method: "POST", headers: { prefer: (replace ? "resolution=merge-duplicates" : "resolution=ignore-duplicates") + ",return=minimal" }, body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }) });
+}
+let vapidKeys: Vapid | null = null;
+async function vapid(): Promise<Vapid> {
+  if (vapidKeys) return vapidKeys;
+  let v = await config("vapid");
+  if (!v || !v.publicKey) { await addConfig("vapid", await newVapid()); v = await config("vapid"); } // deux créations simultanées : la première gagne
+  if (!v || !v.publicKey) throw new Error("vapid");
+  return (vapidKeys = v);
+}
+// L'adresse et le jeton que la base utilise pour réveiller la fonction toutes les 15 minutes (voir la migration).
+let cronSeen = false;
+async function ensureCron() {
+  if (cronSeen) return;
+  try {
+    const url = SB + "/functions/v1/api/push", c = await config("cron");
+    if (!c || c.url !== url || !c.token) await addConfig("cron", { url, token: (c && c.token) || [...crypto.getRandomValues(new Uint8Array(24))].map((x) => x.toString(16).padStart(2, "0")).join("") }, true);
+    cronSeen = true;
+  } catch (e) { console.error("cron", e); }
+}
+const pushSubject = () => env("PUSH_SUBJECT") || "mailto:" + (owners()[0] || "contact@example.com");
+const REM_COLS = "user_id,enabled,hour,tz,ui,course,name,last_day,streak,paused,sent_day,sent,created_at";
+const validTz = (tz: unknown) => { try { new Intl.DateTimeFormat("en", { timeZone: String(tz) }); return /^[A-Za-z_+\-/0-9]{1,60}$/.test(String(tz)); } catch { return false; } };
+async function remOf(uid: string): Promise<Rem | null> { const rows = await restJSON("reminders?user_id=eq." + uid + "&select=" + REM_COLS); return rows && rows[0] || null; }
+async function setRem(uid: string, patch: Json) {
+  await restJSON("reminders?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ user_id: uid, ...patch, updated_at: new Date().toISOString() }) });
+}
+async function sendTo(uid: string, msg: unknown): Promise<number> {
+  const subs = await restJSON("push_subs?user_id=eq." + uid + "&select=endpoint,p256dh,auth") || [];
+  const v = await vapid(); let ok = 0;
+  for (const s of subs) {
+    const st = await sendPush(s, msg, v, pushSubject());
+    if (st >= 200 && st < 300) ok++;
+    else if (st === 404 || st === 410) await rest("push_subs?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "DELETE" }); // téléphone désabonné
+    else console.error("push", st, new URL(s.endpoint).host);
+  }
+  return ok;
+}
+async function push(req: Request, u: User): Promise<Response> {
+  let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Requête illisible."); }
+  const act = b && b.action;
+  if (act === "key") return json(req, { key: (await vapid()).publicKey });
+  // État envoyé par l'app à l'ouverture et après chaque séance : de quoi choisir le bon rappel.
+  const state = (x: any): Json => {
+    const o: Json = {};
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(x.last || ""))) o.last_day = x.last;
+    if (Number.isFinite(+x.streak)) o.streak = Math.max(0, Math.min(100000, Math.floor(+x.streak)));
+    if (validTz(x.tz)) o.tz = String(x.tz);
+    if (["fr", "en", "es"].includes(x.ui)) o.ui = x.ui;
+    if (/^[a-z]{2}$/.test(String(x.course || ""))) o.course = x.course;
+    if (typeof x.name === "string") o.name = x.name.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 60);
+    if (Number.isInteger(x.hour) && x.hour >= 0 && x.hour <= 23) o.hour = x.hour;
+    return o;
+  };
+  if (act === "subscribe") {
+    const s = b.sub || {}, k = s.keys || {};
+    if (!/^https:\/\/[^\s]{10,990}$/.test(String(s.endpoint || "")) || !/^[A-Za-z0-9_-]{80,100}$/.test(String(k.p256dh || "")) || !/^[A-Za-z0-9_-]{16,40}$/.test(String(k.auth || "")))
+      return fail(req, 400, "input", "Abonnement aux notifications invalide.");
+    await restJSON("push_subs?on_conflict=endpoint", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ endpoint: s.endpoint, user_id: u.id, p256dh: k.p256dh, auth: k.auth }) });
+    await setRem(u.id, { ...state(b), enabled: true, paused: false });
+    return json(req, { ok: true });
+  }
+  if (act === "unsubscribe") {
+    if (b.endpoint) await rest("push_subs?endpoint=eq." + encodeURIComponent(String(b.endpoint)) + "&user_id=eq." + u.id, { method: "DELETE" });
+    const left = await restJSON("push_subs?user_id=eq." + u.id + "&select=endpoint") || [];
+    if (!left.length || b.all) { await setRem(u.id, { enabled: false }); if (b.all) await rest("push_subs?user_id=eq." + u.id, { method: "DELETE" }); }
+    return json(req, { ok: true });
+  }
+  if (act === "state") {
+    const o = state(b), old = await remOf(u.id);
+    if (!old && !Object.keys(o).length) return json(req, { ok: true });
+    if (old && old.paused && o.last_day && (!old.last_day || String(o.last_day) > old.last_day)) o.paused = false; // il est revenu : les rappels reprennent
+    await setRem(u.id, o);
+    return json(req, { ok: true, enabled: old ? old.enabled : false });
+  }
+  if (act === "get") {
+    const r = await remOf(u.id), subs = await restJSON("push_subs?user_id=eq." + u.id + "&select=endpoint") || [];
+    return json(req, { enabled: !!(r && r.enabled), hour: r ? r.hour : 19, devices: subs.length, endpoints: subs.map((s: any) => s.endpoint) });
+  }
+  if (act === "test") {
+    const r = await remOf(u.id); if (!r) return fail(req, 404, "no_device", "Aucun téléphone abonné.");
+    const n = await sendTo(u.id, { ...message("test", r), tag: "ipp-test", url: "./" });
+    return n ? json(req, { ok: true, sent: n }) : fail(req, 502, "push_failed", "Le rappel n'a pas pu être envoyé.");
+  }
+  return fail(req, 400, "input", "Action inconnue.");
+}
+// Toutes les 15 minutes : les rappels de l'heure, pour chaque élève selon son fuseau.
+async function pushRun(req: Request): Promise<Response> {
+  const c = await config("cron").catch(() => null), tok = req.headers.get("x-cron") || "";
+  if (!c || !c.token || tok.length !== c.token.length || tok !== c.token) return fail(req, 403, "forbidden", "Jeton invalide.");
+  const rems: Rem[] = await restJSON("reminders?enabled=eq.true&select=" + REM_COLS + "&limit=5000") || [];
+  const devs: any[] = await restJSON("push_subs?select=user_id&limit=20000") || [];
+  const has = new Set(devs.map((d) => d.user_id));
+  let sent = 0, checked = 0;
+  const now = new Date();
+  for (const r of rems) {
+    if (!has.has((r as any).user_id)) continue;
+    checked++;
+    let plan: { trialing?: boolean; trial_end?: string | null } = {};
+    const sub = await subOf((r as any).user_id);
+    if (sub && sub.status === "trialing" && !sub.cancel_at_period_end) plan = { trialing: true, trial_end: sub.trial_end };
+    const kind = pick(r, plan, now); if (!kind) continue;
+    const t = localNow(r.tz, now), doy = Math.floor(Date.parse(t.day) / 864e5);
+    const m = message(kind, r, { variant: doy });
+    const n = await sendTo((r as any).user_id, { ...m, tag: "ipp-" + kind, url: kind === "trial" ? "./?go=premium" : "./?go=lesson", kind });
+    const prev = r.sent_day === t.day ? r.sent.split(",").filter(Boolean) : [];
+    await setRem((r as any).user_id, { sent_day: t.day, sent: prev.concat(kind).join(","), ...(kind === "last" ? { paused: true } : {}) });
+    if (n) sent++;
+  }
+  return json(req, { ok: true, checked, sent });
+}
+
 // ---------- Routage ----------
 export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });
@@ -824,6 +1118,9 @@ export async function handle(req: Request): Promise<Response> {
   if (!SB || !SERVICE) return fail(req, 503, "not_configured", "Serveur incomplet : SUPABASE_URL ou la clé serveur manquent.");
   const route = new URL(req.url).pathname.replace(/\/+$/, "").split("/").pop();
   try {
+    // Sans connexion : le webhook Stripe et le réveil des rappels par la base (chacun vérifie sa signature ou son jeton).
+    if (route === "stripe") return await stripeHook(req);
+    if (route === "push" && req.headers.get("x-cron")) return await pushRun(req);
     const u = await getUser(req);
     if (!u) return fail(req, 401, "not_signed_in", "Connecte-toi pour continuer.");
     // Membres : le propriétaire, les invités et, si les inscriptions sont ouvertes, toute personne à l'adresse confirmée.
@@ -843,6 +1140,8 @@ export async function handle(req: Request): Promise<Response> {
     if (route === "stt") return await stt(req, u);
     if (route === "tts") return await tts(req, u);
     if (route === "news") return await news(req);
+    if (route === "billing") return await billing(req, u);
+    if (route === "push") { ensureCron(); return await push(req, u); }
     return fail(req, 404, "input", "Adresse inconnue.");
   } catch (e) {
     console.error(e);

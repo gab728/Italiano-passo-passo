@@ -21,6 +21,8 @@ NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/spanish.cjs; R7=$
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/i18n.cjs; R8=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/french.cjs; R9=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/english.cjs; R10=$?
+node tests/premium.cjs; R11=$?
+NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/premium-ui.cjs; R12=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/link.cjs
 kill $PID
-[ $R1 -eq 0 ] && [ $R2 -eq 0 ] && [ $R3 -eq 0 ] && [ $R4 -eq 0 ] && [ $R5 -eq 0 ] && [ $R6 -eq 0 ] && [ $R7 -eq 0 ] && [ $R8 -eq 0 ] && [ $R9 -eq 0 ] && [ $R10 -eq 0 ]
+[ $R1 -eq 0 ] && [ $R2 -eq 0 ] && [ $R3 -eq 0 ] && [ $R4 -eq 0 ] && [ $R5 -eq 0 ] && [ $R6 -eq 0 ] && [ $R7 -eq 0 ] && [ $R8 -eq 0 ] && [ $R9 -eq 0 ] && [ $R10 -eq 0 ] && [ $R11 -eq 0 ] && [ $R12 -eq 0 ]

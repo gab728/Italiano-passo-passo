@@ -300,7 +300,15 @@
           const nc = btn("Nouveau code"); nc.onclick = async () => { nc.disabled = true; try { const x = await W.admin("invite", { email: m.email }); showInvite(m.name, x.email, x.code); res.scrollIntoView({ behavior: "smooth" }); } catch (x) { speakNote(x.message); } nc.disabled = false; };
           const rm = btn("Retirer"); rm.onclick = async () => { if (!rm.dataset.sure) { rm.dataset.sure = 1; rm.textContent = "Confirmer le retrait"; return; } rm.disabled = true; try { await W.admin("remove", { user_id: m.user_id }); load(); } catch (x) { speakNote(x.message); rm.disabled = false; } };
           row.append(nc, rm);
+          // Premium offert : membres fondateurs ou proches (un abonnement payant en cours n'est pas touché).
+          const pl = m.plan || {}, paid = ["trialing", "active", "past_due"].includes(pl.status);
+          if (!paid) {
+            const cp = btn(pl.status === "comp" ? "Retirer Premium offert" : "Offrir Premium");
+            cp.onclick = async () => { cp.disabled = true; try { await W.admin("set_comp", { user_id: m.user_id, on: pl.status !== "comp" }); load(); } catch (x) { speakNote(x.message); cp.disabled = false; } };
+            row.append(cp);
+          }
         }
+        if (m.plan) { const pp = el("p", "fr"); pp.textContent = m.plan.status === "comp" ? "Premium offert" : m.plan.premium ? (m.plan.status === "trialing" ? "Premium · essai" : "Premium · abonné") : "Formule gratuite"; st.after(pp); }
         li.append(row); ul.append(li);
       });
       box.append(ul, el("p", "fr", "Plafond vide : valeur par défaut (" + r.defaults.calls + " demandes par jour, " + r.defaults.owner_calls + " pour toi). Modèles : " + r.models.quick + " pour la conversation, " + r.models.default + " pour écrire les leçons."));

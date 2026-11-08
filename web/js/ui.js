@@ -194,6 +194,8 @@
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
     const doneN = ss.filter(isDone).length;
     root.append(lessonHero(cu, ss, doneN));
+    // Rappels sur le téléphone (après une première séance) et offre Premium à un moment naturel.
+    if (window.PREM) PREM.homeCards(root);
     // Le journal du jour, juste sous la leçon (sauf en hébreu tant que l'alef-bet n'est pas fini).
     if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) root.append(NEWS.homeCard());
     // Ta journée : quatre petites choses à faire, dans une seule carte.
@@ -669,6 +671,7 @@
     id.append(txt("h1", null, firstName() || "Toi"));
     const lv = vLevel(); id.append(txt("span", "muted", "Niveau " + lv.cecr + (W.me && W.me.owner ? " · créateur de l'app" : ""))); root.append(id);
     if (!firstName()) root.append(nameCard());
+    if (window.PREM) PREM.profileTop(root);
     const sk = streak();
     if (typeof RV !== "undefined") RV.progress(root);
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
@@ -692,6 +695,7 @@
       const c = el("button", "chip" + (GOAL === g ? " sel" : "")); c.type = "button"; c.textContent = l; c.setAttribute("aria-pressed", String(GOAL === g));
       c.onclick = () => { S.ob = Object.assign({}, S.ob || {}, { goal: g }); GOAL = g; save(); profileTab(); }; gl.append(c);
     }); goalC.append(gl); root.append(goalC);
+    if (window.PREM) PREM.profileSettings(root);
     if (Object.keys(COURSES).length > 1) {
       const lc = card("goal-c"); lc.append(txt("b", null, "Langue apprise"), txt("small", "muted", "Chaque langue garde sa progression"));
       const cl = el("div", "chips"); Object.values(COURSES).forEach((c) => { const x = el("button", "chip" + (c.id === C().id ? " sel" : "")); x.type = "button"; x.innerHTML = '<i class="flag flag-' + c.id + '" aria-hidden="true"></i>'; x.append(document.createTextNode(cap(T(c.name)))); x.setAttribute("aria-pressed", String(c.id === C().id)); x.onclick = () => pickCourse(c.id, () => profileTab()); cl.append(x); });

@@ -1147,3 +1147,48 @@ h1, h2, h3 { font-weight: 800; }
 .ws-word, .wt-it { font-style: normal; font-weight: 800; }
 .wt-li-t .it, .nw-kw-t .it { font-style: normal; font-weight: 700; }
 .lhero.over .lh-title { font-style: normal; font-weight: 800; }
+
+/* ---------- Premium : l'offre, la carte du profil ; rappels ---------- */
+body.pw-open { overflow: hidden; }
+.pw { position: fixed; inset: 0; z-index: 2000; background: rgba(14, 14, 19, .5); display: flex; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity .2s; }
+.pw.in { opacity: 1; }
+.pw-box { position: relative; width: 100%; max-width: 480px; max-height: 94vh; overflow-y: auto; background: var(--surface); color: var(--ink); border-radius: 28px 28px 0 0;
+  padding: 26px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; transform: translateY(24px); transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+.pw.in .pw-box { transform: none; }
+@media (min-width: 600px) { .pw { align-items: center; } .pw-box { border-radius: 28px; } }
+.pw-x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--chip); color: var(--ink); display: grid; place-items: center; }
+.pw-x svg { width: 18px; height: 18px; }
+.pw-badge { align-self: flex-start; background: linear-gradient(90deg, #FFB800, #FF5B2E); color: #fff; font-weight: 900; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; }
+.pw-h { margin: 2px 40px 0 0; font-size: 25px; line-height: 1.15; font-weight: 900; }
+.pw-sub { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.4; }
+.pw-feat { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 8px; }
+.pw-feat li { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; }
+.pw-feat svg { flex: none; width: 22px; height: 22px; padding: 3px; border-radius: 50%; background: var(--ok-bg); color: var(--ok); }
+.pw-plans { display: grid; gap: 10px; margin-top: 4px; }
+.pw-plan { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 14px 16px; border-radius: 18px; border: 2.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+.pw-plan.sel { border-color: var(--brand); background: var(--brand-soft); }
+.pw-plan-t { display: flex; width: 100%; justify-content: space-between; gap: 10px; font-size: 16px; }
+.pw-plan-t b { font-weight: 900; }
+.pw-plan-t span { font-weight: 800; }
+.pw-plan-n { color: var(--muted); font-size: 13px; font-weight: 700; }
+.pw-plan-b { position: absolute; top: -11px; right: 14px; background: var(--ok-fill); color: #fff; font-weight: 900; font-size: 12px; padding: 3px 9px; border-radius: 999px; }
+.pw-then { margin: 2px 0 0; text-align: center; font-size: 14px; font-weight: 800; color: var(--ink); }
+.pw-cta { height: 54px; border: 0; border-radius: 16px; background: var(--brand); color: var(--brand-ink); font: inherit; font-size: 17px; font-weight: 900; box-shadow: 0 4px 0 var(--brand-deep); }
+.pw-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--brand-deep); }
+.pw-cta:disabled { opacity: .7; }
+.pw-later { border: 0; background: none; color: var(--muted); font: inherit; font-size: 15px; font-weight: 800; padding: 6px; }
+.pw-legal { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.4; text-align: center; }
+.pw-yay .pw-box { align-items: center; text-align: center; }
+.pw-yay .pw-h { margin: 0; }
+.pw-confetti { font-size: 56px; line-height: 1; }
+.pw-card.on { background: linear-gradient(135deg, #FFF6DB, #FFE9DF); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pw-card.on { background: linear-gradient(135deg, #33290F, #33201A); } }
+.pw-card-t { display: flex; flex-direction: column; gap: 3px; }
+.rm-card { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+.rm-card .rm-bell { font-size: 30px; line-height: 1; }
+.rm-card .rm-t { flex: 1 1 200px; display: flex; flex-direction: column; gap: 4px; }
+.rm-card .chips, .rm-card .acts { flex-basis: 100%; }
+.rm-card .chip, .rm-set .chip { white-space: nowrap; }
+.rm-card .rm-done { align-self: center; flex: 1; }
+.pw-open .speaknote { z-index: 2100; }
+.rm-card .chips, .rm-set .chips { flex-wrap: wrap; }
