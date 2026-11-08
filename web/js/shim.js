@@ -8,6 +8,14 @@
   const okCfg = (c) => !!(c && c.supabaseUrl && c.supabaseKey && !/TON-PROJET/.test(c.supabaseUrl));
   const CFG = okCfg(window.APP_CONFIG) ? window.APP_CONFIG : okCfg(window.APP_CONFIG_BUILT) ? window.APP_CONFIG_BUILT : (window.APP_CONFIG || {});
   const gate = document.getElementById("gate");
+  // Écran de démarrage (Lino dans son avion) : il s'efface dès que l'accueil, la connexion ou l'app est prête.
+  const bootOff = () => {
+    const b = document.getElementById("boot"); if (!b || b.classList.contains("boot-out")) return;
+    b.classList.add("boot-out"); setTimeout(() => b.remove(), 450);
+  };
+  window.bootOff = bootOff;
+  if (gate) new MutationObserver(() => { if (!gate.hidden) bootOff(); }).observe(gate, { attributes: true, attributeFilter: ["hidden"] });
+  setTimeout(bootOff, 15000);
   const APP_KEYS = ["italiano-in-treno-v1", "italiano-in-treno-v1-base", "italiano-in-treno-v1-base-en", "italiano-in-treno-v1-base-es", "ipp-plan", "ipp-rm-sent"];
   // Langue de l'élève (interface) : fr, en ou es. Les leçons écrites pour un anglophone ou un hispanophone sont rangées à part dans la
   // base (identifiant préfixé « uen- » / « ues- ») : elles ne se mélangent pas aux leçons écrites pour les francophones.
@@ -299,10 +307,11 @@
     resolveReady(s);
     loadMe();
     try {
-      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
+      for (const f of ["js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js", "js/fx.js"]) await loadScript(f + (window.APP_BUILD ? "?v=" + window.APP_BUILD : ""));
     } catch (e) {
       document.getElementById("app").textContent = "Impossible de charger l'app. Vérifie le réseau, puis recharge la page.";
     }
+    bootOff();
   }
 
   /* ---------- Accueil, inscription et connexion ----------

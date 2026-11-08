@@ -188,5 +188,8 @@
  "Le changement n'a pas pu se faire. Réessaie dans un moment.": "The change didn't go through. Try again in a moment.",
  "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et {1} minutes par jour. Expert : {2} minutes par jour.": "One new lesson and {0} minutes of conversation a day. Premium: every lesson and {1} minutes a day. Expert: {2} minutes a day.",
  "Voir les formules": "See plans",
- "Essayer gratuitement": "Try it free"
+ "Essayer gratuitement": "Try it free",
+ "{0} bonnes réponses d'affilée !": "{0} correct answers in a row!",
+ "Objectif du jour atteint !": "Daily goal reached!",
+ "Série : {0} jours d'affilée !": "Streak: {0} days in a row!"
 }

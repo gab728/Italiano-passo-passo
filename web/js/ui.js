@@ -865,6 +865,7 @@
     try { if (navigator.vibrate) navigator.vibrate(fb.classList.contains("ok") ? 12 : [24, 40, 24]); } catch (e) { /* rien */ }
     const ab = root.querySelector(":scope > .actionbar"); if (ab) ab.innerHTML = "";
     { const s0 = fb.querySelector("strong"); if (s0 && !s0.querySelector(".lino")) { const l = lino(fb.classList.contains("ok") ? "joy" : "think", 46); l.classList.add("fb-lino"); s0.append(l); } }
+    if (window.FX) try { FX.answer(fb.classList.contains("ok"), fb); } catch (e) { /* rien */ }
     if (fb.classList.contains("ko")) { const s = fb.querySelector("strong"); if (s && cur && cur.q[cur.i] && !cur.q[cur.i].retry) s.after(txt("span", "fb-tag", "Reviendra en fin de leçon")); }
     const why = fb.querySelector(".why > .btn"); if (why) why.textContent = "Pourquoi ? Demander à " + PERSONAS.giulia.name;
     const sec = el("div", "fb-acts"); fb.querySelectorAll(":scope > .say, :scope > .btn:not(.primary)").forEach((b) => sec.append(b)); const prim = fb.querySelector(":scope > .btn.primary"); if (sec.children.length) fb.insertBefore(sec, prim);

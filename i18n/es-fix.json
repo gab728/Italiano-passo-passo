@@ -253,5 +253,8 @@
  "Le changement n'a pas pu se faire. Réessaie dans un moment.": "No se pudo hacer el cambio. Inténtalo de nuevo en un momento.",
  "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et {1} minutes par jour. Expert : {2} minutes par jour.": "Una lección nueva y {0} minutos de conversación al día. Premium: todas las lecciones y {1} minutos al día. Expert: {2} minutos al día.",
  "Voir les formules": "Ver fórmulas",
- "Essayer gratuitement": "Probar gratis"
+ "Essayer gratuitement": "Probar gratis",
+ "{0} bonnes réponses d'affilée !": "¡{0} respuestas correctas seguidas!",
+ "Objectif du jour atteint !": "¡Objetivo del día cumplido!",
+ "Série : {0} jours d'affilée !": "Racha: ¡{0} días seguidos!"
 }

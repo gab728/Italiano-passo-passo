@@ -699,7 +699,7 @@ function vcEnd() {
 async function vBilan(A, script) {
   qbar(null, null, "Bilan", "← Accueil", home); view = "vbilan";
   body.append(el("div", "kind", "Bilan de la conversation")); const h = el("h2"); h.textContent = A.title; body.append(h);
-  const wait = el("p", "fr", "Claude relit ce que tu as dit. Cela peut prendre jusqu'à une minute."); wait.setAttribute("role", "status"); body.append(wait); const host = body;
+  const wait = el("p", "fr ai-wait", "Claude relit ce que tu as dit. Cela peut prendre jusqu'à une minute."); wait.setAttribute("role", "status"); body.append(wait); const host = body;
   let r;
   try { r = await askJSON("Tu es professeur d'" + LN() + ". Voici une conversation orale (transcrite par reconnaissance vocale, donc sans ponctuation fiable) entre une professeure et un élève francophone.\nSujet : " + A.goal + "\nPoints étudiés : " + (A.focus || "") + "\n\n" + script + "\n\nAnalyse uniquement les répliques de l'élève, en ignorant l'orthographe et la ponctuation (c'est une transcription). Réponds uniquement avec un objet JSON de cette forme : {\"resume\": \"deux phrases en français, honnêtes et encourageantes, sur ce qui est réussi et ce qui reste à travailler\", \"erreurs\": [{\"type\": \"grammaire\" ou \"vocabulaire\" ou \"registre\", \"dit\": \"ce que l'élève a dit\", \"mieux\": \"la version corrigée en " + LN() + "\", \"regle\": \"l'explication en une phrase, en français\"}], \"mots\": [{\"it\": \"mot ou expression utile en " + LN() + ", forme du dictionnaire\", \"fr\": \"traduction française\"}]}. Au plus 6 erreurs et 6 mots."); }
   catch (e) { if (host.isConnected) { wait.textContent = aiFail(e); const again = btn("Réessayer", "primary"); again.onclick = () => vBilan(A, script); host.append(again); } return; }

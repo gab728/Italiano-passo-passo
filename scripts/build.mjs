@@ -106,10 +106,11 @@ for (const u of UIS) delete catalog["ui_" + u];
 writeFileSync(join(WEB, "content", "catalog.json"), catJSON);
 writeFileSync(join(WEB, "js", "app.js"), "/* Généré par scripts/build.mjs à partir de src/app.html : ne pas modifier à la main. */\n" + js);
 
-const files = ["fonts/nunito-latin-wght-normal.woff2", "fonts/nunito-latin-ext-wght-normal.woff2", "fonts/nunito-latin-wght-italic.woff2", "fonts/nunito-latin-ext-wght-italic.woff2", "js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
+const files = ["fonts/nunito-latin-wght-normal.woff2", "fonts/nunito-latin-ext-wght-normal.woff2", "fonts/nunito-latin-wght-italic.woff2", "fonts/nunito-latin-ext-wght-italic.woff2", "js/i18n.js", "js/app.js", "js/voice.js", "js/tts.js", "js/web.js", "js/dm.js", "js/ui.js", "js/quiz.js", "js/words.js", "js/news.js", "js/train.js", "js/premium.js", "js/fx.js", "css/app.css", "js/shim.js", "js/supabase.js", "css/web.css", "content/catalog.json", "config.js", "manifest.webmanifest", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png"];
 const hash = createHash("sha256");
 for (const f of files.concat(uiFiles)) if (existsSync(join(WEB, f))) hash.update(readFileSync(join(WEB, f)));
 hash.update(css);
+hash.update(read("src/plane.svg"));
 // Photos des thèmes (crédits) et portraits des personnages : ils font partie de la version.
 const CRED = join(WEB, "img", "photos", "credits.json");
 const PHOTOS = existsSync(CRED) ? JSON.parse(readFileSync(CRED, "utf8")) : {};
@@ -131,6 +132,9 @@ const INLINE_CFG = (() => {
     return JSON.stringify({ supabaseUrl: c.supabaseUrl, supabaseKey: c.supabaseKey }).replace(/</g, "\\u003c");
   } catch (e) { return "null"; }
 })();
+// Lino dans son avion : écran de démarrage, et modèle repris par js/fx.js pour les attentes.
+const PLANE = read("src/plane.svg").replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+const SKY = '<div class="lp-sky"><i class="lp-cloud c1"></i><i class="lp-cloud c2"></i><i class="lp-cloud c3"></i><i class="lp-wind w1"></i><i class="lp-wind w2"></i><i class="lp-wind w3"></i></div>';
 const html = `<!doctype html>
 <html lang="fr">
 <head>
@@ -155,6 +159,8 @@ ${fonts}
 <link rel="stylesheet" href="css/app.css?v=${BUILD}">
 </head>
 <body>
+<div id="boot" class="boot" aria-hidden="true"><div class="lp lp-boot">${SKY}<div class="lp-plane">${PLANE}</div></div><p class="boot-name" data-no-i18n>${title}</p><div class="boot-dots"><i></i><i></i><i></i></div></div>
+<template id="lp-plane">${PLANE}</template>
 <div id="gate" class="gate" hidden></div>
 <div id="app" hidden></div>
 <noscript>Cette app a besoin de JavaScript.</noscript>

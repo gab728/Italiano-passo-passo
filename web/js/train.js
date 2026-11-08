@@ -189,7 +189,7 @@
     if (window.PREM && PREM.gateReview(faultsOnly ? "faults" : "rv")) return; // formule gratuite : un essai
     cur = null; qbar(null, null, "Révision sur mesure", "← Mots", () => UI.go("words"));
     body.append(el("div", "kind", "Révision sur mesure"), el("h2", null, faultsOnly ? "Tes fautes, avec d'autres phrases" : "Ta série du jour"));
-    const st = el("div", "rv-prep"); st.append(lino("think", 72)); const sp = el("p", "fr"); sp.textContent = "Claude prépare 12 exercices à partir de tes fautes, de la grammaire de tes leçons et de tes mots à revoir…"; st.append(sp); body.append(st);
+    const st = el("div", "rv-prep ai-wait"); if (!window.FX) st.append(lino("think", 72)); const sp = el("p", "fr"); sp.textContent = "Claude prépare 12 exercices à partir de tes fautes, de la grammaire de tes leçons et de tes mots à revoir…"; st.append(sp); body.append(st);
     try {
       const set = await generate(faultsOnly); rvAll()[cid()] = set; save(); rvRun(set);
     } catch (e) {
