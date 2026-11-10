@@ -1,4 +1,4 @@
-# Writing a French lesson for "Italiano passo passo"
+# Writing a French lesson for "NOE"
 
 The app teaches **standard French from France** to adult **English speakers** (the lessons are later adapted for Spanish speakers by
 a separate pass — write for English speakers only). Each lesson of the program is a file `content/fr/lessons/<id>.json`. The full

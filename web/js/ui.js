@@ -679,10 +679,10 @@
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
     const acts = el("div", "acts two");
     acts.append(pillBtn("Inviter un ami", "dark", () => {
-      const text = T("Viens apprendre l'" + LN() + " avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink());
+      const text = T("Viens apprendre l'" + LN() + " avec moi sur NOE : des leçons courtes et des conversations à voix haute. Crée ton compte ici : " + appLink());
       if (navigator.share) navigator.share({ text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => speakNote("Lien d'invitation copié. Colle-le dans un message.")); else speakNote(text);
     }));
-    acts.append(pillBtn("Partager ma série", "", () => { const text = T((sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur Italiano passo passo. ") + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
+    acts.append(pillBtn("Partager ma série", "", () => { const text = T((sk ? sk + (sk > 1 ? " jours" : " jour") + " d'" + LN() + " d'affilée" : "J'apprends l'" + LN()) + " sur NOE. ") + appLink(); if (navigator.share) navigator.share({ text }).catch(() => {}); else navigator.clipboard && navigator.clipboard.writeText(text).then(() => speakNote("Copié.")); }));
     root.append(acts);
     if (window.PLACE) {
       const pt = (S.ptest || {})[C().id], tc = card("goal-c pt-c"); tc.append(txt("b", null, "Test de niveau"), txt("small", "muted", pt ? "Dernier résultat : " + pt.lv + ". Le refaire ajuste ton point de départ." : "12 questions pour savoir où commencer en " + LN() + "."));

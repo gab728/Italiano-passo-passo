@@ -1,8 +1,8 @@
 {
-  "name": "italiano-passo-passo",
+  "name": "noe",
   "version": "1.0.0",
   "private": true,
-  "description": "Italiano passo passo : app web et applications mobiles (Android, iOS) construites avec Capacitor à partir du dossier web/.",
+  "description": "NOE : app web et applications mobiles (Android, iOS) construites avec Capacitor à partir du dossier web/.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "mobile:sync": "node scripts/build.mjs && cap sync",

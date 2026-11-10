@@ -32,7 +32,8 @@ async function decrypt(body, uaKeys, authSecret) {
   return JSON.parse(Buffer.from(pt.subarray(0, pt.lastIndexOf(2))).toString());
 }
 const parisHour = () => +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hourCycle: "h23" }).format(new Date()) % 24;
-const parisDay = (off = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date(Date.now() + off * 864e5));
+// Jour de Paris décalé de off jours (calcul sur les dates, pas en heures : juste aussi autour du changement d'heure).
+const parisDay = (off = 0) => new Date(Date.parse(new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date()) + "T12:00:00Z") + off * 864e5).toISOString().slice(0, 10);
 
 (async () => {
   console.log("1. Payant en sommeil (pas de clé Stripe) : rien ne change");

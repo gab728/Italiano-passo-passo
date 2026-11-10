@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Italiano</string>
-    <string name="title_activity_main">Italiano</string>
-    <string name="package_name">com.italianopassopasso.app</string>
-    <string name="custom_url_scheme">com.italianopassopasso.app</string>
+    <string name="app_name">NOE</string>
+    <string name="title_activity_main">NOE</string>
+    <string name="package_name">com.noe.langues</string>
+    <string name="custom_url_scheme">com.noe.langues</string>
 </resources>

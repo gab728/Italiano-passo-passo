@@ -1,4 +1,4 @@
-# Écrire une leçon d'hébreu pour « Italiano passo passo »
+# Écrire une leçon d'hébreu pour « NOE »
 
 L'app apprend l'hébreu moderne israélien à des francophones adultes. Chaque leçon du programme est un fichier
 `content/he/lessons/<id>.json`. Le programme complet (titres `t`, point de langue `g`, consignes `b` de chaque leçon)

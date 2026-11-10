@@ -1,4 +1,4 @@
-// Italiano passo passo : la fonction serveur unique de l'app.
+// NOE : la fonction serveur unique de l'app.
 //   POST /api/claude  → appelle Claude avec la clé du serveur (jamais envoyée au téléphone), en direct (streaming)
 //   POST /api/admin   → profil, codes de connexion, invitations et plafonds (le propriétaire seul pour la gestion)
 //   POST /api/stt     → transcription vocale de secours, si un service est configuré

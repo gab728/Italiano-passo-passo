@@ -146,13 +146,13 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>${title}</title>
-<meta name="description" content="Apprendre l'italien pas à pas, en lisant, en écrivant et en parlant avec Claude.">
+<meta name="description" content="NOE : apprends les langues en parlant. Leçons courtes, conversations à voix haute avec des personnages, en italien, espagnol, anglais, français et hébreu.">
 <meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E0E13" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Italiano">
+<meta name="apple-mobile-web-app-title" content="NOE">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">

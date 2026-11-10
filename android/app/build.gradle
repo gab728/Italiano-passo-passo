@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.italianopassopasso.app"
+    namespace = "com.noe.langues"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.italianopassopasso.app"
+        applicationId "com.noe.langues"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Numéro de version : donné par la construction automatique (GitHub Actions), sinon 1.

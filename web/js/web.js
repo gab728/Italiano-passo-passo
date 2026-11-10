@@ -251,7 +251,7 @@
 
   /* ---------- Mes amis (propriétaire) ---------- */
   function inviteText(name, email, code) {
-    return "Ciao" + (name ? " " + name : "") + " ! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude.\n\n" +
+    return "Ciao" + (name ? " " + name : "") + " ! Je t'invite sur NOE, une app pour apprendre l'italien en parlant avec Claude.\n\n" +
       "1. Ouvre " + appUrl() + "?e=" + encodeURIComponent(email) + "\n" +
       "2. Touche « Première connexion », entre ton e-mail et ce code : " + code + " (valable environ une heure), puis choisis ton mot de passe\n" +
       "3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.";

@@ -2840,11 +2840,11 @@
   "ctx": "web/js/ui.js:672"
  },
  {
-  "s": "avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici :",
+  "s": "avec moi sur NOE : des leçons courtes et des conversations à voix haute. Crée ton compte ici :",
   "ctx": "web/js/ui.js:673 (morceau)"
  },
  {
-  "s": "Viens apprendre l'{0} avec moi sur Italiano passo passo : des leçons courtes et des conversations à voix haute. Crée ton compte ici : {1}",
+  "s": "Viens apprendre l'{0} avec moi sur NOE : des leçons courtes et des conversations à voix haute. Crée ton compte ici : {1}",
   "ctx": "web/js/ui.js:673"
  },
  {
@@ -2860,11 +2860,11 @@
   "ctx": "web/js/ui.js:676"
  },
  {
-  "s": "sur Italiano passo passo.",
+  "s": "sur NOE.",
   "ctx": "web/js/ui.js:676 (morceau)"
  },
  {
-  "s": "{0} sur Italiano passo passo. {1}",
+  "s": "{0} sur NOE. {1}",
   "ctx": "web/js/ui.js:676"
  },
  {
@@ -5176,7 +5176,7 @@
   "ctx": "web/js/web.js:244"
  },
  {
-  "s": "! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude.",
+  "s": "! Je t'invite sur NOE, une app pour apprendre l'italien en parlant avec Claude.",
   "ctx": "web/js/web.js:254 (morceau)"
  },
  {
@@ -5192,7 +5192,7 @@
   "ctx": "web/js/web.js:257 (morceau)"
  },
  {
-  "s": "Ciao{0} ! Je t'invite sur Italiano passo passo, une app pour apprendre l'italien en parlant avec Claude. 1. Ouvre {1}?e={2} 2. Touche « Première connexion », entre ton e-mail et ce code : {3} (valable environ une heure), puis choisis ton mot de passe 3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.",
+  "s": "Ciao{0} ! Je t'invite sur NOE, une app pour apprendre l'italien en parlant avec Claude. 1. Ouvre {1}?e={2} 2. Touche « Première connexion », entre ton e-mail et ce code : {3} (valable environ une heure), puis choisis ton mot de passe 3. Installe-la sur ton écran d'accueil (sur iPhone : Partager, puis « Sur l'écran d'accueil ») et connecte-toi avec ton e-mail et ton mot de passe.",
   "ctx": "web/js/web.js:254"
  },
  {

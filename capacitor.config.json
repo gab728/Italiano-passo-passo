@@ -1,6 +1,6 @@
 {
-  "appId": "com.italianopassopasso.app",
-  "appName": "Italiano",
+  "appId": "com.noe.langues",
+  "appName": "NOE",
   "webDir": "web",
   "backgroundColor": "#6FB0FF",
   "android": {

@@ -1,4 +1,4 @@
-/* Service worker d'Italiano passo passo : garde l'app et les leçons disponibles hors ligne.
+/* Service worker d'NOE : garde l'app et les leçons disponibles hors ligne.
    Les pages et le catalogue passent d'abord par le réseau (pour recevoir les mises à jour), puis par le cache s'il n'y a pas de réseau.
    Les appels au serveur (Supabase, Claude) ne sont jamais mis en cache. */
 const VERSION = "ipp-__BUILD__";
@@ -40,7 +40,7 @@ self.addEventListener("fetch", (e) => {
 // Rappels : la notification envoyée par le serveur (titre, texte, page à ouvrir), affichée même app fermée.
 self.addEventListener("push", (e) => {
   let m = {}; try { m = e.data ? e.data.json() : {}; } catch (x) { m = { body: e.data ? e.data.text() : "" }; }
-  e.waitUntil(self.registration.showNotification(m.title || "Italiano passo passo", {
+  e.waitUntil(self.registration.showNotification(m.title || "NOE", {
     body: m.body || "", tag: m.tag || "ipp", renotify: false, icon: "icons/icon-192.png", badge: "icons/icon-192.png", lang: m.lang || undefined,
     data: { url: m.url || "./" },
   }));

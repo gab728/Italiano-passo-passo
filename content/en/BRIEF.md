@@ -1,4 +1,4 @@
-# Écrire une leçon d'anglais pour « Italiano passo passo »
+# Écrire une leçon d'anglais pour « NOE »
 
 L'app apprend l'anglais américain standard à des francophones adultes (une adaptation pour les hispanophones sera faite à part ensuite : écris pour des francophones). Chaque leçon du programme est un fichier
 `content/en/lessons/<id>.json`. Le programme complet (titres `t`, point de langue `g`, consignes `b` de chaque leçon)

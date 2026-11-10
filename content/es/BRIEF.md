@@ -1,4 +1,4 @@
-# Écrire une leçon d'espagnol pour « Italiano passo passo »
+# Écrire une leçon d'espagnol pour « NOE »
 
 L'app apprend l'espagnol d'Espagne (castillan) à des francophones adultes. Chaque leçon du programme est un fichier
 `content/es/lessons/<id>.json`. Le programme complet (titres `t`, point de langue `g`, consignes `b` de chaque leçon)

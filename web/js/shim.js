@@ -1,4 +1,4 @@
-/* Italiano passo passo, version web app.
+/* NOE, version web app.
    Ce fichier remplace ce que l'app Claude fournissait à la page : la connexion, la base (progression, leçons) et l'accès à Claude.
    Il présente la même interface que dans Claude (window.claude.use("db" | "user" | "sample")), si bien que le code de l'app
    reste identique dans les deux versions. Rien ne démarre avant la connexion : les données locales d'une autre personne sur le
@@ -43,7 +43,7 @@
 
   if (!CFG.supabaseUrl || !CFG.supabaseKey || !window.supabase) {
     gate.hidden = false;
-    gate.append($("h1", null, "Italiano passo passo"));
+    gate.append($("h1", null, "NOE"));
     if (!CFG.supabaseUrl || !CFG.supabaseKey) {
       gate.append($("p", "fr", "L'app n'est pas encore reliée à son serveur : il manque l'adresse Supabase et la clé publique dans config.js. Le guide de mise en ligne explique où les trouver."));
       return;

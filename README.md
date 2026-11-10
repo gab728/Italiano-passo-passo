@@ -1,4 +1,4 @@
-# Italiano passo passo — la web app
+# NOE — la web app
 
 L'app d'italien de Claude, en version installable sur téléphone : inscription libre avec un accueil en quelques questions, micro, mode voiture qui écoute et corrige, conversation à voix haute avec Claude. Même programme, mêmes leçons, même code de leçon que dans l'app Claude.
 
@@ -46,7 +46,7 @@ Ensuite, chaque modification du dépôt republie tout automatiquement.
 ### 4. Premiers pas dans l'app
 1. Ouvre l'adresse de l'app sur ton téléphone, touche *J'ai déjà un compte* et connecte-toi avec ton e-mail et le mot de passe choisi dans Supabase (étape 2.4). Tu l'as oublié ? *Mot de passe oublié ? → Recevoir un lien par e-mail*, ouvre le lien, puis choisis un nouveau mot de passe.
 2. Installe-la sur l'écran d'accueil (iPhone : Safari → Partager → *Sur l'écran d'accueil* ; Android : menu → *Installer l'application*). Sur iPhone, l'app installée a son propre stockage : connecte-toi une fois dedans avec ton e-mail et ton mot de passe (le trousseau iCloud peut les remplir).
-3. **Reprendre ta progression** : dans l'app Claude « Italiano passo passo », touche *Transférer ma progression vers l'app mobile* en bas de l'accueil, puis colle le texte dans *Mon compte → Reprendre ma progression de l'app Claude*. Rien n'est effacé : les deux progressions sont fusionnées.
+3. **Reprendre ta progression** : dans l'app Claude « NOE », touche *Transférer ma progression vers l'app mobile* en bas de l'accueil, puis colle le texte dans *Mon compte → Reprendre ma progression de l'app Claude*. Rien n'est effacé : les deux progressions sont fusionnées.
 
 ## Inviter des amis
 *Profil → Inviter un ami* envoie le lien de l'app. Ton ami l'ouvre, touche *Commencer*, répond à quatre questions (pourquoi l'italien, son niveau, son temps par jour, son prénom), puis crée son compte avec son e-mail et un mot de passe. L'app démarre au niveau choisi, avec son objectif du jour ; les conversations tiennent compte de ses raisons d'apprendre.
@@ -122,7 +122,7 @@ Avant d'encaisser pour de vrai : conditions de vente, confidentialité et TVA (v
 
 Les applications sont construites avec **Capacitor** à partir du même dossier `web/` : tout ce qui marche sur le web marche dans l'app, avec en plus ce qui est propre au téléphone (`web/js/native.js`) : écran de lancement, vibrations, bouton retour d'Android, liens ouverts dans le navigateur intégré, écran allumé pendant la conversation en voiture, voix du téléphone sur Android, son de la conversation sur le haut-parleur de l'iPhone, rappels quotidiens programmés sur le téléphone (notifications locales, rédigées par le serveur).
 
-- **Android, version d'essai** : à chaque modification de `main`, GitHub construit l'app et la publie dans **Releases → « Version d'essai Android »**. Sur le téléphone, ouvre cette page, télécharge `italiano-passo-passo.apk` et ouvre-le (accepte l'installation depuis le navigateur). Les versions suivantes s'installent par-dessus.
+- **Android, version d'essai** : à chaque modification de `main`, GitHub construit l'app et la publie dans **Releases → « Version d'essai Android »**. Sur le téléphone, ouvre cette page, télécharge `noe.apk` et ouvre-le (accepte l'installation depuis le navigateur). Les versions suivantes s'installent par-dessus.
 - **iPhone, sur ton propre téléphone** (Mac avec Xcode, compte Apple gratuit) : `npm install`, puis `npm run mobile:ios` ; dans Xcode, choisis ton compte dans *Signing & Capabilities* (onglet de la cible « App »), branche l'iPhone et lance ▶. Avec un compte gratuit, l'app reste installée 7 jours.
 - **Publication** : il faut un compte Google Play (25 $, une fois) et un compte Apple Developer (99 $ par an). Ensuite, renseigne les secrets décrits en tête de `.github/workflows/mobile.yml` : GitHub produit le paquet pour Google Play et envoie l'app iPhone sur TestFlight.
 - **Paiement** : dans les applications, les abonnements doivent passer par l'App Store et Google Play ; en attendant de les brancher, l'offre Premium s'affiche sans bouton de paiement.

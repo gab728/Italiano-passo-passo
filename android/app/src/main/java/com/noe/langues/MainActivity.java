@@ -1,4 +1,4 @@
-package com.italianopassopasso.app;
+package com.noe.langues;
 
 import com.getcapacitor.BridgeActivity;
 
