@@ -246,7 +246,13 @@
       try { await W.admin("delete_me"); await W.signOut(true); } catch (e) { del.disabled = false; speakNote(aiFail(e)); }
     };
     out.append(el("p", null, "Ta progression, ton carnet et tes leçons à la carte sont privés : seules les leçons du programme sont partagées entre les membres, pour qu'une leçon préparée une fois serve à tous. Ce que tu dis au micro est transcrit par ton téléphone (ou, sur iPhone, par ElevenLabs ou OpenAI) et n'est pas enregistré par l'app ; les voix naturelles sont produites par OpenAI à partir du texte des réponses."));
-    out.append(so, el("br"), del); body.append(out);
+    // Pages publiques (exigées par l'App Store et Google Play) ; dans l'application, elles s'ouvrent dans le navigateur intégré.
+    const site = "https://gab728.github.io/italiano-passo-passo/", legal = el("p", "legal-links");
+    [["Confidentialité", "confidentialite.html"], ["Aide", "aide.html"]].forEach(([t, f], k) => {
+      if (k) legal.append(" · ");
+      const a = el("a", null, t); a.href = (window.NATIVE && NATIVE.on ? site : "") + f + (window.I18N && I18N.ui && I18N.ui !== "fr" ? "#" + I18N.ui : ""); a.target = "_blank"; a.rel = "noopener"; legal.append(a);
+    });
+    out.append(so, el("br"), del, legal); body.append(out);
   }
 
   /* ---------- Mes amis (propriétaire) ---------- */

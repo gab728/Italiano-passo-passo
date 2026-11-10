@@ -1354,3 +1354,5 @@ html.fx-hot .prog i { background: linear-gradient(90deg, #FFC93C, #FF6B35) !impo
 /* Applications mobiles : l'écran de lancement du téléphone montre déjà l'avion au centre, il ne revient pas de la gauche. */
 html.native .boot-c .lp-plane-in { animation: none; }
 .pw-native { margin: 4px 0 0; padding: 14px 16px; border-radius: 16px; background: var(--brand-soft, #E3E8FF); color: var(--ink); font-weight: 700; text-align: center; }
+.legal-links { margin-top: 14px; font-size: 14px; color: var(--muted); }
+.legal-links a { color: var(--muted); }

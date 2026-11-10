@@ -86,6 +86,9 @@ const CAP = (platform) => `
   ok(await a.evaluate(() => __called("Browser", "open").some((c) => c[2].url === "https://example.com/article") && location.host === "127.0.0.1:8787"), "lien vers un autre site : ouvert dans le navigateur, l'app reste ouverte");
   ok(await a.evaluate(async () => { const s = await navigator.wakeLock.request("screen"); await s.release(); return __called("KeepAwake", "keepAwake").length === 1 && __called("KeepAwake", "allowSleep").length === 1; }), "conversation en voiture : l'écran reste allumé, puis peut s'éteindre");
   ok(await a.evaluate(() => { WEB.account && WEB.account(); return !/Installer l'app/.test(document.body.textContent); }), "pas de conseil « Installer l'app » dans l'application");
+  await a.waitForSelector(".legal-links a", { timeout: 3000 }).catch(() => {});
+  ok(await a.evaluate(() => [...document.querySelectorAll(".legal-links a")].map((x) => x.href).join(" ") === "https://gab728.github.io/italiano-passo-passo/confidentialite.html https://gab728.github.io/italiano-passo-passo/aide.html"), "profil : liens « Confidentialité » et « Aide » vers les pages publiques");
+  ok(await a.evaluate(async () => { const r = await fetch("/confidentialite.html"); const t = await r.text(); return r.ok && /GBH/.test(t) && /934 041 229/.test(t) && /bramigab@gmail.com/.test(t) && /id="en"/.test(t) && /id="es"/.test(t) && (await fetch("/aide.html")).ok; }), "politique de confidentialité (éditeur, contact, 3 langues) et page d'aide publiées");
   await a.evaluate(() => UI.go("feed"));
 
   console.log("3. Voix du téléphone (Android)");

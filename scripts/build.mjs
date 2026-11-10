@@ -2,6 +2,7 @@
 //   node scripts/build.mjs
 // La page d'origine reste la source unique du code des leçons : on en extrait le style et le script,
 // on y pose quelques accroches pour la version web (micro, compte), et on assemble le catalogue de cours.
+import { writeLegal } from "./legal.mjs";
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -179,6 +180,7 @@ ${fonts}
 </html>
 `;
 writeFileSync(join(WEB, "index.html"), html);
+writeLegal(WEB);
 
 // Service worker : la coquille de l'app et le catalogue restent disponibles hors ligne.
 const shell = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"].concat(readdirSync(join(WEB, "img", "themes")).filter((f) => f.endsWith(".svg")).map((f) => "img/themes/" + f))
