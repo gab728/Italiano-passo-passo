@@ -28,8 +28,16 @@
   const premium = () => !PLAN || !PLAN.billing || !!PLAN.premium;
   async function refresh() {
     try { PLAN = await (await W.call("billing", { action: "status" })).json(); ls.set("ipp-plan", PLAN); } catch (e) { /* hors ligne : on garde le dernier état connu */ }
+    iapSetup();
     return PLAN;
   }
+  // Application mobile : abonnements par l'App Store ou Google Play (js/native.js), dès que le serveur donne la clé publique.
+  const NAT = () => !!(window.NATIVE && NATIVE.on);
+  function iapSetup() { if (NAT() && NATIVE.iapSetup && PLAN && W.user) NATIVE.iapSetup(PLAN, W.user.id).catch(() => {}); }
+  const iapOn = () => NAT() && !!NATIVE.iap;
+  // Abonnement modifiable ici : sur le web, celui payé par carte ; dans l'app, celui pris dans le store de ce téléphone.
+  const canChange = () => NAT() ? iapOn() && PLAN.store === NATIVE.store : !!PLAN.manage;
+  const STORE_NAME = { app_store: "l'App Store", play_store: "Google Play" };
   const money = (cents) => { const p = PLAN && PLAN.prices || { currency: "eur" }; try { return new Intl.NumberFormat(loc(), { style: "currency", currency: p.currency.toUpperCase() }).format(cents / 100); } catch (e) { return (cents / 100).toFixed(2) + " €"; } };
   const date = (iso) => { try { return new Date(iso).toLocaleDateString(loc(), { day: "numeric", month: "long" }); } catch (e) { return ""; } };
 
@@ -56,12 +64,13 @@
   function close() { if (!open) return; const o = open; open = null; o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); }
   // L'écran de l'offre : Premium et Expert côte à côte pour la formule gratuite, Expert seul pour un abonné Premium.
   // Rend true s'il s'est affiché.
-  const storeApp = () => !!(window.NATIVE && NATIVE.on && !NATIVE.iap);
+  // Application mobile sans paiement branché (clés RevenueCat absentes) : offre visible, sans bouton de paiement.
+  const storeApp = () => NAT() && !iapOn();
   function paywall(reason, opts) {
     opts = opts || {};
     const t0 = tier();
-    // Pas d'offre : paiement fermé, déjà Expert, ou Premium offert (fondateurs : rien à facturer).
-    if (!billing() || open || t0 === "expert" || (t0 === "premium" && (PLAN.founder || !PLAN.manage))) return false;
+    // Pas d'offre : paiement fermé, déjà Expert, ou Premium qu'on ne peut pas changer ici (offert, ou pris ailleurs).
+    if (!billing() || open || t0 === "expert" || (t0 === "premium" && (PLAN.founder || !canChange()))) return false;
     const upgrade = t0 === "premium"; // abonné Premium : passage à Expert, sans nouveau paiement à saisir
     const P = PLAN.prices || { monthly: 999, yearly: 8999, trial_days: 7, expert: { monthly: 1999, yearly: 14999 } };
     const priceOf = (tr, pl) => tr === "expert" ? (pl === "monthly" ? P.expert.monthly : P.expert.yearly) : (pl === "monthly" ? P.monthly : P.yearly);
@@ -94,12 +103,32 @@
     const then = txt("p", "pw-then"); box.append(then);
     const go = txt("button", "pw-cta"); go.type = "button"; box.append(go);
     const no = txt("button", "pw-later"); no.type = "button"; no.textContent = upgrade ? "Rester en Premium" : "Continuer gratuitement"; no.onclick = later; box.append(no);
-    box.append(txt("p", "pw-legal", upgrade ? "La différence est calculée au prorata et prélevée aujourd'hui. Tu peux revenir à Premium depuis ton profil." : "Renouvellement automatique, résiliable à tout moment depuis ton profil. Paiement sécurisé par Stripe."));
+    const iap = iapOn(); let offers = null, offerErr = false;
+    box.append(txt("p", "pw-legal", iap ? (NATIVE.platform === "ios"
+      ? "Abonnement à renouvellement automatique, payé avec ton compte Apple à la confirmation. Il se renouvelle sauf si tu le résilies au moins 24 h avant la fin de la période, dans les réglages de ton compte Apple."
+      : "Abonnement à renouvellement automatique, payé avec Google Play à la confirmation. Résiliable à tout moment dans Google Play, rubrique Paiements et abonnements.")
+      : upgrade ? "La différence est calculée au prorata et prélevée aujourd'hui. Tu peux revenir à Premium depuis ton profil." : "Renouvellement automatique, résiliable à tout moment depuis ton profil. Paiement sécurisé par Stripe."));
+    if (iap) {
+      // Exigé par Apple : restaurer ses achats, conditions d'utilisation et confidentialité, à portée de main.
+      const links = txt("p", "pw-links"), site = "https://gab728.github.io/italiano-passo-passo/";
+      const restore = txt("button", "linkbtn", "Restaurer mes achats"); restore.type = "button";
+      restore.onclick = async () => { restore.disabled = true; try { await NATIVE.iapRestore(); PLAN = await (await W.call("billing", { action: "store_sync" })).json(); ls.set("ipp-plan", PLAN); if (premium()) { close(); celebrate(); } else speakNote("Aucun abonnement à restaurer sur ce compte."); } catch (e) { speakNote("La restauration n'a pas pu se faire. Réessaie dans un moment."); } restore.disabled = false; };
+      const a1 = txt("a", null, "Conditions d'utilisation"); a1.href = NATIVE.platform === "ios" ? "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" : site + "aide.html"; a1.target = "_blank";
+      const a2 = txt("a", null, "Confidentialité"); a2.href = site + "confidentialite.html"; a2.target = "_blank";
+      links.append(restore, " · ", a1, " · ", a2); box.append(links);
+      NATIVE.iapOffers().then((o) => { offers = o; offerErr = !Object.keys(o).length; draw(); }).catch(() => { offerErr = true; draw(); });
+    }
+    // Prix affichés : ceux du store dans l'app (monnaie du téléphone), sinon ceux du serveur.
+    const storeOf = (tr, id) => offers && offers[tr + "_" + id];
+    const shown = (tr, id) => { if (!iap) return money(priceOf(tr, id)); const o = storeOf(tr, id); return o ? o.price : "…"; };
+    const perMonth = (tr) => { if (!iap) return money(Math.floor(priceOf(tr, "yearly") / 12)); const o = storeOf(tr, "yearly"); if (!o || !o.amount) return "…"; try { return new Intl.NumberFormat(loc(), { style: "currency", currency: o.currency }).format(Math.floor(o.amount / 12 * 100) / 100); } catch (e) { return ""; } };
+    const saving = (tr) => { if (!iap) return Math.round(100 * (1 - priceOf(tr, "yearly") / (priceOf(tr, "monthly") * 12))); const y = storeOf(tr, "yearly"), m = storeOf(tr, "monthly"); return y && m && m.amount ? Math.round(100 * (1 - y.amount / (m.amount * 12))) : 0; };
+    const trialDays = () => { if (!iap) return trial ? P.trial_days : 0; const o = storeOf(sel, plan); if (!o || !o.trial || upgrade || PLAN.trial_used) return 0; const t = o.trial; return /WEEK/i.test(t.unit) ? 7 * (t.n || 1) : /MONTH/i.test(t.unit) ? 30 * (t.n || 1) : t.n || 0; };
     function planBtn(b, id) {
-      const pr = priceOf(sel, id), base = priceOf(sel, "monthly") * 12, off = id === "yearly" ? Math.round(100 * (1 - pr / base)) : 0;
+      const off = id === "yearly" ? saving(sel) : 0;
       b.replaceChildren();
-      const t = txt("span", "pw-plan-t"); t.append(txt("b", null, id === "yearly" ? "Annuel" : "Mensuel"), txt("span", null, (id === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr)))); b.append(t);
-      if (id === "yearly") b.append(txt("small", "pw-plan-n", "soit {0} par mois".replace("{0}", money(Math.floor(pr / 12)))));
+      const t = txt("span", "pw-plan-t"); t.append(txt("b", null, id === "yearly" ? "Annuel" : "Mensuel"), txt("span", null, (id === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", shown(sel, id)))); b.append(t);
+      if (id === "yearly") b.append(txt("small", "pw-plan-n", "soit {0} par mois".replace("{0}", perMonth(sel))));
       if (off > 0) b.append(txt("span", "pw-plan-b", "−{0} %".replace("{0}", String(off))));
     }
     function draw() {
@@ -109,21 +138,37 @@
         li.append(txt("span", null, f.replace("{0}", String(sel === "expert" ? tm.expert : tm.premium)).replace("{1}", String(sel === "expert" ? em.expert : em.premium)))); ul.append(li); });
       planBtn(yB, "yearly"); planBtn(mB, "monthly");
       plans.querySelectorAll(".pw-plan").forEach((b) => { const on = b.dataset.plan === plan; b.classList.toggle("sel", on); b.setAttribute("aria-checked", String(on)); });
-      const pr = priceOf(sel, plan), price = (plan === "yearly" ? "puis {0} par an" : "puis {0} par mois").replace("{0}", money(pr));
-      if (upgrade) { then.textContent = (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr)); go.textContent = "Passer à Expert"; return; }
-      then.textContent = trial ? "{0} jours gratuits".replace("{0}", String(P.trial_days)) + " · " + price : (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", money(pr));
-      go.textContent = trial ? "Essayer gratuitement {0} jours".replace("{0}", String(P.trial_days)) : (sel === "expert" ? "Choisir Expert" : "Choisir Premium");
+      const pr = shown(sel, plan), price = (plan === "yearly" ? "puis {0} par an" : "puis {0} par mois").replace("{0}", pr), td = trialDays();
+      if (iap) go.disabled = offerErr || !storeOf(sel, plan);
+      if (iap && offerErr) { then.textContent = "L'App Store ou Google Play ne répond pas pour l'instant. Réessaie dans un moment."; go.textContent = sel === "expert" ? "Choisir Expert" : "Choisir Premium"; return; }
+      if (upgrade) { then.textContent = (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", pr); go.textContent = "Passer à Expert"; return; }
+      then.textContent = td ? "{0} jours gratuits".replace("{0}", String(td)) + " · " + price : (plan === "yearly" ? "{0} par an" : "{0} par mois").replace("{0}", pr);
+      go.textContent = td ? "Essayer gratuitement {0} jours".replace("{0}", String(td)) : (sel === "expert" ? "Choisir Expert" : "Choisir Premium");
     }
     go.onclick = async () => {
       go.disabled = true; const was = go.textContent; go.textContent = upgrade ? "Un instant…" : "Ouverture du paiement…";
+      if (iap) {
+        // Achat dans l'App Store / Google Play, puis le serveur relit l'abonnement chez RevenueCat.
+        try {
+          await NATIVE.iapBuy(sel, plan, upgrade ? String(PLAN.product || "") : "");
+          go.textContent = "Un instant…";
+          for (let k = 0; k < 4; k++) { PLAN = await (await W.call("billing", { action: "store_sync" })).json(); if (tier() === sel || (sel === "premium" && premium())) break; await new Promise((r) => setTimeout(r, 1500)); }
+          ls.set("ipp-plan", PLAN); close(); celebrate();
+        } catch (e) {
+          go.disabled = false; go.textContent = was;
+          if (!(e && e.code === "cancel")) speakNote("L'achat n'a pas pu se faire. Rien n'a été prélevé. Réessaie dans un moment.");
+        }
+        return;
+      }
       try {
         if (upgrade) { PLAN = await (await W.call("billing", { action: "change", tier: "expert" })).json(); ls.set("ipp-plan", PLAN); close(); celebrate(); return; }
         const r = await (await W.call("billing", { action: "checkout", plan, tier: sel, return_url: back(), ui: ui() })).json(); if (r.url) { location.href = r.url; return; } throw new Error("url");
       } catch (e) { go.disabled = false; go.textContent = was; speakNote(e && e.code === "already" ? "Tu as déjà un abonnement : change de formule depuis ton profil." : "Le paiement ne s'ouvre pas pour l'instant. Réessaie dans un moment."); if (e && e.code === "already") { close(); refresh(); } }
     };
     draw();
-    // Application mobile : le paiement passera par l'App Store et Google Play (pas encore branché) ; pas de paiement par carte ici.
+    // Application mobile sans paiement branché : pas de paiement par carte ici. Site sans paiement par carte : l'abonnement se prend dans l'app.
     if (storeApp()) { go.hidden = true; const lg = box.querySelector(".pw-legal"); if (lg) lg.hidden = true; go.after(txt("p", "pw-native", "Bientôt : l'abonnement directement dans l'app.")); }
+    else if (!NAT() && PLAN.web_pay === false) { go.hidden = true; const lg = box.querySelector(".pw-legal"); if (lg) lg.hidden = true; go.after(txt("p", "pw-native", "L'abonnement se prend dans l'application NOE, sur iPhone ou Android.")); }
     document.body.append(o); document.body.classList.add("pw-open"); open = o; requestAnimationFrame(() => o.classList.add("in"));
     o.addEventListener("keydown", (e) => { if (e.key === "Escape") later(); });
     setTimeout(() => go.focus(), 50);
@@ -389,16 +434,21 @@
       t.append(txt("b", null, s0.status === "trialing" ? name + " · essai gratuit" : s0.status === "past_due" ? name + " · paiement à mettre à jour" : name + (s0.plan === "monthly" ? " · mensuel" : " · annuel")));
       t.append(txt("small", "muted", "{0} minutes de conversation par jour.".replace("{0}", String(tr === "expert" ? tm.expert : tm.premium)) + " " + (s0.status === "trialing" && s0.trial_end ? (s0.cancel_at_period_end ? "Jusqu'au {0}, sans renouvellement." : "Jusqu'au {0}, puis abonnement automatique.").replace("{0}", date(s0.trial_end))
         : s0.period_end ? (s0.cancel_at_period_end ? "Se termine le {0}." : "Renouvelé le {0}.").replace("{0}", date(s0.period_end)) : "")));
-      const a = txt("div", "acts");
-      if (tr === "premium" && s0.manage) a.append(btn("Passer à Expert · {0} min par jour".replace("{0}", String(tm.expert)), "dark", () => paywall("expert")));
-      if (tr === "expert" && s0.manage && !storeApp()) a.append(btn("Revenir à Premium", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { PLAN = await (await W.call("billing", { action: "change", tier: "premium" })).json(); ls.set("ipp-plan", PLAN); speakNote("C'est fait : tu repasses en Premium ({0} minutes par jour).".replace("{0}", String(tm.premium))); if (window.UI) UI.go("profile"); } catch (e) { b.disabled = false; speakNote("Le changement n'a pas pu se faire. Réessaie dans un moment."); } }));
-      if (s0.manage && !storeApp()) a.append(btn("Gérer mon abonnement", "soft", portal));
+      const a = txt("div", "acts"), st = s0.store && s0.store !== "stripe" ? s0.store : null;
+      // Abonnement pris dans un store : il se gère là-bas (depuis l'app sur le même téléphone, sinon dans les réglages du store).
+      if (st && !(iapOn() && st === NATIVE.store)) c.append(txt("small", "muted pw-store", "Abonnement pris dans {0} : il se gère dans les réglages de {0}.".split("{0}").join(STORE_NAME[st] || st)));
+      if (tr === "premium" && canChange()) a.append(btn("Passer à Expert · {0} min par jour".replace("{0}", String(tm.expert)), "dark", () => paywall("expert")));
+      if (st && iapOn() && st === NATIVE.store) a.append(btn("Gérer mon abonnement", "soft", () => NATIVE.iapManage()));
+      if (tr === "expert" && s0.manage && !NAT()) a.append(btn("Revenir à Premium", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { PLAN = await (await W.call("billing", { action: "change", tier: "premium" })).json(); ls.set("ipp-plan", PLAN); speakNote("C'est fait : tu repasses en Premium ({0} minutes par jour).".replace("{0}", String(tm.premium))); if (window.UI) UI.go("profile"); } catch (e) { b.disabled = false; speakNote("Le changement n'a pas pu se faire. Réessaie dans un moment."); } }));
+      if (s0.manage && !NAT()) a.append(btn("Gérer mon abonnement", "soft", portal));
       if (a.childNodes.length) c.append(a);
       return c;
     }
     t.append(txt("b", null, "Formule gratuite"), txt("small", "muted", "Une nouvelle leçon et {0} minutes de conversation par jour. Premium : toutes les leçons et {1} minutes par jour. Expert : {2} minutes par jour.".replace("{0}", String(tm.free)).replace("{1}", String(tm.premium)).replace("{2}", String(tm.expert))));
     const a = txt("div", "acts"); a.append(btn(s0.trial_used ? "Voir les formules" : "Essayer gratuitement", "dark", () => paywall("profile")));
-    if (s0.manage && !storeApp()) a.append(btn("Mes factures", "", portal)); c.append(a);
+    if (s0.manage && !NAT()) a.append(btn("Mes factures", "", portal));
+    if (iapOn()) a.append(btn("Restaurer mes achats", "", async (ev) => { const b = ev.currentTarget; b.disabled = true; try { await NATIVE.iapRestore(); PLAN = await (await W.call("billing", { action: "store_sync" })).json(); ls.set("ipp-plan", PLAN); if (premium()) { celebrate(); if (window.UI) UI.go("profile"); } else speakNote("Aucun abonnement à restaurer sur ce compte."); } catch (e) { speakNote("La restauration n'a pas pu se faire. Réessaie dans un moment."); } b.disabled = false; }));
+    c.append(a);
     return c;
   }
 
@@ -420,7 +470,7 @@
   try { navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", (e) => { const d = e.data || {}; if (d.type === "ipp-go") follow(d.go); }); } catch (e) { /* rien */ }
   // Déconnexion : ce téléphone ne reçoit plus les rappels de ce compte.
   const out0 = W.signOut;
-  W.signOut = async function (force) { if (RM.on() && NR()) { await NR().disable().catch(() => {}); } else if (RM.on()) { try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await W.call("push", { action: "unsubscribe", endpoint: sub.endpoint }); await sub.unsubscribe(); } } catch (e) { /* hors ligne */ } } return out0.apply(this, arguments); };
+  W.signOut = async function (force) { if (NAT() && NATIVE.iapLogout) await NATIVE.iapLogout(); if (RM.on() && NR()) { await NR().disable().catch(() => {}); } else if (RM.on()) { try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await W.call("push", { action: "unsubscribe", endpoint: sub.endpoint }); await sub.unsubscribe(); } } catch (e) { /* hors ligne */ } } return out0.apply(this, arguments); };
   (async () => {
     try {
       await refresh();

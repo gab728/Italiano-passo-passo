@@ -1356,3 +1356,6 @@ html.native .boot-c .lp-plane-in { animation: none; }
 .pw-native { margin: 4px 0 0; padding: 14px 16px; border-radius: 16px; background: var(--brand-soft, #E3E8FF); color: var(--ink); font-weight: 700; text-align: center; }
 .legal-links { margin-top: 14px; font-size: 14px; color: var(--muted); }
 .legal-links a { color: var(--muted); }
+.pw-links { margin: 6px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.pw-links a, .pw-links .linkbtn { color: var(--muted); font-size: 13px; }
+.pw-store { display: block; margin-top: 8px; }

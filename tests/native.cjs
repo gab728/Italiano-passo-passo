@@ -20,7 +20,25 @@ const CAP = (platform) => `
       "LocalNotifications.cancel": (o) => { const ids = (o.notifications || []).map((n) => n.id); __cap.pending = __cap.pending.filter((x) => !ids.includes(x.id)); return {}; },
       "TextToSpeech.getSupportedLanguages": () => ({ languages: ["fr-FR", "it-IT", "en-US"] }),
       "TextToSpeech.speak": () => new Promise((r) => setTimeout(() => r({}), 30)),
+      // Faux RevenueCat : 4 formules au prix du store ; un achat pose l'abonnement chez le faux RevenueCat du serveur de test.
+      "Purchases.isConfigured": () => ({ isConfigured: !!__cap.rcUser }),
+      "Purchases.configure": (o) => { __cap.rcUser = o.appUserID; return {}; },
+      "Purchases.logIn": (o) => { __cap.rcUser = o.appUserID; return {}; },
+      "Purchases.logOut": () => { __cap.rcUser = null; return {}; },
+      "Purchases.getOfferings": () => ({ current: { identifier: "default", availablePackages: __cap.pkgs } }),
+      "Purchases.getCustomerInfo": () => ({ customerInfo: { managementURL: "https://play.google.com/store/account/subscriptions?sku=noe" } }),
+      "Purchases.restorePurchases": () => ({ customerInfo: {} }),
+      "Purchases.purchasePackage": async (o) => {
+        if (__cap.cancelNext) { __cap.cancelNext = false; throw Object.assign(new Error("Purchase was cancelled."), { code: "1", userCancelled: true }); }
+        const pid = o.aPackage.product.identifier, exp = new Date(Date.now() + 30 * 864e5).toISOString(), ent = { expires_date: exp, product_identifier: pid };
+        const ents = /expert/.test(pid) ? { premium: ent, expert: ent } : { premium: ent };
+        await fetch("/__setRC", { method: "POST", body: JSON.stringify({ uid: __cap.rcUser, subscriber: { entitlements: ents, subscriptions: { [pid]: { expires_date: exp, period_type: /expert/.test(pid) ? "normal" : "trial", store: "play_store" } } } }) });
+        return { customerInfo: {}, productIdentifier: pid };
+      },
     };
+    const pk = (id, pid, price, amount, per, type, trial) => ({ identifier: id, packageType: type, product: { identifier: pid, priceString: price, price: amount, currencyCode: "EUR", subscriptionPeriod: per, introPrice: trial ? { price: 0, periodUnit: "WEEK", periodNumberOfUnits: 1, cycles: 1, period: "P1W" } : null } });
+    __cap.pkgs = [pk("$rc_annual", "noe_premium:yearly", "€89.99", 89.99, "P1Y", "ANNUAL", true), pk("$rc_monthly", "noe_premium:monthly", "€9.99", 9.99, "P1M", "MONTHLY", true),
+      pk("expert_annual", "noe_expert:yearly", "€149.99", 149.99, "P1Y", "CUSTOM", false), pk("expert_monthly", "noe_expert:monthly", "€19.99", 19.99, "P1M", "CUSTOM", false)];
     const plugin = (n) => new Proxy({}, { get: (_, m) => {
       if (m === "addListener") return (ev, fn) => { (__cap.listeners[n + "." + ev] = __cap.listeners[n + "." + ev] || []).push(fn); return Promise.resolve({ remove() {} }); };
       return (a) => { __cap.calls.push([n, String(m), a]); const h = H[n + "." + String(m)]; return Promise.resolve(h ? h(a) : {}); };
@@ -122,6 +140,37 @@ const CAP = (platform) => `
   await a.evaluate(() => UI.go("profile")); await a.waitForSelector(".rm-set");
   await a.click(".rm-set .acts button:first-child"); await a.waitForTimeout(400);
   ok(await a.evaluate(() => !__cap.pending.some((n) => n.id >= 2000 && n.id < 2100) && S.rm.on === false), "rappels désactivés : plus rien de programmé");
+
+  console.log("4 bis. Abonnement dans l'app (Google Play, par RevenueCat)");
+  await fetch(O + "/__rc?on=1");
+  await a.evaluate(() => { UI.go("feed"); return PREM.refresh(); });
+  await a.waitForFunction(() => NATIVE.iap === true, null, { timeout: 4000 }).catch(() => {});
+  ok(await a.evaluate(() => NATIVE.iap === true && __called("Purchases", "configure").some((c) => c[2].apiKey === "goog_mock" && c[2].appUserID === WEBAUTH.user.id)), "RevenueCat démarré avec la clé Android et l'identifiant du compte");
+  await a.evaluate(() => PREM.paywall("more"));
+  await a.waitForFunction(() => /€89\.99/.test((document.querySelector(".pw") || {}).textContent || ""), null, { timeout: 3000 }).catch(() => {});
+  const pwt = await a.textContent(".pw").catch(() => "");
+  ok(/€89\.99/.test(pwt) && /€9\.99/.test(pwt) && /7 jours gratuits/.test(pwt), "offre : prix du store (€89.99 par an, €9.99 par mois) et essai de 7 jours");
+  ok(/Google Play/.test(await a.textContent(".pw-legal")) && /Restaurer mes achats/.test(await a.textContent(".pw-links")) && !(await a.$(".pw-native")), "renouvellement expliqué, « Restaurer mes achats », conditions et confidentialité");
+  await a.evaluate(() => { __cap.cancelNext = true; });
+  await a.click(".pw-cta"); await a.waitForTimeout(500);
+  ok(await a.evaluate(() => !document.querySelector(".pw-yay") && !document.querySelector(".pw-cta").disabled && PREM.plan.tier === "free"), "achat annulé dans Google Play : rien ne change, pas de message d'erreur");
+  await a.click(".pw-cta");
+  await a.waitForSelector(".pw-yay", { timeout: 6000 }).catch(() => {});
+  ok(await a.evaluate(() => __called("Purchases", "purchasePackage").some((c) => c[2].aPackage.identifier === "$rc_annual")), "achat de Premium annuel dans Google Play");
+  ok(!!(await a.$(".pw-yay")) && await a.evaluate(() => PREM.plan.tier === "premium" && PREM.plan.store === "play_store" && PREM.plan.status === "trialing"), "abonnement relu par le serveur : Premium (essai), fête de bienvenue");
+  await a.click(".pw-yay .pw-cta"); await a.waitForTimeout(300);
+  await a.evaluate(() => UI.go("profile")); await a.waitForSelector(".pw-card");
+  await a.click(".pw-card button:has-text('Gérer mon abonnement')");
+  await a.waitForTimeout(300);
+  ok(await a.evaluate(() => __called("Browser", "open").some((c) => /play\.google\.com\/store\/account\/subscriptions/.test(c[2].url))), "« Gérer mon abonnement » ouvre les abonnements Google Play");
+  await a.click(".pw-card button:has-text('Passer à Expert')");
+  await a.waitForSelector(".pw .pw-cta", { timeout: 3000 });
+  await a.waitForFunction(() => /€149\.99|€19\.99/.test(document.querySelector(".pw").textContent), null, { timeout: 3000 }).catch(() => {});
+  await a.click(".pw .pw-cta");
+  await a.waitForFunction(() => PREM.plan.tier === "expert", null, { timeout: 6000 }).catch(() => {});
+  ok(await a.evaluate(() => PREM.plan.tier === "expert" && __called("Purchases", "purchasePackage").some((c) => /noe_expert/.test(c[2].aPackage.product.identifier) && c[2].googleProductChangeInfo && c[2].googleProductChangeInfo.oldProductIdentifier === "noe_premium")), "passage à Expert : remplace l'abonnement Premium dans Google Play");
+  await a.evaluate(() => { document.querySelectorAll(".pw").forEach((x) => x.remove()); document.body.classList.remove("pw-open"); UI.go("feed"); });
+  await fetch(O + "/__rc?on=0");
 
   console.log("5. Application iPhone");
   const i = await newPage("ios");

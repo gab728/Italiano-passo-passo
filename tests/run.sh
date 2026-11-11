@@ -25,6 +25,7 @@ node tests/premium.cjs; R11=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/premium-ui.cjs; R12=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/fx.cjs; R13=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/native.cjs; R14=$?
+node tests/iap.cjs; R15=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/link.cjs
 kill $PID
-[ $R1 -eq 0 ] && [ $R2 -eq 0 ] && [ $R3 -eq 0 ] && [ $R4 -eq 0 ] && [ $R5 -eq 0 ] && [ $R6 -eq 0 ] && [ $R7 -eq 0 ] && [ $R8 -eq 0 ] && [ $R9 -eq 0 ] && [ $R10 -eq 0 ] && [ $R11 -eq 0 ] && [ $R12 -eq 0 ] && [ $R13 -eq 0 ] && [ $R14 -eq 0 ]
+[ $R1 -eq 0 ] && [ $R2 -eq 0 ] && [ $R3 -eq 0 ] && [ $R4 -eq 0 ] && [ $R5 -eq 0 ] && [ $R6 -eq 0 ] && [ $R7 -eq 0 ] && [ $R8 -eq 0 ] && [ $R9 -eq 0 ] && [ $R10 -eq 0 ] && [ $R11 -eq 0 ] && [ $R12 -eq 0 ] && [ $R13 -eq 0 ] && [ $R14 -eq 0 ] && [ $R15 -eq 0 ]

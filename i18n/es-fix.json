@@ -264,5 +264,16 @@
  "Sons des exercices": "Sonidos de los ejercicios",
  "Bientôt : l'abonnement directement dans l'app.": "Muy pronto: la suscripción directamente en la app.",
  "Confidentialité": "Privacidad",
- "Aide": "Ayuda"
+ "Aide": "Ayuda",
+ "Restaurer mes achats": "Restaurar compras",
+ "Conditions d'utilisation": "Condiciones de uso",
+ "Abonnement à renouvellement automatique, payé avec ton compte Apple à la confirmation. Il se renouvelle sauf si tu le résilies au moins 24 h avant la fin de la période, dans les réglages de ton compte Apple.": "Suscripción de renovación automática, cobrada a tu cuenta de Apple al confirmar. Se renueva salvo que la canceles al menos 24 horas antes del final del periodo, en los ajustes de tu cuenta de Apple.",
+ "Abonnement à renouvellement automatique, payé avec Google Play à la confirmation. Résiliable à tout moment dans Google Play, rubrique Paiements et abonnements.": "Suscripción de renovación automática, cobrada a través de Google Play al confirmar. Puedes cancelarla en cualquier momento en Google Play, en Pagos y suscripciones.",
+ "L'App Store ou Google Play ne répond pas pour l'instant. Réessaie dans un moment.": "El App Store o Google Play no responden ahora mismo. Vuelve a intentarlo en un momento.",
+ "L'achat n'a pas pu se faire. Rien n'a été prélevé. Réessaie dans un moment.": "La compra no se ha podido hacer. No se te ha cobrado nada. Vuelve a intentarlo en un momento.",
+ "Aucun abonnement à restaurer sur ce compte.": "No hay ninguna suscripción que restaurar en esta cuenta.",
+ "La restauration n'a pas pu se faire. Réessaie dans un moment.": "No se ha podido restaurar. Vuelve a intentarlo en un momento.",
+ "Abonnement pris dans {0} : il se gère dans les réglages de {0}.": "Suscripción hecha en {0}: se gestiona en los ajustes de {0}.",
+ "l'App Store": "el App Store",
+ "L'abonnement se prend dans l'application NOE, sur iPhone ou Android.": "La suscripción se contrata en la app NOE, en iPhone o Android."
 }

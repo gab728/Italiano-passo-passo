@@ -199,5 +199,16 @@
  "Sons des exercices": "Exercise sounds",
  "Bientôt : l'abonnement directement dans l'app.": "Coming soon: subscribe right in the app.",
  "Confidentialité": "Privacy",
- "Aide": "Help"
+ "Aide": "Help",
+ "Restaurer mes achats": "Restore purchases",
+ "Conditions d'utilisation": "Terms of use",
+ "Abonnement à renouvellement automatique, payé avec ton compte Apple à la confirmation. Il se renouvelle sauf si tu le résilies au moins 24 h avant la fin de la période, dans les réglages de ton compte Apple.": "Auto-renewing subscription, charged to your Apple account at confirmation. It renews unless you cancel at least 24 hours before the end of the period, in your Apple account settings.",
+ "Abonnement à renouvellement automatique, payé avec Google Play à la confirmation. Résiliable à tout moment dans Google Play, rubrique Paiements et abonnements.": "Auto-renewing subscription, charged through Google Play at confirmation. Cancel anytime in Google Play, under Payments & subscriptions.",
+ "L'App Store ou Google Play ne répond pas pour l'instant. Réessaie dans un moment.": "The App Store or Google Play isn't responding right now. Try again in a moment.",
+ "L'achat n'a pas pu se faire. Rien n'a été prélevé. Réessaie dans un moment.": "The purchase didn't go through. You haven't been charged. Try again in a moment.",
+ "Aucun abonnement à restaurer sur ce compte.": "No subscription to restore on this account.",
+ "La restauration n'a pas pu se faire. Réessaie dans un moment.": "Restoring didn't work. Try again in a moment.",
+ "Abonnement pris dans {0} : il se gère dans les réglages de {0}.": "Subscription bought through {0}: manage it in {0} settings.",
+ "l'App Store": "the App Store",
+ "L'abonnement se prend dans l'application NOE, sur iPhone ou Android.": "Subscribe in the NOE app, on iPhone or Android."
 }

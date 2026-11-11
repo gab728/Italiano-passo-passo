@@ -6,6 +6,7 @@
 //   POST /api/tts     → voix naturelles (synthèse vocale OpenAI ou compatible), phrases des leçons gardées en cache pour tous
 //   POST /api/billing → abonnement Premium : état, page de paiement Stripe, gestion de l'abonnement
 //   POST /api/stripe  → webhook Stripe (sans connexion, signature vérifiée)
+//   POST /api/revenuecat → webhook RevenueCat : abonnements App Store et Google Play (sans connexion, en-tête Authorization vérifié)
 //   POST /api/push    → rappels sur le téléphone : abonnement aux notifications, réglages ; appelé aussi toutes les 15 minutes par la base
 // Chaque appel exige une personne connectée. La consommation est comptée par personne et par jour, avec un plafond.
 //
@@ -438,6 +439,13 @@ async function admin(req: Request, u: User): Promise<Response> {
       try { const a = await stripe("balance"); out.paiement = env("STRIPE_WEBHOOK_SECRET") ? { ok: true, from: a.livemode ? "mode réel" : "mode test" } : { ok: false, why: "Il manque le secret STRIPE_WEBHOOK_SECRET (webhook " + SB + "/functions/v1/api/stripe)." }; }
       catch { out.paiement = { ok: false, why: "La clé STRIPE_SECRET_KEY est refusée par Stripe." }; }
     } else out.paiement = { ok: true, from: "en sommeil : tout est gratuit tant que STRIPE_SECRET_KEY n'est pas renseignée" };
+    // Abonnements dans les applications (RevenueCat) : clé secrète acceptée, webhook et clés publiques renseignés.
+    if (storeOn()) {
+      try { await rcSubscriber("00000000-0000-4000-8000-000000000000");
+        const miss = ["REVENUECAT_WEBHOOK_AUTH", "REVENUECAT_IOS_KEY", "REVENUECAT_ANDROID_KEY"].filter((k) => !env(k));
+        out.abonnements_app = miss.length ? { ok: false, why: "Il manque : " + miss.join(", ") + " (webhook " + SB + "/functions/v1/api/revenuecat)." } : { ok: true, from: "RevenueCat (App Store et Google Play)" };
+      } catch { out.abonnements_app = { ok: false, why: "La clé REVENUECAT_SECRET_KEY est refusée par RevenueCat." }; }
+    } else out.abonnements_app = { ok: true, from: "en sommeil : pas de paiement dans les applications tant que REVENUECAT_SECRET_KEY n'est pas renseignée" };
     try {
       await vapid(); await ensureCron();
       const job = await restJSON("rpc/rappels_cron_ok", { method: "POST", body: "{}" }).catch(() => null);
@@ -886,9 +894,15 @@ async function news(req: Request): Promise<Response> {
 //   (10000 ≈ 20 min), EXPERT_TALK_CHARS (30000 ≈ 60 min), dont en voix ElevenLabs PREMIUM_EL_CHARS (5000) et EXPERT_EL_CHARS (15000),
 //   puis voix OpenAI ; TALK_CHARS_PER_MIN (500) pour afficher des minutes.
 //   FREE_DAILY_CALLS (40), FREE_TTS_DAILY_CHARS (6000), FREE_STT_DAILY_SECONDS (300).
-const billingOn = () => !!env("STRIPE_SECRET_KEY") && !/^(off|false|0|non|no)$/i.test(env("BILLING", "on"));
+// Le payant s'ouvre dès qu'un moyen de paiement est branché : Stripe (web) ou RevenueCat (App Store et Google Play).
+const stripeOn = () => !!env("STRIPE_SECRET_KEY");
+const storeOn = () => !!env("REVENUECAT_SECRET_KEY");
+const billingOn = () => (stripeOn() || storeOn()) && !/^(off|false|0|non|no)$/i.test(env("BILLING", "on"));
 type Tier = "free" | "premium" | "expert";
-type Sub = { user_id: string; plan: string; tier?: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null };
+// store : d'où vient l'abonnement (stripe = web, app_store, play_store).
+type Sub = { user_id: string; plan: string; tier?: string; status: string; trial_end?: string | null; period_end?: string | null; cancel_at_period_end?: boolean; trial_used?: boolean; customer?: string | null; subscription?: string | null; store?: string | null };
+const STORE_RE = /^(app_store|play_store)$/;
+const fromStore = (s: Sub | null) => !!s && STORE_RE.test(s.store || "");
 async function subOf(uid: string): Promise<Sub | null> {
   try { const rows = await restJSON("subscriptions?user_id=eq." + uid + "&select=*"); return rows && rows[0] || null; } catch { return null; }
 }
@@ -953,6 +967,8 @@ async function saveStripeSub(s: any, uidHint?: string): Promise<Sub | null> {
   if (!/^[0-9a-f-]{36}$/i.test(uid)) { console.error("stripe : abonnement sans élève", s.id); return null; }
   const old = await subOf(uid);
   if (old && old.status === "comp") return old; // un abonnement offert reste offert
+  // Un abonnement pris dans l'app (App Store, Google Play) encore en cours n'est pas remplacé par un ancien abonnement web.
+  if (fromStore(old) && premiumSub(old) && old!.status !== "canceled" && !["trialing", "active", "past_due"].includes(s.status)) return old;
   // Un ancien abonnement (par exemple payé deux fois dans deux onglets) ne remplace pas l'abonnement en cours.
   if (old && old.subscription && old.subscription !== s.id && premiumSub(old) && old.status !== "canceled" && !["trialing", "active", "past_due"].includes(s.status)) return old;
   const it = s.items && s.items.data && s.items.data[0] || {};
@@ -960,7 +976,7 @@ async function saveStripeSub(s: any, uidHint?: string): Promise<Sub | null> {
   const st = ["trialing", "active", "past_due", "canceled"].includes(s.status) ? s.status : s.status === "unpaid" || s.status === "incomplete_expired" ? "canceled" : "none";
   const tier = (s.metadata && s.metadata.tier) || (it.price && it.price.metadata && it.price.metadata.tier) || (old && old.tier) || "premium";
   const row: Sub = { user_id: uid, plan: interval === "year" ? "yearly" : "monthly", tier: tier === "expert" ? "expert" : "premium", status: st, trial_end: iso(s.trial_end), period_end: iso(s.current_period_end ?? it.current_period_end),
-    cancel_at_period_end: !!s.cancel_at_period_end, trial_used: !!(old && old.trial_used) || !!s.trial_end || st !== "none", customer: String(s.customer || ""), subscription: s.id };
+    cancel_at_period_end: !!s.cancel_at_period_end, trial_used: !!(old && old.trial_used) || !!s.trial_end || st !== "none", customer: String(s.customer || ""), subscription: s.id, store: "stripe" };
   try { await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ ...row, updated_at: new Date().toISOString() }) }); }
   catch (e) { if (/23503|foreign key/i.test(String(e))) { console.error("stripe : compte supprimé", s.id); return null; } throw e; } // compte supprimé entre-temps : rien à garder
   return row;
@@ -968,11 +984,11 @@ async function saveStripeSub(s: any, uidHint?: string): Promise<Sub | null> {
 // Résilie tous les abonnements Stripe en cours d'un élève (suppression du compte, retrait d'un membre). Rend false si Stripe ne répond pas.
 async function cancelStripe(uid: string): Promise<boolean> {
   if (!env("STRIPE_SECRET_KEY")) return true;
-  const sub = await subOf(uid); if (!sub || (!sub.customer && !sub.subscription)) return true;
+  const sub = await subOf(uid); if (!sub || (!sub.customer && !(sub.subscription && !sub.subscription.startsWith("rc:")))) return true;
   try {
     let ids: string[] = [];
     if (sub.customer) { const l = await stripe("subscriptions?customer=" + encodeURIComponent(sub.customer) + "&status=all&limit=20").catch(() => ({ data: [] })); ids = (l.data || []).filter((x: any) => ["trialing", "active", "past_due", "unpaid", "incomplete", "paused"].includes(x.status)).map((x: any) => x.id); }
-    if (sub.subscription && ["trialing", "active", "past_due"].includes(sub.status) && !ids.includes(sub.subscription)) ids.push(sub.subscription);
+    if (sub.subscription && !sub.subscription.startsWith("rc:") && ["trialing", "active", "past_due"].includes(sub.status) && !ids.includes(sub.subscription)) ids.push(sub.subscription);
     for (const id of ids) await stripe("subscriptions/" + id, undefined, "DELETE");
     return true;
   } catch { return false; }
@@ -982,11 +998,68 @@ async function liveStripeSub(customer: string): Promise<any> {
   const l = await stripe("subscriptions?customer=" + encodeURIComponent(customer) + "&status=all&limit=20");
   return (l.data || []).find((x: any) => ["trialing", "active", "past_due"].includes(x.status)) || null;
 }
+// ---------- Abonnements dans les applications : App Store et Google Play, par RevenueCat ----------
+// Secrets : REVENUECAT_SECRET_KEY (clé secrète de l'API v1, sk_…) et REVENUECAT_WEBHOOK_AUTH (valeur exacte de l'en-tête Authorization
+// réglé dans le webhook RevenueCat, adresse …/functions/v1/api/revenuecat). Clés publiques, envoyées à l'app : REVENUECAT_IOS_KEY (appl_…)
+// et REVENUECAT_ANDROID_KEY (goog_…). Droits RevenueCat : « premium » sur les 4 abonnements, « expert » sur les 2 abonnements Expert
+// (autres noms : RC_PREMIUM, RC_EXPERT). L'identifiant RevenueCat de l'élève est son identifiant de compte.
+async function rcSubscriber(uid: string): Promise<any> {
+  const r = await fetch("https://api.revenuecat.com/v1/subscribers/" + encodeURIComponent(uid), {
+    headers: { authorization: "Bearer " + env("REVENUECAT_SECRET_KEY"), "content-type": "application/json" }, signal: AbortSignal.timeout(15000) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { console.error("revenuecat", r.status, JSON.stringify(j).slice(0, 200)); throw new Error("revenuecat " + r.status); }
+  return j.subscriber || {};
+}
+// Relit chez RevenueCat les abonnements de l'élève et enregistre celui qui donne accès (Expert d'abord).
+async function saveStoreSub(uid: string): Promise<Sub | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(uid)) return null;
+  const s = await rcSubscriber(uid), now = Date.now();
+  const live = (e: any) => !!e && (!e.expires_date || Date.parse(e.expires_date) > now || (!!e.grace_period_expires_date && Date.parse(e.grace_period_expires_date) > now));
+  const E = s.entitlements || {}, ex = E[env("RC_EXPERT", "expert")], pr = E[env("RC_PREMIUM", "premium")];
+  const ent = live(ex) ? ex : live(pr) ? pr : null, tier = ent && ent === ex ? "expert" : "premium";
+  const old = await subOf(uid);
+  if (old && old.status === "comp") return old;
+  const write = async (row: Sub) => {
+    try { await restJSON("subscriptions?on_conflict=user_id", { method: "POST", headers: { prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ ...row, updated_at: new Date().toISOString() }) }); }
+    catch (e) { if (/23503|foreign key/i.test(String(e))) return null; throw e; }
+    return row;
+  };
+  if (!ent) {
+    // Plus rien d'actif dans les stores : seul un abonnement venu des stores passe à « terminé » ; un abonnement web n'est pas touché.
+    if (!fromStore(old) || old!.status === "canceled") return old;
+    return await write({ ...old!, status: "canceled", cancel_at_period_end: false });
+  }
+  // Un abonnement web encore en cours garde la main (l'app empêche de payer deux fois).
+  if (old && !fromStore(old) && old.subscription && !old.subscription.startsWith("rc:") && premiumSub(old) && old.status !== "canceled") return old;
+  const product = String(ent.product_identifier || ""), sub = (s.subscriptions || {})[product] || {};
+  const status = sub.period_type === "trial" ? "trialing" : sub.billing_issues_detected_at ? "past_due" : "active";
+  return await write({ user_id: uid, plan: /year|annual|annuel|anual|p1y/i.test(product) ? "yearly" : "monthly", tier, status,
+    trial_end: status === "trialing" ? ent.expires_date || null : null, period_end: ent.expires_date || sub.expires_date || null,
+    cancel_at_period_end: !!sub.unsubscribe_detected_at, trial_used: true, customer: old && old.customer || null,
+    subscription: "rc:" + product, store: STORE_RE.test(sub.store || "") ? sub.store : "app_store" });
+}
+// Webhook RevenueCat : achat, renouvellement, résiliation, problème de paiement, transfert… On relit l'élève concerné chez RevenueCat.
+async function revenuecatHook(req: Request): Promise<Response> {
+  const want = env("REVENUECAT_WEBHOOK_AUTH"), got = req.headers.get("authorization") || "";
+  if (!want || !storeOn()) return fail(req, 503, "not_configured", "Webhook non configuré.");
+  const same = got.length === want.length && [...got].reduce((d, c, i) => d | (c.charCodeAt(0) ^ want.charCodeAt(i)), 0) === 0;
+  if (!same) return fail(req, 401, "signature", "Autorisation invalide.");
+  let b: any; try { b = await req.json(); } catch { return fail(req, 400, "input", "Corps illisible."); }
+  const ev = b && b.event || {};
+  const ids = [ev.app_user_id, ev.original_app_user_id, ...(ev.transferred_to || []), ...(ev.transferred_from || []), ...(ev.aliases || [])]
+    .map((x: any) => String(x || "")).filter((x: string) => /^[0-9a-f-]{36}$/i.test(x));
+  try { for (const id of [...new Set(ids)]) await saveStoreSub(id); }
+  catch (e) { console.error("revenuecat webhook", ev.type, e); return fail(req, 500, "server", "Erreur de traitement."); }
+  return json(req, { received: true });
+}
 function statusOut(p: Plan, used = 0) {
   const s = p.sub, tl = talkLimits(p), per = int("TALK_CHARS_PER_MIN", 500);
   return { billing: p.billing, premium: p.premium, owner: p.owner, tier: p.tier, founder: !!s && s.status === "comp", plan: s ? s.plan : "free", status: s ? s.status : "none",
     trial_end: s && s.trial_end || null, period_end: s && s.period_end || null, cancel_at_period_end: !!(s && s.cancel_at_period_end), trial_used: !!(s && s.trial_used),
-    manage: !!(s && s.customer), prices: prices(),
+    manage: !!(s && s.customer) && !fromStore(s) && stripeOn(), store: s ? (fromStore(s) ? s.store : "stripe") : null, web_pay: stripeOn(),
+    product: s && s.subscription && s.subscription.startsWith("rc:") ? s.subscription.slice(3) : null,
+    // Abonnements dans l'app : clés publiques RevenueCat (sans elles, l'app n'affiche pas de paiement).
+    iap: { ios: env("REVENUECAT_IOS_KEY") || null, android: env("REVENUECAT_ANDROID_KEY") || null }, prices: prices(),
     free: { calls: int("FREE_DAILY_CALLS", 40), tts_chars: int("FREE_TTS_DAILY_CHARS", 6000), stt_seconds: int("FREE_STT_DAILY_SECONDS", 300) },
     // Conversation du jour : caractères des répliques du prof (comptés par le serveur), affichés en minutes.
     talk: { per_min: per, used, max: tl.max, el: tl.el, unlimited: tl.max >= 1e9,
@@ -1013,11 +1086,22 @@ async function billing(req: Request, u: User): Promise<Response> {
     // Abonnement Stripe dont la période est passée (webhook manqué) : on redemande son état.
     const s = p.sub;
     if (p.billing && s && s.subscription && s.status !== "comp" && s.status !== "canceled" && s.period_end && Date.parse(s.period_end) < Date.now()) {
-      try { await saveStripeSub(await stripe("subscriptions/" + s.subscription), u.id); p = await planOf(u); } catch { /* on garde l'état connu */ }
+      try {
+        if (s.subscription.startsWith("rc:")) { if (storeOn()) await saveStoreSub(u.id); }
+        else if (stripeOn()) await saveStripeSub(await stripe("subscriptions/" + s.subscription), u.id);
+        p = await planOf(u);
+      } catch { /* on garde l'état connu */ }
     }
     return json(req, statusOut(p, await talkUsed(u.id)));
   }
   if (!p.billing) return fail(req, 409, "billing_off", "Le paiement n'est pas encore ouvert : tout est accessible gratuitement.");
+  // Application mobile, après un achat ou une restauration dans l'App Store / Google Play : on relit tout de suite chez RevenueCat.
+  if (act === "store_sync") {
+    if (!storeOn()) return fail(req, 409, "store_off", "Les abonnements dans l'app ne sont pas encore ouverts.");
+    try { await saveStoreSub(u.id); } catch { return fail(req, 502, "unavailable", "L'App Store ou Google Play ne répond pas : réessaie dans un moment."); }
+    return json(req, statusOut(await planOf(u), await talkUsed(u.id)));
+  }
+  if (!stripeOn()) return fail(req, 409, "web_pay_off", "Le paiement sur le web n'est pas ouvert : l'abonnement se prend dans l'application.");
   if (act === "checkout") {
     if (p.premium && p.sub && p.sub.status !== "canceled") return fail(req, 409, "already", "Tu as déjà un abonnement : change de formule depuis ton profil.");
     const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
@@ -1048,6 +1132,7 @@ async function billing(req: Request, u: User): Promise<Response> {
   if (act === "change") {
     const tier = b.tier === "expert" ? "expert" : "premium", s = p.sub;
     if (!s || !s.subscription || !["trialing", "active", "past_due"].includes(s.status)) return fail(req, 404, "no_subscription", "Aucun abonnement à changer.");
+    if (fromStore(s) || s.subscription.startsWith("rc:")) return fail(req, 409, "store", "Cet abonnement se change dans l'App Store ou Google Play.");
     if ((s.tier || "premium") === tier) return json(req, statusOut(p, await talkUsed(u.id)));
     const cur = await stripe("subscriptions/" + s.subscription), item = cur.items && cur.items.data && cur.items.data[0];
     if (!item) return fail(req, 502, "unavailable", "Abonnement illisible.");
@@ -1060,6 +1145,7 @@ async function billing(req: Request, u: User): Promise<Response> {
   if (act === "portal") {
     const back = backUrl(req, b.return_url); if (!back) return fail(req, 400, "input", "Adresse de retour invalide.");
     if (!p.sub || !p.sub.customer) return fail(req, 404, "no_subscription", "Aucun abonnement à gérer.");
+    if (fromStore(p.sub) && premiumSub(p.sub)) return fail(req, 409, "store", "Cet abonnement se gère dans l'App Store ou Google Play.");
     const s = await stripe("billing_portal/sessions", { customer: p.sub.customer, return_url: back + "?billing=portal" });
     return json(req, { url: s.url });
   }
@@ -1241,6 +1327,7 @@ export async function handle(req: Request): Promise<Response> {
   try {
     // Sans connexion : le webhook Stripe et le réveil des rappels par la base (chacun vérifie sa signature ou son jeton).
     if (route === "stripe") return await stripeHook(req);
+    if (route === "revenuecat") return await revenuecatHook(req);
     if (route === "push" && req.headers.get("x-cron")) return await pushRun(req);
     const u = await getUser(req);
     if (!u) return fail(req, 401, "not_signed_in", "Connecte-toi pour continuer.");

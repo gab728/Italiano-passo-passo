@@ -11,7 +11,7 @@
   const platform = C.getPlatform();
   const plug = (n) => { try { return (C.Plugins && C.Plugins[n]) || C.registerPlugin(n); } catch (e) { return null; } };
   const P = {};
-  ["App", "Browser", "Haptics", "Keyboard", "LocalNotifications", "SplashScreen", "StatusBar", "TextToSpeech", "KeepAwake"].forEach((n) => { P[n] = plug(n); });
+  ["App", "Browser", "Haptics", "Keyboard", "LocalNotifications", "SplashScreen", "StatusBar", "TextToSpeech", "KeepAwake", "Purchases"].forEach((n) => { P[n] = plug(n); });
   const quiet = (fn) => { try { const r = fn(); if (r && typeof r.catch === "function") r.catch(() => {}); return r; } catch (e) { return null; } };
   D.documentElement.classList.add("native", "native-" + platform);
   const N = W.NATIVE = { on: true, platform, P, iap: false };
@@ -120,6 +120,62 @@
     W.speechSynthesis = ss;
     W.SpeechSynthesisUtterance = function (t) { this.text = t || ""; this.lang = ""; this.rate = 1; this.pitch = 1; this.volume = 1; this.voice = null; this.onend = null; this.onerror = null; this.onstart = null; };
   }
+
+  /* ---------- Abonnements dans l'app : App Store et Google Play, par RevenueCat ----------
+     La clé publique vient du serveur (statut de l'abonnement) ; sans elle, l'app n'affiche pas de paiement.
+     L'élève est identifié chez RevenueCat par son identifiant de compte : le serveur relit ses achats avec. */
+  const PU = P.Purchases, STORE = platform === "ios" ? "app_store" : "play_store";
+  let iapUser = null, iapWait = null, offers = null;
+  N.store = STORE;
+  N.iapSetup = (plan, uid) => {
+    const key = plan && plan.iap && plan.iap[platform === "ios" ? "ios" : "android"];
+    if (!key || !PU || !uid) { N.iap = false; return Promise.resolve(false); }
+    if (iapUser === uid && iapWait) return iapWait;
+    iapWait = (async () => {
+      try {
+        const c = await PU.isConfigured().catch(() => ({ isConfigured: false }));
+        if (!c || !c.isConfigured) await PU.configure({ apiKey: key, appUserID: uid });
+        else if (iapUser !== uid) await PU.logIn({ appUserID: uid });
+        iapUser = uid; offers = null; N.iap = true; return true;
+      } catch (e) { N.iap = false; iapWait = null; return false; }
+    })();
+    return iapWait;
+  };
+  // Les formules du store, avec le prix affiché dans la monnaie du téléphone : { premium_monthly: { pkg, price, amount, currency, trial } … }
+  N.iapOffers = async () => {
+    if (offers) return offers;
+    const o = await PU.getOfferings(), cur = o && o.current, out = {};
+    ((cur && cur.availablePackages) || []).forEach((p) => {
+      const pr = p.product || {}, id = String(pr.identifier || "") + " " + String(p.identifier || "");
+      const tier = /expert/i.test(id) ? "expert" : "premium";
+      const plan = p.packageType === "ANNUAL" || /year|annual|annuel|p1y/i.test(id + " " + (pr.subscriptionPeriod || "")) ? "yearly" : "monthly";
+      const intro = pr.introPrice || null;
+      out[tier + "_" + plan] = { pkg: p, product: String(pr.identifier || ""), price: pr.priceString || "", amount: Number(pr.price) || 0, currency: pr.currencyCode || "EUR",
+        trial: intro && Number(intro.price) === 0 ? { unit: intro.periodUnit || "DAY", n: Number(intro.periodNumberOfUnits) || Number(intro.cycles) || 0, period: intro.period || "" } : null };
+    });
+    if (Object.keys(out).length) offers = out;
+    return out;
+  };
+  // Achat. Passage de Premium à Expert sur Android : on indique l'abonnement remplacé (sur iPhone, le store le fait seul).
+  N.iapBuy = async (tier, plan, fromProduct) => {
+    const all = await N.iapOffers(), o = all[tier + "_" + plan];
+    if (!o) throw Object.assign(new Error("offer"), { code: "offer" });
+    const opts = { aPackage: o.pkg };
+    if (platform === "android" && fromProduct) opts.googleProductChangeInfo = { oldProductIdentifier: String(fromProduct).split(":")[0], prorationMode: 2 };
+    try { return await PU.purchasePackage(opts); }
+    catch (e) {
+      if (e && (e.userCancelled || String(e.code) === "1" || /cancel/i.test(String(e.message || "")))) throw Object.assign(new Error("cancel"), { code: "cancel" });
+      throw e;
+    }
+  };
+  N.iapRestore = () => PU.restorePurchases();
+  N.iapManage = async () => {
+    let url = null;
+    try { const r = await PU.getCustomerInfo(); url = r && r.customerInfo && r.customerInfo.managementURL; } catch (e) { /* rien */ }
+    url = url || (platform === "ios" ? "https://apps.apple.com/account/subscriptions" : "https://play.google.com/store/account/subscriptions?package=com.noe.langues");
+    if (P.Browser) quiet(() => P.Browser.open({ url })); else location.href = url;
+  };
+  N.iapLogout = async () => { if (PU && iapUser) { iapUser = null; iapWait = null; offers = null; N.iap = false; await PU.logOut().catch(() => {}); } };
 
   /* ---------- Rappels quotidiens : notifications programmées sur le téléphone ----------
      Le serveur rédige les rappels des prochains jours (mêmes messages que sur le web) ; le téléphone les programme.

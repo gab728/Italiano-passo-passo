@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = +(process.argv[2] || 8787);
 const ORIGIN = "http://127.0.0.1:" + PORT;
 const SECRET = "sb_secret_test", PUB = "sb_publishable_test";
-export const state = { activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map(), tables: { subscriptions: new Map(), push_subs: new Map(), reminders: new Map(), app_config: new Map() }, stripe: { customers: new Map(), sessions: new Map(), subs: new Map(), calls: [] }, pushes: [] };
+export const state = { rc: { subs: new Map(), calls: [] }, activity: [], cheers: [], weekly: new Map(), users: new Map(), otps: new Map(), tokens: new Map(), profiles: new Map(), progress: new Map(), lessons: new Map(), usage: new Map(), claude: [], stt: 0, tts: [], storage: new Map(), tables: { subscriptions: new Map(), push_subs: new Map(), reminders: new Map(), app_config: new Map() }, stripe: { customers: new Map(), sessions: new Map(), subs: new Map(), calls: [] }, pushes: [] };
 const PK = { subscriptions: "user_id", push_subs: "endpoint", reminders: "user_id", app_config: "key" };
 
 // ---------- Environnement de la fonction ----------
@@ -23,6 +23,13 @@ const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u === "https://api.anthropic.com/v1/models" || u === "https://api.openai.com/v1/models") return new Response(JSON.stringify({ data: [] }), { headers: { "content-type": "application/json" } });
+  // RevenueCat simulé : état des abonnements App Store / Google Play d'un élève (posé par /__setRC).
+  if (u.startsWith("https://api.revenuecat.com/v1/subscribers/")) {
+    const id = decodeURIComponent(u.split("/").pop());
+    state.rc.calls.push({ id, key: (init && init.headers || {}).authorization });
+    if ((init && init.headers || {}).authorization !== "Bearer " + ENV.REVENUECAT_SECRET_KEY) return new Response(JSON.stringify({ code: 7225, message: "Invalid API key" }), { status: 401 });
+    return new Response(JSON.stringify({ subscriber: state.rc.subs.get(id) || { entitlements: {}, subscriptions: {}, original_app_user_id: id } }), { headers: { "content-type": "application/json" } });
+  }
   // Stripe simulé : clients, pages de paiement, abonnements, portail.
   if (u.startsWith("https://api.stripe.com/v1/")) {
     const path = u.slice("https://api.stripe.com/v1/".length).split("?")[0], method = (init && init.method) || "GET";
@@ -225,6 +232,9 @@ createServer(async (req, res) => {
   try {
     // État pour les tests
     if (p === "/__state") return send(res, 200, { trJudged: state.trJudged || 0, rvAsked: state.rvAsked || "", activity: state.activity, cheers: state.cheers, weekly: [...state.weekly.values()], users: [...state.users.values()].map((u) => ({ id: u.id, email: u.email, pw: !!u.password })), profiles: [...state.profiles.values()], progress: Object.fromEntries(state.progress), lessons: [...state.lessons.keys()], usage: [...state.usage.values()], claude: state.claude.map((c) => ({ model: c.model, sys: c.system.slice(0, 60), n: c.messages.length, max: c.max_tokens, thinking: c.thinking, temperature: c.temperature, ask: c.ask })), thinkRefused: state.thinkRefused || 0, news: [...(state.news || new Map()).keys()], ansa: state.ansa || 0, lemonde: state.lemonde || 0, npr: state.npr || 0, sttModels: state.sttModels || [], stt: state.stt, sttLast: state.sttLast, tts: state.tts, elAdded: state.elAdded || [], storage: [...state.storage.keys()], otps: Object.fromEntries(state.otps) });
+    if (p === "/__rc") { const on = url.searchParams.get("on") === "1"; Object.assign(ENV, on ? { REVENUECAT_SECRET_KEY: "sk_rc_mock", REVENUECAT_WEBHOOK_AUTH: "Bearer rc-hook-secret", REVENUECAT_IOS_KEY: "appl_mock", REVENUECAT_ANDROID_KEY: "goog_mock" } : { REVENUECAT_SECRET_KEY: "", REVENUECAT_WEBHOOK_AUTH: "", REVENUECAT_IOS_KEY: "", REVENUECAT_ANDROID_KEY: "" }); return send(res, 200, { on }); }
+    if (p === "/__setRC") { const b = JSON.parse((await readBody(req)).toString()); state.rc.subs.set(b.uid, b.subscriber); return send(res, 200, {}); }
+    if (p === "/__rcCalls") return send(res, 200, state.rc.calls);
     if (p === "/__billing") { const on = url.searchParams.get("on") === "1"; ENV.STRIPE_SECRET_KEY = on ? "sk_test_mock" : ""; ENV.STRIPE_WEBHOOK_SECRET = on ? "whsec_test" : ""; return send(res, 200, { on }); }
     if (p === "/__tables") return send(res, 200, Object.fromEntries(Object.entries(state.tables).map(([k, m]) => [k, [...m.values()]])));
     if (p === "/__pushes") return send(res, 200, state.pushes);
