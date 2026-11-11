@@ -402,7 +402,7 @@ const MOCKS = `
     await a.evaluate((k) => { TTS.stop(); const id = M[k].id; const v = JSON.parse(window.__keep); if (v) S[id] = v; else delete S[id]; home(); }, mi);
   }
   const fr = await a.evaluate(async () => {
-    const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh2-" + M[mi].id);
+    const mi = M.findIndex((m) => m.ex.some((x) => x[0] === "f" && /___ \(/.test(x[1]))); localStorage.removeItem("ipp-frh3-" + M[mi].id);
     go(mi); const k = cur.q.findIndex((x) => x.t === "f" && /___ \(/.test(x.d[1])); cur.i = k; show();
     for (let n = 0; n < 40 && !Object.keys(FRH.get(M[mi].id)).length; n++) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 100));
@@ -412,6 +412,8 @@ const MOCKS = `
   ok(fr.hint && fr.shown.includes("(" + fr.hint + ")") && !/\((venire|fare|sapere|uscire|dovere|volere|dire)/.test(fr.shown), "indice en français entre parenthèses dans les phrases à trous : « " + fr.shown + " » (" + fr.n + " indices pour la leçon)");
   const fin = await a.evaluate(() => [FRH.finish("___ (quanti) anni hai?", "combien quanti", "Quanti"), FRH.finish("Non ___ (sapere, io) a che ora.", "savoir", "so"), FRH.finish("Il biglietto è ___ (in + la) borsa.", "dans la", "nella"), FRH.finish("Abito in una strada ___.", "calme", "tranquilla")]);
   ok(fin.join("|") === "combien|savoir ; io|dans la ; in + la|calme", "indice : jamais le mot italien, la personne et la contraction gardées : " + fin.join(" | "));
+  const bad = await a.evaluate(() => [FRH.finish("Domani ho una riunione: non ___ (potere, io) venire.", "demain / avoir / une réunion : ne pas pouvoir / venir", "posso"), FRH.finish("Vuoi ___ con noi?", "vouloir / avec / nous", "venire"), FRH.finish("Abito ___ Parigi, ___ Francia.", "à / en", "a")]);
+  ok(bad[0] === "" && bad[1] === "" && bad[2] === "à / en", "indice qui traduit toute la phrase : refusé (on garde l'indice d'origine) ; un indice par trou accepté");
   ok(await a.evaluate(() => FRH.withHint("Abito in una strada ___.", "calme") === "Abito in una strada ___ (calme)." && FRH.withHint("Non ___ (sapere, io) a che ora.", "savoir ; io") === "Non ___ (savoir ; io) a che ora." && FRH.withHint("Abito ___ Parigi, ___ Francia.", "à / en") === "Abito ___ Parigi, ___ Francia (à / en)."), "placement de l'indice (après le trou, ou en fin de phrase s'il y a plusieurs trous)");
   await a.evaluate(() => home());
   t0 = (await st()).tts.length;

@@ -160,13 +160,16 @@
   };
 })();
 
-/* ---------- Indice en français dans les phrases à trous ----------
-   Chaque phrase à trous affiche entre parenthèses la traduction française du mot attendu, à sa forme de base :
-   « Abito in una strada ___ (calme). » L'élève retrouve le mot italien, puis l'accorde ou le conjugue.
-   Les indices d'une leçon sont demandés à Claude une seule fois, dès le début de la leçon, et gardés sur l'appareil. */
+/* ---------- Indice dans la langue de l'élève, dans les phrases à trous ----------
+   Chaque phrase à trous affiche entre parenthèses la traduction du SEUL mot attendu, à sa forme de base, dans la langue
+   de l'app (français, anglais ou espagnol) : « Abito in una strada ___ (calme). » L'élève retrouve le mot, puis l'accorde
+   ou le conjugue. Jamais la traduction du reste de la phrase. Les indices d'une leçon sont demandés à Claude une seule fois,
+   dès le début de la leçon, vérifiés (un indice court par trou, sinon rien) et gardés sur l'appareil. */
 (function () {
   "use strict";
-  const KEY = (id) => "ipp-frh2-" + id + (window.I18N && I18N.ui !== "fr" ? "-" + I18N.ui : "");
+  // frh3 : nouvelle version des indices (les anciens traduisaient parfois toute la phrase).
+  const UI = () => (window.I18N && ["en", "es"].includes(I18N.ui) ? I18N.ui : "fr");
+  const KEY = (id) => "ipp-frh3-" + id + (UI() !== "fr" ? "-" + UI() : "");
   const load = (id) => { try { return JSON.parse(localStorage.getItem(KEY(id)) || "{}") || {}; } catch (e) { return {}; } };
   const store = (id, v) => { try { localStorage.setItem(KEY(id), JSON.stringify(v)); } catch (e) { /* rien */ } };
   const answerOf = (x) => Array.isArray(x[2]) ? String(x[2][0]) : String(x[2]).split("|")[0];
@@ -180,9 +183,13 @@
     if (!todo.length) return;
     pending[m.id] = true;
     try {
-      const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  " + answerOf(x)).join("\n");
-      const r = await AI("Pour chaque phrase d'exercice d'" + LN() + " ci-dessous (phrase à trous → mot attendu), écris l'indice à afficher entre parenthèses après le trou : la traduction française du mot attendu, à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier), pour que l'élève retrouve lui-même le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : C().id === "fr" ? "français" : C().id === "en" ? "anglais" : "italien") + " et le mette à la bonne forme.\n" +
-        "Règles : jamais le mot " + (C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : C().id === "fr" ? "français" : C().id === "en" ? "anglais" : "italien") + " attendu ni sa forme conjuguée ou accordée ; pour une préposition ou un article, l'équivalent français le plus proche (« de la », « au ») ; pour plusieurs mots ou plusieurs trous, sépare par « / ». Seulement du français : ne recopie pas ce qui est déjà entre parenthèses dans la phrase.\n\n" + list +
+      const list = todo.map((x, i) => (i + 1) + ". " + x[1] + "  →  mot attendu : " + answerOf(x)).join("\n");
+      const tl = C().id === "he" ? "hébreu" : C().id === "es" ? "espagnol" : C().id === "fr" ? "français" : C().id === "en" ? "anglais" : "italien";
+      const nl = { fr: "français", en: "anglais", es: "espagnol" }[UI()];
+      const ex = { fr: ["calme", "pouvoir", "au"], en: ["quiet", "can", "to the"], es: ["tranquilo", "poder", "al"] }[UI()];
+      const r = await AI("Pour chaque phrase d'exercice d'" + LN() + " ci-dessous, écris l'indice qui s'affichera entre parenthèses juste après le trou : la traduction en " + nl + " du SEUL mot attendu (pas des autres mots de la phrase), à sa forme de dictionnaire (verbe à l'infinitif, adjectif et nom au masculin singulier). L'élève retrouve ainsi le mot " + tl + " et le met à la bonne forme.\n" +
+        "Règles :\n- Ne traduis jamais la phrase ni les autres mots : seulement le mot attendu. Un trou = un indice de 1 à 3 mots.\n- Plusieurs trous dans une phrase : un indice par trou, dans l'ordre, séparés par « / ».\n- Jamais le mot " + tl + " attendu ni une de ses formes. Pour une préposition ou un article, l'équivalent le plus proche en " + nl + ".\n" +
+        "- Exemples : « Abito in una strada ___. » → mot attendu : tranquilla → \"" + ex[0] + "\" ; « Domani non ___ venire. » → mot attendu : posso → \"" + ex[1] + "\" ; « Vado ___ cinema. » → mot attendu : al → \"" + ex[2] + "\".\n\n" + list +
         "\n\nRéponds uniquement par un tableau JSON de " + todo.length + " chaînes, dans l'ordre, sans parenthèses.",
         { modelTier: "quick", cache: true, maxTokens: 120 + 40 * todo.length });
       const arr = JSON.parse(String(r.text).replace(/^[^[]*/, "").replace(/[^\]]*$/, ""));
@@ -198,6 +205,9 @@
   const PRON = /\b(io|tu|lui|lei|Lei|noi|voi|loro)\b/g;
   function finish(q, fr, answer) {
     const orig = ((q.match(/___\s*\(([^)]*)\)/) || [])[1] || "").trim();
+    // Un indice court par trou, sinon rien (jamais une traduction de la phrase entière).
+    const holesN = Math.max(1, (q.match(/___/g) || []).length), parts = String(fr || "").split("/").map((x) => x.trim()).filter(Boolean);
+    if (!parts.length || parts.length > holesN || parts.some((x) => x.split(/\s+/).length > 4 || /[:;!?]/.test(x)) || String(fr).length > 24 * holesN) return "";
     const banned = new Set((/\+/.test(orig) ? [] : orig.toLowerCase().split(/[\s,;/]+/)).concat(String(answer).toLowerCase().split(/\s+/)).filter((w) => w.length >= 3 && !/^(lui|lei|noi|voi|loro)$/.test(w)));
     let h = String(fr || "").replace(/[<>()]/g, " ").split(/\s+/).filter((w) => !banned.has(w.toLowerCase().replace(/[.,;:!?]/g, ""))).join(" ").replace(/\s*;\s*$/, "").replace(/\s+/g, " ").trim().slice(0, 60);
     if (!h) return "";
