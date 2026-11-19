@@ -134,6 +134,38 @@ const ok = (c, m) => { if (c) { passes++; console.log("  ok  " + m); } else { fa
   ok(await p.evaluate(() => !FX.muted()), "sons réactivés");
   await p.evaluate(() => UI.go("feed"));
 
+  console.log("4 ter. Vocabulaire : Lino dit le mot, le mot écrit en dessous (plus de carte)");
+  const vi = await p.evaluate(() => M.findIndex((m) => m.vocab && m.vocab.length >= 6));
+  await p.evaluate((mi) => { window.__said = []; window.__talkUntil = 0; speak = (t) => { __said.push(t); __talkUntil = Date.now() + 700; }; TTS.speaking = () => Date.now() < __talkUntil;
+    go(mi); cur.i = cur.q.findIndex((x) => x.t === "v"); show(); }, vi);
+  await p.waitForSelector(".vw .vw-lino .lino-talk");
+  const w0 = await p.evaluate((mi) => M[mi].vocab[0], vi);
+  ok(!(await p.$(".flash")) && (await p.textContent(".vw .vw-word")) === w0[0], "le mot « " + w0[0] + " » s'affiche sous Lino, sans carte");
+  const c1 = await p.textContent(".vw-n");
+  ok(/^Mot 1 \/ \d+$/.test(c1), "compteur « Mot 1 / … » : " + c1);
+  ok(await p.evaluate(() => { const l = document.querySelector(".vw-who").getBoundingClientRect(), w = document.querySelector(".vw-word").getBoundingClientRect(), v = getComputedStyle(document.querySelector(".vw"));
+    return w.top >= l.bottom - 4 && Math.abs((l.left + l.right) / 2 - (w.left + w.right) / 2) < 30 && v.backgroundColor === "rgba(0, 0, 0, 0)" && v.borderTopWidth === "0px" && v.boxShadow === "none"; }), "mot centré juste en dessous de Lino ; pas de fond, de bordure ni d'ombre de carte");
+  ok(await p.evaluate((w) => __said[0] === w, w0[0]) && !!(await p.$(".vw.talking")), "Lino dit le mot tout seul et bouge la bouche");
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector(".vw.talking .ln-mouth")).animationName === "ln-talk" && getComputedStyle(document.querySelector(".vw.talking .vw-waves i")).animationName === "vw-wave"), "bouche et ondes sonores animées pendant qu'il parle");
+  await p.waitForFunction(() => !document.querySelector(".vw.talking"), null, { timeout: 3000 }).catch(() => {});
+  ok(!(await p.$(".vw.talking")), "il se tait quand la lecture est finie");
+  await p.click(".vw-lino");
+  ok(await p.evaluate(() => __said.length === 2) && !!(await p.$(".vw.talking")), "toucher Lino : il redit le mot");
+  await p.screenshot({ path: "tests/shot-vocab.png" });
+  await p.click(".rowb .btn.primary");
+  ok((await p.textContent(".vw .vw-tr")) === w0[1], "« Voir la traduction » : la traduction s'écrit sous le mot");
+  await p.screenshot({ path: "tests/shot-vocab-tr.png" });
+  await p.click(".rowb .btn.primary");
+  ok(!!(await p.$(".vw .lino-joy")), "« Je le savais » : Lino se réjouit");
+  await p.waitForFunction(() => /^Mot 2 /.test(document.querySelector(".vw-n").textContent), null, { timeout: 2000 }).catch(() => {});
+  const w1 = await p.evaluate((mi) => M[mi].vocab[1][0], vi);
+  ok((await p.textContent(".vw .vw-word")) === w1 && await p.evaluate((w) => __said.slice(-1)[0] === w, w1) && !!(await p.$(".vw .lino-talk")), "mot suivant : Lino reparle, « " + w1 + " »");
+  await p.click(".rowb .btn.primary"); await p.click(".rowb .btn:not(.primary)");
+  ok(!!(await p.$(".vw .lino-think")), "« À revoir » : Lino réfléchit, le mot reviendra à la fin");
+  await p.waitForFunction(() => /^Mot 3 \/ /.test(document.querySelector(".vw-n").textContent), null, { timeout: 2000 }).catch(() => {});
+  ok(await p.evaluate((mi) => document.querySelector(".vw-n").textContent === "Mot 3 / " + (M[mi].vocab.length + 1), vi), "le mot à revoir est remis au bout de la liste");
+  await p.evaluate(() => UI.go("feed"));
+
   console.log("5. Anglais et réduction des animations");
   const e = await newPage({ locale: "en-US" });
   await signup(e, "Emma");
@@ -141,6 +173,9 @@ const ok = (c, m) => { if (c) { passes++; console.log("  ok  " + m); } else { fa
   await e.waitForSelector(".fx-toast.combo", { timeout: 2000 }).catch(() => {});
   ok(/3 correct answers in a row/.test(await e.textContent(".fx-toast.combo").catch(() => "")), "anglais : « 3 correct answers in a row! »");
   ok(/Daily goal reached!/.test(await e.textContent(".fx-cel").catch(() => "")) && /Continue/.test(await e.textContent(".fx-cel .btn").catch(() => "")), "anglais : « Daily goal reached! », « Continue »");
+  await e.evaluate(() => { speak = () => {}; const mi = M.findIndex((m) => m.vocab && m.vocab.length >= 6); go(mi); cur.i = cur.q.findIndex((x) => x.t === "v"); show(); });
+  await e.waitForSelector(".vw .vw-word");
+  ok(/^Word 1 \/ \d+$/.test(await e.textContent(".vw-n")) && (await e.getAttribute(".vw-lino", "aria-label")) === "Listen to the word" && /Listen to Lino/.test(await e.textContent("main p.fr, .body p.fr").catch(() => "")), "anglais : « Word 1 / … », « Listen to the word », « Listen to Lino… »");
   const r = await newPage({ reducedMotion: "reduce" });
   await signup(r, "Rita");
   await r.evaluate(() => FX.burst(100, 100, 20));

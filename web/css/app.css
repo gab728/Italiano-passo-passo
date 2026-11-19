@@ -63,7 +63,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .field input, .cj-q, .addw input, .panel textarea, #import-text, .gate-form input, .custom textarea { border-radius: 16px !important; border: 1px solid var(--line) !important; background: var(--surface) !important; color: var(--ink); font-size: 17px; }
 .field input { font-family: var(--it) !important; font-size: 22px !important; }
 .field input:focus-visible { outline: none; border-color: var(--azzurro) !important; box-shadow: 0 0 0 3px var(--azzurro-soft); }
-.panel, .today-old, .flash, .cj-card, .cj-facts div, .members li, .tip { border-radius: 20px; border: 0; background: var(--surface); }
+.panel, .today-old, .cj-card, .cj-facts div, .members li, .tip { border-radius: 20px; border: 0; background: var(--surface); }
 .tip { background: var(--note); color: var(--note-ink); }
 .mic { border-radius: 999px; min-height: 44px; border: 0; background: var(--chip); color: var(--ink); font-weight: 500; font-size: 14.5px; align-self: flex-start; padding: 8px 16px; }
 .mic svg { width: 18px; height: 18px; }
@@ -71,13 +71,40 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .say { color: var(--muted); font-weight: 500; }
 
 /* Texte italien en serif italique */
-.q-it, .lesson .ex b, .flash .it, .dlg .it, .bub.it, .big-it, .it-line, .quote .it, .corr .better, .nb .it, .dict { font-family: var(--it); font-weight: 400; }
+.q-it, .lesson .ex b, .vw .it, .dlg .it, .bub.it, .big-it, .it-line, .quote .it, .corr .better, .nb .it, .dict { font-family: var(--it); font-weight: 400; }
 .q-it { font-size: 31px !important; line-height: 1.18 !important; letter-spacing: -.005em; }
 .q { font-size: 20px; font-weight: 500; line-height: 1.35; }
 .blank { border-bottom: 2.5px solid var(--ink); min-width: 2.6em; }
-.flash { padding: 36px 20px; min-height: 230px; box-shadow: 0 18px 40px -28px rgba(18, 18, 24, .45); }
-.flash .it { font-size: 44px; font-weight: 400; }
-.flash .tr { font-size: 17px; }
+/* Vocabulaire des leçons : Lino dit le mot, le mot s'écrit en dessous (plus de carte). */
+.vw { position: relative; min-height: 286px; padding: 6px 0 10px; gap: 4px; }
+.vw::before { content: ""; position: absolute; left: 50%; top: 20px; width: 168px; height: 168px; margin-left: -84px; border-radius: 50%; background: radial-gradient(circle, #FFF1B8 0%, rgba(255, 241, 184, 0) 70%); z-index: 0; pointer-events: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .vw::before { background: radial-gradient(circle, rgba(255, 216, 74, .22) 0%, rgba(255, 216, 74, 0) 70%); } }
+.vw > * { position: relative; z-index: 1; }
+.vw-lino { display: block; width: 150px; height: 150px; margin: 0 auto; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.vw-lino:focus-visible { outline: 3px solid var(--accent, #6D5BD0); outline-offset: 2px; }
+.vw-who { display: block; width: 132px; height: 132px; margin: 9px auto 0; }
+.vw-who .lino { width: 132px; height: 132px; filter: drop-shadow(0 12px 14px rgba(120, 90, 0, .18)); }
+.vw-who .lino-talk { animation: vw-in .5s cubic-bezier(.3, 1.4, .5, 1) both; transform-origin: 50% 100%; }
+.vw.talking .vw-who { animation: vw-nod .5s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.lino .ln-mouth { transform-box: fill-box; transform-origin: 50% 0%; transform: scaleY(.45); transition: transform .12s; }
+.vw.talking .lino .ln-mouth { animation: ln-talk .16s ease-in-out infinite alternate; }
+.lino .ln-tell { transform-box: fill-box; transform-origin: 0% 100%; }
+.vw.talking .lino .ln-tell { animation: ln-tell .5s ease-in-out infinite alternate; }
+.vw-waves { position: absolute; left: -8px; top: 74px; width: 30px; height: 40px; pointer-events: none; }
+.vw-waves i { position: absolute; top: 50%; right: -2px; border: 3px solid transparent; border-left-color: #F59E0B; border-radius: 50%; opacity: 0; }
+.vw-waves i:nth-child(1) { width: 14px; height: 14px; margin-top: -7px; }
+.vw-waves i:nth-child(2) { width: 26px; height: 26px; margin-top: -13px; animation-delay: .15s !important; }
+.vw-waves i:nth-child(3) { width: 38px; height: 38px; margin-top: -19px; animation-delay: .3s !important; }
+.vw.talking .vw-waves i { animation: vw-wave .9s ease-out infinite; }
+.vw .vw-word { font-size: 44px; font-weight: 400; line-height: 1.15; color: var(--ink); max-width: 100%; overflow-wrap: anywhere; animation: vw-up .45s cubic-bezier(.2, .9, .3, 1.2) .12s both; }
+.vw .vw-tr { font-size: 20px; font-weight: 600; color: var(--ink); opacity: .72; margin-top: 2px; animation: vw-up .35s ease-out both; }
+@keyframes vw-in { from { transform: translateY(18px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes vw-nod { from { transform: rotate(-3deg); } to { transform: rotate(3deg) translateY(-2px); } }
+@keyframes vw-up { from { transform: translateY(14px); opacity: 0; } }
+@keyframes vw-wave { 0% { opacity: 0; transform: scale(.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes ln-talk { from { transform: scaleY(.35); } to { transform: scaleY(1.1); } }
+@keyframes ln-tell { from { transform: rotate(0deg); } to { transform: rotate(-16deg); } }
+@media (prefers-reduced-motion: reduce) { .vw *, .vw.talking .vw-who { animation: none !important; } .vw.talking .lino .ln-mouth { transform: none; } .vw.talking .vw-waves i { opacity: .8; } }
 .dlg .it { font-size: 20px; }
 .lesson h2 { font-size: 26px; } .lesson h3 { font-size: 17px; }
 .lesson em { color: var(--spritz-text); font-weight: 600; font-style: normal; }
@@ -852,7 +879,7 @@ html[data-course="he"] :is(.it, .word, .opt, .q, .bub, .ws-word, .wt-it, .nw-tit
 html[data-course="he"] :is(.tray, .pool) { direction: rtl; }
 html[data-course="he"] .lesson em { font-style: normal; font-family: var(--it); font-size: 1.2em; unicode-bidi: isolate; }
 html[data-course="he"] .lesson td em { font-size: 1.45em; }
-html[data-course="he"] :is(.flash .it, .word) { font-size: 1.15em; line-height: 1.5; }
+html[data-course="he"] :is(.vw .it, .word) { font-size: 1.15em; line-height: 1.5; }
 html[data-course="he"] .keys { direction: rtl; gap: 4px; }
 html[data-course="he"] .keys button { min-width: 34px; min-height: 40px; padding: 0 2px; font: 400 20px/1 "Noto Sans Hebrew", var(--body); }
 
@@ -875,7 +902,7 @@ html[data-course="he"] .lhero.start { box-shadow: 0 0 0 2px var(--spritz), 0 14p
 /* Prononciation de l'hébreu, sous le texte (attribut data-tl rempli par ui.js) */
 html.show-tl [data-tl]::after { content: attr(data-tl); display: block; margin-top: 3px; font: italic 400 13.5px/1.35 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); direction: ltr; unicode-bidi: isolate; text-align: inherit; white-space: normal; }
 html.show-tl .lesson em[data-tl]::after { display: inline; margin-inline-start: .35em; font-size: .62em; }
-html.show-tl :is(.word, .flash .it, .q)[data-tl]::after { font-size: 15px; }
+html.show-tl :is(.word, .vw .it, .q)[data-tl]::after { font-size: 15px; }
 html.show-tl :is(.opt, .chip)[data-tl]::after { font-size: 12px; margin-top: 1px; }
 html.show-tl .bub[data-tl]::after { color: inherit; opacity: .72; }
 html.show-tl .vy-t-top [data-tl]::after, html.show-tl .daily-t [data-tl]::after { color: inherit; opacity: .7; }
@@ -1138,7 +1165,7 @@ html[data-course="he"] .tr-inp { font-family: "Noto Sans Hebrew", var(--body); t
 
 /* ---------- Nunito partout : la langue étudiée en gras (sans serif ni italique), titres très gras ---------- */
 h1, h2, h3 { font-weight: 800; }
-.q-it, .lesson .ex b, .flash .it, .dlg .it, .bub.it, .big-it, .it-line, .quote .it, .corr .better, .nb .it, .dict, .lesson .ex, .opts.grid2 .opt, .pool .chip, .tray .chip, .keys button, .field input { font-weight: 700; font-style: normal; }
+.q-it, .lesson .ex b, .vw .it, .dlg .it, .bub.it, .big-it, .it-line, .quote .it, .corr .better, .nb .it, .dict, .lesson .ex, .opts.grid2 .opt, .pool .chip, .tray .chip, .keys button, .field input { font-weight: 700; font-style: normal; }
 .pc-n b { font-weight: 800; }
 .av { font-style: normal; font-weight: 800; }
 .nwj-title, .nwj-h1, .nwj-h3, .nwj-h4, .nwe-title, .nwe-h1, .nwj-filh h3, .cf-nat { font-weight: 800 !important; letter-spacing: -.02em; }

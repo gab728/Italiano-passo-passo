@@ -1629,16 +1629,26 @@ function quizRun(cfg){const V=vstat(),toIt=cfg.dir==="fr-it";if(cfg.src==="due"&
 const R={
 l(s){const d=el("div","lesson",s.d);body.append(d);d.querySelectorAll(".scroll").forEach(x=>{if(x.scrollWidth>x.clientWidth+4)x.after(el("div","swipe","Fais glisser le tableau pour voir la suite →"))});const b=btn("Continuer","primary");b.onclick=next;body.append(b)},
 v(){const m=M[cur.mi];let deck=m.vocab.map((v,ix)=>({v,ix,again:0})),k=0;const mark=(c,val)=>{S.v=S.v||{};const key=M[cur.mi].id+"-"+c.ix;if(val||!S.v[key]){setV(key,val||1);save()}};
-  const intro=el("p","fr","Essaie de traduire chaque mot avant de retourner la carte.");
-  const count=el("div","count"),card=el("div","flash"),row=el("div","rowb");body.append(intro,count,card,row);
+  /* Lino dit le mot (il bouge la bouche pendant la lecture), le mot s'écrit en dessous ; on le touche pour réécouter. */
+  const intro=el("p","fr",canSpeak?"Écoute Lino et essaie de traduire chaque mot avant de voir la traduction.":"Essaie de traduire chaque mot avant de voir la traduction.");
+  const count=el("div","count vw-n"),scene=el("div","vw"),row=el("div","rowb");body.append(intro,count,scene,row);
   const skip=el("button","linkbtn");skip.type="button";skip.textContent="Passer le vocabulaire";skip.onclick=next;body.append(skip);
-  function draw(){if(k>=deck.length)return next();const c=deck[k];count.textContent="Carte "+(k+1)+" / "+deck.length;
-    card.innerHTML="";row.innerHTML="";const it=el("div","it");it.textContent=c.v[0];card.append(it);
-    if(canSpeak)card.append(sayBtn(c.v[0]));
+  const lang=C().speech||"it-IT",hasTTS=()=>typeof TTS!=="undefined",talking=()=>{try{return!!((hasTTS()&&TTS.speaking())||(canSpeak&&speechSynthesis.speaking))}catch(e){return false}};
+  let tk=0,who=null;
+  const mood=mo=>{if(!who||!window.LINO)return;who.innerHTML="";who.append(LINO(mo,132))};
+  const say=t=>{if(!canSpeak)return;speak(t);clearInterval(tk);let n=0,was=false;scene.classList.add("talking");
+    tk=setInterval(()=>{n++;const on=talking();if(on)was=true;if(!document.body.contains(scene)||(was&&!on)||(!was&&n>40)||n>120){clearInterval(tk);scene.classList.remove("talking")}},120)};
+  function draw(){if(k>=deck.length){clearInterval(tk);return next()}const c=deck[k];count.textContent="Mot "+(k+1)+" / "+deck.length;
+    scene.innerHTML="";row.innerHTML="";scene.classList.remove("talking","shown");
+    const lb=el("button","vw-lino");lb.type="button";lb.setAttribute("aria-label",canSpeak?"Écouter le mot":"Lino");
+    who=el("span","vw-who");lb.append(who,el("span","vw-waves","<i></i><i></i><i></i>"));mood("talk");
+    const it=el("div","it vw-word");it.textContent=c.v[0];scene.append(lb,it);
+    if(canSpeak){lb.onclick=()=>say(c.v[0]);const ua=navigator.userActivation;if(!ua||ua.hasBeenActive)say(c.v[0])}
+    const nx=deck[k+1];if(nx&&hasTTS()&&TTS.prefetch)try{TTS.prefetch(nx.v[0],lang,{who:"narrator",cache:true,rate:.9})}catch(e){}
     const show=btn("Voir la traduction","primary");row.append(show);
-    show.onclick=()=>{mark(c,0);const tr=el("div","tr");tr.textContent=c.v[1];card.append(tr);row.innerHTML="";
-      const no=btn("À revoir"),yes=btn("Je le savais","primary");
-      no.onclick=()=>{mark(c,2);if(!c.again)deck.push({v:c.v,ix:c.ix,again:1});k++;draw()};yes.onclick=()=>{if(!c.again)mark(c,1);k++;draw()};row.append(no,yes);yes.focus({preventScroll:true})}}
+    show.onclick=()=>{mark(c,0);const tr=el("div","tr vw-tr");tr.textContent=c.v[1];scene.append(tr);scene.classList.add("shown");row.innerHTML="";
+      const no=btn("À revoir"),yes=btn("Je le savais","primary"),go=(mo,f)=>{no.disabled=yes.disabled=true;mood(mo);setTimeout(()=>{f();k++;draw()},window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches?0:420)};
+      no.onclick=()=>go("think",()=>{mark(c,2);if(!c.again)deck.push({v:c.v,ix:c.ix,again:1})});yes.onclick=()=>go("joy",()=>{if(!c.again)mark(c,1)});row.append(no,yes);yes.focus({preventScroll:true})}}
   draw()},
 m(s){const d=s.d;if(d[4])body.append(el("p","fr",d[4]));body.append(el("p","q",fmt(d[1])));
   const g=el("div","opts");

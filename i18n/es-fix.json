@@ -275,5 +275,9 @@
  "La restauration n'a pas pu se faire. Réessaie dans un moment.": "No se ha podido restaurar. Vuelve a intentarlo en un momento.",
  "Abonnement pris dans {0} : il se gère dans les réglages de {0}.": "Suscripción hecha en {0}: se gestiona en los ajustes de {0}.",
  "l'App Store": "el App Store",
- "L'abonnement se prend dans l'application NOE, sur iPhone ou Android.": "La suscripción se contrata en la app NOE, en iPhone o Android."
+ "L'abonnement se prend dans l'application NOE, sur iPhone ou Android.": "La suscripción se contrata en la app NOE, en iPhone o Android.",
+ "Écoute Lino et essaie de traduire chaque mot avant de voir la traduction.": "Escucha a Lino e intenta traducir cada palabra antes de ver la traducción.",
+ "Essaie de traduire chaque mot avant de voir la traduction.": "Intenta traducir cada palabra antes de ver la traducción.",
+ "Mot {0} / {1}": "Palabra {0} / {1}",
+ "Écouter le mot": "Escuchar la palabra"
 }

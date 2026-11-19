@@ -348,7 +348,7 @@
     root.append(sg);
   }
   /* ---------- Lino, le petit citron de l'app ----------
-     Humeurs : wave (coucou), joy (fête), hang (suspendu à la guirlande), think (encourage). Animé en CSS, immobile si l'appareil réduit les animations. */
+     Humeurs : wave (coucou), joy (fête), hang (suspendu à la guirlande), think (encourage), sad (raté), talk (dit un mot ; la bouche bouge sous .talking). Animé en CSS, immobile si l'appareil réduit les animations. */
   function lino(mood, size) {
     const s = size || 64, arms = {
       wave: '<path d="M22 62 C14 70 12 78 16 84" class="ln-arm"/><path class="ln-wave ln-arm" d="M78 58 C88 52 92 44 90 34"/>',
@@ -356,10 +356,11 @@
       hang: '<path d="M30 50 C24 36 28 20 36 6" class="ln-arm"/><path d="M70 50 C76 36 72 20 64 6" class="ln-arm"/>',
       think: '<path d="M22 62 C14 68 14 76 20 80" class="ln-arm"/><path d="M78 62 C70 66 64 62 62 56" class="ln-arm"/>',
       sad: '<path d="M22 62 C16 70 16 78 19 86" class="ln-arm"/><path d="M78 62 C84 70 84 78 81 86" class="ln-arm"/>',
+      talk: '<path d="M22 62 C14 70 12 78 16 84" class="ln-arm"/><path class="ln-tell ln-arm" d="M78 60 C88 58 94 52 94 44"/>',
     }[mood] || "";
     const eyes = mood === "joy" ? '<path d="M37 58 q4 -5 8 0" class="ln-line"/><path d="M55 58 q4 -5 8 0" class="ln-line"/>'
       : '<ellipse class="ln-blink" cx="41" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/><ellipse class="ln-blink" cx="59" cy="58" rx="3.6" ry="4.6" fill="#1E1B2E"/>';
-    const mouth = mood === "joy" ? '<path d="M42 66 Q50 78 58 66 Z" fill="#1E1B2E"/>' : mood === "sad" ? '<path d="M43 73 Q50 66 57 73" class="ln-line"/><path d="M34 50 L45 46" class="ln-line"/><path d="M66 50 L55 46" class="ln-line"/><path class="ln-sweat" d="M77 34 C81 41 83 44 80 47 C77 49 74 46 75 42 Z" fill="#7CC8FF"/>' : mood === "think" ? '<ellipse cx="50" cy="70" rx="3" ry="2.6" fill="#1E1B2E"/>' : '<path d="M44 68 Q50 74 56 68" class="ln-line"/>';
+    const mouth = mood === "joy" ? '<path d="M42 66 Q50 78 58 66 Z" fill="#1E1B2E"/>' : mood === "sad" ? '<path d="M43 73 Q50 66 57 73" class="ln-line"/><path d="M34 50 L45 46" class="ln-line"/><path d="M66 50 L55 46" class="ln-line"/><path class="ln-sweat" d="M77 34 C81 41 83 44 80 47 C77 49 74 46 75 42 Z" fill="#7CC8FF"/>' : mood === "think" ? '<ellipse cx="50" cy="70" rx="3" ry="2.6" fill="#1E1B2E"/>' : mood === "talk" ? '<path d="M35 49 Q41 45 46 48" class="ln-line"/><path d="M54 48 Q59 45 65 49" class="ln-line"/><g class="ln-mouth"><path d="M43 67 Q50 65 57 67 Q56 76 50 77 Q44 76 43 67 Z" fill="#1E1B2E"/><path d="M46 74 Q50 71 54 74 Q50 77 46 74 Z" fill="#FF7A8A"/></g>' : '<path d="M44 68 Q50 74 56 68" class="ln-line"/>';
     return node('<svg class="lino lino-' + mood + '" width="' + s + '" height="' + s + '" viewBox="0 0 100 100" aria-hidden="true">'
       + '<path d="M50 30 C52 18 62 12 72 14 C68 24 60 30 50 30 Z" fill="#3DBE8B"/>' + arms
       + '<circle cx="17" cy="58" r="5" fill="#FFD84A"/><circle cx="83" cy="58" r="5" fill="#FFD84A"/>'
@@ -911,7 +912,7 @@
      Chaque texte hébreu vocalisé reçoit sa prononciation en lettres latines (attribut data-tl, affiché par le CSS : le texte
      lui-même ne change pas, les exercices qui le comparent restent justes). Celle écrite dans la leçon passe avant la transcription
      automatique. Pas de prononciation quand l'exercice demande justement de lire (« Comment se lit… ? »). */
-  const TL_SEL = ".q, .opt, .word, .flash .it, .dlg .ln .it, .bub.it, .tray .chip, .pool .chip, .fb p, .nw-p .it, .nw-title, .nw-card-t, .quote .it, .daily-t b.it, .wt-it, .wt-li-t .it, .car-heard, .it-line, .lesson em, .nw-kw-t .it, .nb .it, .miss b, .ws-word";
+  const TL_SEL = ".q, .opt, .word, .vw .it, .dlg .ln .it, .bub.it, .tray .chip, .pool .chip, .fb p, .nw-p .it, .nw-title, .nw-card-t, .quote .it, .daily-t b.it, .wt-it, .wt-li-t .it, .car-heard, .it-line, .lesson em, .nw-kw-t .it, .nb .it, .miss b, .ws-word";
   function authTl(t) {
     const k = norm(t).replace(/[.,!?]/g, "").trim(); if (!k) return "";
     const m = typeof cur !== "undefined" && cur && cur.mi != null ? M[cur.mi] : null;
@@ -931,7 +932,7 @@
         const near = (e.parentElement && e.parentElement.textContent) || "";
         const skip = (reading && (e.matches(".q") || e.closest(".fb"))) || (e.matches(".opt") && t.replace(/[^\u05D0-\u05EA]/g, "").length <= 2) ||
           (e.matches(".lesson em, .fb p, .nb .it, .miss b") && /\[[^\]]+\]/.test(near)) || (e.closest("td") && /Pronon|Son|Lecture|Translit|Sound|Reading|Sonido|Lectura/i.test((e.closest("table").querySelector("tr") || {}).textContent || ""));
-        if (!skip) v = (e.matches(".flash .it, .dlg .ln .it, .tray .chip, .pool .chip, .ws-word, .opt, .word") && authTl(t)) || heTl(t);
+        if (!skip) v = (e.matches(".vw .it, .dlg .ln .it, .tray .chip, .pool .chip, .ws-word, .opt, .word") && authTl(t)) || heTl(t);
         if (e.matches(".dlg .ln .it")) { const tr = e.parentElement.querySelector(".tr"); if (tr && tl(tr.textContent)) v = tl(tr.textContent); }
       }
       if (v) e.dataset.tl = v; else delete e.dataset.tl;
