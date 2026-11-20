@@ -7,6 +7,8 @@ export const SITE = "https://gab728.github.io/italiano-passo-passo/";
 const CONTACT = "bramigab@gmail.com";
 const UPDATED = { fr: "10 novembre 2026", en: "November 10, 2026", es: "10 de noviembre de 2026" };
 const EDITOR = "GBH, SAS au capital de 1 000 €, 23 rue d'Anjou, 75008 Paris, France — RCS Paris 934 041 229";
+// Site de la société éditrice (demandé par Apple : nom complet de la société et contact visibles).
+export const GBH_SITE = "https://gab728.github.io/gbh-site/";
 
 const PRIVACY = {
   fr: {
@@ -196,7 +198,9 @@ header { background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-fi
 header b { font-weight: 900; letter-spacing: .12em; font-size: 20px; }
 nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 nav a { color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 700; font-size: 15px; }
-main { max-width: 720px; margin: 0 auto; padding: 8px 16px 64px; }
+main { max-width: 720px; margin: 0 auto; padding: 8px 16px 24px; }
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 56px; color: var(--muted); font-size: 15px; }
+footer p { margin: 0 0 6px; }
 section { background: var(--surface); border-radius: 24px; padding: 8px 22px 18px; margin: 18px 0; border: 1px solid var(--line); }
 h1 { font-size: 30px; line-height: 1.15; margin: 18px 0 8px; font-weight: 900; letter-spacing: -.02em; }
 h2 { font-size: 19px; margin: 26px 0 6px; font-weight: 800; }
@@ -211,6 +215,11 @@ a { color: var(--brand); }
 <main>
 ${body}
 </main>
+<footer>
+<p><b>NOE</b> est éditée par <b>GBH</b>, société par actions simplifiée au capital de 1 000 €, 23 rue d'Anjou, 75008 Paris, France — RCS Paris 934 041 229.</p>
+<p lang="en"><b>NOE</b> is published by <b>GBH</b>, a French simplified joint-stock company (SAS), 23 rue d'Anjou, 75008 Paris, France — Paris trade register 934 041 229.</p>
+<p>Contact : <a href="mailto:${CONTACT}">${CONTACT}</a> · <a href="${GBH_SITE}">${GBH_SITE.replace(/^https:\/\/|\/$/g, "")}</a></p>
+</footer>
 </body>
 </html>
 `;
