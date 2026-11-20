@@ -7,8 +7,8 @@ export const SITE = "https://gab728.github.io/italiano-passo-passo/";
 const CONTACT = "bramigab@gmail.com";
 const UPDATED = { fr: "10 novembre 2026", en: "November 10, 2026", es: "10 de noviembre de 2026" };
 const EDITOR = "GBH, SAS au capital de 1 000 €, 23 rue d'Anjou, 75008 Paris, France — RCS Paris 934 041 229";
-// Site de la société éditrice (demandé par Apple : nom complet de la société et contact visibles).
-export const GBH_SITE = "https://gab728.github.io/gbh-site/";
+// Site de NOE (demandé par Apple : nom complet de la société éditrice et contact visibles).
+export const GBH_SITE = "https://gab728.github.io/noe-site/";
 
 const PRIVACY = {
   fr: {
