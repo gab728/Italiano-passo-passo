@@ -229,3 +229,6 @@ export function writeLegal(webDir) {
   writeFileSync(join(webDir, "confidentialite.html"), page(PRIVACY, "confidentialite.html", "aide.html", "Aide · Help"));
   writeFileSync(join(webDir, "aide.html"), page(HELP, "aide.html", "confidentialite.html", "Confidentialité · Privacy"));
 }
+
+// Contenu réutilisé par le site noelang.app (dépôt noe-site, scripts/sync-app.mjs).
+export const LEGAL = { PRIVACY, HELP, CONTACT, UPDATED, EDITOR };
