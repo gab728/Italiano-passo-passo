@@ -3,7 +3,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const SITE = "https://gab728.github.io/italiano-passo-passo/";
+export const SITE = "https://gab728.github.io/Italiano-passo-passo/";
 const CONTACT = "bramigab@gmail.com";
 const UPDATED = { fr: "10 novembre 2026", en: "November 10, 2026", es: "10 de noviembre de 2026" };
 const EDITOR = "GBH, SAS au capital de 1 000 €, 23 rue d'Anjou, 75008 Paris, France — RCS Paris 934 041 229";

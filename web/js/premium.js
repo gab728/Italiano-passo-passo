@@ -110,7 +110,7 @@
       : upgrade ? "La différence est calculée au prorata et prélevée aujourd'hui. Tu peux revenir à Premium depuis ton profil." : "Renouvellement automatique, résiliable à tout moment depuis ton profil. Paiement sécurisé par Stripe."));
     if (iap) {
       // Exigé par Apple : restaurer ses achats, conditions d'utilisation et confidentialité, à portée de main.
-      const links = txt("p", "pw-links"), site = "https://gab728.github.io/italiano-passo-passo/";
+      const links = txt("p", "pw-links"), site = "https://noelang.app/";
       const restore = txt("button", "linkbtn", "Restaurer mes achats"); restore.type = "button";
       restore.onclick = async () => { restore.disabled = true; try { await NATIVE.iapRestore(); PLAN = await (await W.call("billing", { action: "store_sync" })).json(); ls.set("ipp-plan", PLAN); if (premium()) { close(); celebrate(); } else speakNote("Aucun abonnement à restaurer sur ce compte."); } catch (e) { speakNote("La restauration n'a pas pu se faire. Réessaie dans un moment."); } restore.disabled = false; };
       const a1 = txt("a", null, "Conditions d'utilisation"); a1.href = NATIVE.platform === "ios" ? "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" : site + "aide.html"; a1.target = "_blank";

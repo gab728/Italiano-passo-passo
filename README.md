@@ -26,7 +26,7 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 2. **Project Settings → API Keys** : note l'**URL du projet** (`https://xxxx.supabase.co`), la **clé publique** (*publishable*, commence par `sb_publishable_`) et l'**identifiant du projet** (les lettres de l'URL, avant `.supabase.co`).
 3. **Authentication → Sign In / Providers** (ou *Settings*, selon la version) : active **Allow new users to sign up** (tes amis créent leur compte eux-mêmes) et, dans *Email*, désactive **Confirm email** : sans réglage d'envoi d'e-mails, Supabase ne peut écrire qu'aux membres de ton équipe Supabase, donc tes amis ne recevraient jamais l'e-mail de confirmation. Pour réserver l'app aux seules personnes que tu invites, fais l'inverse et ajoute le secret `OPEN_SIGNUP` = `false`.
 4. **Authentication → Users → Add user → Create new user** : ton adresse e-mail (la même que `OWNER_EMAIL` plus bas), un mot de passe quelconque (il ne servira pas), et coche **Auto Confirm User**. C'est ton compte de propriétaire ; tes amis, eux, seront créés depuis l'app.
-5. **Authentication → URL Configuration** : dans *Site URL*, mets l'adresse de l'app (par exemple `https://ton-nom.github.io/italiano-passo-passo/`) et ajoute-la aussi dans *Redirect URLs*. C'est là que mène le lien « Sign in » des e-mails de connexion. Sans réglage d'envoi d'e-mails, Supabase n'écrit qu'aux membres de ton équipe Supabase : c'est suffisant pour toi ; tes amis, eux, reçoivent un code par message (voir « Inviter des amis »).
+5. **Authentication → URL Configuration** : dans *Site URL*, mets l'adresse de l'app (par exemple `https://ton-nom.github.io/Italiano-passo-passo/`) et ajoute-la aussi dans *Redirect URLs*. C'est là que mène le lien « Sign in » des e-mails de connexion. Sans réglage d'envoi d'e-mails, Supabase n'écrit qu'aux membres de ton équipe Supabase : c'est suffisant pour toi ; tes amis, eux, reçoivent un code par message (voir « Inviter des amis »).
 6. **Edge Functions → Secrets** : ajoute
    - `ANTHROPIC_API_KEY` = la clé de l'étape 1
    - `OWNER_EMAIL` = ton adresse e-mail (celle avec laquelle tu te connecteras). Elle fait de toi le propriétaire de l'app : tu vois les membres et leur usage, tu fixes leurs plafonds, tu peux retirer quelqu'un, et ton plafond quotidien est plus élevé.
@@ -39,7 +39,7 @@ Ton abonnement Claude ne peut pas servir à une autre app : l'accès passe par u
 3. **Settings → Secrets and variables → Actions** :
    - onglet *Variables* : `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` (étape 2.2)
    - onglet *Secrets* : `SUPABASE_ACCESS_TOKEN` (étape 2.7), `SUPABASE_PROJECT_REF` (l'identifiant du projet), `SUPABASE_DB_PASSWORD` (le mot de passe de la base)
-4. **Actions → Mise en ligne → Run workflow**. En deux ou trois minutes, la base est créée, la fonction serveur déployée et l'app publiée. L'adresse de l'app s'affiche dans le résultat (du type `https://ton-nom.github.io/italiano-passo-passo/`).
+4. **Actions → Mise en ligne → Run workflow**. En deux ou trois minutes, la base est créée, la fonction serveur déployée et l'app publiée. L'adresse de l'app s'affiche dans le résultat (du type `https://ton-nom.github.io/Italiano-passo-passo/`).
 
 Ensuite, chaque modification du dépôt republie tout automatiquement.
 
