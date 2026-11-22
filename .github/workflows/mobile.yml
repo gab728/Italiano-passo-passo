@@ -148,14 +148,18 @@ jobs:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
           KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        # L'archive est construite sans signature (pas besoin d'iPhone enregistré dans le compte) ; l'export la signe
+        # avec un certificat de distribution App Store créé et géré par Apple grâce à la clé d'API (rôle Admin), puis l'envoie.
         run: |
+          set -o pipefail
           KEY="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"; echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 -d > "$KEY"
+          trap 'rm -f "$KEY"' EXIT
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           VERSION=$(node -p "require('./package.json').version")
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/App.xcarchive "${AUTH[@]}" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic \
+            -archivePath build/App.xcarchive DEVELOPMENT_TEAM="$TEAM" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" archive | tail -30
           sed "s/__TEAM__/$TEAM/" ios/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
           xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath build/export "${AUTH[@]}" | tail -30
-          rm -f "$KEY"
+            -exportPath build/export "${AUTH[@]}" | tail -40
