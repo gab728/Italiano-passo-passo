@@ -7,7 +7,7 @@
   const W = window.WEBAUTH;
   const svg = (d, w) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (w || 1.8) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
   const IC = {
-    feed: svg('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>'),
+    feed: svg('<path d="M21 3 3 10.5l6.5 2.6L12 20z"/><path d="M9.5 13.1 21 3"/>'),
     lessons: svg('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20"/>'),
     talk: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>', 2),
     words: svg('<rect x="3" y="7" width="13" height="13" rx="2.5"/><path d="M8 4h10.5A2.5 2.5 0 0 1 21 6.5V17"/>'),
@@ -31,7 +31,7 @@
   let TAB = "feed";
   // Le profil s'ouvre en touchant ton avatar en haut du Fil ; sa place dans la barre va aux actualités.
   const SCREENS = { feed: () => home(), lessons: () => lessonsTab(), talk: () => talkHub(), news: () => newsTab(), words: () => wordsTab(), profile: () => profileTab() };
-  const LABEL = { feed: "Fil", lessons: "Leçons", talk: "Parler", news: "Actu", words: "Mots", profile: "Profil" };
+  const LABEL = { feed: "Voyage", lessons: "Leçons", talk: "Parler", news: "Actu", words: "Mots", profile: "Profil" };
   const bar = el("nav", "tabbar"); bar.setAttribute("aria-label", "Navigation principale");
   ["feed", "lessons", "talk", "news", "words"].forEach((id) => {
     const b = el("button", id === "talk" ? "tab-talk" : ""); b.type = "button"; b.dataset.tab = id;
@@ -187,13 +187,25 @@
     const st = node('<span class="streak' + (sk ? " on" : "") + '">' + IC.flame + "<b></b></span>"); st.querySelector("b").textContent = sk; st.setAttribute("aria-label", "Série : " + sk + (sk > 1 ? " jours" : " jour") + " d'affilée"); st.title = st.getAttribute("aria-label");
     const td = dayN(day()), gl = el("span", "goal-chip");
     gl.innerHTML = ring(td, GOAL, 28, "Objectif du jour : " + Math.min(td, GOAL) + " réponses sur " + GOAL, td >= GOAL ? "var(--ok)" : "var(--ok-fill)");
-    const sw = el("div", "hd-chips"); if (Object.keys(COURSES).length > 1) sw.append(langChip()); sw.append(st, gl);
+    const mi = node('<span class="miles">' + TI.mile + "<b></b></span>"), xp = milesNow(); mi.querySelector("b").textContent = xp.toLocaleString(window.I18N ? I18N.locale() : "fr-FR"); mi.setAttribute("aria-label", xp + " miles"); mi.title = mi.getAttribute("aria-label");
+    const sw = el("div", "hd-chips"); if (Object.keys(COURSES).length > 1) sw.append(langChip()); sw.append(st, mi, gl);
     hd.append(who, sw); root.append(hd);
     const sy = syncEl(); sy.classList.add("home-sync"); root.append(sy);
     if (!firstName()) root.append(nameCard());
     // La leçon d'abord : c'est par là que tout commence, surtout pour un débutant.
     const doneN = ss.filter(isDone).length;
-    root.append(lessonHero(cu, ss, doneN));
+    const trip = tripMap(ss, cu);
+    if (trip) {
+      root.append(trip);
+      // Départ choisi plus loin que le début (hébreu) : on le dit, et on propose de reprendre au tout début tant que rien d'avant n'est fait.
+      const k0 = fromN(ss), foot = el("div", "trip-foot");
+      if (cu && k0 > 0 && !ss.slice(0, k0).some(isDone)) {
+        const n = el("p", "lh-from"); n.append(document.createTextNode("Tu as choisi de commencer ici (" + ss[k0].lv.t + "). "));
+        const b = el("button", "link"); b.type = "button"; b.textContent = "Commencer plutôt par le début"; b.onclick = () => { S.from = Object.assign({}, S.from || {}, { [C().id]: "" }); save(); home(); };
+        n.append(b); foot.append(n);
+      }
+      const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le voyage (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); foot.append(all); root.append(foot);
+    } else root.append(lessonHero(cu, ss, doneN));
     // Rappels sur le téléphone (après une première séance) et offre Premium à un moment naturel.
     if (window.PREM) PREM.homeCards(root);
     // Le journal du jour, juste sous la leçon (sauf en hébreu tant que l'alef-bet n'est pas fini).
@@ -484,6 +496,152 @@
     c.append(bot);
     return c;
   }
+
+  /* ---------- Le voyage, à l'accueil : une ligne de ville en ville, une étape par leçon ----------
+     Chaque unité est un trajet entre deux villes (ROUTES) ; ses leçons sont les arrêts, avec un coffre juste avant l'arrivée.
+     Une leçon faite garde ses étoiles (1 à 3, d'après le meilleur score). Le panneau « Prochain départ » décrit l'arrêt choisi :
+     la leçon du jour par défaut, ou celui qu'on touche sur la ligne. */
+  const ROUTES = {
+    it: ["Torino", "Milano", "Bergamo", "Verona", "Venezia", "Padova", "Ferrara", "Bologna", "Parma", "Genova", "Pisa", "Firenze", "Siena", "Perugia", "Assisi", "Roma", "Napoli", "Pompei", "Amalfi", "Matera", "Bari", "Lecce", "Cosenza", "Reggio Calabria", "Messina", "Palermo"],
+    es: ["Barcelona", "Girona", "Zaragoza", "Pamplona", "San Sebastián", "Bilbao", "Santander", "Oviedo", "Santiago", "Salamanca", "Segovia", "Madrid", "Toledo", "Cuenca", "Valencia", "Alicante", "Murcia", "Almería", "Granada", "Córdoba", "Sevilla", "Cádiz", "Málaga", "Palma", "Tenerife", "Las Palmas"],
+    en: ["London", "Brighton", "Oxford", "Bath", "Bristol", "Cardiff", "Birmingham", "Cambridge", "Norwich", "Nottingham", "Sheffield", "Liverpool", "Manchester", "Leeds", "York", "Durham", "Newcastle", "Edinburgh", "Glasgow", "Stirling", "Dundee", "Aberdeen", "Inverness", "Belfast", "Galway", "Dublin"],
+    fr: ["Paris", "Lille", "Rouen", "Caen", "Rennes", "Brest", "Nantes", "Tours", "La Rochelle", "Bordeaux", "Biarritz", "Toulouse", "Carcassonne", "Montpellier", "Marseille", "Nice", "Avignon", "Lyon", "Annecy", "Grenoble", "Dijon", "Strasbourg", "Nancy", "Reims", "Orléans", "Versailles"],
+    he: ["Tel Aviv", "Yafo", "Herzliya", "Netanya", "Césarée", "Haïfa", "Akko", "Nazareth", "Tibériade", "Safed", "Jérusalem", "Beer-Sheva", "Eilat"],
+  };
+  const tripUnits = (ss) => { const out = []; ((C().plan && C().plan.levels) || []).forEach((lv, li) => (lv.units || []).forEach((u, ui) => { const ux = ss.filter((x) => x.li === li && x.ui === ui); if (ux.length) out.push({ lv, li, u, ui, ux, key: li + ":" + ui }); })); return out; };
+  const cityOf = (k) => { const r = ROUTES[C().id]; return r ? r[k % r.length] : "Escale " + (k + 1); };
+  const starsOf = (x) => { const st = S[x.key] || {}; return !st.done ? 0 : st.best == null ? 2 : st.best >= 85 ? 3 : st.best >= 65 ? 2 : 1; };
+  const CHEST = 50, LESSON_MILES = 25;
+  const TI = {
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19.5 12z" fill="currentColor"/></svg>',
+    gift: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M3 7h18v3H3zM12 7v13M12 7c-1.5-4-6-3-4.5 0M12 7c1.5-4 6-3 4.5 0"/></svg>',
+    station: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10l8-6 8 6v10M4 20h16M10 20v-5h4v5"/></svg>',
+    star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3 1.1-6.3-4.6-4.5 6.4-.9z" fill="currentColor"/></svg>',
+    mile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#FFD23F"/><path d="M6.5 13.2l11-4.7-4.2 9.2-1.6-3.6z" fill="#14151A"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  };
+  // Nom de ville en lettres d'affichage de gare (une tuile par lettre).
+  // Panneau d'affichage : une tuile par lettre. Un nom long en plusieurs mots passe sur deux lignes ; la taille des tuiles
+  // s'ajuste à la place disponible à côté de la ville (fitSign), pour qu'aucun nom ne sorte de l'écran.
+  function flapSign(name, cls) {
+    const s = el("span", "flap" + (cls ? " " + cls : "")), up = String(name).toLocaleUpperCase(); s.setAttribute("role", "img"); s.setAttribute("aria-label", name); s.setAttribute("data-no-i18n", "");
+    let rows = [up]; const sp = up.indexOf(" ");
+    if (up.length > 9 && sp > 0) { let best = sp; for (let k = sp; k > 0; k = up.indexOf(" ", k + 1)) if (Math.abs(up.length - 1 - 2 * k) < Math.abs(up.length - 1 - 2 * best)) best = k; rows = [up.slice(0, best), up.slice(best + 1)]; }
+    let wide = 1, gaps = 0;
+    rows.forEach((r) => { const row = el("span", "fl-r"), cs = [...r]; let w = 0; cs.forEach((ch) => { const i = el("i", ch === " " ? "sp" : ""); i.textContent = ch === " " ? "" : ch; i.setAttribute("aria-hidden", "true"); row.append(i); w += ch === " " ? .45 : 1; }); if (w > wide) { wide = w; gaps = cs.length - 1; } s.append(row); });
+    s._w = wide; s._g = gaps;
+    return s;
+  }
+  const fitSign = (s, avail) => s.style.setProperty("--fw", Math.max(7, Math.min(16, Math.floor((avail - 2 * s._g) / s._w))) + "px");
+  const starRow = (n, cls) => { const r = el("span", cls); r.setAttribute("aria-label", n + (n > 1 ? " étoiles" : " étoile") + " sur 3"); r.setAttribute("role", "img"); for (let k = 0; k < 3; k++) { const i = el("i", k < n ? "on" : ""); i.innerHTML = TI.star; r.append(i); } return r; };
+  const milesNow = () => { try { return RV.stats().xp; } catch (e) { return 0; } };
+  let TU = null, TSEL = null; // étape affichée (clé d'unité) et arrêt choisi (numéro de leçon, ou "gift")
+  window.addEventListener("ipp-course", () => { TU = null; TSEL = null; });
+  const TW = 390;
+  // Courbe lisse passant par les points P[a..b].
+  function tripPath(P, a, b) {
+    const Q = [P[0]].concat(P, [P[P.length - 1]]); let d = "";
+    for (let i = a + 1; i <= b; i++) { const p0 = Q[i - 1], p1 = Q[i], p2 = Q[i + 1], p3 = Q[i + 2]; if (!d) d = "M" + p1[0].toFixed(1) + " " + p1[1].toFixed(1);
+      d += " C" + [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]].map((v) => v.toFixed(1)).join(" "); }
+    return d;
+  }
+  function tripMap(ss, cu) {
+    const units = tripUnits(ss); if (!units.length) return null;
+    const hereK = cu ? units.findIndex((u) => u.li === cu.li && u.ui === cu.ui) : units.length - 1;
+    let k = units.findIndex((u) => u.key === TU); if (k < 0) k = Math.max(0, hereK);
+    const U = units[k], ux = U.ux, NX = units[k + 1], doneN = ux.filter(isDone).length, allDone = doneN === ux.length;
+    const sec = el("section", "trip"); sec.dataset.stage = String(k + 1);
+    // L'étape : d'où à où, le thème de l'unité, et de quoi passer à la précédente ou à la suivante.
+    const hd = el("div", "trip-hd"), ti = el("div", "trip-ti"), l1 = el("div", "trip-l1");
+    const fromTo = el("b"); fromTo.setAttribute("data-no-i18n", ""); fromTo.textContent = cityOf(k).toLocaleUpperCase() + " → " + cityOf(k + 1).toLocaleUpperCase();
+    l1.append(txt("span", null, "ÉTAPE " + (k + 1)), fromTo);
+    const l2 = el("div", "trip-l2"); l2.append(txt("b", null, U.u.t), txt("span", null, doneN + "/" + ux.length));
+    ti.append(l1, l2);
+    const nav = (dir, label) => { const b = el("button", "trip-nav" + (dir < 0 ? " prev" : "")); b.type = "button"; b.setAttribute("aria-label", label); b.innerHTML = TI.chev; const t = units[k + dir]; b.disabled = !t; b.onclick = () => { TU = t.key; TSEL = null; home(); }; return b; };
+    hd.append(nav(-1, "Étape précédente"), ti, nav(1, "Étape suivante")); sec.append(hd);
+    // Les arrêts, du bas (départ) vers le haut (arrivée), puis un aperçu de l'étape suivante.
+    const items = [{ t: "city", name: cityOf(k), on: k <= hereK || !cu }];
+    ux.forEach((x, i) => items.push({ t: "lesson", s: x, i }));
+    items.push({ t: "gift" }, { t: "city", name: cityOf(k + 1), on: k < hereK || (!cu && allDone) || allDone });
+    const nS = items.length; if (NX) NX.ux.slice(0, 2).forEach((x, i) => items.push({ t: "peek", s: x, i }));
+    const TH = Math.max(420, (nS - 1) * 50 + 162), yB = TH - 66, yT = 96, step = (yB - yT) / (nS - 1);
+    items.forEach((it, i) => { it.y = yB - step * i; it.x = TW / 2 + 104 * Math.sin(-1.2 + i * 1.05); });
+    const last = items[items.length - 1], P = [[items[0].x - 50, TH + 40]].concat(items.map((it) => [it.x, it.y]), NX ? [[last.x + (last.x < TW / 2 ? 60 : -60), last.y - step]] : []);
+    const curI = cu ? items.findIndex((it) => it.t === "lesson" && it.s.n === cu.n) : -1;
+    const reach = k < hereK || !cu || allDone ? nS - 1 : k === hereK ? curI : -1; // dernier arrêt atteint (indice dans items)
+    const map = el("div", "trip-map"); map.style.height = TH + "px";
+    map.innerHTML = '<svg class="trip-svg" viewBox="0 0 ' + TW + " " + TH + '" preserveAspectRatio="none" aria-hidden="true"><g transform="scale(1 ' + (TH / 520).toFixed(3) + ')">'
+      + '<path class="tp-land" d="M-20 400 C40 350 60 270 30 200 C10 150 60 100 140 92 C230 84 250 140 320 130 C370 124 410 90 420 60 L420 560 L-20 560Z"/>'
+      + '<path class="tp-land2" d="M210 520 C250 470 330 480 350 420 C366 372 330 330 350 280 C364 246 400 230 420 230 L420 560 L200 560Z"/></g>'
+      + '<path class="tp-all" d="' + tripPath(P, 0, P.length - 1) + '"/>' + (reach >= 0 ? '<path class="tp-done" d="' + tripPath(P, 0, reach + 1) + '"/>' : "")
+      + '<path class="tp-dash" d="' + tripPath(P, 0, P.length - 1) + '"/></svg>';
+    const at = (e, it, dy) => { e.style.left = (100 * it.x / TW).toFixed(2) + "%"; e.style.top = "calc(" + (100 * it.y / TH).toFixed(2) + "% + " + (dy || 0) + "px)"; return e; };
+    const beside = (e, it, gap) => { const r = it.x < TW / 2; e.classList.add(r ? "to-r" : "to-l"); if (r) e.style.left = "calc(" + (100 * it.x / TW).toFixed(2) + "% + " + gap + "px)"; else e.style.right = "calc(" + (100 - 100 * it.x / TW).toFixed(2) + "% + " + gap + "px)"; e.style.top = (100 * it.y / TH).toFixed(2) + "%"; return e; };
+    let sel = TSEL != null && (TSEL === "gift" || ux.some((x) => x.n === TSEL)) ? TSEL : curI >= 0 ? cu.n : allDone ? "gift" : (ux.find((x) => !isDone(x)) || ux[0]).n;
+    const nodes = [], signs = [];
+    // Place disponible à côté de chaque ville, d'après la largeur réelle de la carte (ou celle de l'écran avant l'affichage).
+    const fit = () => { const W = map.clientWidth || Math.min(window.innerWidth || TW, 560); signs.forEach(([sg, it]) => fitSign(sg, (it.x < TW / 2 ? W * (1 - it.x / TW) : W * it.x / TW) - 34 - 8)); };
+    const board = el("div", "trip-board");
+    const pick = (v) => { sel = v; TSEL = v; nodes.forEach(([b, id]) => b.classList.toggle("sel", id === v)); drawBoard(); };
+    items.forEach((it, i) => {
+      if (it.t === "city") {
+        const c = at(el("span", "tn city" + (it.on ? " done" : "")), it); c.innerHTML = TI.station; c.style.setProperty("--i", i); const sg = beside(flapSign(it.name, it.on ? "" : "dim"), it, 34); signs.push([sg, it]); map.append(c, sg);
+      } else if (it.t === "gift") {
+        const b = at(el("button", "tn gift" + (allDone ? " done" : "")), it); b.type = "button"; b.innerHTML = TI.gift; b.style.setProperty("--i", i);
+        b.setAttribute("aria-label", "Coffre de l'étape : " + CHEST + " miles" + (allDone ? ", ouvert" : "")); b.onclick = () => pick("gift"); nodes.push([b, "gift"]); map.append(b);
+      } else if (it.t === "peek") {
+        const b = at(el("button", "tn todo peek"), it); b.type = "button"; b.textContent = String(it.i + 1); b.setAttribute("aria-label", "Étape suivante"); b.onclick = () => { TU = NX.key; TSEL = null; home(); }; map.append(b);
+      } else {
+        const x = it.s, d = isDone(x), now = i === curI, b = at(el("button", "tn " + (now ? "now" : d ? "done" : "todo")), it); b.type = "button"; b.style.setProperty("--i", i);
+        if (now) b.innerHTML = TI.play; else if (d) b.innerHTML = TI.check; else b.textContent = String(it.i + 1);
+        b.setAttribute("aria-label", "Leçon " + (it.i + 1) + " : " + x.l.t + (d ? ", faite" : now ? ", à faire maintenant" : ""));
+        b.onclick = () => (sel === x.n && now ? openSlot(x) : pick(x.n)); nodes.push([b, x.n]); map.append(b);
+        if (d) map.append(at(starRow(starsOf(x), "tn-stars"), it, now ? 34 : 23));
+        if (now) {
+          map.append(beside(txt("span", "tn-here", "LEÇON " + (it.i + 1)), it, 40));
+          const pl = el("div", "trip-plane"), tp = document.getElementById("lp-plane"); if (tp) { pl.append(tp.content.cloneNode(true)); pl.setAttribute("aria-hidden", "true");
+            const nx = items[i + 1], left = !nx || nx.x >= it.x; pl.style.left = "clamp(4px, calc(" + (100 * it.x / TW).toFixed(2) + "% " + (left ? "- 112px" : "+ 8px") + "), calc(100% - 108px))"; pl.style.top = "calc(" + (100 * it.y / TH).toFixed(2) + "% - 86px)"; map.append(pl); }
+        }
+      }
+    });
+    sec.append(map);
+    // Le panneau des départs : l'arrêt choisi.
+    function drawBoard() {
+      board.innerHTML = ""; const row = el("div", "tb-row"), main = el("div", "tb-main"), body = el("div", "tb-body"), meta = el("div", "tb-meta");
+      const chip = (t, cls) => meta.append(txt("span", "tb-flap" + (cls ? " " + cls : ""), t));
+      const go = (label, fn, soft) => { const b = el("button", "tb-go" + (soft ? " soft" : "")); b.type = "button"; b.textContent = label; b.onclick = fn; main.append(b); };
+      if (sel === "gift") {
+        row.append(txt("span", "tb-lab", "COFFRE DE L'ÉTAPE"), txt("span", "tb-live" + (allDone ? "" : " off"), allDone ? "OUVERT" : "FERMÉ"));
+        const b = el("b"); b.append(document.createTextNode(allDone ? "Arrivée à " : "Arrive à ")); const cn = el("span"); cn.setAttribute("data-no-i18n", ""); cn.textContent = cityOf(k + 1); b.append(cn); body.append(b);
+        chip("+" + CHEST + " MILES", allDone ? "ok" : ""); if (!allDone) chip((ux.length - doneN) + (ux.length - doneN > 1 ? " LEÇONS" : " LEÇON"));
+        body.append(meta); main.append(body);
+        if (allDone && NX) go("Étape suivante", () => { TU = NX.key; TSEL = null; home(); });
+      } else {
+        const x = ux.find((y) => y.n === sel) || ux[0], n = ux.indexOf(x) + 1, m = x.mi >= 0 ? M[x.mi] : null, stt = S[x.key] || {}, d = !!stt.done, isCur = !!cu && x.n === cu.n, started = !!(m && stt.i), sc = m ? screens(m).length : 0;
+        row.append(txt("span", "tb-lab", isCur && !d ? "PROCHAIN DÉPART" : "LEÇON " + n + (d ? " · DÉJÀ FAITE" : " · À VENIR")));
+        if (isCur && m) row.append(txt("span", "tb-live", started ? "EN ROUTE" : "EMBARQUEMENT"));
+        body.append(txt("b", null, x.l.t));
+        if (d) { meta.append(starRow(starsOf(x), "tb-stars")); if (stt.best != null) chip(stt.best + " %", "ok"); }
+        else if (!m) chip("À PRÉPARER");
+        else if (started) chip("REPRISE " + Math.round(100 * stt.i / sc) + " %");
+        else chip(sc + " ÉCRANS");
+        if (!d) chip("+" + LESSON_MILES + " MILES");
+        body.append(meta); main.append(body);
+        go(!m ? (AI ? "Préparer" : "Bientôt") : d ? "Refaire" : started ? "Reprendre" : isCur ? "Embarquer" : "Commencer", () => openSlot(x), d || (!isCur && !started));
+      }
+      board.append(row, main);
+    }
+    drawBoard(); nodes.forEach(([b, id]) => b.classList.toggle("sel", id === sel)); sec.append(board);
+    // Petit écran : la leçon du jour reste en vue au-dessus du panneau.
+    requestAnimationFrame(() => { const nw = map.querySelector(".tn.now"); if (!nw || view !== "home") return; const r = nw.getBoundingClientRect(), br = board.getBoundingClientRect(); if (r.bottom > br.top - 12) window.scrollBy(0, Math.round(r.bottom - br.top + 60)); });
+    fit(); requestAnimationFrame(fit);
+    const onSize = () => { if (!map.isConnected) return window.removeEventListener("resize", onSize); fit(); }; window.addEventListener("resize", onSize);
+    return sec;
+  }
+  window.TRIP = { units: tripUnits, city: cityOf, stars: starsOf, CHEST, LESSON_MILES };
+  // Miles gagnés pendant une leçon : on note le total à l'ouverture, la fin de leçon affiche la différence.
+  let XP0 = null; { const go0 = go; go = function (mi) { try { XP0 = { mi, xp: milesNow() }; } catch (e) { XP0 = null; } return go0.apply(this, arguments); }; }
 
   /* ---------- Actu ---------- */
   let NEDIT = false;
@@ -888,16 +1046,22 @@
     const tiles = el("div", "end-tiles rise");
     const tile = (v, label, cls) => { const t = el("div", "end-tile " + cls); t.append(txt("b", null, v), txt("span", null, label)); tiles.append(t); };
     if (Number.isFinite(pct)) tile(pct + " %", "de réussite", "t-ok");
-    if (m.vocab && m.vocab.length) tile("+" + m.vocab.length, "mots", "t-blue");
+    { const now = milesNow(), g = XP0 && XP0.mi === cur.mi ? now - XP0.xp : 0; if (g > 0) tile("+" + g, "miles", "t-blue"); else tile(now.toLocaleString(window.I18N ? I18N.locale() : "fr-FR"), "miles", "t-blue"); }
     const sk = streak(); tile(String(sk), sk > 1 ? "jours d'affilée" : "jour d'affilée", "t-sun");
     const sc = e.querySelector(".score"); (sc || h2).after(tiles);
-    // L'unité : un segment par leçon.
+    // L'étape : où on en est sur la ligne, entre les deux villes ; le coffre s'ouvre à l'arrivée.
     const x = slots().find((y) => y.mi === cur.mi);
     if (x) {
-      const ux = slots().filter((y) => y.li === x.li && y.ui === x.ui), d = ux.filter(isDone).length;
-      const u = el("div", "end-unit rise"); u.append(txt("b", null, "Unité " + x.un + " · " + d + (d > 1 ? " leçons" : " leçon") + " sur " + ux.length));
-      const bar = el("div", "end-seg"); ux.forEach((y) => bar.append(el("i", isDone(y) ? (y.n === x.n ? "on now" : "on") : ""))); u.append(bar);
-      tiles.after(u);
+      const us = tripUnits(slots()), k = us.findIndex((u) => u.li === x.li && u.ui === x.ui), ux = k >= 0 ? us[k].ux : [], d = ux.filter(isDone).length, left = ux.length - d;
+      if (k >= 0) {
+        const u = el("div", "end-leg rise"), cap = el("div", "el-cap"), a = el("span"), b = el("span"), mid = el("b");
+        a.setAttribute("data-no-i18n", ""); a.textContent = cityOf(k).toLocaleUpperCase(); b.setAttribute("data-no-i18n", ""); b.textContent = cityOf(k + 1).toLocaleUpperCase();
+        mid.textContent = left > 1 ? "Encore " + left + " leçons" : left === 1 ? "Encore 1 leçon" : "Arrivée !"; cap.append(a, mid, b); u.append(cap);
+        const ln = el("div", "el-line"); ln.setAttribute("aria-hidden", "true"); ln.style.setProperty("--p", (100 * (d + (left ? 0 : 2)) / (ux.length + 2)).toFixed(1) + "%");
+        ln.append(el("i", "c on")); ux.forEach((y) => ln.append(el("i", isDone(y) ? (y.n === x.n ? "on now" : "on") : ""))); ln.append(el("i", "g" + (left ? "" : " on")), el("i", "c" + (left ? "" : " on"))); u.append(ln);
+        if (!left) { const c = el("div", "el-chest"); c.innerHTML = TI.gift; c.append(txt("span", null, "Coffre de l'étape ouvert"), txt("b", null, "+" + CHEST + " miles")); u.append(c); }
+        tiles.after(u);
+      }
     }
   }
   function lessonDone() {

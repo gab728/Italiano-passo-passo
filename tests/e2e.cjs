@@ -90,7 +90,7 @@ const MOCKS = `
   ok(daily.some((x) => /mot du jour/i.test(x)) && daily.some((x) => /Défi oral/.test(x)), "accueil : « Ta journée » réunit mot du jour et défi oral (" + daily.join(", ") + ")");
   ok(await a.isVisible(".nwe .nwe-title:has-text('Il tuo giornale')"), "accueil : la carte du journal, sous la leçon du jour");
   ok((await a.$$eval(".carousel .theme", (d) => d.length)) >= 5, "thèmes de conversation en images");
-  ok(await a.evaluate(() => { const t = document.querySelector(".home-trip .vy-ticket.cur"); return !!t && /LEÇON [1-9]/.test(t.textContent) && t.querySelector(".vy-t-title").textContent === current().l.t && !!t.querySelector(".lino"); }), "accueil : billet de la leçon du jour, avec son numéro et Lino");
+  ok(await a.evaluate(() => { const t = document.querySelector(".trip"); return !!t && /LEÇON [1-9]/.test(t.querySelector(".tn-here").textContent) && t.querySelector(".trip-board .tb-body > b").textContent === current().l.t && !!t.querySelector(".trip-plane svg"); }), "accueil : la carte du voyage, la leçon du jour avec son numéro et l'avion de Lino");
   ok(await a.evaluate(() => !!document.querySelector(".daily .lino")), "accueil : Lino accompagne « Ta journée »");
   await a.click(".tabbar [data-tab=lessons]");
   const nUnits = await a.$$eval(".vy-unit", (d) => d.length);

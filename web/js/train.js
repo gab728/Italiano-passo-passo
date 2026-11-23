@@ -268,7 +268,10 @@
     const c = cid(), ss = slots(), done = ss.filter(isDone), V = vstat();
     const answers = (S.xa && S.xa[c] != null) ? S.xa[c] : seedAnswers();
     const fix = fixCount(), rvn = ((S.rvn || {})[c]) || 0, conv = S.dmn || 0;
-    const xp = answers + 25 * done.length + 15 * conv + 30 * rvn + 5 * fix;
+    // Un coffre de 50 miles par étape (unité) entièrement faite.
+    const stage = {}; ss.forEach((x) => { const k = x.li + ":" + x.ui; stage[k] = (stage[k] == null ? true : stage[k]) && isDone(x); });
+    const chests = Object.values(stage).filter(Boolean).length;
+    const xp = answers + 25 * done.length + 15 * conv + 30 * rvn + 5 * fix + 50 * chests;
     let goalDays = 0; const t = day(); for (let k = t - 120; k <= t; k++) if (dayN(k) >= GOAL) goalDays++;
     return { xp, lessons: done.length, total: ss.length, words: V.seen.length, conv, fix, rvn, streak: streak(), goalDays, test: !!((S.ptest || {})[c]), done, ss };
   }
@@ -305,7 +308,7 @@
     ["f10", "fix", "Tête dure, mais pas trop", "10 fautes corrigées", (s) => [s.fix, 10]],
     ["g5", "target", "Objectif tenu", "Objectif du jour atteint 5 fois", (s) => [s.goalDays, 5]],
     ["pt", "test", "Évalué", "Passer le test de niveau", (s) => [s.test ? 1 : 0, 1]],
-    ["x1k", "star", "Mille points", "1 000 points", (s) => [s.xp, 1000]],
+    ["x1k", "star", "Mille miles", "1 000 miles", (s) => [s.xp, 1000]],
   ];
   function badges(s) { return BADGES.map(([id, ic, name, desc, f]) => { const [n, t] = f(s); return { id, ic, name, desc, n: Math.min(n, t), t, got: n >= t }; }); }
   // Nouveaux trophées depuis la dernière fois : annoncés une fois (fin de leçon, fin de révision, profil).
@@ -337,10 +340,10 @@
     // Rang et points
     const hero = el("section", "pg-hero");
     const hl = el("div", "pg-rank"); hl.append(txt("small", null, "Rang"), txt("b", null, rk.name));
-    const hx = el("div", "pg-xp"); hx.append(txt("b", null, s.xp.toLocaleString(window.I18N ? I18N.locale() : "fr-FR")), txt("small", null, "points"));
+    const hx = el("div", "pg-xp"); hx.append(txt("b", null, s.xp.toLocaleString(window.I18N ? I18N.locale() : "fr-FR")), txt("small", null, "miles"));
     const top = el("div", "pg-top"); top.append(hl, hx); hero.append(top);
     const bar = el("div", "pg-bar"); const fill = el("i"); fill.style.width = rk.pct + "%"; bar.append(fill); hero.append(bar);
-    hero.append(txt("small", "pg-next", rk.next ? "Encore " + (rk.to - s.xp).toLocaleString(window.I18N ? I18N.locale() : "fr-FR") + " points pour devenir « " + rk.next + " »" : "Rang maximum : bravo !"));
+    hero.append(txt("small", "pg-next", rk.next ? "Encore " + (rk.to - s.xp).toLocaleString(window.I18N ? I18N.locale() : "fr-FR") + " miles pour devenir « " + rk.next + " »" : "Rang maximum : bravo !"));
     // Niveau européen : leçons faites dans le niveau en cours
     const cu = current(), lv = cu ? cu.lv : (s.done.length ? s.done[s.done.length - 1].lv : null);
     if (lv) {
