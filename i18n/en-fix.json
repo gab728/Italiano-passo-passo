@@ -277,5 +277,18 @@
  "{0} villes sur {1}": "{0} of {1} cities",
  "1 ville sur {0}": "1 of {0} cities",
  "{0} (à venir)": "{0} (upcoming)",
- "Bases {0}": "Basics {0}"
+ "Bases {0}": "Basics {0}",
+ "Ta leçon gratuite du jour est faite": "Today's free lesson is done",
+ "Bravo pour ta première conversation !": "Well done on your first conversation!",
+ "Le mode voiture est réservé à Premium": "Car mode is a Premium feature",
+ "Ton article gratuit de la semaine est lu": "You've read this week's free article",
+ "Ton essai gratuit est fait": "You've had your free try",
+ "7 jours d'affilée, chapeau !": "7 days in a row, hats off!",
+ "Tout est offert, pour te remercier d'être là depuis le début": "Everything is on us, to thank you for being here from the start",
+ "Tes {0} minutes de conversation du jour sont écoulées": "Your {0} minutes of conversation for today are up",
+ "Parle plus longtemps": "Talk for longer",
+ "Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.": "Just one free minute of conversation left today. With Premium, talk up to {0} minutes a day.",
+ "Passe à Expert": "Go Expert",
+ "Plus qu'une minute de conversation aujourd'hui. Avec Expert, parle jusqu'à {0} minutes par jour.": "Just one minute of conversation left today. With Expert, talk up to {0} minutes a day.",
+ "Tout est offert, pour te remercier d'être là depuis le début.": "Everything is on us, to thank you for being here from the start."
 }

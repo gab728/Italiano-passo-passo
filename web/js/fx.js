@@ -183,7 +183,7 @@
 
   /* ---------- Correction ---------- */
   let combo = 0, lastAt = 0;
-  const flame = () => mk("span", "fx-flame", "🔥");
+  const flame = () => { const f = mk("span", "fx-flame"); f.setAttribute("aria-hidden", "true"); f.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF5A2C" d="M12.6 2.2c.5 3-1 4.700-2.600 6.500C8.300 10.600 6.500 12.400 6.500 15.300a5.700 5.700 0 0 0 11.400.100c0-2.500-1.200-4.200-2.300-5.400-.300 1.300-1 2.100-1.900 2.500.500-3.800-.300-7.600-1.100-10.300z"/><path fill="#FFD84A" d="M12.200 12.300c-1.300 1.300-2.600 2.500-2.600 4.300a2.700 2.700 0 0 0 5.400 0c0-1.300-.700-2.200-1.400-2.900-.200.800-.600 1.200-1.100 1.400.100-1-.000-2-.300-2.800z"/></svg>'; return f; };
   function setHot(on) { D.documentElement.classList.toggle("fx-hot", !!on); }
   function comboToast(n) {
     const box = mk("span", "fx-row"); box.append(flame(), mk("b", null, n + " bonnes réponses d'affilée !"));

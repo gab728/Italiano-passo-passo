@@ -111,13 +111,13 @@ const MOCKS = `
   const tu = await q.textContent(".talk-up");
   ok(/3 minutes de conversation par jour en gratuit/.test(tu) && /Premium : 20 minutes par jour/.test(tu) && /Expert : 60 minutes/.test(tu), "onglet Parler : « 3 minutes par jour en gratuit · Premium 20 · Expert 60 »");
   await q.evaluate(() => openPersona("giulia")); await q.waitForSelector(".dm-quota");
-  ok(/⏱ 3 min/.test(await q.textContent(".dm-quota")) && /Premium : 20 min\/j/.test(await q.textContent(".dm-quota")), "conversation, au-dessus de la saisie : « ⏱ 3 min · Premium : 20 min/j »");
+  ok(/^3 min/.test(await q.textContent(".dm-quota")) && !!(await q.$(".dm-quota-n .picto svg")) && /Premium : 20 min\/j/.test(await q.textContent(".dm-quota")), "conversation, au-dessus de la saisie : « 3 min · Premium : 20 min/j »");
   await q.waitForFunction(() => DM && !DM.busy, null, { timeout: 10000 });
   // 1 100 caractères déjà dits par le prof aujourd'hui : il reste moins d'une minute après la réplique.
   await fetch(O + "/__setTalk", { method: "POST", body: JSON.stringify({ user_id: qid, chars: 1100 }) });
   await q.evaluate(async () => { await dmSend("Ciao Giulia, come stai?", false); for (let k = 0; k < 100 && DM && DM.busy; k++) await new Promise((r) => setTimeout(r, 100)); });
   await q.waitForTimeout(400);
-  ok(/⏱ 1 min/.test(await q.textContent(".dm-quota")) && await q.$(".dm-quota.low") && await q.$(".dm-upsell"), "compteur mis à jour par le serveur après la réplique, proposition à une minute de la fin");
+  ok(/^1 min/.test(await q.textContent(".dm-quota")) && await q.$(".dm-quota.low") && await q.$(".dm-upsell"), "compteur mis à jour par le serveur après la réplique, proposition à une minute de la fin");
   await q.screenshot({ path: "tests/shot-talk-quota.png" });
   await fetch(O + "/__setTalk", { method: "POST", body: JSON.stringify({ user_id: qid, chars: 1600 }) });
   await q.evaluate(async () => { await PREM.refresh(); await dmSend("Andiamo al cinema?", false); });

@@ -1174,6 +1174,18 @@ const ln = legLine(ux, x.n); u.append(ln);
     if (n > 1) return false;
     I18N.set(S.ui); return true;
   };
-  window.UI = { setTab, sync, go: goTab, lessons, news }; window.LINO = lino;
+  // Pictogrammes maison (à la place des emojis du téléphone, qui changent d'un appareil à l'autre) : un trait, dans une tuile d'affichage.
+  const SV = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+  const PICTOS = {
+    bell: SV('<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/>'),
+    timer: SV('<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M9.5 3h5M12 3v3.5"/>'),
+    heart: SV('<path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.600 12 20 12 20z"/>'),
+    chat: SV('<path d="M4.5 6.500A2 2 0 0 1 6.500 4.500h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.500 3.500v-3.500a2 2 0 0 1-2-2z"/>'),
+    mic: SV('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.500 11.500a6.500 6.500 0 0 0 13 0M12 18v3"/>'),
+    star: SV('<path d="M12 3.500l2.600 5.300 5.900.900-4.300 4.100 1 5.800-5.200-2.800-5.200 2.800 1-5.800-4.300-4.100 5.900-.900z"/>'),
+    check: IC.check, flame: IC.flame, plane: IC.feed, car: IC.car, news: IC.news, spark: IC.spark,
+  };
+  const picto = (name, cls) => { const e = el("span", "picto" + (cls ? " " + cls : "")); e.setAttribute("aria-hidden", "true"); e.innerHTML = PICTOS[name] || PICTOS.star; return e; };
+  window.UI = { setTab, sync, go: goTab, lessons, news }; window.LINO = lino; window.PICTO = picto;
   home();
 })();

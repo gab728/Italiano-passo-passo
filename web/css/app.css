@@ -1690,3 +1690,25 @@ button.dep-row { cursor: pointer; } button.dep-row:active { background: var(--bo
 /* Le journal : même bouton d'action, onglet souligné d'orange. */
 .nwj-cta { border-radius: 14px; background: var(--cta); color: var(--cta-ink); font-weight: 900; }
 .nwj-tab { font-weight: 800; } .nwj-tab[aria-selected="true"] { border-bottom: 3px solid var(--cta); }
+
+/* ---------- Pictogrammes maison (à la place des emojis du téléphone) ---------- */
+.picto { flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--tile); color: var(--tile-ink); box-shadow: 0 0 0 1px var(--tile-ring); font-size: 0; line-height: 1; }
+.picto svg { width: 22px; height: 22px; display: block; }
+.picto.sm { width: 22px; height: 22px; border-radius: 6px; } .picto.sm svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.picto.ok { background: var(--ok-fill); color: #fff; box-shadow: none; }
+.rm-card { align-items: center; } .rm-card .rm-t b { font-weight: 800; }
+.rm-card .chip, .rm-set .chip { border-radius: 999px; font-weight: 800; }
+.rm-card .chip.sel, .rm-set .chip.sel { background: var(--on); border-color: var(--on); color: var(--on-ink); }
+.pw-top { display: flex; align-items: center; gap: 10px; }
+.pw-confetti { display: grid; place-items: center; height: 100px; font-size: 0; }
+.dm-quota-n { display: inline-flex; align-items: center; gap: 6px; }
+.fx-flame { width: 1em; height: 1em; vertical-align: -.12em; } .fx-flame svg { display: block; width: 100%; height: 100%; }
+/* Liens : la couleur de l'action (orange), plus de bleu. */
+:root { --azzurro-text: #B33A14; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --azzurro-text: #FF9C7D; } }
+.link, .linkbtn, .g-link { font-weight: 800; }
+.nwe-go { background: var(--cta); color: var(--cta-ink); }
+/* L'heure et la batterie de l'iPhone restent lisibles : le contenu ne défile plus dessous. */
+body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 19; pointer-events: none; }
+body:has(.dm-hd)::before { background: var(--surface); }
+.pw-cta { flex: none; min-height: 56px; }

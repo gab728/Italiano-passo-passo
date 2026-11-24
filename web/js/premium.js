@@ -43,16 +43,16 @@
 
   const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   const REASONS = {
-    lesson: ["Ta leçon gratuite du jour est faite 🎉", "Reviens demain pour la suivante, ou continue tout de suite avec Premium."],
-    talk: ["Tes {0} minutes de conversation du jour sont écoulées 💬", "Passe à une formule supérieure pour parler plus longtemps avec {1} et tous les personnages."],
-    more: ["Parle plus longtemps 🎙️", "Jusqu'à {0} minutes par jour avec Premium, et {1} avec Expert : de quoi vraiment progresser à l'oral."],
-    expert: ["Passe à Expert 🚀", "Jusqu'à {0} minutes de conversation par jour, avec les voix naturelles des personnages pendant {1} minutes."],
-    first: ["Bravo pour ta première conversation ! 🎉", "Avec Premium, parle jusqu'à {0} minutes par jour avec les personnages et débloque toutes les leçons."],
+    lesson: ["Ta leçon gratuite du jour est faite", "Reviens demain pour la suivante, ou continue tout de suite avec Premium.", "star"],
+    talk: ["Tes {0} minutes de conversation du jour sont écoulées", "Passe à une formule supérieure pour parler plus longtemps avec {1} et tous les personnages.", "chat"],
+    more: ["Parle plus longtemps", "Jusqu'à {0} minutes par jour avec Premium, et {1} avec Expert : de quoi vraiment progresser à l'oral.", "mic"],
+    expert: ["Passe à Expert", "Jusqu'à {0} minutes de conversation par jour, avec les voix naturelles des personnages pendant {1} minutes.", "plane"],
+    first: ["Bravo pour ta première conversation !", "Avec Premium, parle jusqu'à {0} minutes par jour avec les personnages et débloque toutes les leçons.", "star"],
     limit: ["L'assistant gratuit du jour est épuisé", "Il revient demain, ou tout de suite avec Premium."],
-    car: ["Le mode voiture est réservé à Premium 🚗", "Révise à voix haute pendant tes trajets, sans toucher l'écran."],
-    news: ["Ton article gratuit de la semaine est lu 📰", "Avec Premium, l'actualité à ton niveau, tous les jours."],
-    review: ["Ton essai gratuit est fait ✨", "Avec Premium, les révisions sur mesure et la correction de tes traductions, chaque jour."],
-    streak: ["7 jours d'affilée, chapeau ! 🔥", "Pour fêter ça, essaie Premium : tout est débloqué pendant l'essai."],
+    car: ["Le mode voiture est réservé à Premium", "Révise à voix haute pendant tes trajets, sans toucher l'écran.", "car"],
+    news: ["Ton article gratuit de la semaine est lu", "Avec Premium, l'actualité à ton niveau, tous les jours.", "news"],
+    review: ["Ton essai gratuit est fait", "Avec Premium, les révisions sur mesure et la correction de tes traductions, chaque jour.", "spark"],
+    streak: ["7 jours d'affilée, chapeau !", "Pour fêter ça, essaie Premium : tout est débloqué pendant l'essai.", "flame"],
     profile: ["Choisis ta formule", "Toutes les leçons et des conversations à voix haute, dans toutes les langues."],
   };
   const FEATURES = {
@@ -80,7 +80,7 @@
     const fill = (x) => key === "talk" ? x.replace("{0}", String(t0 === "premium" ? tm.premium : tm.free)).replace("{1}", who)
       : key === "more" ? x.replace("{0}", String(tm.premium)).replace("{1}", String(tm.expert))
       : key === "expert" ? x.replace("{0}", String(tm.expert)).replace("{1}", String(em.expert)) : x.replace("{0}", String(tm.premium));
-    const [h, sub] = (REASONS[key] || REASONS.profile).map(fill);
+    const [h, sub, pic] = (REASONS[key] || REASONS.profile).map(fill);
     let sel = upgrade ? "expert" : opts.tier === "expert" ? "expert" : "premium", plan = (PLAN.plan === "monthly" && upgrade) ? "monthly" : "yearly";
     const o = txt("div", "pw"); o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true"); o.setAttribute("aria-label", "Premium");
     const box = txt("div", "pw-box"); o.append(box);
@@ -88,7 +88,7 @@
     const later = () => { close(); if (opts.onLater) opts.onLater(); };
     x.onclick = later; box.append(x);
     const badge = txt("span", "pw-badge", upgrade ? "Expert" : "Premium");
-    box.append(badge, txt("h2", "pw-h", h), txt("p", "pw-sub", sub));
+    const top = txt("div", "pw-top"); if (pic && window.PICTO) top.append(PICTO(pic)); top.append(badge); box.append(top, txt("h2", "pw-h", h), txt("p", "pw-sub", sub));
     // Choix de la formule (formule gratuite seulement).
     const tiers = txt("div", "pw-tiers"); tiers.setAttribute("role", "tablist");
     if (!upgrade) ["premium", "expert"].forEach((tr) => { const b = txt("button", "pw-tier"); b.type = "button"; b.dataset.tier = tr; b.setAttribute("role", "tab");
@@ -193,7 +193,7 @@
   }
   function celebrate() {
     const o = txt("div", "pw pw-yay"); const box = txt("div", "pw-box"); o.append(box);
-    box.append(txt("div", "pw-confetti", "🎉"), txt("h2", "pw-h", tier() === "expert" ? "Bienvenue dans Expert !" : "Bienvenue dans Premium !"));
+    const yay = txt("div", "pw-confetti"); if (window.LINO) yay.append(LINO("joy", 96)); box.append(yay, txt("h2", "pw-h", tier() === "expert" ? "Bienvenue dans Expert !" : "Bienvenue dans Premium !"));
     box.append(txt("p", "pw-sub", PLAN.status === "trialing" && PLAN.trial_end ? "Ton essai gratuit court jusqu'au {0}. On te prévient la veille de la fin.".replace("{0}", date(PLAN.trial_end)) : (tier() === "expert" ? "Tu peux parler jusqu'à {0} minutes par jour avec les personnages." : "Tout est débloqué : leçons, conversations, mode voiture et actualité.").replace("{0}", String(talkMin().expert))));
     const go = txt("button", "pw-cta"); go.type = "button"; go.textContent = "C'est parti !"; go.onclick = () => { o.classList.remove("in"); setTimeout(() => o.remove(), 200); document.body.classList.remove("pw-open"); };
     box.append(go); document.body.append(o); document.body.classList.add("pw-open"); requestAnimationFrame(() => o.classList.add("in"));
@@ -250,12 +250,12 @@
       q.append(txt("span", "dm-quota-n"), txt("span", "dm-quota-up", (nxt === "expert" ? "Expert : {0} min/j" : "Premium : {0} min/j").replace("{0}", String(talkMin()[nxt]))));
       if (DM.ui.sug) DM.ui.sug.prepend(q); else DM.ui.wrap.prepend(q); // dans la rangée fixe au-dessus de la saisie : toujours visible
     }
-    q.querySelector(".dm-quota-n").textContent = "⏱ {0} min".replace("{0}", String(left));
+    { const qn = q.querySelector(".dm-quota-n"); qn.textContent = ""; if (window.PICTO) qn.append(PICTO("timer", "sm")); qn.append(txt("span", null, "{0} min".replace("{0}", String(left)))); }
     q.classList.toggle("low", left <= 1);
     if (left === 1 && (S.pw || {}).nudge !== today() && DM.ui.log) {
       S.pw = Object.assign({}, S.pw || {}, { nudge: today() });
       const n = txt("div", "dm-upsell");
-      n.append(txt("p", null, (nxt === "expert" ? "⏳ Plus qu'une minute de conversation aujourd'hui. Avec Expert, parle jusqu'à {0} minutes par jour." : "⏳ Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.").replace("{0}", String(talkMin()[nxt]))));
+      n.append(txt("p", null, (nxt === "expert" ? "Plus qu'une minute de conversation aujourd'hui. Avec Expert, parle jusqu'à {0} minutes par jour." : "Plus qu'une minute de conversation gratuite aujourd'hui. Avec Premium, parle jusqu'à {0} minutes par jour.").replace("{0}", String(talkMin()[nxt]))));
       n.append(btn("Parler plus longtemps", "dark", () => paywall("more")));
       DM.ui.log.append(n); try { dmScroll(); } catch (e) { /* rien */ }
     }
@@ -371,7 +371,7 @@
     if (!Object.values(S.d || {}).some((n) => n > 0)) return null;
     const later = (S.rm && S.rm.later) || -99; if (day() - later < 7) return null;
     if (RM.supported() && RM.perm() === "denied") return null;
-    const c = txt("section", "card rm-card"); c.append(txt("span", "rm-bell", "🔔"));
+    const c = txt("section", "card rm-card"); c.append(window.PICTO ? PICTO("bell", "rm-bell") : txt("span", "rm-bell"));
     const t = txt("div", "rm-t"); t.append(txt("b", null, "Je te fais signe chaque jour ?"));
     let hour = RM.hour();
     if (RM.needsInstall()) {
@@ -383,7 +383,7 @@
     const a = txt("div", "acts two");
     const yes = btn("Oui, rappelle-moi", "dark", async () => {
       yes.disabled = true; const r = await RM.enable(hour).catch(() => "error");
-      if (r === "ok") { c.replaceChildren(txt("span", "rm-bell", "✅"), txt("b", "rm-done", "C'est noté ! On te fait signe chaque jour à {0}.".replace("{0}", hourLabel(hour)))); setTimeout(() => c.remove(), 4000); }
+      if (r === "ok") { c.replaceChildren(window.PICTO ? PICTO("check", "rm-bell ok") : txt("span", "rm-bell"), txt("b", "rm-done", "C'est noté ! On te fait signe chaque jour à {0}.".replace("{0}", hourLabel(hour)))); setTimeout(() => c.remove(), 4000); }
       else { yes.disabled = false; speakNote(r === "denied" ? deniedNote : "Les rappels ne s'activent pas sur ce téléphone pour l'instant."); }
     });
     a.append(yes, btn("Plus tard", "", () => { S.rm = Object.assign({}, S.rm || {}, { later: day() }); save(); c.remove(); }));
@@ -419,7 +419,7 @@
     tt.append(txt("b", null, after || t === "premium" ? "Tu as parlé {0} min sur {1} aujourd'hui".replace("{0}", String(used)).replace("{1}", String(max)) : "{0} minutes de conversation par jour en gratuit".replace("{0}", String(tm.free))));
     tt.append(txt("small", null, nxt === "expert" ? "Avec Expert, parle jusqu'à {0} minutes par jour.".replace("{0}", String(tm.expert)) : "Premium : {0} minutes par jour. Expert : {1} minutes.".replace("{0}", String(tm.premium)).replace("{1}", String(tm.expert))));
     const bar = txt("div", "talk-up-bar"); const fillb = txt("i"); fillb.style.width = Math.round(100 * used / max) + "%"; bar.append(fillb);
-    c.append(txt("span", "talk-up-ic", "🎙️"), tt, bar, btn("Parler plus longtemps", "dark", () => paywall("more")));
+    c.append(window.PICTO ? PICTO("mic", "talk-up-ic") : txt("span", "talk-up-ic"), tt, bar, btn("Parler plus longtemps", "dark", () => paywall("more")));
     return c;
   }
   // Carte du profil : l'abonnement.
@@ -429,7 +429,7 @@
     const s0 = PLAN, t = txt("div", "pw-card-t"); c.append(t);
     const tm = talkMin(), tr = tier(), name = TIER_NAME[tr] || "Premium";
     if (s0.owner) { t.append(txt("b", null, "Expert"), txt("small", "muted", "Créateur de l'app : tout est inclus.")); return c; }
-    if (s0.founder) { t.append(txt("b", null, name + " · membre fondateur"), txt("small", "muted", "Tout est offert, pour te remercier d'être là depuis le début 💛")); return c; }
+    if (s0.founder) { t.append(txt("b", null, name + " · membre fondateur"), txt("small", "muted", "Tout est offert, pour te remercier d'être là depuis le début.")); return c; }
     if (premium()) {
       t.append(txt("b", null, s0.status === "trialing" ? name + " · essai gratuit" : s0.status === "past_due" ? name + " · paiement à mettre à jour" : name + (s0.plan === "monthly" ? " · mensuel" : " · annuel")));
       t.append(txt("small", "muted", "{0} minutes de conversation par jour.".replace("{0}", String(tr === "expert" ? tm.expert : tm.premium)) + " " + (s0.status === "trialing" && s0.trial_end ? (s0.cancel_at_period_end ? "Jusqu'au {0}, sans renouvellement." : "Jusqu'au {0}, puis abonnement automatique.").replace("{0}", date(s0.trial_end))
