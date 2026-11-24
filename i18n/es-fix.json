@@ -327,5 +327,20 @@
  "miles pour devenir «": "millas para ser «",
  "Leçon {0} : {1}": "Lección {0}: {1}",
  "Leçon {0} : {1}, faite": "Lección {0}: {1}, hecha",
- "Leçon {0} : {1}, à faire maintenant": "Lección {0}: {1}, ahora"
+ "Leçon {0} : {1}, à faire maintenant": "Lección {0}: {1}, ahora",
+ "À VENIR": "PRÓXIMA",
+ "Coffre de l'étape": "Cofre de la etapa",
+ "Passeport": "Pasaporte",
+ "DÉPARTS": "SALIDAS",
+ "DÉPART": "SALIDA",
+ "BIENTÔT": "PRONTO",
+ "{0} leçon(s) faite(s) sur {1}": "{0} de {1} lecciones hechas",
+ "Étape {0}": "Etapa {0}",
+ "Étape {0} · en cours": "Etapa {0} · en curso",
+ "Étapes": "Etapas",
+ "Étape validée": "Etapa completada",
+ "{0} villes sur {1}": "{0} de {1} ciudades",
+ "1 ville sur {0}": "1 de {0} ciudades",
+ "{0} (à venir)": "{0} (próximamente)",
+ "Bases {0}": "Bases {0}"
 }

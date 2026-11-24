@@ -95,14 +95,14 @@ const MOCKS = `
   await a.click(".tabbar [data-tab=lessons]");
   const nUnits = await a.$$eval(".vy-unit", (d) => d.length);
   ok(nUnits >= 5, "le voyage : toutes les unités en pastilles (" + nUnits + ")");
-  const vy = await a.evaluate(() => ({ bulbs: document.querySelectorAll(".vy-garland ellipse").length, lessons: (() => { const cu = current(); return slots().filter((x) => x.li === cu.li && x.ui === cu.ui).length; })(), ticket: (document.querySelector(".vy-ticket.cur .vy-t-title") || {}).textContent, cur: current().l.t, lino: !!document.querySelector(".vy-ticket.cur .lino") && !!document.querySelector(".vy-hang .lino") }));
-  ok(vy.bulbs === vy.lessons && vy.ticket === vy.cur && vy.lino, "guirlande (une ampoule par leçon), billet de la leçon en cours et Lino : " + JSON.stringify(vy));
+  const vy = await a.evaluate(() => ({ dots: document.querySelectorAll(".dep .el-line i:not(.c):not(.g)").length, rows: document.querySelectorAll(".dep-list .dep-row:not(.chest)").length, lessons: (() => { const cu = current(); return slots().filter((x) => x.li === cu.li && x.ui === cu.ui).length; })(), ticket: (document.querySelector(".dep-focus.cur .dep-title") || {}).textContent, cur: current().l.t, lino: !!document.querySelector(".dep-lino .lino") }));
+  ok(vy.dots === vy.lessons && vy.rows === vy.lessons && vy.ticket === vy.cur && vy.lino, "tableau des départs : une ligne par leçon, la leçon en cours ouverte, et Lino : " + JSON.stringify(vy));
   await a.click(".vy-unit >> nth=1"); await a.waitForTimeout(150);
-  ok(await a.evaluate(() => document.querySelector(".vy-unit[aria-selected=true]") === document.querySelectorAll(".vy-unit")[1] && !!document.querySelector(".vy-ticket")), "changer d'unité d'un toucher");
+  ok(await a.evaluate(() => document.querySelector(".vy-unit[aria-selected=true]") === document.querySelectorAll(".vy-unit")[1] && !!document.querySelector(".dep-focus")), "changer d'étape d'un toucher");
   await a.click(".vy-unit >> nth=0"); await a.waitForTimeout(150);
 
   console.log("2. Une leçon : réponse enregistrée sur le serveur");
-  await a.click(".vy-ticket .vy-go");
+  await a.click(".dep-focus .dep-go");
   ok(await a.isHidden(".tabbar"), "pas d'onglets pendant une leçon");
   await a.waitForSelector("main.body");
   for (let i = 0; i < 4; i++) { const nx = await a.$("button:has-text('Suivant'), button:has-text('Continuer'), button:has-text('Commencer')"); if (!nx) break; await nx.click(); await a.waitForTimeout(150); }

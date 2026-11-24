@@ -262,5 +262,20 @@
  "miles pour devenir «": "miles to become “",
  "Leçon {0} : {1}": "Lesson {0}: {1}",
  "Leçon {0} : {1}, faite": "Lesson {0}: {1}, done",
- "Leçon {0} : {1}, à faire maintenant": "Lesson {0}: {1}, up next"
+ "Leçon {0} : {1}, à faire maintenant": "Lesson {0}: {1}, up next",
+ "À VENIR": "UPCOMING",
+ "Coffre de l'étape": "Stage chest",
+ "Passeport": "Passport",
+ "DÉPARTS": "DEPARTURES",
+ "DÉPART": "START",
+ "BIENTÔT": "SOON",
+ "{0} leçon(s) faite(s) sur {1}": "{0} of {1} lessons done",
+ "Étape {0}": "Stage {0}",
+ "Étape {0} · en cours": "Stage {0} · in progress",
+ "Étapes": "Stages",
+ "Étape validée": "Stage complete",
+ "{0} villes sur {1}": "{0} of {1} cities",
+ "1 ville sur {0}": "1 of {0} cities",
+ "{0} (à venir)": "{0} (upcoming)",
+ "Bases {0}": "Basics {0}"
 }

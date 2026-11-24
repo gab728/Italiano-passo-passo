@@ -156,7 +156,7 @@ const MOCKS = `
   ok(heDay.n > 0 && itSide.n === 0 && itSide.all >= heDay.n && itSide.sk >= 1, "objectif du jour compté par langue (hébreu " + heDay.n + ", italien " + itSide.n + "), la série de jours reste commune");
   ok(!/Shalom/.test(itSide.hist), "historique : rien de l'hébreu côté italien");
   ok(!/אבא/.test(itSide.ctx), "erreurs récentes : celles de l'hébreu ne servent pas aux leçons d'italien");
-  ok(heDay.color !== itSide.color, "chaque langue a sa couleur (" + heDay.color + " / " + itSide.color + ")");
+  ok(heDay.color === itSide.color, "même identité (orange) dans toutes les langues (" + heDay.color + " / " + itSide.color + ")");
   const s6 = await p.evaluate(() => ({ attr: document.documentElement.dataset.course, giulia: PERSONAS.giulia.name, cur: current() && current().l.id, he: !!(S["L.he-u01-l1"] || {}).done, speech: C().speech }));
   ok(s6.attr === "it" && s6.giulia === "Giulia" && /^it-/.test(s6.cur || "") && s6.speech === "it-IT", "italien : programme, personnages et voix italiens " + JSON.stringify(s6));
   ok(s6.he, "la progression en hébreu est gardée");
@@ -182,7 +182,7 @@ const MOCKS = `
   ok(await p.evaluate(() => current().l.id === "he-u03-l1"), "point de départ modifiable dans le profil");
   await p.screenshot({ path: "tests/shot-he-profile.png" });
 
-  await p.evaluate(() => { S.from.he = ""; save(); UI.go("lessons"); }); await p.waitForSelector(".vy-ticket, .tab-hd"); await new Promise((r) => setTimeout(r, 400));
+  await p.evaluate(() => { S.from.he = ""; save(); UI.go("lessons"); }); await p.waitForSelector(".dep, .tab-hd"); await new Promise((r) => setTimeout(r, 400));
   await p.screenshot({ path: "tests/shot-he-lessons.png" });
   ok(/L'alef-bet/.test(await p.textContent("#app")), "parcours : le niveau « L'alef-bet » en tête");
   await p.evaluate(() => UI.go("talk")); await new Promise((r) => setTimeout(r, 300));

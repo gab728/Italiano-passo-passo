@@ -386,84 +386,80 @@
   /* ---------- Le voyage : guirlande de l'unité, billet de la leçon, billets suivants ---------- */
   let VU = null; // unité affichée : "li:ui"
   window.addEventListener("ipp-course", () => { LV = null; VU = null; });
-  const STRIPS = [["#EEE8FF", "#3A2E86"], ["#E3F6EC", "#1E5A40"], ["#FFF1C9", "#6B5310"], ["#FFE3D1", "#8A3412"]];
-  function garland(ux, cu, w) {
-    const n = ux.length, P = [[-10, 14], [w * 0.25, 82], [w * 0.75, -38], [w + 10, 32]];
-    const at = (t) => { const c = [(1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t * t, t ** 3]; return [0, 1].map((k) => c.reduce((a, v, i) => a + v * P[i][k], 0)); };
-    let g = '<svg class="vy-garland" width="' + w + '" height="96" viewBox="0 0 ' + w + ' 96" role="img" aria-label="' + ux.filter(isDone).length + " leçon(s) faite(s) sur " + n + '">'
-      + '<path d="M' + P[0] + " C" + P[1] + " " + P[2] + " " + P[3] + '" fill="none" stroke="currentColor" stroke-width="2"/>';
-    ux.forEach((x, k) => {
-      const [bx, by] = at(n === 1 ? 0.5 : 0.1 + 0.7 * k / (n - 1)), done = isDone(x), now = cu && x.n === cu.n, cy = by + 14;
-      if (done) g += '<circle class="vy-tw" style="animation-delay:' + (k * 0.4).toFixed(1) + 's" cx="' + bx + '" cy="' + cy + '" r="15" fill="#FFE9A8"/>';
-      if (now) g += '<circle class="vy-glow" cx="' + bx + '" cy="' + cy + '" r="17" fill="#FFC2A3"/>';
-      g += '<rect x="' + (bx - 3) + '" y="' + by + '" width="6" height="6" rx="1" fill="currentColor"/><ellipse cx="' + bx + '" cy="' + cy + '" rx="7" ry="9" fill="' + (done ? "#FFD45C" : now ? "#FF8A4C" : "var(--vy-off)") + '"/>';
-    });
-    return { svg: node(g + "</svg>"), end: at(0.92) };
-  }
   // Où en est la leçon : la partie en cours (cours, vocabulaire, exercices, dialogue…) d'après l'écran enregistré.
   function partOf(m, i) {
     try { const ps = LMAP.parts(screens(m)); const p = ps.find((q) => i >= q.at && i <= q.end) || ps[0]; return { name: p.name, k: ps.indexOf(p), n: ps.length }; } catch (e) { return { name: "", k: 0, n: 1 }; }
   }
+  /* L'onglet Leçons : le tableau des départs. Une étape (unité) à la fois, entre deux villes : ses leçons en lignes d'affichage,
+     avec leurs étoiles, la leçon en cours ouverte (« Embarquer »), et le coffre de l'étape au bout. */
+  function legLine(ux, nowN) {
+    const d = ux.filter(isDone).length, left = ux.length - d, ln = el("div", "el-line"); ln.setAttribute("aria-hidden", "true");
+    ln.style.setProperty("--p", (100 * (d + (left ? 0 : 2)) / (ux.length + 2)).toFixed(1) + "%");
+    ln.append(el("i", "c on")); ux.forEach((y) => ln.append(el("i", (isDone(y) ? "on" : "") + (y.n === nowN ? " now" : "")))); ln.append(el("i", "g" + (left ? "" : " on")), el("i", "c" + (left ? "" : " on")));
+    return ln;
+  }
   function voyage(ss, cu) {
-    const levels = (C().plan && C().plan.levels) || [];
-    const units = []; levels.forEach((lv, li) => (lv.units || []).forEach((u, ui) => { const ux = ss.filter((x) => x.li === li && x.ui === ui); if (ux.length) units.push({ lv, li, u, ui, ux, key: li + ":" + ui }); }));
-    if (!units.length) return false;
+    const units = tripUnits(ss); if (!units.length) return false;
     if (!VU || !units.some((x) => x.key === VU)) VU = cu ? cu.li + ":" + cu.ui : units[0].key;
-    const U = units.find((x) => x.key === VU), wrap = el("div", "vy");
-    // Les unités, d'un geste.
-    const chips = el("div", "vy-units"); chips.setAttribute("role", "tablist"); chips.setAttribute("aria-label", "Unités");
-    units.forEach((x) => {
+    const k = units.findIndex((x) => x.key === VU), U = units[k], wrap = el("div", "vy");
+    // Les étapes, d'un geste.
+    const chips = el("div", "vy-units"); chips.setAttribute("role", "tablist"); chips.setAttribute("aria-label", "Étapes");
+    units.forEach((x, i) => {
       const d = x.ux.every(isDone), here = cu && cu.li === x.li && cu.ui === x.ui, b = el("button", "vy-unit" + (d ? " done" : "") + (here ? " here" : ""));
       b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(x.key === VU));
-      b.innerHTML = d ? IC.check : ""; b.append(txt("span", null, "Unité " + x.ux[0].un + (here ? " · en cours" : "")));
+      b.innerHTML = d ? IC.check : ""; b.append(txt("span", null, here ? "Étape " + (i + 1) + " · en cours" : "Étape " + (i + 1)));
       b.onclick = () => { VU = x.key; lessonsTab(); }; chips.append(b);
     });
     wrap.append(chips);
-    // La guirlande : une ampoule par leçon, Lino suspendu au bout quand c'est l'unité en cours.
-    const ux = U.ux, doneN = ux.filter(isDone).length, mine_ = cu && cu.li === U.li && cu.ui === U.ui;
-    const gw = Math.min(Math.max((root.clientWidth || 390) - 32, 280), 560), gl = garland(ux, cu, gw), gbox = el("div", "vy-gbox");
-    gbox.append(gl.svg);
-    if (mine_) { const l = el("div", "vy-hang"); l.style.left = Math.round(gl.end[0] - 22) + "px"; l.style.top = Math.round(gl.end[1] - 6) + "px"; l.append(lino("hang", 48)); gbox.append(l); }
-    wrap.append(gbox);
-    const hd = el("div", "vy-head");
-    hd.append(txt("span", "vy-eyebrow", lvName(U) + " · Unité " + ux[0].un + " · " + doneN + (doneN > 1 ? " lumières" : " lumière") + " sur " + ux.length), txt("h2", "vy-title", U.u.t));
-    if (isS(U.u.goal)) hd.append(txt("p", "vy-goal", U.u.goal));
-    wrap.append(hd);
-    // Le billet : la leçon en cours de l'unité (ou la première à faire).
+    const ux = U.ux, doneN = ux.filter(isDone).length, all = doneN === ux.length, mine_ = cu && cu.li === U.li && cu.ui === U.ui;
     const focus = (mine_ && ux.find((x) => x.n === cu.n)) || ux.find((x) => !isDone(x));
-    if (focus) wrap.append(ticket(focus, ux.indexOf(focus) + 1, mine_ && focus.n === cu.n));
-    else {
-      const best = ux.map((x) => (S[x.key] || {}).best).filter((v) => v != null), avg = best.length ? Math.round(best.reduce((a, b) => a + b, 0) / best.length) : null;
-      const c = el("div", "vy-ticket vy-done-all"); const t = el("div", "vy-t-top"); t.append(txt("span", "vy-mono", "VOYAGE TERMINÉ"), txt("b", "vy-t-title", "Unité " + ux[0].un + " validée"));
-      if (avg != null) t.append(txt("span", "vy-t-sub", avg + " % de réussite en moyenne"));
-      c.append(t); const ix = units.indexOf(U), nx = units[ix + 1];
-      if (nx) { const b = el("button", "vy-go"); b.type = "button"; b.textContent = "Unité suivante : " + nx.u.t; b.onclick = () => { VU = nx.key; lessonsTab(); }; const bot = el("div", "vy-t-bot"); bot.append(b); c.append(bot); }
-      wrap.append(c);
+    const bd = el("section", "dep");
+    if (mine_) { const l = el("div", "dep-lino"); l.append(lino("wave", 58)); bd.append(l); }
+    // En-tête : l'étape, les deux villes en lettres d'affichage, le thème.
+    const eye = el("div", "dep-eye"); eye.append(txt("span", null, "ÉTAPE " + (k + 1)), txt("span", null, lvName(U))); bd.append(eye);
+    const ct = el("div", "dep-cities"), aw = el("span", "dep-arrow"); aw.innerHTML = IC.arrow; aw.setAttribute("aria-hidden", "true");
+    const sa = flapSign(cityOf(k)), sb = flapSign(cityOf(k + 1), all ? "" : "dim"), half = (Math.min(root.clientWidth || 390, 560) - 32 - 36 - 34) / 2;
+    fitSign(sa, half); fitSign(sb, half); [sa, sb].forEach((sg) => { const fw = parseFloat(sg.style.getPropertyValue("--fw")); if (fw > 15) sg.style.setProperty("--fw", "15px"); });
+    ct.append(sa, aw, sb); bd.append(ct);
+    const hd = el("div", "dep-head"); hd.append(txt("h2", "dep-h", U.u.t)); if (isS(U.u.goal)) hd.append(txt("p", "dep-goal", U.u.goal)); bd.append(hd);
+    const prog = el("div", "dep-prog"); prog.append(legLine(ux, focus && mine_ ? focus.n : null), txt("span", "dep-count", doneN + "/" + ux.length)); prog.setAttribute("role", "img"); prog.setAttribute("aria-label", doneN + " leçon(s) faite(s) sur " + ux.length); bd.append(prog);
+    // Les départs : une ligne par leçon.
+    const list = el("div", "dep-list");
+    const flag = (cls, label) => txt("span", "dep-flag" + (cls ? " " + cls : ""), label);
+    ux.forEach((x, i) => {
+      const m = x.mi >= 0 ? M[x.mi] : null, stt = S[x.key] || {}, done = isDone(x), num = String(i + 1).padStart(2, "0");
+      if (x === focus) {
+        const isCur = mine_ && x.n === cu.n, n = m ? screens(m).length : 0, at = stt.i || 0, started = !!(m && at);
+        const c = el("article", "dep-row dep-focus" + (isCur ? " cur" : "")), top = el("div", "dep-top"), tt = el("div", "dep-t");
+        tt.append(txt("h3", "dep-title", x.l.t)); if (isS(x.l.g)) tt.append(txt("span", "dep-sub", x.l.g));
+        top.append(txt("span", "dep-n", num), tt); c.append(top);
+        const meta = el("div", "dep-meta");
+        meta.append(flag(m ? "live" : "wait", !m ? "À PRÉPARER" : started ? "EN ROUTE" : "EMBARQUEMENT"));
+        if (m) { meta.append(txt("span", "tb-flap", started ? "REPRISE " + Math.round(100 * at / n) + " %" : n + " ÉCRANS")); if (started) meta.append(txt("span", "tb-flap dep-part", partOf(m, at).name)); }
+        meta.append(txt("span", "tb-flap", "+" + LESSON_MILES + " MILES")); c.append(meta);
+        const bot = el("div", "dep-act"), go = el("button", "dep-go tb-go"); go.type = "button";
+        go.textContent = !m ? (AI ? "Préparer la leçon" : "Préparer avec le réseau") : started ? "Reprendre" : isCur ? "Embarquer" : "Commencer";
+        go.onclick = () => openSlot(x); bot.append(go);
+        if (m && typeof LMAP !== "undefined") { const sm = el("button", "dep-map"); sm.type = "button"; sm.setAttribute("aria-label", "Sommaire de la leçon"); sm.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>'; sm.onclick = () => LMAP.open(x.mi); bot.append(sm); }
+        c.append(bot); list.append(c); return;
+      }
+      const b = el("button", "dep-row " + (done ? "done" : "todo")); b.type = "button";
+      const tt = el("span", "dep-t"); tt.append(txt("b", null, x.l.t)); b.append(txt("span", "dep-n", num), tt);
+      if (done) { const r = el("span", "dep-res"); r.append(starRow(starsOf(x), "tb-stars")); if (stt.best != null) r.append(txt("small", null, stt.best + " %")); b.append(r); }
+      else b.append(flag("wait", m ? "À VENIR" : AI ? "À PRÉPARER" : "BIENTÔT"));
+      b.onclick = () => openSlot(x); list.append(b);
+    });
+    // Le coffre de l'étape, juste avant la ville d'arrivée.
+    const ch = el("div", "dep-row chest" + (all ? " open" : "")), cn = el("span", "dep-n"); cn.innerHTML = TI.gift;
+    const ctt = el("span", "dep-t"); ctt.append(txt("b", null, "Coffre de l'étape"), txt("small", null, "+" + CHEST + " miles")); ch.append(cn, ctt, flag(all ? "live" : "wait", all ? "OUVERT" : "FERMÉ")); list.append(ch);
+    bd.append(list);
+    if (all) {
+      const best = ux.map((x) => (S[x.key] || {}).best).filter((v) => v != null), avg = best.length ? Math.round(best.reduce((a, b) => a + b, 0) / best.length) : null, nx = units[k + 1];
+      const f = el("div", "dep-end"); f.append(txt("b", null, "Étape validée")); if (avg != null) f.append(txt("span", null, avg + " % de réussite en moyenne"));
+      if (nx) { const b = el("button", "dep-go tb-go"); b.type = "button"; b.textContent = "Étape suivante"; b.onclick = () => { VU = nx.key; lessonsTab(); }; f.append(b); }
+      bd.append(f);
     }
-    // Les billets suivants, empilés, puis les billets validés.
-    const next = ux.filter((x) => x !== focus && !isDone(x));
-    if (next.length) {
-      wrap.append(txt("h3", "vy-sec", "Prochains billets"));
-      const st = el("div", "vy-stack");
-      next.forEach((x, k) => {
-        const [bg, fg] = STRIPS[k % STRIPS.length], b = el("button", "vy-strip"); b.type = "button"; b.style.background = bg; b.style.color = fg; b.style.zIndex = String(10 - k);
-        const z = slotState(x); b.append(txt("span", "vy-mono", String(ux.indexOf(x) + 1)), txt("b", null, x.l.t), txt("small", null, z.cls === "todo" ? (AI ? "À préparer" : "Bientôt") : "Prête"));
-        b.onclick = () => openSlot(x); st.append(b);
-      });
-      wrap.append(st);
-    }
-    const done = ux.filter(isDone);
-    if (done.length) {
-      wrap.append(txt("h3", "vy-sec", done.length > 1 ? done.length + " billets validés" : "1 billet validé"));
-      const l = el("div", "vy-done");
-      done.forEach((x) => {
-        const b = el("button", "vy-stub"); b.type = "button"; const best = (S[x.key] || {}).best;
-        b.append(txt("span", "vy-stamp", C().id === "he" ? "בּוּצַע" : C().id === "es" ? "HECHO" : C().id === "fr" ? "FAIT" : C().id === "en" ? "DONE" : "FATTO"), txt("b", null, x.l.t), txt("small", null, best != null ? best + " %" : ""));
-        b.onclick = () => openSlot(x); l.append(b);
-      });
-      wrap.append(l);
-    }
-    root.append(wrap);
+    wrap.append(bd); root.append(wrap);
     requestAnimationFrame(() => { const on = chips.querySelector('[aria-selected="true"]'); if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center" }); });
     return true;
   }
@@ -825,6 +821,21 @@
   }
 
   /* ---------- Profil ---------- */
+  // Le passeport : un tampon par ville de l'itinéraire, encré quand la ville est atteinte (étape terminée).
+  function passport() {
+    const us = tripUnits(slots()); if (!us.length) return null;
+    const n = us.length + 1; let reach = 0; while (reach < us.length && us[reach].ux.every(isDone)) reach++;
+    const c = card("psp"), h = el("div", "pg-h"); h.append(txt("b", null, "Passeport"), txt("small", "muted", reach ? (reach + 1) + " villes sur " + n : "1 ville sur " + n)); c.append(h);
+    const row = el("div", "psp-row");
+    for (let k = 0; k < n; k++) {
+      const got = k <= reach, st = el("div", "psp-st" + (got ? " got" : k === reach + 1 ? " next" : "")); st.style.setProperty("--r", [-7, 5, -3, 8, -5, 3][k % 6] + "deg");
+      st.innerHTML = TI.station; const nm = txt("b", null, cityOf(k).toLocaleUpperCase()); nm.setAttribute("data-no-i18n", ""); st.append(nm, txt("small", null, k ? "ÉTAPE " + k : "DÉPART"));
+      st.setAttribute("role", "img"); st.setAttribute("aria-label", cityOf(k) + (got ? "" : " (à venir)")); row.append(st);
+    }
+    c.append(row);
+    requestAnimationFrame(() => { const t = row.children[Math.max(0, reach - 1)]; if (t) row.scrollLeft = Math.max(0, t.offsetLeft - 16); });
+    return c;
+  }
   function profileTab() {
     screen("profile");
     const top = el("div", "prof-top"); const gear = el("button", "icon-btn round"); gear.type = "button"; gear.innerHTML = IC.gear; gear.setAttribute("aria-label", "Réglages du compte"); gear.onclick = () => { setTab("profile"); WEB.account(); }; top.append(gear); root.append(top);
@@ -835,6 +846,7 @@
     if (window.PREM) PREM.profileTop(root);
     const sk = streak();
     if (typeof RV !== "undefined") RV.progress(root);
+    const pp = passport(), ps = root.querySelector(".pg-stats"); if (pp) { if (ps) ps.after(pp); else root.append(pp); }
     const lb = card("lboard"); lb.append(txt("div", "board-h", "")); lb.firstChild.append(txt("b", null, "Cette semaine entre amis"), txt("small", null, "réponses")); root.append(lb); SOC.renderBoard(lb);
     const acts = el("div", "acts two");
     acts.append(pillBtn("Inviter un ami", "dark", () => {
@@ -1057,8 +1069,7 @@
         const u = el("div", "end-leg rise"), cap = el("div", "el-cap"), a = el("span"), b = el("span"), mid = el("b");
         a.setAttribute("data-no-i18n", ""); a.textContent = cityOf(k).toLocaleUpperCase(); b.setAttribute("data-no-i18n", ""); b.textContent = cityOf(k + 1).toLocaleUpperCase();
         mid.textContent = left > 1 ? "Encore " + left + " leçons" : left === 1 ? "Encore 1 leçon" : "Arrivée !"; cap.append(a, mid, b); u.append(cap);
-        const ln = el("div", "el-line"); ln.setAttribute("aria-hidden", "true"); ln.style.setProperty("--p", (100 * (d + (left ? 0 : 2)) / (ux.length + 2)).toFixed(1) + "%");
-        ln.append(el("i", "c on")); ux.forEach((y) => ln.append(el("i", isDone(y) ? (y.n === x.n ? "on now" : "on") : ""))); ln.append(el("i", "g" + (left ? "" : " on")), el("i", "c" + (left ? "" : " on"))); u.append(ln);
+const ln = legLine(ux, x.n); u.append(ln);
         if (!left) { const c = el("div", "el-chest"); c.innerHTML = TI.gift; c.append(txt("span", null, "Coffre de l'étape ouvert"), txt("b", null, "+" + CHEST + " miles")); u.append(c); }
         tiles.after(u);
       }

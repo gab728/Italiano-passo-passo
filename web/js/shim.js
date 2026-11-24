@@ -365,9 +365,19 @@
 
   function welcome() {
     const box = frame({ cls: "g-welcome" });
-    const art = $("div", "g-art"); art.setAttribute("aria-hidden", "true");
-    ["cafe", "viaggio", "cucina"].forEach((n) => { const i = document.createElement("img"); i.src = "img/themes/" + n + ".svg"; i.alt = ""; art.append(i); });
-    box.append(art);
+    // Le tableau des départs : une ville par langue proposée, en lettres d'affichage, et l'avion de Lino au-dessus.
+    const art = $("div", "g-art g-board-w"); art.setAttribute("aria-hidden", "true");
+    const brand = $("div", "gb-brand"), bn = $("span", "flap"); bn.setAttribute("data-no-i18n", ""); [..."NOE"].forEach((ch, j) => { const t = $("i", "", ch); t.style.animationDelay = (j * 0.08).toFixed(2) + "s"; bn.append(t); }); brand.append(bn);
+    const pl = document.getElementById("lp-plane"); if (pl) { const w = $("div", "gb-plane"); w.append(pl.content.cloneNode(true)); brand.append(w); }
+    art.append(brand);
+    const bd = $("div", "g-board"), hd = $("div", "gb-hd"); hd.append($("span", null, "DÉPARTS"), $("span", "tb-live", "EMBARQUEMENT")); bd.append(hd);
+    [["it", "ROMA", "Ciao"], ["es", "MADRID", "¡Hola!"], ["en", "LONDON", "Hello"], ["fr", "PARIS", "Bonjour"], ["he", "TEL AVIV", "שָׁלוֹם"]].filter((r) => r[0] !== UI()).forEach(([id, city, hi], k) => {
+      const row = $("div", "gb-row"), f = $("i", "flag flag-" + id), c = $("span", "flap"); c.setAttribute("data-no-i18n", "");
+      [...city].forEach((ch, j) => { const t = $("i", ch === " " ? "sp" : "", ch === " " ? "" : ch); t.style.animationDelay = (0.25 + k * 0.18 + j * 0.045).toFixed(2) + "s"; c.append(t); });
+      const g = $("span", "gb-hi", hi); g.setAttribute("data-no-i18n", ""); if (id === "he") { g.lang = "he"; g.dir = "rtl"; }
+      row.append(f, c, g); bd.append(row);
+    });
+    art.append(bd); box.append(art);
     const h = $("h1", "g-hello", "Ciao. ¡Hola! "); const sh = $("span", "g-he", "שָׁלוֹם."); sh.lang = "he"; sh.dir = "rtl"; h.append(sh); box.append(h);
     box.append($("p", "g-lead", UI() === "fr" ? "L'italien, l'espagnol, l'anglais ou l'hébreu en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute." : UI() === "es" ? "L'italien, l'anglais, l'hébreu ou le français en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute." : "L'italien, l'espagnol, l'hébreu ou le français en parlant, à ton rythme : des leçons courtes, et des personnages qui te répondent à voix haute."))
     const go = $("button", "g-cta", "Commencer"); go.type = "button"; go.onclick = () => stepNative();
