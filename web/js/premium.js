@@ -371,23 +371,23 @@
     if (!Object.values(S.d || {}).some((n) => n > 0)) return null;
     const later = (S.rm && S.rm.later) || -99; if (day() - later < 7) return null;
     if (RM.supported() && RM.perm() === "denied") return null;
-    const c = txt("section", "card rm-card"); c.append(window.PICTO ? PICTO("bell", "rm-bell") : txt("span", "rm-bell"));
+    // Un bandeau d'une ligne ; l'heure ne se choisit qu'après « Choisir l'heure », sur une seule rangée.
+    const c = txt("section", "card rm-card"), top = txt("div", "rm-top"); top.append(window.PICTO ? PICTO("bell", "rm-bell") : txt("span", "rm-bell"));
     const t = txt("div", "rm-t"); t.append(txt("b", null, "Je te fais signe chaque jour ?"));
+    const snooze = () => { S.rm = Object.assign({}, S.rm || {}, { later: day() }); save(); c.remove(); };
+    const x = txt("button", "rm-x"); x.type = "button"; x.setAttribute("aria-label", "Plus tard"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; x.onclick = snooze;
     let hour = RM.hour();
-    if (RM.needsInstall()) {
-      t.append(txt("small", "muted", installNote)); c.append(t);
-      const a = txt("div", "acts"); a.append(btn("Compris", "soft", () => { S.rm = Object.assign({}, S.rm || {}, { later: day() }); save(); c.remove(); })); c.append(a); return c;
-    }
-    t.append(txt("small", "muted", "Un petit rappel à l'heure de ton choix pour garder ta série, et rien si tu as déjà pratiqué."));
-    c.append(t, hourChips(hour, (h) => { hour = h; }));
-    const a = txt("div", "acts two");
-    const yes = btn("Oui, rappelle-moi", "dark", async () => {
+    if (RM.needsInstall()) { t.append(txt("small", "muted", installNote)); top.append(t, x); c.append(top); return c; }
+    const more = txt("div", "rm-more"); more.hidden = true;
+    const open = btn("Activer", "dark rm-open", () => { more.hidden = false; open.hidden = true; c.classList.add("open"); });
+    top.append(t, open, x); c.append(top);
+    const yes = btn("Oui, rappelle-moi", "dark rm-yes", async () => {
       yes.disabled = true; const r = await RM.enable(hour).catch(() => "error");
-      if (r === "ok") { c.replaceChildren(window.PICTO ? PICTO("check", "rm-bell ok") : txt("span", "rm-bell"), txt("b", "rm-done", "C'est noté ! On te fait signe chaque jour à {0}.".replace("{0}", hourLabel(hour)))); setTimeout(() => c.remove(), 4000); }
+      if (r === "ok") { const ok = txt("div", "rm-top"); ok.append(window.PICTO ? PICTO("check", "rm-bell ok") : txt("span", "rm-bell"), txt("b", "rm-done", "C'est noté ! On te fait signe chaque jour à {0}.".replace("{0}", hourLabel(hour)))); c.replaceChildren(ok); setTimeout(() => c.remove(), 4000); }
       else { yes.disabled = false; speakNote(r === "denied" ? deniedNote : "Les rappels ne s'activent pas sur ce téléphone pour l'instant."); }
     });
-    a.append(yes, btn("Plus tard", "", () => { S.rm = Object.assign({}, S.rm || {}, { later: day() }); save(); c.remove(); }));
-    c.append(a); return c;
+    more.append(hourChips(hour, (h) => { hour = h; }), yes, txt("small", "muted rm-note", "Un petit rappel à l'heure de ton choix pour garder ta série, et rien si tu as déjà pratiqué."));
+    c.append(more); return c;
   }
   // Carte du profil : réglage des rappels.
   function remSettings() {

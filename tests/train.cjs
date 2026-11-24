@@ -84,7 +84,7 @@ const st = async () => (await fetch(O + "/__state")).json();
   await p.evaluate(() => UI.go("words")); await p.waitForSelector(".rv-card");
   ok(/Série du jour terminée/.test(await p.textContent(".rv-card")) && /Une autre série/.test(await p.textContent(".rv-go")), "la carte indique la série faite et propose une autre série");
   await p.evaluate(() => UI.go("feed")); await p.waitForSelector(".daily-row");
-  ok(await p.isVisible(".daily-row:has-text('Révision sur mesure')"), "« Ta journée » propose la révision sur mesure");
+  ok(await p.isVisible(".daily-row:has-text('Sur mesure'):has-text('série du jour')"), "« Ta journée » propose la révision sur mesure");
 
   console.log("3. Progression dans le profil");
   await p.evaluate(() => UI.go("profile")); await p.waitForSelector(".pg-hero");

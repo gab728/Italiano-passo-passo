@@ -136,8 +136,11 @@ const MOCKS = `
   await q.waitForSelector(".rm-card");
   ok(/Je te fais signe chaque jour/.test(await q.textContent(".rm-card")), "accueil : « Je te fais signe chaque jour ? »");
   await q.screenshot({ path: "tests/shot-reminder-card.png" });
+  ok(await q.evaluate(() => { const c = document.querySelector(".rm-card"), d = document.querySelector(".daily"), t = [...document.querySelectorAll(".sec-h")].find((x) => /Parler avec/.test(x.textContent)); return c.getBoundingClientRect().height < 90 && !c.querySelector(".rm-more:not([hidden])") && (d.compareDocumentPosition(c) & 4) && (!t || (c.compareDocumentPosition(t) & 4)); }), "le rappel est un bandeau d'une ligne, sous « Ta journée »");
+  await q.click(".rm-card .rm-open");
+  ok(await q.evaluate(() => { const cs = [...document.querySelectorAll(".rm-card .chip")]; return cs.length === 5 && new Set(cs.map((c) => Math.round(c.getBoundingClientRect().top))).size === 1; }), "« Activer » : les cinq heures tiennent sur une seule rangée");
   await q.click(".rm-card .chip:has-text('21 h')");
-  await q.click(".rm-card .pill-btn.dark");
+  await q.click(".rm-card .rm-yes");
   await q.waitForSelector(".rm-done");
   ok(/21 h/.test(await q.textContent(".rm-card")), "rappels activés à 21 h : « " + (await q.textContent(".rm-card")).trim() + " »");
   const tb = await get("/__tables");

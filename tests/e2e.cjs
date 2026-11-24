@@ -88,7 +88,7 @@ const MOCKS = `
   ok((await a.$$eval(".stories .story", (d) => d.length)) === 4, "accueil : les quatre personnages");
   const daily = await a.$$eval(".daily-row small", (l) => l.map((x) => x.textContent));
   ok(daily.some((x) => /mot du jour/i.test(x)) && daily.some((x) => /Défi oral/.test(x)), "accueil : « Ta journée » réunit mot du jour et défi oral (" + daily.join(", ") + ")");
-  ok(await a.isVisible(".nwe .nwe-title:has-text('Il tuo giornale')"), "accueil : la carte du journal, sous la leçon du jour");
+  ok(await a.isVisible(".nwe .nwe-title") && await a.evaluate(() => document.querySelector(".nwe .nwe-title .flap").getAttribute("aria-label") === "Il tuo giornale" && !!document.querySelector(".daily .nwe")), "accueil : le journal du jour, à la suite de « Ta journée »");
   ok((await a.$$eval(".carousel .theme", (d) => d.length)) >= 5, "thèmes de conversation en images");
   ok(await a.evaluate(() => { const t = document.querySelector(".trip"); return !!t && /LEÇON [1-9]/.test(t.querySelector(".tn-here").textContent) && t.querySelector(".trip-board .tb-body > b").textContent === current().l.t && !!t.querySelector(".trip-plane svg"); }), "accueil : la carte du voyage, la leçon du jour avec son numéro et l'avion de Lino");
   ok(await a.evaluate(() => !!document.querySelector(".daily .lino")), "accueil : Lino accompagne « Ta journée »");
@@ -587,7 +587,7 @@ const MOCKS = `
   ok(true, "le profil s'ouvre en touchant son avatar en haut du Fil");
   await a.evaluate(() => { S.nth = []; S.nw = {}; save(); try { localStorage.removeItem("ipp-news-feed"); localStorage.removeItem("ipp-news-docs"); } catch (e) {} home(); });
   await a.waitForSelector(".nwe .nwe-pick");
-  ok(/Il tuo giornale/.test(await a.textContent(".nwe")), "l'accueil a sa carte « Il tuo giornale », qui propose de choisir ses sujets d'actu");
+  ok(await a.evaluate(() => document.querySelector(".nwe .nwe-title .flap").getAttribute("aria-label") === "Il tuo giornale"), "l'accueil a son panneau « Il tuo giornale », qui propose de choisir ses sujets d'actu");
   await a.click(".nwe .nwe-pick");
   await a.click(".nwt:has-text('Économie')"); await a.click(".nwt:has-text('Voyages')");
   ok(await a.evaluate(() => S.nth.join() === "economie,voyages"), "thèmes choisis dans l'app et enregistrés");

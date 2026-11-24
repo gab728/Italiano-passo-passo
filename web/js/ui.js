@@ -206,12 +206,10 @@
       }
       const all = el("button", "link lh-all"); all.type = "button"; all.textContent = "Voir tout le voyage (" + doneN + "/" + ss.length + ")"; all.onclick = () => goTab("lessons"); foot.append(all); root.append(foot);
     } else root.append(lessonHero(cu, ss, doneN));
-    // Rappels sur le téléphone (après une première séance) et offre Premium à un moment naturel.
-    if (window.PREM) PREM.homeCards(root);
-    // Le journal du jour, juste sous la leçon (sauf en hébreu tant que l'alef-bet n'est pas fini).
-    if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) root.append(NEWS.homeCard());
-    // Ta journée : quatre petites choses à faire, dans une seule carte.
+    // Ta journée : les petites choses du jour en tuiles, puis le journal (sauf en hébreu tant que l'alef-bet n'est pas fini).
     root.append(dailyPlan());
+    // Rappels sur le téléphone (après une première séance) et offre Premium à un moment naturel : un bandeau discret, sous la journée.
+    if (window.PREM) PREM.homeCards(root);
     // Parler : les personnages, puis les sujets et jeux de rôle.
     if (AI) {
       const h = el("div", "sec-h"); h.append(txt("h2", null, "Parler avec…")); const all = el("button", "link"); all.type = "button"; all.textContent = "Tout voir"; all.onclick = () => goTab("talk"); h.append(all); root.append(h);
@@ -234,18 +232,21 @@
     const head = el("div", "daily-h"); const ht = el("div"); ht.append(txt("h2", "feed-sec", "Ta journée"), txt("small", "muted", new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "long", day: "numeric", month: "long" })));
     const cnt = el("span", "daily-n"), lw = el("span", "daily-lino"); const right = el("div", "daily-r"); right.append(lw, cnt); head.append(ht, right); sec.append(head);
     const box = el("div", "daily-box"); sec.append(box);
-    const items = [];
+    const items = [], pips = el("span", "daily-pips"); pips.setAttribute("aria-hidden", "true"); right.insertBefore(pips, cnt);
+    // Une tuile par chose à faire : pictogramme, intitulé, et une pastille qui se coche.
     const row = (icon, tint, eyebrow, title, sub, done, fn) => {
       const b = el("button", "daily-row" + (done ? " done" : "")); b.type = "button";
-      const i = el("span", "row-ic tint-" + tint); i.innerHTML = icon;
+      const top = el("span", "dq-top"), i = el("span", "row-ic tint-" + tint); i.innerHTML = icon;
+      const st = el("span", "daily-st"); st.innerHTML = IC.check; top.append(i, st);
       const t = el("span", "daily-t"); t.append(txt("small", null, eyebrow), txt("b", null, title)); if (sub) t.append(txt("span", "daily-sub", sub));
-      const st = el("span", "daily-st"); st.innerHTML = done ? IC.check : IC.chev;
-      b.append(i, t, st); b.onclick = fn; box.append(b); items.push(b); return b;
+      b.append(top, t); b.onclick = fn; box.append(b); items.push(b); return b;
     };
     let mood = "";
     const count = () => {
       const d = items.filter((b) => b.classList.contains("done")).length, all = items.length && d === items.length;
       cnt.textContent = d + "/" + items.length; cnt.classList.toggle("all", !!all);
+      pips.innerHTML = ""; items.forEach((b) => pips.append(el("i", b.classList.contains("done") ? "on" : "")));
+      items.forEach((b, k) => b.classList.toggle("wide", items.length % 2 === 1 && k === items.length - 1));
       const m = all ? "joy" : "wave"; if (m !== mood) { mood = m; lw.innerHTML = ""; lw.append(lino(m, 44)); }
     };
     // 1. Révision espacée
@@ -253,7 +254,7 @@
       () => V.due.length ? quizRun({ dir: (S.qz && S.qz.dir) || "fr-it", src: "due", n: 0 }) : goTab("words"));
     // 1 bis. Révision sur mesure (fautes, grammaire, mots), préparée par Claude à la demande.
     if (AI && typeof RV !== "undefined" && slots().some(isDone)) { const rs = RV.status();
-      row(ICD.spark, 1, "Révision sur mesure", rs.done ? "Série du jour terminée" : rs.today ? "Reprendre ma série" : "Ta série du jour", rs.faults ? rs.faults + (rs.faults > 1 ? " fautes à retravailler, avec Claude" : " faute à retravailler, avec Claude") : "Grammaire et mots, préparés par Claude", rs.done, () => rs.done ? UI.go("words") : RV.open(false)); }
+      row(ICD.spark, 1, "Sur mesure", rs.done ? "Série du jour terminée" : rs.today ? "Reprendre ma série" : "Ta série du jour", rs.faults ? rs.faults + (rs.faults > 1 ? " fautes à retravailler, avec Claude" : " faute à retravailler, avec Claude") : "Grammaire et mots, préparés par Claude", rs.done, () => rs.done ? UI.go("words") : RV.open(false)); }
     // 2. Le mot du jour : un toucher le dit et déplie l'exemple.
     const wd = wordOfDay();
     if (wd) {
@@ -267,17 +268,18 @@
       if (wd.ex) { const q = el("div", "quote"); q.append(txt("p", "it", "« " + wd.ex[1] + " »"), txt("p", "muted small", wd.ex[2])); more.append(q); }
       const acts = el("div", "acts");
       if (canSpeak && wd.ex) acts.append(pillBtn("Écouter l'exemple", "soft", () => speak(wd.ex[1]), IC.listen));
-      const sv = pillBtn(inNb() ? "Dans ton carnet" : "Au carnet", "soft", () => { setV(wd.w.key, 2); save(); sv.disabled = true; sv.querySelector("span").textContent = "Dans ton carnet"; r.classList.add("done"); r.querySelector(".daily-st").innerHTML = IC.check; count(); }, IC.save); sv.disabled = inNb();
+      const sv = pillBtn(inNb() ? "Dans ton carnet" : "Au carnet", "soft", () => { setV(wd.w.key, 2); save(); sv.disabled = true; sv.querySelector("span").textContent = "Dans ton carnet"; r.classList.add("done"); count(); }, IC.save); sv.disabled = inNb();
       acts.append(sv); more.append(acts); r.after(more);
     }
     // 3. Le défi oral avec un personnage
     if (AI) {
       const ids = ["marco", "sofia", "rosa"], id = ids[day() % ids.length], p = PERSONAS[id], tints = { marco: 0, sofia: 4, rosa: 2 };
-      const r = row("", tints[id], "Défi oral · 2 min", p.name + " : « " + p.open + " »", p.mission, (S.pc || {})[pcKey(id)] === day(), () => openPersona(id));
-      { const b = r.querySelector(".daily-t b"); if (b) { b.textContent = p.name + " : « "; const q = el("bdi"); q.textContent = p.open; b.append(q, document.createTextNode(" »")); if (C().rtl) { b.textContent = p.name + " · " + p.sub; } } }
+      const r = row("", tints[id], "Défi oral · 2 min", p.name, p.mission, (S.pc || {})[pcKey(id)] === day(), () => openPersona(id)); r.classList.add("dq-talk");
       const ic = r.querySelector(".row-ic"); ic.innerHTML = ""; ic.classList.add("daily-av"); ic.append(personaAvatar(p, 42));
     }
     count();
+    // Le journal du jour, à la suite : la une, en panneau.
+    if (typeof NEWS !== "undefined" && AI && !NEWS.locked()) sec.append(NEWS.homeCard());
     return sec;
   }
   /* Carte de la leçon du jour, en tête de l'accueil : où j'en suis dans l'unité, l'objectif du jour, un grand bouton. */
@@ -520,10 +522,10 @@
   // Nom de ville en lettres d'affichage de gare (une tuile par lettre).
   // Panneau d'affichage : une tuile par lettre. Un nom long en plusieurs mots passe sur deux lignes ; la taille des tuiles
   // s'ajuste à la place disponible à côté de la ville (fitSign), pour qu'aucun nom ne sorte de l'écran.
-  function flapSign(name, cls) {
+  function flapSign(name, cls, oneRow) {
     const s = el("span", "flap" + (cls ? " " + cls : "")), up = String(name).toLocaleUpperCase(); s.setAttribute("role", "img"); s.setAttribute("aria-label", name); s.setAttribute("data-no-i18n", "");
     let rows = [up]; const sp = up.indexOf(" ");
-    if (up.length > 9 && sp > 0) { let best = sp; for (let k = sp; k > 0; k = up.indexOf(" ", k + 1)) if (Math.abs(up.length - 1 - 2 * k) < Math.abs(up.length - 1 - 2 * best)) best = k; rows = [up.slice(0, best), up.slice(best + 1)]; }
+    if (!oneRow && up.length > 9 && sp > 0) { let best = sp; for (let k = sp; k > 0; k = up.indexOf(" ", k + 1)) if (Math.abs(up.length - 1 - 2 * k) < Math.abs(up.length - 1 - 2 * best)) best = k; rows = [up.slice(0, best), up.slice(best + 1)]; }
     let wide = 1, gaps = 0;
     rows.forEach((r) => { const row = el("span", "fl-r"), cs = [...r]; let w = 0; cs.forEach((ch) => { const i = el("i", ch === " " ? "sp" : ""); i.textContent = ch === " " ? "" : ch; i.setAttribute("aria-hidden", "true"); row.append(i); w += ch === " " ? .45 : 1; }); if (w > wide) { wide = w; gaps = cs.length - 1; } s.append(row); });
     s._w = wide; s._g = gaps;
@@ -635,7 +637,7 @@
     const onSize = () => { if (!map.isConnected) return window.removeEventListener("resize", onSize); fit(); }; window.addEventListener("resize", onSize);
     return sec;
   }
-  window.TRIP = { units: tripUnits, city: cityOf, stars: starsOf, CHEST, LESSON_MILES };
+  window.TRIP = { units: tripUnits, city: cityOf, stars: starsOf, CHEST, LESSON_MILES, sign: flapSign, fit: fitSign };
   // Miles gagnés pendant une leçon : on note le total à l'ouverture, la fin de leçon affiche la différence.
   let XP0 = null; { const go0 = go; go = function (mi) { try { XP0 = { mi, xp: milesNow() }; } catch (e) { XP0 = null; } return go0.apply(this, arguments); }; }
 

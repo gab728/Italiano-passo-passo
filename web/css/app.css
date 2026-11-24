@@ -1712,3 +1712,74 @@ button.dep-row { cursor: pointer; } button.dep-row:active { background: var(--bo
 body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 19; pointer-events: none; }
 body:has(.dm-hd)::before { background: var(--surface); }
 .pw-cta { flex: none; min-height: 56px; }
+
+/* ---------- Accueil, sous le voyage : Ta journée en tuiles, le journal en panneau, le rappel en bandeau ---------- */
+.daily { gap: 12px; margin-top: 6px; }
+.daily-h { align-items: center; }
+.daily-pips { display: inline-flex; gap: 4px; margin-left: 2px; }
+.daily-pips i { width: 9px; height: 14px; border-radius: 3px; background: var(--line); }
+.daily-pips i.on { background: #FFD84A; box-shadow: inset 0 0 0 1px rgba(15, 27, 61, .18); }
+.daily-n { height: auto; padding: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.daily-n.all { background: none; color: var(--ok); }
+.daily-box { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.daily-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; min-height: 148px; border-radius: 20px; background: var(--surface); box-shadow: 0 10px 26px -22px rgba(15, 27, 61, .45); }
+.daily-row + .daily-row, .daily-more + .daily-row { border-top: 0; border-radius: 20px; }
+.daily-row:active { background: var(--surface); transform: scale(.98); }
+.dq-top { display: flex; align-items: center; justify-content: space-between; }
+.dq-top .row-ic { width: 38px; height: 38px; } .dq-top .row-ic svg { width: 20px; height: 20px; }
+.daily-st { width: 24px; height: 24px; border: 2px dashed var(--line); box-sizing: border-box; color: transparent; }
+.daily-st svg { width: 14px; height: 14px; stroke-width: 3; }
+.daily-row.done { background: var(--gold-soft); box-shadow: inset 0 0 0 2px #FFD84A; }
+.daily-row.done .daily-st { border: 0; background: #0F1B3D; color: #FFD84A; }
+.daily-row.done .daily-t b:not(.it) { color: var(--ink); }
+.daily-t { gap: 3px; }
+.daily-t small { font-size: 10.5px; font-weight: 900; letter-spacing: .1em; }
+.daily-t b { font-size: 16px; line-height: 1.22; -webkit-line-clamp: 3; }
+.daily-t b.it { font-family: var(--body); font-weight: 900; font-size: 19px; line-height: 1.15; }
+.daily-sub { white-space: normal; font-size: 12.5px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.daily-av > *, .dq-top .daily-av { width: 38px; height: 38px; border-radius: 50%; }
+/* Nombre impair : la dernière tuile prend toute la largeur, à l'horizontale. */
+.daily-row.wide { grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; gap: 12px; }
+.daily-row.wide .dq-top { flex-direction: row-reverse; order: 2; } .daily-row.wide .dq-top .row-ic { display: none; }
+.daily-row.wide::before { content: none; }
+.daily-row.wide .daily-t { flex: 1; order: 1; }
+.daily-more { grid-column: 1 / -1; padding: 14px; border-radius: 20px; background: var(--surface); }
+@media (max-width: 340px) { .daily-row { padding: 12px; min-height: 140px; } .daily-t b { font-size: 15px; } }
+
+/* Le journal : la une du jour sur un panneau, titre en lettres d'affichage. */
+.nwe { display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 14px !important; border-radius: 24px; background: var(--board); color: #fff; box-shadow: 0 0 0 1px var(--board-ring), 0 18px 30px -22px rgba(8, 16, 41, .7);
+  --t-tile: #1A2960; --t-tile-ink: #FFD84A; --t-tile-ring: transparent; }
+.nwe-h { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; }
+.nwe-title { font: 900 15px/1.2 var(--body); letter-spacing: .12em; text-transform: uppercase; color: #FFD84A; white-space: nowrap; }
+.nwe-title .flap { position: static; transform: none; flex-direction: row; }
+.nwe-date { font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--board-mut); }
+.nwe-empty { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.45; color: #A9B6E3; }
+.nwe-pick { align-self: flex-start; margin: 2px 0 2px; padding: 0 18px; }
+.nwe .nwe-b { gap: 12px; }
+.nwe .nwe-lead { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; padding: 12px 0 0; border-top: 1px solid var(--board-2); color: #fff; }
+.nwe-kick { display: flex; flex-wrap: wrap; gap: 6px; }
+.nwe-h1 { font: 900 19px/1.22 var(--body); letter-spacing: -.01em; color: #fff; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nwe .nwj-frs { font-size: 13.5px; font-weight: 600; line-height: 1.35; color: #A9B6E3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nwe-lead.done .nwe-h1 { color: var(--board-ink2); }
+.nwe-ft { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nwe-go { width: auto; height: 48px; padding: 0 18px; border-radius: 14px; font-size: 15px; }
+.nwe .nwe-all { width: auto; min-height: 44px; padding: 0 2px; border: 0; background: none; font: 800 14px/1 var(--body); color: #FFD84A; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; cursor: pointer; }
+
+/* Le rappel : un bandeau d'une ligne ; les heures sur une seule rangée. */
+.rm-card { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 18px; }
+.rm-top { display: flex; align-items: center; gap: 10px; }
+.rm-card .rm-bell { width: 36px; height: 36px; border-radius: 10px; } .rm-card .rm-bell svg { width: 19px; height: 19px; }
+.rm-card .rm-t { flex: 1 1 auto; min-width: 0; } .rm-card .rm-t b { font-size: 14.5px; line-height: 1.25; } .rm-card .rm-t small { font-size: 12.5px; line-height: 1.35; }
+.rm-card .pill-btn.rm-open { flex: none; height: 40px; padding: 0 14px; font-size: 13.5px; border-radius: 12px; }
+.rm-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; } .rm-x svg { width: 16px; height: 16px; }
+.rm-more { display: flex; flex-direction: column; gap: 10px; } .rm-more[hidden] { display: none; }
+.rm-card .chips.rm-hours, .rm-set .chips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; flex-basis: auto; }
+.rm-card .chip, .rm-set .chips .chip { min-width: 0; padding: 0; height: 42px; justify-content: center; text-align: center; font-size: 14px; }
+.rm-card .pill-btn.rm-yes { width: 100%; height: 48px; justify-content: center; }
+.rm-note { font-size: 12.5px; line-height: 1.4; }
+.rm-card .rm-done { flex: 1; font-size: 14.5px; }
+.daily-box { grid-auto-flow: dense; }
+.daily-t b.it { font-size: 22px; }
+.dq-talk .daily-t b { font-size: 19px; font-weight: 900; } .dq-talk .daily-sub { -webkit-line-clamp: 3; }
+.nwe-title .flap { letter-spacing: 0; }
+@media (max-width: 350px) { .rm-card .rm-bell { display: none; } .nwe-go { padding: 0 12px; font-size: 14px; } .nwe .nwe-all { white-space: nowrap; font-size: 13px; } }

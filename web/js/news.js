@@ -503,24 +503,26 @@ const NEWS = (() => {
 
   /* --- Carte de l'accueil : la notizia du jour --- */
   /* --- Carte de l'accueil, façon kiosque : le titre du journal, l'article à la une, deux autres titres --- */
+  // Le journal sur l'accueil : un panneau bleu nuit, le titre en lettres d'affichage, la une du jour et un seul bouton.
   function homeCard() {
-    const c = el("section", "card nwe"); c.setAttribute("aria-label", "Le journal du jour");
-    const h = el("div", "nwe-h"), t = txt("b", "nwe-title", SR.mast); if (C().rtl) t.dir = "rtl";
-    h.append(t, el("span", "nwe-rule"), txt("span", "nwe-date", new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "short", day: "numeric", month: "short" }))); c.append(h);
+    const c = el("section", "nwe"); c.setAttribute("aria-label", "Le journal du jour");
+    const h = el("div", "nwe-h"), t = el("b", "nwe-title"); t.setAttribute("data-no-i18n", "");
+    if (!C().rtl && window.TRIP && TRIP.sign) { const sg = TRIP.sign(SR.mast, "", true); TRIP.fit(sg, Math.min(window.innerWidth || 390, 560) - 32 - 36); if (parseFloat(sg.style.getPropertyValue("--fw")) > 15) sg.style.setProperty("--fw", "15px"); t.append(sg); }
+    else { t.textContent = SR.mast; if (C().rtl) t.dir = "rtl"; }
+    h.append(t, txt("span", "nwe-date", new Date().toLocaleDateString(window.I18N ? I18N.locale() : "fr-FR", { weekday: "short", day: "numeric", month: "short" }))); c.append(h);
     if (!themes().length) {
       c.append(txt("p", "nwe-empty", "L'actualité " + LXC().adj + " réécrite à ton niveau, avec des exercices d'écriture. Choisis d'abord tes sujets."));
-      const b = btn("Choisir mes sujets", "primary nwe-pick"); b.onclick = () => hub(true); c.append(b); return c;
+      const b = el("button", "nwe-pick tb-go"); b.type = "button"; b.textContent = "Choisir mes sujets"; b.onclick = () => hub(true); c.append(b); return c;
     }
     const bd = el("div", "nwe-b"); bd.append(txt("p", "nwe-empty", "Chargement des nouvelles…")); c.append(bd);
     items().then((its) => {
       bd.innerHTML = ""; if (!its.length) { bd.append(txt("p", "nwe-empty", "Pas de nouvelle pour l'instant.")); return; }
-      const lead = its.find((x) => !(S.nw || {})[x.id]) || its[0], rest = its.filter((x) => x !== lead && x.theme !== lead.theme).concat(its.filter((x) => x !== lead && x.theme === lead.theme)).slice(0, 2);
+      const lead = its.find((x) => !(S.nw || {})[x.id]) || its[0];
       const done = (S.nw || {})[lead.id], a = el("button", "nwe-lead" + (done ? " done" : "")); a.type = "button";
-      const tx = el("span", "nwe-lt"); tx.append(txt("span", "nwj-kick", ((NAME[lead.theme] || "") + " · " + (done ? "lue · " + done.sc + " %" : mins() + " min")).toUpperCase()), hed("nwe-h1", lead.title), frLine("nwj-frs", lead));
-      const go = el("span", "nwe-go"); go.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-      a.append(tx, go); a.onclick = () => open(lead); bd.append(a);
-      rest.forEach((x) => { const l = el("button", "nwe-line"); l.type = "button"; l.append(txt("span", "nwe-k", (NAME[x.theme] || "").toUpperCase()), hed("nwe-t", x.title)); l.onclick = () => open(x); bd.append(l); });
-      const all = el("button", "link nwe-all"); all.type = "button"; all.textContent = "Tout le journal"; all.onclick = () => hub(); bd.append(all);
+      const k = el("span", "nwe-kick"); k.append(txt("span", "tb-flap", (NAME[lead.theme] || "").toUpperCase()), txt("span", "tb-flap", done ? "LUE · " + done.sc + " %" : mins() + " MIN"));
+      a.append(k, hed("nwe-h1", lead.title), frLine("nwj-frs", lead)); a.onclick = () => open(lead); bd.append(a);
+      const ft = el("div", "nwe-ft"), go = el("button", "nwe-go tb-go"); go.type = "button"; go.textContent = done ? "Relire" : "Lire et s'entraîner"; go.onclick = () => open(lead);
+      const all = el("button", "nwe-all"); all.type = "button"; all.textContent = "Tout le journal"; all.onclick = () => hub(); ft.append(go, all); bd.append(ft);
       translate([lead], c);
     }).catch((e) => { bd.innerHTML = ""; bd.append(txt("p", "nwe-empty", aiFail(e))); });
     return c;
