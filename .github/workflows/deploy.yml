@@ -73,5 +73,8 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
+      # L'archive n'est pas toujours visible à la seconde où elle vient d'être envoyée : on laisse à GitHub le temps de l'indexer.
+      - name: Attendre que l'archive soit disponible
+        run: sleep 25
       - id: pages
         uses: actions/deploy-pages@v4
