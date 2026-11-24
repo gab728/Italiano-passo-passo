@@ -1,11 +1,43 @@
 /* Applications mobiles (Android, iPhone), construites avec Capacitor à partir de cette même app web.
-   Ce fichier ne fait rien dans un navigateur. Dans l'application, il branche ce qui est propre au téléphone :
+   Dans un navigateur, ce fichier ne gère que le thème (clair / sombre). Dans l'application, il branche ce qui est propre au téléphone :
    écran de lancement, barre d'état, bouton retour d'Android, vibrations, liens ouverts dans le navigateur,
    écran allumé pendant la conversation, voix du téléphone sur Android, rappels quotidiens en notifications locales.
    Il se charge avant le reste de l'app (index.html), pour que tout le monde voie window.NATIVE dès le départ. */
 (function () {
   "use strict";
   const W = window, D = document, C = W.Capacitor;
+  let onTheme = () => {};
+  const sysDark = () => { try { return W.matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { return false; } };
+  /* Thème : celui du téléphone par défaut ; le bouton soleil / lune (profil) force clair ou sombre, et le choix est gardé.
+     Les règles sombres sont écrites « sombre selon le téléphone, sauf si clair est choisi » : pour « sombre choisi » sur un
+     téléphone en clair, chacune reçoit une jumelle, insérée juste après elle (même ordre, donc même résultat). */
+  const TKEY = "noe-theme";
+  const forced = () => { try { const v = W.localStorage.getItem(TKEY); return v === "light" || v === "dark" ? v : ""; } catch (e) { return ""; } };
+  const dark = () => (forced() ? forced() === "dark" : sysDark());
+  let mirrored = false;
+  const mirrorDark = () => {
+    if (mirrored) return; mirrored = true;
+    [...D.styleSheets].forEach((sh) => {
+      let rules; try { rules = sh.cssRules; } catch (e) { return; }
+      for (let i = rules.length - 1; i >= 0; i--) {
+        const r = rules[i]; if (!r.media || !/prefers-color-scheme:\s*dark/.test(r.media.mediaText)) continue;
+        const twins = [...r.cssRules].map((q) => q.cssText).filter((t) => t.includes(':root:not([data-theme="light"])')).map((t) => t.split(':root:not([data-theme="light"])').join(':root[data-theme="dark"]'));
+        for (let k = twins.length - 1; k >= 0; k--) { try { sh.insertRule(twins[k], i + 1); } catch (e) { /* règle non reprise */ } }
+      }
+    });
+  };
+  const applyTheme = () => {
+    const f = forced(); if (f) D.documentElement.setAttribute("data-theme", f); else D.documentElement.removeAttribute("data-theme");
+    if (f === "dark") mirrorDark();
+    D.querySelectorAll('meta[name="theme-color"]').forEach((m) => { if (!m.dataset.c) m.dataset.c = m.content; m.content = f ? (f === "dark" ? "#0F1B3D" : "#EEF2F9") : m.dataset.c; });
+    onTheme();
+  };
+  W.THEME = {
+    dark,
+    // Bascule clair / sombre. Si le choix rejoint le réglage du téléphone, on le suit de nouveau.
+    toggle() { const next = dark() ? "light" : "dark"; try { if ((next === "dark") === sysDark()) W.localStorage.removeItem(TKEY); else W.localStorage.setItem(TKEY, next); } catch (e) { /* rien */ } applyTheme(); return next; },
+  };
+  applyTheme();
   const on = !!(C && typeof C.isNativePlatform === "function" && C.isNativePlatform());
   if (!on) { W.NATIVE = { on: false }; return; }
   const platform = C.getPlatform();
@@ -39,10 +71,9 @@
   const hideSplash = () => quiet(() => P.SplashScreen && P.SplashScreen.hide({ fadeOutDuration: 250 }));
   if (D.readyState !== "loading") setTimeout(hideSplash, 80); else D.addEventListener("DOMContentLoaded", () => setTimeout(hideSplash, 80));
   setTimeout(hideSplash, 4000);
-  const dark = () => { try { return W.matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) { return false; } };
   // DARK = texte clair (fond sombre ou ciel de démarrage), LIGHT = texte sombre.
   const barStyle = () => quiet(() => P.StatusBar && P.StatusBar.setStyle({ style: D.getElementById("boot") || dark() ? "DARK" : "LIGHT" }));
-  barStyle();
+  onTheme = barStyle; barStyle();
   try { W.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", barStyle); } catch (e) { /* rien */ }
   const bootWatch = new MutationObserver(() => { if (!D.getElementById("boot")) { bootWatch.disconnect(); barStyle(); } });
   const startBootWatch = () => bootWatch.observe(D.body, { childList: true });

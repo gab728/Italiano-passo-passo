@@ -294,5 +294,10 @@
  "Relire": "Read again",
  "LUE · {0} %": "READ · {0}%",
  "{0} MIN": "{0} MIN",
- "Activer": "Turn on"
+ "Activer": "Turn on",
+ "Passer en mode clair": "Switch to light mode",
+ "Passer en mode sombre": "Switch to dark mode",
+ "écrit…": "typing…",
+ "parle…": "speaking…",
+ "Aujourd'hui": "Today"
 }

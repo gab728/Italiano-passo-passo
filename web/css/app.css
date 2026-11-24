@@ -1787,3 +1787,55 @@ body:has(.dm-hd)::before { background: var(--surface); }
 .end .rm-card { width: 100%; max-width: 420px; box-sizing: border-box; text-align: left; margin-top: 4px; }
 /* Nouveau trophée (fin de leçon) : lisible aussi en sombre. */
 .bdg-news { background: var(--gold-soft); } .bdg-news > b { color: var(--gold-text); } .bdg-news .bdg b { color: var(--ink); } .bdg-news .bdg small { color: var(--muted); }
+
+/* ---------- Conversation : l'allure d'une messagerie (façon WhatsApp), aux couleurs de NOE ----------
+   Fond illustré, bulles à pointe avec l'heure dedans (et les deux coches sur les miennes), corrections au centre comme
+   un message du système, saisie en pilule avec un bouton rond. */
+body:has(.dm), .dm { --wa-bg: #E3E9F5; --wa-in: #FFFFFF; --wa-out: #FFEDA3; --wa-out-ink: #131A33; --wa-meta: #6B7699; --wa-sys: #FFF3C4; --wa-sys-ink: #5A4500; --wa-sh: 0 1px 1px rgba(15, 27, 61, .16); }
+body:has(.dm) { background-color: var(--wa-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260' fill='none' stroke='%230F1B3D' stroke-opacity='.075' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 40l34-14-12 34-7-13z'/%3E%3Cpath d='M37 47l19-21'/%3E%3Cpath d='M120 22l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/%3E%3Cpath d='M196 44a9 9 0 0 1 17-3 8 8 0 0 1 9 12h-28a6 6 0 0 1 2-9z'/%3E%3Crect x='24' y='112' width='34' height='24' rx='5'/%3E%3Cpath d='M34 112v-5a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v5'/%3E%3Cpath d='M112 100h34a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-18l-10 8v-8h-6a6 6 0 0 1-6-6v-16a6 6 0 0 1 6-6z'/%3E%3Cpath d='M212 106c-9 0-15 7-15 15 0 11 15 24 15 24s15-13 15-24c0-8-6-15-15-15z'/%3E%3Ccircle cx='212' cy='121' r='5'/%3E%3Ccircle cx='40' cy='206' r='14'/%3E%3Cpath d='M40 197v9l6 4'/%3E%3Cpath d='M110 196h44M110 208h30M110 220h38'/%3E%3Cpath d='M210 194l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z'/%3E%3Ccircle cx='84' cy='70' r='2'/%3E%3Ccircle cx='170' cy='82' r='2'/%3E%3Ccircle cx='76' cy='168' r='2'/%3E%3Ccircle cx='178' cy='170' r='2'/%3E%3Ccircle cx='238' cy='240' r='2'/%3E%3Ccircle cx='14' cy='250' r='2'/%3E%3C/svg%3E"); background-size: 260px 260px; }
+.dm-hd { gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 8px 8px 4px; background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 0; box-shadow: 0 1px 0 var(--line), 0 6px 14px -12px rgba(15, 27, 61, .5); }
+.dm-hd .icon-btn { background: none !important; width: 40px; height: 40px; }
+.dm-hd .dm-car.on { background: var(--cta) !important; color: var(--cta-ink) !important; }
+.dm-who { gap: 1px; } .dm-who b { font-size: 16.5px; font-weight: 800; } .dm-who span { font-size: 12.5px; font-weight: 600; }
+.dm-who span.live { color: var(--ok); font-weight: 800; }
+body:has(.dm-hd)::before { background: var(--surface); }
+.dm-mission, .dm-hands { align-self: center; max-width: calc(100% - 28px); margin: 10px 14px 0; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--wa-sys); color: var(--wa-sys-ink); font-size: 13px; font-weight: 600; line-height: 1.35; box-shadow: var(--wa-sh); }
+.dm-log { gap: 7px; padding: 10px 12px 14px; }
+.dm-day { align-self: center; margin: 2px 0 4px; padding: 5px 12px; border-radius: 8px; background: color-mix(in srgb, var(--wa-in) 92%, transparent); color: var(--wa-meta); font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; box-shadow: var(--wa-sh); }
+.msg { max-width: 84%; gap: 4px; }
+.msg .bub { position: relative; border-radius: 12px; padding: 7px 10px 8px 11px; font-size: 16.5px; line-height: 1.36; box-shadow: var(--wa-sh); }
+.msg .bub::before { content: ""; position: absolute; top: 0; width: 9px; height: 13px; }
+.msg.ai .bub { background: var(--wa-in); color: var(--ink); border-radius: 0 12px 12px 12px; }
+.msg.ai .bub::before { left: -8px; background: var(--wa-in); clip-path: polygon(100% 0, 0 0, 100% 100%); }
+.msg.ai .bub.it { font-size: 18px; line-height: 1.34; }
+.msg.me .bub { display: block; background: var(--wa-out); color: var(--wa-out-ink); border-radius: 12px 0 12px 12px; font-size: 16.5px; }
+.msg.me .bub::before { right: -8px; background: var(--wa-out); clip-path: polygon(0 0, 100% 0, 0 100%); }
+.msg .bub[data-t]::after { content: attr(data-t); float: right; margin: 10px -2px -3px 14px; font: 600 11px/1 var(--body); letter-spacing: 0; color: var(--wa-meta); font-variant-numeric: tabular-nums; }
+.msg.me .bub[data-t]::after { padding-right: 21px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 12' fill='none' stroke='%232E9BE6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.500 6.500l3.300 3.300L11.500 2.500'/%3E%3Cpath d='M7.800 9.800L8.500 10.500 16.500 2.500'/%3E%3C/svg%3E") right center / 17px 11px no-repeat; }
+.msg.me .vo { display: inline-block; vertical-align: -2px; margin-right: 6px; color: #2E9BE6; } .msg.me .vo svg { display: block; margin: 0; opacity: 1; }
+.typing .bub { padding: 12px 14px; }
+.msg-acts { gap: 6px; padding-left: 0; }
+.msg-acts button { height: 26px; padding: 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--wa-in) 86%, transparent); color: var(--wa-meta); font-size: 12px; font-weight: 800; box-shadow: var(--wa-sh); }
+.msg .tr { margin: 0; padding: 6px 10px; border-radius: 10px; background: color-mix(in srgb, var(--wa-in) 86%, transparent); color: var(--ink); font-size: 13.5px; font-weight: 600; line-height: 1.35; box-shadow: var(--wa-sh); }
+.note { align-self: center; max-width: 90%; border-radius: 10px; padding: 8px 11px; background: var(--wa-sys); color: var(--wa-sys-ink); font-size: 13px; font-weight: 600; line-height: 1.38; box-shadow: var(--wa-sh); }
+.dm-err { padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--wa-in) 92%, transparent); box-shadow: var(--wa-sh); }
+.dm-sug { bottom: calc(62px + env(safe-area-inset-bottom)); padding: 14px 10px 6px; background: linear-gradient(to bottom, transparent, var(--wa-bg) 55%); }
+.chip-s, .dm-quota { height: 32px; border: 0; background: var(--wa-in); font-size: 12.5px; font-weight: 800; box-shadow: var(--wa-sh); }
+.chip-s.idea { font-family: var(--body); font-size: 14px; color: var(--ink); box-shadow: inset 0 0 0 2px var(--cta), var(--wa-sh); }
+.dm-comp { gap: 8px; padding: 4px 8px calc(10px + env(safe-area-inset-bottom)); background: var(--wa-bg); border-top: 0; }
+.dm-comp input { height: 48px; border: 0; border-radius: 24px; background: var(--wa-in); padding: 0 18px; box-shadow: var(--wa-sh); font-weight: 600; }
+.dm-act { width: 48px; height: 48px; background: var(--cta); color: var(--cta-ink); box-shadow: var(--wa-sh); }
+.dm-act.send { background: var(--cta); color: var(--cta-ink); box-shadow: var(--wa-sh); }
+.dm-act.talk { box-shadow: var(--wa-sh); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body:has(.dm), :root:not([data-theme="light"]) .dm { --wa-bg: #0A1330; --wa-in: #1B2A5E; --wa-out: #3147A8; --wa-out-ink: #FFFFFF; --wa-meta: #A9B6E3; --wa-sys: #3A3410; --wa-sys-ink: #FFE58A; --wa-sh: 0 1px 1px rgba(0, 0, 0, .35); }
+  :root:not([data-theme="light"]) body:has(.dm) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260' fill='none' stroke='%23FFFFFF' stroke-opacity='.055' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 40l34-14-12 34-7-13z'/%3E%3Cpath d='M37 47l19-21'/%3E%3Cpath d='M120 22l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/%3E%3Cpath d='M196 44a9 9 0 0 1 17-3 8 8 0 0 1 9 12h-28a6 6 0 0 1 2-9z'/%3E%3Crect x='24' y='112' width='34' height='24' rx='5'/%3E%3Cpath d='M34 112v-5a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v5'/%3E%3Cpath d='M112 100h34a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-18l-10 8v-8h-6a6 6 0 0 1-6-6v-16a6 6 0 0 1 6-6z'/%3E%3Cpath d='M212 106c-9 0-15 7-15 15 0 11 15 24 15 24s15-13 15-24c0-8-6-15-15-15z'/%3E%3Ccircle cx='212' cy='121' r='5'/%3E%3Ccircle cx='40' cy='206' r='14'/%3E%3Cpath d='M40 197v9l6 4'/%3E%3Cpath d='M110 196h44M110 208h30M110 220h38'/%3E%3Cpath d='M210 194l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z'/%3E%3Ccircle cx='84' cy='70' r='2'/%3E%3Ccircle cx='170' cy='82' r='2'/%3E%3Ccircle cx='76' cy='168' r='2'/%3E%3Ccircle cx='178' cy='170' r='2'/%3E%3Ccircle cx='238' cy='240' r='2'/%3E%3Ccircle cx='14' cy='250' r='2'/%3E%3C/svg%3E"); }
+  :root:not([data-theme="light"]) .msg.me .bub { background: var(--wa-out); color: var(--wa-out-ink); }
+  :root:not([data-theme="light"]) .msg.me .bub[data-t]::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 12' fill='none' stroke='%238FD3FF' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.500 6.500l3.300 3.300L11.500 2.500'/%3E%3Cpath d='M7.800 9.800L8.500 10.500 16.500 2.500'/%3E%3C/svg%3E"); }
+  :root:not([data-theme="light"]) .msg.me .vo { color: #8FD3FF; }
+}
+/* Bouton soleil / lune (profil). */
+.prof-top { gap: 8px; }
+.theme-btn svg { width: 21px; height: 21px; }
+.dm-comp input:focus-visible { outline: none; box-shadow: var(--wa-sh), 0 0 0 2px color-mix(in srgb, var(--cta) 55%, transparent); }
+.prof-top .icon-btn svg { width: 21px; height: 21px; }

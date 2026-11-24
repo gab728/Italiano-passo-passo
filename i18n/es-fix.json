@@ -359,5 +359,10 @@
  "Relire": "Releer",
  "LUE · {0} %": "LEÍDA · {0} %",
  "{0} MIN": "{0} MIN",
- "Activer": "Activar"
+ "Activer": "Activar",
+ "Passer en mode clair": "Cambiar a modo claro",
+ "Passer en mode sombre": "Cambiar a modo oscuro",
+ "écrit…": "escribiendo…",
+ "parle…": "hablando…",
+ "Aujourd'hui": "Hoy"
 }

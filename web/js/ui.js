@@ -840,7 +840,15 @@
   }
   function profileTab() {
     screen("profile");
-    const top = el("div", "prof-top"); const gear = el("button", "icon-btn round"); gear.type = "button"; gear.innerHTML = IC.gear; gear.setAttribute("aria-label", "Réglages du compte"); gear.onclick = () => { setTab("profile"); WEB.account(); }; top.append(gear); root.append(top);
+    const top = el("div", "prof-top"); const gear = el("button", "icon-btn round"); gear.type = "button"; gear.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>'; gear.setAttribute("aria-label", "Réglages du compte"); gear.onclick = () => { setTab("profile"); WEB.account(); };
+    // Soleil / lune : passer du clair au sombre (et retour), sans toucher aux réglages du téléphone.
+    if (window.THEME) {
+      const th = el("button", "icon-btn round theme-btn"); th.type = "button";
+      const SUN = SV('<circle cx="12" cy="12" r="4.200"/><path d="M12 2.500v2.200M12 19.300v2.200M2.500 12h2.200M19.300 12h2.200M5.300 5.300l1.550 1.550M17.150 17.150l1.550 1.550M18.700 5.300l-1.550 1.550M6.850 17.150L5.300 18.700"/>'), MOON = SV('<path d="M20 14.200A8.200 8.200 0 0 1 9.800 4a8.200 8.200 0 1 0 10.200 10.200z"/>');
+      const set = () => { const d = THEME.dark(); th.innerHTML = d ? SUN : MOON; th.setAttribute("aria-label", d ? "Passer en mode clair" : "Passer en mode sombre"); th.setAttribute("aria-pressed", String(d)); };
+      th.onclick = () => { THEME.toggle(); set(); }; set(); top.append(th);
+    }
+    top.append(gear); root.append(top);
     const id = el("div", "prof-id"); const ringW = el("span", "story-ring big"); ringW.append(meAvatar(88)); id.append(ringW);
     id.append(txt("h1", null, firstName() || "Toi"));
     const lv = vLevel(); id.append(txt("span", "muted", "Niveau " + lv.cecr + (W.me && W.me.owner ? " · créateur de l'app" : ""))); root.append(id);

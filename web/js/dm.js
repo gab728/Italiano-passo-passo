@@ -262,6 +262,7 @@ function dmOpen(cfg) {
   const hands = el("div", "dm-hands"); hands.hidden = true; hands.setAttribute("role", "status"); wrap.append(hands);
   if (DM.mission) { const m = el("div", "dm-mission"), t = el("span", "chip-dark", "Mission"), s = el("span"); s.textContent = DM.mission; m.append(t, s); wrap.append(m); }
   const log = el("div", "dm-log"); log.setAttribute("aria-live", "polite"); wrap.append(log);
+  log.append(el("div", "dm-day", "Aujourd'hui"));
   // Suggestions et saisie
   const sug = el("div", "dm-sug");
   const chip = (txt, fn) => { const b = el("button", "chip-s"); b.type = "button"; b.textContent = txt; b.onclick = fn; sug.append(b); return b; };
@@ -285,7 +286,7 @@ function dmOpen(cfg) {
   if (!VO.available()) act.dataset.nomic = "1";
   comp.append(lab, inp, act); wrap.append(sug, comp);
   root.append(wrap);
-  DM.ui = { log, inp, act, setAct, end, hands, car, sug, wrap };
+  DM.ui = { log, inp, act, setAct, end, hands, car, sug, wrap, sb, sub0: sb.textContent };
   setAct();
   const mem = memOf(DM);
   if (mem && mem.n) DM.firstAsk = DM.kind === "role"
@@ -297,13 +298,16 @@ function dmOpen(cfg) {
   try { if (!localStorage.getItem("ipp-hint-words")) { localStorage.setItem("ipp-hint-words", "1"); setTimeout(() => speakNote("Astuce : touche un mot pour voir sa traduction et l'ajouter au carnet."), 1200); } } catch (e) { /* rien */ }
 }
 
+// Sous le nom, comme dans une messagerie : « écrit… » pendant que la réponse arrive, « parle… » pendant qu'elle est lue.
+function dmStatus(A, t) { const s = A && A.ui && A.ui.sb; if (!s) return; s.textContent = t || A.ui.sub0; s.classList.toggle("live", !!t); }
+const dmClock = () => { try { return new Date().toLocaleTimeString(window.I18N ? I18N.locale() : "fr-FR", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
 function dmScroll() { const l = DM && DM.ui.log; if (l) requestAnimationFrame(() => { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }); }
 function dmBubble(lines, opts) {
   const log = DM.ui.log, out = el("div", "msg ai");
   const fr = lines.filter((l) => NARR(l.lang)), it = lines.filter((l) => !NARR(l.lang));
   fr.forEach((l) => { const n = el("div", "note"); n.append(personaAvatar(PERSONAS.giulia, 22)); const s = el("span"); s.textContent = l.t; n.append(s); log.append(n); });
   if (it.length) {
-    const b = el("div", "bub it"); b.lang = SPK(VO.IT()).slice(0, 2); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
+    const b = el("div", "bub it"); b.lang = SPK(VO.IT()).slice(0, 2); b.dataset.t = dmClock(); dmWords(b, it.map((l) => l.t).join(" ")); out.append(b);
     const acts = el("div", "msg-acts"), tr = el("button", null, "Traduire"), re = el("button", null, "Réécouter"); tr.type = re.type = "button";
     re.onclick = () => { if (re.disabled) return; re.disabled = true; re.textContent = "Lecture…"; dmSpeak(it).finally(() => { re.disabled = false; re.textContent = "Réécouter"; }); };
     tr.onclick = async () => {
@@ -317,7 +321,7 @@ function dmBubble(lines, opts) {
   dmScroll(); return out;
 }
 function dmMine(text, voice) {
-  const m = el("div", "msg me"), b = el("div", "bub"); if (voice) { const i = el("span", "vo"); i.innerHTML = DM_SVG.mic; b.append(i); }
+  const m = el("div", "msg me"), b = el("div", "bub"); b.dataset.t = dmClock(); if (voice) { const i = el("span", "vo"); i.innerHTML = DM_SVG.mic; b.append(i); }
   const s = el("span"); s.textContent = text; b.append(s); m.append(b); DM.ui.log.append(m); DM.log.push({ who: "me", lines: [{ lang: VO.IT(), t: text }] }); dmScroll();
 }
 /* Voix : les phrases sont lues par la voix du personnage (voix naturelle si possible), à la suite, sans blanc entre elles. */
@@ -341,7 +345,7 @@ const dmBarge = () => (S.vx && typeof S.vx.barge === "boolean" ? S.vx.barge : !(
 /* Pendant que le personnage parle : le bouton coupe la parole et, en mains libres, il suffit de parler pour l'interrompre. */
 async function dmSpeaking(A, on) {
   if (DM !== A || !!A.speaking === !!on) return;
-  A.speaking = !!on; A.ui.setAct();
+  A.speaking = !!on; A.ui.setAct(); dmStatus(A, on ? "parle…" : A.busy ? "écrit…" : "");
   if (on && A.hands && dmBarge()) { const u = await VO.watchVoice((base) => { if (DM === A && A.speaking) dmInterrupt(true, base); }); if (A.speaking && DM === A) A.unwatch = u; else u(); }
   if (!on && A.unwatch) { A.unwatch(); A.unwatch = null; }
 }
@@ -376,7 +380,7 @@ function dmChunks(text, final) {
 }
 async function dmAsk(first, speakIt) {
   const A = DM; A.busy = true; A.cut = null; A.ui.setAct();
-  const typing = el("div", "msg ai typing"); typing.innerHTML = '<div class="bub"><i></i><i></i><i></i></div>'; typing.setAttribute("aria-label", A.p.name + " écrit"); A.ui.log.append(typing); dmScroll();
+  const typing = el("div", "msg ai typing"); typing.innerHTML = '<div class="bub"><i></i><i></i><i></i></div>'; typing.setAttribute("aria-label", A.p.name + " écrit"); A.ui.log.append(typing); dmScroll(); dmStatus(A, "écrit…");
   const msgs = A.turns.length ? A.turns.slice(-30) : [{ role: "user", content: A.firstAsk || "(L'élève ouvre la conversation. Salue-le et pose ta première question.)" }];
   if (msgs[0].role !== "user") msgs.unshift({ role: "user", content: "(Suite de la conversation.)" });
   let liveB = null, r, sent = 0;
@@ -390,7 +394,7 @@ async function dmAsk(first, speakIt) {
       if (it) { if (!liveB) { typing.remove(); liveB = el("div", "msg ai"); liveB.append(el("div", "bub it")); A.ui.log.append(liveB); } liveB.firstChild.textContent = it; dmScroll(); } } });
   } catch (e) {
     if (q) q.end();
-    if (DM !== A) return; typing.remove(); if (liveB) liveB.remove();
+    if (DM !== A) return; typing.remove(); if (liveB) liveB.remove(); dmStatus(A);
     // L'erreur reste visible, avec un bouton pour redemander la réponse (ta phrase n'est pas renvoyée en double).
     const n = el("div", "dm-err"); n.append(el("p", null, aiFail(e)));
     const rb = el("button", "pill-btn", "Réessayer"); rb.type = "button";
@@ -404,7 +408,7 @@ async function dmAsk(first, speakIt) {
   const lines = vParse(r.text); A.turns.push({ role: "assistant", content: r.text });
   // Réponse lue en silence : son audio est préparé en avance, pour que « Réécouter » parte tout de suite.
   if (!speakIt && TTS.on()) dmChunks(r.text, true).forEach((c) => TTS.prefetch(c.t, c.lang, { who: NARR(c.lang) ? "giulia" : A.voice, rate: NARR(c.lang) ? 1 : 0.95 }));
-  dmBubble(lines); A.busy = false; A.ui.setAct();
+  dmBubble(lines); A.busy = false; A.ui.setAct(); dmStatus(A, A.speaking ? "parle…" : "");
   // Parole coupée pendant que la réponse s'écrivait : on écoute dès qu'elle est finie.
   if (A.listenNext && DM === A) { A.listenNext = false; setTimeout(() => { if (DM === A && !A.listening) dmListenOnce(); }, 0); }
   return lines;
