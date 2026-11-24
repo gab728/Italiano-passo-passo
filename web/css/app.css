@@ -1783,3 +1783,7 @@ body:has(.dm-hd)::before { background: var(--surface); }
 .dq-talk .daily-t b { font-size: 19px; font-weight: 900; } .dq-talk .daily-sub { -webkit-line-clamp: 3; }
 .nwe-title .flap { letter-spacing: 0; }
 @media (max-width: 350px) { .rm-card .rm-bell { display: none; } .nwe-go { padding: 0 12px; font-size: 14px; } .nwe .nwe-all { white-space: nowrap; font-size: 13px; } }
+/* Le rappel se propose en fin de leçon : même bandeau, aligné à gauche dans l'écran de fin. */
+.end .rm-card { width: 100%; max-width: 420px; box-sizing: border-box; text-align: left; margin-top: 4px; }
+/* Nouveau trophée (fin de leçon) : lisible aussi en sombre. */
+.bdg-news { background: var(--gold-soft); } .bdg-news > b { color: var(--gold-text); } .bdg-news .bdg b { color: var(--ink); } .bdg-news .bdg small { color: var(--muted); }

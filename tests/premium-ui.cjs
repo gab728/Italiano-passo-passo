@@ -132,11 +132,13 @@ const MOCKS = `
   if (await q.$(".pw")) { await q.click(".pw-later"); await q.waitForTimeout(300); }
 
   console.log("5. Rappels sur le téléphone");
-  await q.evaluate(() => { S.d = Object.assign({}, S.d || {}, { [day()]: 5 }); save(); home(); });
-  await q.waitForSelector(".rm-card");
-  ok(/Je te fais signe chaque jour/.test(await q.textContent(".rm-card")), "accueil : « Je te fais signe chaque jour ? »");
-  await q.screenshot({ path: "tests/shot-reminder-card.png" });
-  ok(await q.evaluate(() => { const c = document.querySelector(".rm-card"), d = document.querySelector(".daily"), t = [...document.querySelectorAll(".sec-h")].find((x) => /Parler avec/.test(x.textContent)); return c.getBoundingClientRect().height < 90 && !c.querySelector(".rm-more:not([hidden])") && (d.compareDocumentPosition(c) & 4) && (!t || (c.compareDocumentPosition(t) & 4)); }), "le rappel est un bandeau d'une ligne, sous « Ta journée »");
+  await q.evaluate(() => { S.d = Object.assign({}, S.d || {}, { [day()]: 5 }); save(); home(); }); await q.waitForSelector(".daily");
+  ok(await q.evaluate(() => !document.querySelector(".rm-card")), "l'accueil ne propose plus le rappel");
+  await q.evaluate(() => { speak = () => {}; go(current().mi); cur.i = cur.q.length; show(); });
+  await q.waitForSelector(".end .rm-card");
+  ok(/Je te fais signe chaque jour/.test(await q.textContent(".rm-card")), "fin de leçon : « Je te fais signe chaque jour ? »");
+  await q.waitForTimeout(900); await q.evaluate(() => document.querySelector(".rm-card").scrollIntoView({ block: "center" })); await q.screenshot({ path: "tests/shot-reminder-card.png" });
+  ok(await q.evaluate(() => { const c = document.querySelector(".rm-card"); return c.getBoundingClientRect().height < 90 && !c.querySelector(".rm-more:not([hidden])") && S.rm && S.rm.later === day(); }), "un bandeau d'une ligne, proposé au plus une fois par semaine");
   await q.click(".rm-card .rm-open");
   ok(await q.evaluate(() => { const cs = [...document.querySelectorAll(".rm-card .chip")]; return cs.length === 5 && new Set(cs.map((c) => Math.round(c.getBoundingClientRect().top))).size === 1; }), "« Activer » : les cinq heures tiennent sur une seule rangée");
   await q.click(".rm-card .chip:has-text('21 h')");

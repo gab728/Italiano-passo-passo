@@ -365,7 +365,7 @@
   }
   const deniedNote = "Les notifications sont bloquées pour cette app : autorise-les dans les réglages du téléphone ou du navigateur, puis réessaie.";
   const installNote = "Sur iPhone, ajoute d'abord l'app à ton écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil ») : les rappels marchent ensuite.";
-  // Carte de l'accueil : « Je te fais signe chaque jour ? », après une première séance, puis pas plus d'une fois par semaine.
+  // Bandeau de fin de leçon : « Je te fais signe chaque jour ? », après une première séance, puis pas plus d'une fois par semaine.
   function remCard() {
     if (RM.on() || !(RM.supported() || RM.needsInstall())) return null;
     if (!Object.values(S.d || {}).some((n) => n > 0)) return null;
@@ -455,7 +455,9 @@
   window.PREM = {
     get plan() { return PLAN; }, premium, billing, paywall, refresh, portal, RM, report, gateNews, gateReview,
     talkBanner(root) { const c = talkCard(false); if (c) root.append(c); },
-    homeCards(root) { const r = remCard(); if (r) root.append(r); streakOffer(); },
+    homeCards(root) { streakOffer(); },
+    // Le rappel n'est plus sur l'accueil : il se propose à la fin d'une leçon, au plus une fois par semaine (et se règle dans le profil).
+    endCard() { const r = remCard(); if (r) { r.classList.add("rm-end"); S.rm = Object.assign({}, S.rm || {}, { later: day() }); save(); } return r; },
     profileTop(root) { const p = planCard(); if (p) root.append(p); },
     profileSettings(root) { root.append(remSettings()); },
   };

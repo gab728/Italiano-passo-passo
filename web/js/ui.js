@@ -208,7 +208,7 @@
     } else root.append(lessonHero(cu, ss, doneN));
     // Ta journée : les petites choses du jour en tuiles, puis le journal (sauf en hébreu tant que l'alef-bet n'est pas fini).
     root.append(dailyPlan());
-    // Rappels sur le téléphone (après une première séance) et offre Premium à un moment naturel : un bandeau discret, sous la journée.
+    // Offre Premium à un moment naturel (série de 7 jours). Le rappel quotidien, lui, se propose en fin de leçon et se règle dans le profil.
     if (window.PREM) PREM.homeCards(root);
     // Parler : les personnages, puis les sujets et jeux de rôle.
     if (AI) {
@@ -1076,6 +1076,8 @@ const ln = legLine(ux, x.n); u.append(ln);
         tiles.after(u);
       }
     }
+    // Le bon moment pour proposer le rappel quotidien : une leçon vient d'être finie (au plus une fois par semaine).
+    if (window.PREM && PREM.endCard) { const r = PREM.endCard(); if (r) { r.classList.add("rise"); (e.querySelector(".end-leg") || tiles).after(r); } }
   }
   function lessonDone() {
     const e = root.querySelector(".end"); if (!e || !cur || cur.mi == null || !M[cur.mi]) return;
