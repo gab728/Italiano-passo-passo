@@ -309,5 +309,16 @@
  "BILLET": "TICKET",
  "CARTE D'EMBARQUEMENT": "BOARDING PASS",
  "MIN PAR JOUR": "MIN A DAY",
- "TEST DE NIVEAU": "LEVEL TEST"
+ "TEST DE NIVEAU": "LEVEL TEST",
+ "ESCALE": "STOP",
+ "Escale": "Stop",
+ "Première escale !": "First stop!",
+ "Deuxième escale !": "Second stop!",
+ "Troisième escale !": "Third stop!",
+ "Escale !": "Stop reached!",
+ "{0} bonnes réponses sur {1}": "{0} of {1} right",
+ "{0} bonne réponse sur {1}": "{0} of {1} right",
+ "Ta place est gardée : continue maintenant, ou reprends ici plus tard.": "Your place is saved: keep going now, or pick up here later.",
+ "M'arrêter là pour aujourd'hui": "Stop here for today",
+ "{0} ESCALES": "{0} STOPS"
 }

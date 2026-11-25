@@ -374,5 +374,16 @@
  "BILLET": "BILLETE",
  "CARTE D'EMBARQUEMENT": "TARJETA DE EMBARQUE",
  "MIN PAR JOUR": "MIN AL DÍA",
- "TEST DE NIVEAU": "PRUEBA DE NIVEL"
+ "TEST DE NIVEAU": "PRUEBA DE NIVEL",
+ "ESCALE": "ESCALA",
+ "Escale": "Escala",
+ "Première escale !": "¡Primera escala!",
+ "Deuxième escale !": "¡Segunda escala!",
+ "Troisième escale !": "¡Tercera escala!",
+ "Escale !": "¡Escala!",
+ "{0} bonnes réponses sur {1}": "{0} aciertos de {1}",
+ "{0} bonne réponse sur {1}": "{0} acierto de {1}",
+ "Ta place est gardée : continue maintenant, ou reprends ici plus tard.": "Tu sitio está guardado: sigue ahora o retoma aquí más tarde.",
+ "M'arrêter là pour aujourd'hui": "Parar aquí por hoy",
+ "{0} ESCALES": "{0} ESCALAS"
 }

@@ -94,9 +94,10 @@
   R.t = function (s) { const d = s.d; freeTr(s, d[1], d[2], d[3], null); };
   // Les phrases « à remettre dans l'ordre » des leçons : traduction libre d'abord, étiquettes si on bloque.
   // En hébreu, seulement une fois l'alphabet et la lecture acquis (à partir de l'unité 4) ; avant, les étiquettes.
+  // Dans la première étape de chaque cours aussi : on assemble les étiquettes, la traduction libre vient à l'étape suivante.
   const baseO = R.o;
   R.o = function (s) {
-    const m = cur && M[cur.mi], u = m && /he-u(\d+)/.exec(String(m.id || "")), early = cid() === "he" && (!u || +u[1] < 4);
+    const m = cur && M[cur.mi], u = m && /he-u(\d+)/.exec(String(m.id || "")), early = (cid() === "he" && (!u || +u[1] < 4)) || (window.EASY && EASY());
     if (typeof AI !== "function" || early || s.tiles) return baseO.apply(this, arguments);
     const k = body.querySelector(".kind"); if (k && !s.retry) k.textContent = "Traduction";
     freeTr(s, s.d[1], s.d[2], "", () => { s.tiles = 1; baseO(s); });

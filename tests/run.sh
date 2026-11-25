@@ -10,6 +10,7 @@ node tests/check-he.mjs > /tmp/ipp-check-he.log || { cat /tmp/ipp-check-he.log; 
 node tests/check-es.mjs > /tmp/ipp-check-es.log || { cat /tmp/ipp-check-es.log; exit 1; }
 node tests/check-fr.mjs > /tmp/ipp-check-fr.log || { cat /tmp/ipp-check-fr.log; exit 1; }
 node tests/check-en.mjs > /tmp/ipp-check-en.log || { cat /tmp/ipp-check-en.log; exit 1; }
+node tests/check-it.mjs > /tmp/ipp-check-it.log || { grep ERREUR /tmp/ipp-check-it.log; exit 1; }
 node tests/check-i18n.mjs > /tmp/ipp-check-i18n.log || { grep ERREUR /tmp/ipp-check-i18n.log; exit 1; }
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/e2e.cjs; R1=$?
 NODE_PATH=${NODE_PATH:-/opt/npm-tools/node_modules} node tests/stt.cjs; R2=$?

@@ -61,6 +61,10 @@ const MOCKS = `
   const nHe = await p.evaluate(() => ({ m: M.filter((m) => m.course === "he").length, s: slots().filter((x) => x.mi < 0).map((x) => x.l.id) }));
   ok(nHe.m === nHe.m && nHe.s.length === 0, "tout le parcours d'hébreu est écrit et accepté par l'app (" + nHe.m + " leçons" + (nHe.s.length ? ", manquent : " + nHe.s.join(" ") : "") + ")");
   await p.evaluate((mi) => { go(mi); cur.i = cur.q.findIndex((x) => x.t === "f" && /Maman/.test(x.d[1])); show(); }, mi2);
+  // Première étape : la phrase à trous se joue d'abord en propositions ; le clavier hébreu arrive à l'étape suivante.
+  await p.waitForSelector(".opts .opt");
+  ok(await p.evaluate(() => EASY() && !document.querySelector(".field input") && document.querySelectorAll(".opts .opt").length >= 3 && [...document.querySelectorAll(".opts .opt")].some((o) => /אִמָּא|אמא/.test(o.textContent))), "première étape d'hébreu : des propositions avant le clavier");
+  await p.evaluate(() => { window.EASY = () => false; show(); });
   await p.waitForSelector(".field input");
   ok((await p.$$(".keys button")).length === 27, "clavier hébreu à l'écran : 22 lettres et 5 finales");
   await p.screenshot({ path: "tests/shot-he-fill.png" });

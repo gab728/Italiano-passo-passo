@@ -395,7 +395,7 @@
   /* L'onglet Leçons : le tableau des départs. Une étape (unité) à la fois, entre deux villes : ses leçons en lignes d'affichage,
      avec leurs étoiles, la leçon en cours ouverte (« Embarquer »), et le coffre de l'étape au bout. */
   function legLine(ux, nowN) {
-    const d = ux.filter(isDone).length, left = ux.length - d, ln = el("div", "el-line"); ln.setAttribute("aria-hidden", "true");
+    const d = ux.filter(isDone).length, left = ux.filter((y) => !fin(y)).length, ln = el("div", "el-line"); ln.setAttribute("aria-hidden", "true");
     ln.style.setProperty("--p", (100 * (d + (left ? 0 : 2)) / (ux.length + 2)).toFixed(1) + "%");
     ln.append(el("i", "c on")); ux.forEach((y) => ln.append(el("i", (isDone(y) ? "on" : "") + (y.n === nowN ? " now" : "")))); ln.append(el("i", "g" + (left ? "" : " on")), el("i", "c" + (left ? "" : " on")));
     return ln;
@@ -407,13 +407,13 @@
     // Les étapes, d'un geste.
     const chips = el("div", "vy-units"); chips.setAttribute("role", "tablist"); chips.setAttribute("aria-label", "Étapes");
     units.forEach((x, i) => {
-      const d = x.ux.every(isDone), here = cu && cu.li === x.li && cu.ui === x.ui, b = el("button", "vy-unit" + (d ? " done" : "") + (here ? " here" : ""));
+      const d = x.ux.every(fin), here = cu && cu.li === x.li && cu.ui === x.ui, b = el("button", "vy-unit" + (d ? " done" : "") + (here ? " here" : ""));
       b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(x.key === VU));
       b.innerHTML = d ? IC.check : ""; b.append(txt("span", null, here ? "Étape " + (i + 1) + " · en cours" : "Étape " + (i + 1)));
       b.onclick = () => { VU = x.key; lessonsTab(); }; chips.append(b);
     });
     wrap.append(chips);
-    const ux = U.ux, doneN = ux.filter(isDone).length, all = doneN === ux.length, mine_ = cu && cu.li === U.li && cu.ui === U.ui;
+    const ux = U.ux, doneN = ux.filter(isDone).length, all = ux.every(fin), mine_ = cu && cu.li === U.li && cu.ui === U.ui;
     const focus = (mine_ && ux.find((x) => x.n === cu.n)) || ux.find((x) => !isDone(x));
     const bd = el("section", "dep");
     if (mine_) { const l = el("div", "dep-lino"); l.append(lino("wave", 58)); bd.append(l); }
@@ -437,7 +437,7 @@
         top.append(txt("span", "dep-n", num), tt); c.append(top);
         const meta = el("div", "dep-meta");
         meta.append(flag(m ? "live" : "wait", !m ? "À PRÉPARER" : started ? "EN ROUTE" : "EMBARQUEMENT"));
-        if (m) { meta.append(txt("span", "tb-flap", started ? "REPRISE " + Math.round(100 * at / n) + " %" : n + " ÉCRANS")); if (started) meta.append(txt("span", "tb-flap dep-part", partOf(m, at).name)); }
+        if (m) { meta.append(txt("span", "tb-flap", started ? "REPRISE " + Math.round(100 * at / n) + " %" : sizeLabel(m))); if (started) meta.append(txt("span", "tb-flap dep-part", partOf(m, at).name)); }
         meta.append(txt("span", "tb-flap", "+" + LESSON_MILES + " MILES")); c.append(meta);
         const bot = el("div", "dep-act"), go = el("button", "dep-go tb-go"); go.type = "button";
         go.textContent = !m ? (AI ? "Préparer la leçon" : "Préparer avec le réseau") : started ? "Reprendre" : isCur ? "Embarquer" : "Commencer";
@@ -500,7 +500,7 @@
      Une leçon faite garde ses étoiles (1 à 3, d'après le meilleur score). Le panneau « Prochain départ » décrit l'arrêt choisi :
      la leçon du jour par défaut, ou celui qu'on touche sur la ligne. */
   const ROUTES = {
-    it: ["Torino", "Milano", "Bergamo", "Verona", "Venezia", "Padova", "Ferrara", "Bologna", "Parma", "Genova", "Pisa", "Firenze", "Siena", "Perugia", "Assisi", "Roma", "Napoli", "Pompei", "Amalfi", "Matera", "Bari", "Lecce", "Cosenza", "Reggio Calabria", "Messina", "Palermo"],
+    it: ["Aosta", "Torino", "Milano", "Bergamo", "Verona", "Venezia", "Padova", "Ferrara", "Bologna", "Parma", "Genova", "Pisa", "Firenze", "Siena", "Perugia", "Assisi", "Roma", "Napoli", "Pompei", "Amalfi", "Matera", "Bari", "Lecce", "Cosenza", "Reggio Calabria", "Messina", "Palermo"],
     es: ["Barcelona", "Girona", "Zaragoza", "Pamplona", "San Sebastián", "Bilbao", "Santander", "Oviedo", "Santiago", "Salamanca", "Segovia", "Madrid", "Toledo", "Cuenca", "Valencia", "Alicante", "Murcia", "Almería", "Granada", "Córdoba", "Sevilla", "Cádiz", "Málaga", "Palma", "Tenerife", "Las Palmas"],
     en: ["London", "Brighton", "Oxford", "Bath", "Bristol", "Cardiff", "Birmingham", "Cambridge", "Norwich", "Nottingham", "Sheffield", "Liverpool", "Manchester", "Leeds", "York", "Durham", "Newcastle", "Edinburgh", "Glasgow", "Stirling", "Dundee", "Aberdeen", "Inverness", "Belfast", "Galway", "Dublin"],
     fr: ["Paris", "Lille", "Rouen", "Caen", "Rennes", "Brest", "Nantes", "Tours", "La Rochelle", "Bordeaux", "Biarritz", "Toulouse", "Carcassonne", "Montpellier", "Marseille", "Nice", "Avignon", "Lyon", "Annecy", "Grenoble", "Dijon", "Strasbourg", "Nancy", "Reims", "Orléans", "Versailles"],
@@ -508,6 +508,8 @@
   };
   const tripUnits = (ss) => { const out = []; ((C().plan && C().plan.levels) || []).forEach((lv, li) => (lv.units || []).forEach((u, ui) => { const ux = ss.filter((x) => x.li === li && x.ui === ui); if (ux.length) out.push({ lv, li, u, ui, ux, key: li + ":" + ui }); })); return out; };
   const cityOf = (k) => { const r = ROUTES[C().id]; return r ? r[k % r.length] : "Escale " + (k + 1); };
+  // Une étape est bouclée quand chaque leçon est faite, ou mise de côté parce qu'elle a été ajoutée en amont de quelqu'un déjà plus loin.
+  const fin = (x) => isDone(x) || (typeof skipLate === "function" && skipLate(x));
   const starsOf = (x) => { const st = S[x.key] || {}; return !st.done ? 0 : st.best == null ? 2 : st.best >= 85 ? 3 : st.best >= 65 ? 2 : 1; };
   const CHEST = 50, LESSON_MILES = 25;
   const TI = {
@@ -548,7 +550,7 @@
     const units = tripUnits(ss); if (!units.length) return null;
     const hereK = cu ? units.findIndex((u) => u.li === cu.li && u.ui === cu.ui) : units.length - 1;
     let k = units.findIndex((u) => u.key === TU); if (k < 0) k = Math.max(0, hereK);
-    const U = units[k], ux = U.ux, NX = units[k + 1], doneN = ux.filter(isDone).length, allDone = doneN === ux.length;
+    const U = units[k], ux = U.ux, NX = units[k + 1], doneN = ux.filter(isDone).length, allDone = ux.every(fin);
     const sec = el("section", "trip"); sec.dataset.stage = String(k + 1);
     // L'étape : d'où à où, le thème de l'unité, et de quoi passer à la précédente ou à la suivante.
     const hd = el("div", "trip-hd"), ti = el("div", "trip-ti"), l1 = el("div", "trip-l1");
@@ -623,7 +625,7 @@
         if (d) { meta.append(starRow(starsOf(x), "tb-stars")); if (stt.best != null) chip(stt.best + " %", "ok"); }
         else if (!m) chip("À PRÉPARER");
         else if (started) chip("REPRISE " + Math.round(100 * stt.i / sc) + " %");
-        else chip(sc + " ÉCRANS");
+        else chip(sizeLabel(m));
         if (!d) chip("+" + LESSON_MILES + " MILES");
         body.append(meta); main.append(body);
         go(!m ? (AI ? "Préparer" : "Bientôt") : d ? "Refaire" : started ? "Reprendre" : isCur ? "Embarquer" : "Commencer", () => openSlot(x), d || (!isCur && !started));
@@ -640,6 +642,50 @@
   window.TRIP = { units: tripUnits, city: cityOf, stars: starsOf, CHEST, LESSON_MILES, sign: flapSign, fit: fitSign };
   // Miles gagnés pendant une leçon : on note le total à l'ouverture, la fin de leçon affiche la différence.
   let XP0 = null; { const go0 = go; go = function (mi) { try { XP0 = { mi, xp: milesNow() }; } catch (e) { XP0 = null; } return go0.apply(this, arguments); }; }
+
+  /* ---------- Escales : une leçon se fait en deux ou trois arrêts ----------
+     Les arrêts tombent à intervalles réguliers (une dizaine d'écrans), jamais juste après une explication ni au milieu du
+     dialogue et de ses questions ; une leçon peut aussi fixer les siens (champ stops). Rien ne change dans les positions
+     enregistrées : l'écran d'escale s'affiche en arrivant sur l'écran suivant, il n'est pas compté. */
+  function escStops(m) {
+    let q; try { q = screens(m); } catch (e) { return []; } const n = q.length;
+    if (Array.isArray(m.stops) && m.stops.length) return [...new Set(m.stops.filter((i) => Number.isInteger(i) && i > 1 && i < n - 1))].sort((a, b) => a - b);
+    if (n < 16) return [];
+    const E = n < 24 ? 2 : 3, P = q.findIndex((x) => x.t === "v"), D = q.findIndex((x) => x.t === "d"), lo = Math.max(0, P) + 3, hi = D < 0 ? n - 2 : D, out = [];
+    for (let k = 1; k < E; k++) {
+      let i = Math.round(n * k / E); if (hi - i <= 3) i = hi; i = Math.max(lo, Math.min(hi, i));
+      while (i < hi && q[i - 1] && q[i - 1].t === "l") i++;
+      if (!out.length || i > out[out.length - 1] + 3) out.push(i);
+    }
+    return out;
+  }
+  // Où en est-on : numéro de l'escale en cours (1…n) pour l'écran i.
+  const escAt = (m, i) => { const st = escStops(m); return { k: st.filter((x) => x <= i).length + 1, n: st.length + 1, st }; };
+  // Sur les panneaux : « 3 ESCALES » plutôt que « 29 ÉCRANS ».
+  const sizeLabel = (m) => { const st = escStops(m); return st.length ? (st.length + 1) + " ESCALES" : screens(m).length + " ÉCRANS"; };
+  function escale(k, n, resume) {
+    view = "course"; root.innerHTML = ""; try { stopSpeech(); } catch (e) { /* rien */ } window.scrollTo(0, 0);
+    const T = tally(), e = el("main", "esc"), tag = el("div", "g-tag");
+    const tn = txt("span", "g-tag-n", k + "/" + n); tn.setAttribute("data-no-i18n", ""); tag.append(txt("span", "g-tag-t", "ESCALE"), tn);
+    const who = el("div", "esc-lino"); who.append(lino("joy", 116));
+    const line = el("div", "esc-line"); line.setAttribute("aria-hidden", "true"); for (let j = 1; j <= n; j++) line.append(el("i", j <= k ? "on" : ""));
+    const info = el("div", "esc-info");
+    if (T.n) info.append(txt("span", "tb-flap", T.ok > 1 ? T.ok + " bonnes réponses sur " + T.n : T.ok + " bonne réponse sur " + T.n));
+    try { const g = XP0 && XP0.mi === cur.mi ? milesNow() - XP0.xp : 0; if (g > 0) info.append(txt("span", "tb-flap gold", "+" + g + " MILES")); } catch (x) { /* rien */ }
+    e.append(tag, who, txt("h2", "esc-h", ["Première escale !", "Deuxième escale !", "Troisième escale !"][k - 1] || "Escale !"), line, info,
+      txt("p", "esc-p", "Ta place est gardée : continue maintenant, ou reprends ici plus tard."));
+    const acts = el("div", "esc-acts"), go1 = btn("Continuer", "primary"), stop = btn("M'arrêter là pour aujourd'hui");
+    go1.onclick = resume; stop.onclick = () => home(); acts.append(go1, stop); e.append(acts); root.append(e);
+    try { if (window.NATIVE && NATIVE.haptic) NATIVE.haptic("success"); } catch (x) { /* rien */ }
+    go1.focus({ preventScroll: true });
+  }
+  { const next0 = next; next = function () { if (cur) cur.fwd = true; return next0.apply(this, arguments); };
+    const show0 = show; show = function () {
+      const fwd = cur && cur.fwd; if (cur) cur.fwd = false;
+      if (fwd && cur && cur.i < cur.base) { const a = escAt(M[cur.mi], cur.i); if (a.st.includes(cur.i)) return escale(a.k - 1, a.n, () => show()); }
+      return show0.apply(this, arguments);
+    }; }
+  window.ESC = { stops: escStops, at: escAt };
 
   /* ---------- Actu ---------- */
   let NEDIT = false;
@@ -826,7 +872,7 @@
   // Le passeport : un tampon par ville de l'itinéraire, encré quand la ville est atteinte (étape terminée).
   function passport() {
     const us = tripUnits(slots()); if (!us.length) return null;
-    const n = us.length + 1; let reach = 0; while (reach < us.length && us[reach].ux.every(isDone)) reach++;
+    const n = us.length + 1; let reach = 0; while (reach < us.length && us[reach].ux.every(fin)) reach++;
     const c = card("psp"), h = el("div", "pg-h"); h.append(txt("b", null, "Passeport"), txt("small", "muted", reach ? (reach + 1) + " villes sur " + n : "1 ville sur " + n)); c.append(h);
     const row = el("div", "psp-row");
     for (let k = 0; k < n; k++) {
@@ -1024,6 +1070,12 @@
       const top = b.querySelector(".top"), prog = b.querySelector(".prog"), sub = b.querySelector(".sub"), where = top.querySelector(".where"), count = sub && sub.querySelector(".count");
       if (prog) top.insertBefore(prog, where); if (count) top.insertBefore(count, where); if (sub && where) sub.insertBefore(where, sub.firstChild);
       b.classList.add("lesson-bar");
+      // Les escales : des repères sur la ligne de progression, et « Escale 2/3 » à la place du compte d'écrans.
+      try {
+        if (cur && cur.i < cur.base && prog) { const a = escAt(M[cur.mi], cur.i);
+          if (a.n > 1) { a.st.forEach((i) => { const t = el("b", "prog-stop" + (i <= cur.i ? " on" : "")); t.style.left = (100 * i / cur.q.length) + "%"; prog.append(t); });
+            if (count) { const nn = txt("span", null, " " + a.k + "/" + a.n); nn.setAttribute("data-no-i18n", ""); count.textContent = ""; count.classList.add("esc-count"); count.append(txt("span", null, "Escale"), nn); } } }
+      } catch (e) { /* rien */ }
     } else if (back) { const lbl = back.textContent.replace(/^←\s*/, "").trim(); back.innerHTML = IC.prev + "<span></span>"; back.classList.add("back-btn"); if (lbl) { back.setAttribute("aria-label", "Retour : " + lbl); back.title = lbl; } }
     b.querySelectorAll(".sub > .linkbtn").forEach((l) => { const hit = LINKS.find(([re]) => re.test(l.textContent)); if (hit) { l.innerHTML = hit[1]; l.classList.add("icon-btn"); l.setAttribute("aria-label", hit[2]); l.title = hit[2]; } });
   }
@@ -1074,7 +1126,7 @@
     // L'étape : où on en est sur la ligne, entre les deux villes ; le coffre s'ouvre à l'arrivée.
     const x = slots().find((y) => y.mi === cur.mi);
     if (x) {
-      const us = tripUnits(slots()), k = us.findIndex((u) => u.li === x.li && u.ui === x.ui), ux = k >= 0 ? us[k].ux : [], d = ux.filter(isDone).length, left = ux.length - d;
+      const us = tripUnits(slots()), k = us.findIndex((u) => u.li === x.li && u.ui === x.ui), ux = k >= 0 ? us[k].ux : [], d = ux.filter(isDone).length, left = ux.filter((y) => !fin(y)).length;
       if (k >= 0) {
         const u = el("div", "end-leg rise"), cap = el("div", "el-cap"), a = el("span"), b = el("span"), mid = el("b");
         a.setAttribute("data-no-i18n", ""); a.textContent = cityOf(k).toLocaleUpperCase(); b.setAttribute("data-no-i18n", ""); b.textContent = cityOf(k + 1).toLocaleUpperCase();

@@ -80,11 +80,43 @@
   }
   const verdict = (r, answer) => r.how === "exact" ? null : r.how === "accent" ? (HEB.test(answer) ? "Attention aux lettres finales : " : "Attention à l'accent : ") + answer + "." : r.how === "typo" ? "Presque, attention à l'orthographe : " + answer + "." : null;
 
+  /* Départ en douceur : dans la toute première étape d'un cours (et l'étape « Premiers mots » qui la précède), on choisit
+     et on assemble ; on tape à partir de l'étape suivante. Ne vaut que pour les leçons du programme. */
+  window.EASY = function (mi) {
+    try {
+      if (mi == null) { if (!cur || cur.mi == null) return false; mi = cur.mi; }
+      const ss = slots(), x = ss.find((y) => y.mi === mi); if (!x || x.li !== 0) return false;
+      const first = ss.find((y) => y.li === 0 && !(y.u && y.u.start)); return x.ui <= (first ? first.ui : 0);
+    } catch (e) { return false; }
+  };
   /* Exercices à choix des leçons : réponse libre si la réponse attendue est courte et la phrase à trous. */
   const baseM = R.m;
+  /* Phrases à trous, au départ : quatre propositions (la bonne réponse et trois autres réponses de la même leçon) au lieu de la saisie. */
+  const baseF = R.f;
+  R.f = function (s) {
+    if (!EASY()) return baseF(s);
+    const d = s.d, answers = String(d[2]).split("|").map((a) => a.trim()), good = answers[0], low = (t) => norm(String(t));
+    const pool = [];
+    const add = (t) => { t = String(t || "").split("|")[0].trim(); if (!t || answers.some((a) => low(a) === low(t)) || pool.some((p) => low(p) === low(t))) return; if (/^[A-ZÀ-Ý]/.test(good) !== /^[A-ZÀ-Ý]/.test(t)) t = (/^[A-ZÀ-Ý]/.test(good) ? t.charAt(0).toUpperCase() : t.charAt(0).toLowerCase()) + t.slice(1); pool.push(t); };
+    // Les fausses pistes viennent de la leçon, des plus proches aux plus lointaines : d'abord les autres formes du même mot
+    // (même indice entre parenthèses : « (essere) » → sei, è, siamo), puis les propositions d'un exercice à choix qui contient
+    // la réponse, enfin les réponses des autres phrases à trous, les plus proches en longueur.
+    const m = M[cur.mi], hintOf = (q) => { const h = /\(([^)]+)\)/.exec(String(q || "")); return h ? low(h[1]) : ""; }, h0 = hintOf(d[1]);
+    if (h0) shuffle(m.ex.filter((x) => x[0] === "f" && x !== d && hintOf(x[1]) === h0)).forEach((x) => add(x[2]));
+    m.ex.forEach((x) => { if (pool.length < 3 && x[0] === "m" && Array.isArray(x[2]) && x[2].some((o) => low(o) === low(good))) shuffle(x[2].slice()).forEach(add); });
+    // Leçons courtes : les mots de la leçon, sans leur article, complètent la liste — en premier quand la réponse est elle-même un mot du lexique.
+    const byLen = (a) => a.sort((x, y) => Math.abs(x.length - good.length) - Math.abs(y.length - good.length));
+    const vw = []; (m.vocab || []).forEach((w) => String(w[0]).split(/[,\/]/).forEach((p) => { p = p.trim().replace(/[?!.…]+$/, "").replace(/^(il|lo|la|i|gli|le|un|uno|una)\s+|^(l'|un')/i, ""); if (p && !/\s/.test(p)) vw.push(p); }));
+    const others = () => byLen(m.ex.filter((x) => x[0] === "f" && x !== d).map((x) => String(x[2]).split("|")[0].trim())).forEach(add);
+    const lex = () => { if (!/\s/.test(good)) byLen(vw.slice()).forEach(add); };
+    if (pool.length < 3) { if (vw.some((w) => low(w) === low(good))) { lex(); if (pool.length < 3) others(); } else { others(); if (pool.length < 3) lex(); } }
+    const near = pool.slice(0, 3);
+    if (near.length < 2) return baseF(s);
+    return baseM({ t: "m", d: ["m", d[1], [good].concat(near), d[3]].concat(d[4] ? [d[4]] : []), retry: s.retry, pushed: s.pushed });
+  };
   R.m = function (s) {
     const d = s.d, good = d[2][0];
-    if (!(/___/.test(d[1]) && good.split(/\s+/).length <= 4 && good.length <= 32)) return baseM(s);
+    if (EASY() || !(/___/.test(d[1]) && good.split(/\s+/).length <= 4 && good.length <= 32)) return baseM(s);
     if (d[4]) body.append(el("p", "fr", d[4]));
     const h = (d[1].match(/___/g) || []).length === 1 && !/___\s*\(/.test(d[1]) ? hint(d[2]) : "";
     body.append(el("p", "q", fmt(h ? d[1].replace("___", "___ (" + h + ")") : d[1])));
