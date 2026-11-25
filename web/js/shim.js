@@ -353,9 +353,11 @@
     if (opts.back || opts.step) {
       const top = $("div", "g-top");
       if (opts.back) { const b = $("button", "g-back"); b.type = "button"; b.setAttribute("aria-label", "Retour"); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.onclick = opts.back; top.append(b); }
-      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 7"); for (let k = 1; k <= 7; k++) d.append($("i", k <= opts.step ? "on" : "")); top.append(d); }
+      if (opts.step) { const d = $("div", "g-dots"); d.setAttribute("aria-label", "Étape " + opts.step + " sur 7"); for (let k = 1; k <= 7; k++) d.append($("i", (k <= opts.step ? "on" : "") + (k === opts.step ? " now" : ""))); top.append(d); }
       box.append(top);
     }
+    // L'enregistrement avant le départ : chaque écran porte son étiquette d'affichage (« DESTINATION », « PASSAGER »…).
+    if (opts.tag) { const t = $("div", "g-tag"); t.append($("span", "g-tag-t", opts.tag)); if (opts.step) { const n = $("span", "g-tag-n", opts.step + "/7"); n.setAttribute("data-no-i18n", ""); t.append(n); } box.append(t); }
     gate.append(box); return box;
   }
   // Le curseur va dans le premier champ, sauf si la personne a déjà touché un autre champ entre-temps.
@@ -386,21 +388,39 @@
   }
   function choice(box, items, multi, selected, onPick) {
     const list = $("div", "g-choices");
-    items.forEach(([val, label, sub]) => {
+    items.forEach(([val, label, sub, lead, tail]) => {
       const b = $("button", "g-choice"); b.type = "button"; b.setAttribute("aria-pressed", String(multi ? selected.includes(val) : selected === val));
-      const t = $("b", null, label); b.append(t); if (sub) b.append($("small", null, sub));
+      if (lead) { b.classList.add("has-lead"); b.append(lead); }
+      const tx = $("span", "g-ct"), t = $("b", null, label); tx.append(t); if (sub) tx.append($("small", null, sub)); b.append(tx);
+      if (tail) b.append(tail);
+      const ck = $("span", "g-ck"); ck.setAttribute("aria-hidden", "true"); ck.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.500l4.500 4.500L19 7.500"/></svg>'; b.append(ck);
       b.onclick = () => { onPick(val); [...list.children].forEach((c, k) => c.setAttribute("aria-pressed", String(multi ? OB.why.includes(items[k][0]) : items[k][0] === val))); };
       list.append(b);
     });
     box.append(list); return list;
   }
+  // Visuels des choix : drapeau, pictogramme dans une tuile, chiffres ou nom de ville en lettres d'affichage, barres de niveau.
+  const gFlag = (id) => $("i", "flag flag-" + id + " g-lead");
+  const GSV = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+  const GPIC = {
+    voyage: GSV('<path d="M3.500 11.500l16-7-5.500 16-3-6.500z"/><path d="M11 14l8.500-9.500"/>'),
+    proches: GSV('<path d="M4.500 6.500a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.500 3.500v-3.500a2 2 0 0 1-2-2z"/>'),
+    travail: GSV('<rect x="3.500" y="7.500" width="17" height="12" rx="2.500"/><path d="M9 7.500V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.500M3.500 13h17"/>'),
+    culture: GSV('<path d="M9 18V6l10-2v12"/><circle cx="6.500" cy="18" r="2.500"/><circle cx="16.500" cy="16" r="2.500"/>'),
+    plaisir: GSV('<path d="M12 20s-7-4.400-7-9.600A3.900 3.900 0 0 1 12 8a3.900 3.900 0 0 1 7 2.400C19 15.600 12 20 12 20z"/>'),
+    test: GSV('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.500"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'),
+  };
+  const gPic = (n) => { const e = $("span", "picto g-lead"); e.setAttribute("aria-hidden", "true"); e.innerHTML = GPIC[n] || GPIC.voyage; return e; };
+  const gTiles = (txt, cls) => { const f = $("span", "flap" + (cls ? " " + cls : "")); f.setAttribute("aria-hidden", "true"); f.setAttribute("data-no-i18n", ""); [...String(txt)].forEach((ch) => f.append($("i", ch === " " ? "sp" : "", ch === " " ? "" : ch))); return f; };
+  const gBars = (n) => { const e = $("span", "g-bars g-lead"); e.setAttribute("aria-hidden", "true"); for (let k = 1; k <= 4; k++) e.append($("i", k <= n ? "on" : "")); return e; };
+  const GCITY = { it: "ROMA", es: "MADRID", en: "LONDON", fr: "PARIS", he: "TEL AVIV" };
   // Étape 1 : la langue de l'élève. L'app s'affiche aussitôt dans cette langue (français, anglais ou espagnol).
   function stepNative() {
-    const box = frame({ back: welcome, step: 1 });
+    const box = frame({ back: welcome, step: 1, tag: "TA LANGUE" });
     const cur = OB.ui || (window.I18N ? I18N.ui : "fr");
     box.append($("h1", null, "Quelle est ta langue ?"), $("p", "g-sub", "L'app, les explications et les traductions seront dans cette langue."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
-    const list = choice(box, [["fr", "Français", "Je parle français"], ["en", "English", "I speak English"], ["es", "Español", "Hablo español"]], false, cur, (v) => {
+    const list = choice(box, [["fr", "Français", "Je parle français", gFlag("fr")], ["en", "English", "I speak English", gFlag("en")], ["es", "Español", "Hablo español", gFlag("es")]], false, cur, (v) => {
       OB.ui = v; if (OB.course === v) OB.course = "";
       if (window.I18N && I18N.ui !== v) I18N.use(v).then(stepNative);
     });
@@ -410,38 +430,38 @@
   // Étape 2 : la langue à apprendre. L'hébreu s'écrit avec un autre alphabet : son parcours commence par les lettres.
   // Un hispanophone n'apprend pas l'espagnol : sa langue n'est pas proposée.
   function stepLang() {
-    const box = frame({ back: stepNative, step: 2 });
+    const box = frame({ back: stepNative, step: 2, tag: "DESTINATION" });
     box.append($("h1", null, "Quelle langue veux-tu apprendre ?"), $("p", "g-sub", "Tu pourras en changer, ou apprendre les deux : chaque langue garde sa progression."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.course;
-    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1"], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1"], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet"], ["fr", (window.T ? T("français") : "français").replace(/^./, (c) => c.toUpperCase()), "Bonjour ! De zéro jusqu'au niveau B1"], ["en", (window.T ? T("anglais") : "anglais").replace(/^./, (c) => c.toUpperCase()), "Hello! De zéro jusqu'au niveau B1"]].filter(([v]) => v !== (OB.ui || (window.I18N ? I18N.ui : "fr"))), false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
+    const list = choice(box, [["it", "Italien", "Ciao ! De zéro jusqu'au niveau B1", gFlag("it"), gTiles(GCITY.it, "g-tail")], ["es", "Espagnol", "¡Hola! De zéro jusqu'au niveau B1", gFlag("es"), gTiles(GCITY.es, "g-tail")], ["he", "Hébreu", "שָׁלוֹם ! On commence par l'alphabet", gFlag("he"), gTiles(GCITY.he, "g-tail")], ["fr", (window.T ? T("français") : "français").replace(/^./, (c) => c.toUpperCase()), "Bonjour ! De zéro jusqu'au niveau B1", gFlag("fr"), gTiles(GCITY.fr, "g-tail")], ["en", (window.T ? T("anglais") : "anglais").replace(/^./, (c) => c.toUpperCase()), "Hello! De zéro jusqu'au niveau B1", gFlag("en"), gTiles(GCITY.en, "g-tail")]].filter(([v]) => v !== (OB.ui || (window.I18N ? I18N.ui : "fr"))), false, OB.course, (v) => { OB.course = v; OB.why = []; go.disabled = false; });
     list.classList.add("g-langs");
     go.onclick = stepWhy; box.append(go);
   }
   function stepWhy() {
-    const box = frame({ back: stepLang, step: 3 });
+    const box = frame({ back: stepLang, step: 3, tag: "MOTIF DU VOYAGE" });
     box.append($("h1", null, "Pourquoi " + LANGN() + " ?"), $("p", "g-sub", "Choisis tout ce qui compte pour toi. Les conversations s'en inspireront."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button"; go.disabled = !OB.why.length;
-    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : OB.course === "fr" ? "Voyager en France ou dans un pays francophone" : OB.course === "en" ? "Voyager aux États-Unis ou au Royaume-Uni" : "Voyager en Italie"], ["proches", "Parler avec des amis ou de la famille"], ["travail", "Pour le travail"], ["culture", "La culture : cinéma, musique, cuisine"], ["plaisir", "Pour le plaisir d'apprendre"]], true, OB.why,
+    choice(box, [["voyage", OB.course === "he" ? "Voyager en Israël" : OB.course === "es" ? "Voyager en Espagne ou en Amérique latine" : OB.course === "fr" ? "Voyager en France ou dans un pays francophone" : OB.course === "en" ? "Voyager aux États-Unis ou au Royaume-Uni" : "Voyager en Italie", "", gPic("voyage")], ["proches", "Parler avec des amis ou de la famille", "", gPic("proches")], ["travail", "Pour le travail", "", gPic("travail")], ["culture", "La culture : cinéma, musique, cuisine", "", gPic("culture")], ["plaisir", "Pour le plaisir d'apprendre", "", gPic("plaisir")]], true, OB.why,
       (v) => { OB.why = OB.why.includes(v) ? OB.why.filter((x) => x !== v) : OB.why.concat(v); go.disabled = !OB.why.length; });
     go.onclick = stepLevel; box.append(go);
   }
   function stepLevel() {
-    const box = frame({ back: stepWhy, step: 4 });
+    const box = frame({ back: stepWhy, step: 4, tag: "NIVEAU" });
     box.append($("h1", null, "Tu en es où ?"), $("p", "g-sub", OB.ptest && OB.ptest.c === OB.course ? "Résultat du test : " + OB.ptest.label + ". Tu peux encore choisir toi-même." : "Fais le test, ou choisis toi-même. Tu pourras changer de niveau à tout moment."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
     if (!(OB.ptest && OB.ptest.c === OB.course)) {
-      const t = $("button", "g-testbtn"); t.type = "button"; t.innerHTML = "<b>Faire le test de niveau</b><small>12 questions, 3 minutes</small>";
+      const t = $("button", "g-testbtn"); t.type = "button"; t.innerHTML = "<span class=\"g-ct\"><b>Faire le test de niveau</b><small>12 questions, 3 minutes</small></span>"; t.prepend(gPic("test"));
       t.onclick = () => placement(OB.course, (r) => { OB.ptest = { c: OB.course, lv: r.label, label: r.label }; if (OB.course === "he") OB.start = r.start; else OB.lv = r.start; stepLevel(); }, stepLevel);
       box.append(t, $("p", "g-or", "ou choisis toi-même"));
     }
     if (OB.course === "he") {
       // Hébreu : le point de départ dans le parcours, puis la façon dont les personnages s'adressent à toi (l'hébreu tutoie au masculin ou au féminin).
-      choice(box, [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement"], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles"],
-        ["he-u04-l1", "Je lis et je connais quelques mots", "On commence au niveau A1"], ["he-u08-l1", "Je me débrouille", "Je parle déjà au présent (A2)"]], false, OB.start, (v) => { OB.start = v; });
+      choice(box, [["", "Je ne connais pas l'alphabet", "On commence par les lettres, tout doucement", gBars(1)], ["he-u03-l1", "Je lis un peu, avec les voyelles", "On reprend à la lecture sans voyelles", gBars(2)],
+        ["he-u04-l1", "Je lis et je connais quelques mots", "On commence au niveau A1", gBars(3)], ["he-u08-l1", "Je me débrouille", "Je parle déjà au présent (A2)", gBars(4)]], false, OB.start, (v) => { OB.start = v; });
       box.append($("h2", "g-h2", "En hébreu, on te dit…"));
       const gl = choice(box, [["m", "אַתָּה (ata)", "au masculin"], ["f", "אַתְּ (at)", "au féminin"]], false, OB.g, (v) => { OB.g = v; go.disabled = false; });
       gl.classList.add("g-two"); go.disabled = !OB.g;
-    } else choice(box, [[0, "Je débute", "Quelques mots, pas plus"], [0.5, "Je connais les bases", "Je me présente, je commande un café"], [1, "Je me débrouille", "Je tiens une conversation simple (A2)"], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)"]], false, OB.lv, (v) => { OB.lv = v; });
+    } else choice(box, [[0, "Je débute", "Quelques mots, pas plus", gBars(1)], [0.5, "Je connais les bases", "Je me présente, je commande un café", gBars(2)], [1, "Je me débrouille", "Je tiens une conversation simple (A2)", gBars(3)], [2, "Je suis à l'aise", "Je parle de beaucoup de sujets (B1)", gBars(4)]], false, OB.lv, (v) => { OB.lv = v; });
     go.onclick = stepGoal; box.append(go);
   }
   /* Test de niveau : 4 paliers de 3 questions, du plus simple au plus difficile. On monte tant qu'un palier est réussi
@@ -500,6 +520,7 @@
       const [q, opts] = blocks[b][k];
       const box = frame({ back: onBack, cls: "g-test" });
       const pr = $("div", "g-tprog"); const fill = $("i"); fill.style.width = Math.round(100 * qn / total) + "%"; pr.append(fill); box.append(pr);
+      { const tg = $("div", "g-tag"); tg.append($("span", "g-tag-t", "TEST DE NIVEAU")); box.append(tg); }
       box.append($("p", "g-tstep", "Question " + (qn + 1) + " · palier " + (b + 1) + " sur " + blocks.length));
       const h = $("h1", "g-tq", q); if (/[֐-׿]/.test(q)) h.dir = "auto"; box.append(h);
       const list = $("div", "g-choices g-topts");
@@ -541,25 +562,42 @@
     },
   };
   function stepGoal() {
-    const box = frame({ back: stepLevel, step: 5 });
+    const box = frame({ back: stepLevel, step: 5, tag: "RYTHME" });
     box.append($("h1", null, "Combien de temps par jour ?"), $("p", "g-sub", "Un petit objectif tenu chaque jour vaut mieux qu'un grand de temps en temps."));
     const go = $("button", "g-cta", "Continuer"); go.type = "button";
-    choice(box, [[8, "5 minutes", "Tranquille"], [12, "10 minutes", "Régulier"], [20, "20 minutes", "Sérieux"], [30, "30 minutes et plus", "Intense"]], false, OB.goal, (v) => { OB.goal = v; });
+    choice(box, [[8, "5 minutes", "Tranquille", gTiles("05", "g-lead")], [12, "10 minutes", "Régulier", gTiles("10", "g-lead")], [20, "20 minutes", "Sérieux", gTiles("20", "g-lead")], [30, "30 minutes et plus", "Intense", gTiles("30", "g-lead")]], false, OB.goal, (v) => { OB.goal = v; });
     go.onclick = stepName; box.append(go);
   }
+  // Prénom en lettres d'affichage (12 au plus), à la bonne taille pour tenir sur une ligne ; cases vides tant qu'il n'y a rien.
+  function passName(v, max) {
+    const n = String(v || "").trim().split(/\s+/)[0].toLocaleUpperCase().slice(0, 12), f = gTiles(n || "      ", n ? "" : "empty");
+    const W = Math.min(window.innerWidth || 390, 460) - 40 - 36, len = Math.max(n.length, 6);
+    f.style.setProperty("--fw", Math.max(12, Math.min(max || 26, Math.floor((W - 3 * (len - 1)) / len))) + "px"); return f;
+  }
   function stepName() {
-    const box = frame({ back: stepGoal, step: 6 });
+    const box = frame({ back: stepGoal, step: 6, tag: "PASSAGER" });
     box.append($("h1", null, "Comment tu t'appelles ?"), $("p", "g-sub", "C'est le prénom que verront tes amis dans l'app."));
+    // Le prénom s'affiche en lettres de gare à mesure qu'il est tapé.
+    const bd = $("div", "g-pass"), row = $("div", "g-pass-row"); bd.setAttribute("aria-hidden", "true"); bd.append($("span", "g-pass-l", "PASSAGER"), row); box.append(bd);
     const f = document.createElement("form"); f.className = "g-form";
     const [w, i] = field("g-name", "Ton prénom", "text", { autocomplete: "given-name", maxLength: 40, value: OB.name });
     i.setAttribute("autocapitalize", "words");
+    const spell = () => { row.innerHTML = ""; row.append(passName(i.value)); }; i.addEventListener("input", spell); spell();
     const go = $("button", "g-cta", "Continuer"); go.type = "submit";
     f.append(w, go); f.onsubmit = (e) => { e.preventDefault(); OB.name = i.value.trim(); if (!OB.name) return i.focus(); signup(); };
     box.append(f); setTimeout(() => softFocus(i), 60);
   }
   function signup() {
-    const box = frame({ back: stepName, step: 7 });
+    const box = frame({ back: stepName, step: 7, tag: "BILLET" });
     box.append($("h1", null, "Crée ton compte, " + OB.name), $("p", "g-sub", "Pour retrouver ta progression sur tous tes appareils."));
+    // La carte d'embarquement : ce qui vient d'être choisi (prénom, destination, rythme).
+    { const bp = $("div", "g-pass g-bp"); bp.setAttribute("aria-hidden", "true");
+      const hd = $("div", "g-bp-hd"); hd.append($("span", "g-pass-l", "CARTE D'EMBARQUEMENT")); bp.append(hd);
+      const two = $("div", "g-bp-two"), c1 = $("div", "g-bp-col"), c2 = $("div", "g-bp-col");
+      c1.append($("span", "g-pass-l", "PASSAGER"), passName(OB.name, 15)); const ct = gTiles(GCITY[OB.course] || "ROMA"); ct.style.setProperty("--fw", "15px"); c2.append($("span", "g-pass-l", "DESTINATION"), ct);
+      two.append(c1, c2); bp.append(two);
+      const ft = $("div", "g-bp-ft"), mn = $("span", "tb-flap"); const num = $("span", null, String({ 8: 5, 12: 10, 20: 20, 30: 30 }[OB.goal] || 20)); num.setAttribute("data-no-i18n", ""); mn.append(num, $("span", null, "MIN PAR JOUR")); ft.append($("i", "flag flag-" + (OB.course || "it")), mn); bp.append(ft);
+      box.append(bp); }
     const f = document.createElement("form"); f.className = "g-form";
     const [we, ie] = field("g-email", "Adresse e-mail", "email", { autocomplete: "email", value: params.get("e") || "" });
     const [wp, ip] = field("g-pass", "Mot de passe (8 caractères au moins)", "password", { autocomplete: "new-password" });

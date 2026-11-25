@@ -364,5 +364,15 @@
  "Passer en mode sombre": "Cambiar a modo oscuro",
  "écrit…": "escribiendo…",
  "parle…": "hablando…",
- "Aujourd'hui": "Hoy"
+ "Aujourd'hui": "Hoy",
+ "TA LANGUE": "TU IDIOMA",
+ "DESTINATION": "DESTINO",
+ "MOTIF DU VOYAGE": "MOTIVO DEL VIAJE",
+ "NIVEAU": "NIVEL",
+ "RYTHME": "RITMO",
+ "PASSAGER": "PASAJERO",
+ "BILLET": "BILLETE",
+ "CARTE D'EMBARQUEMENT": "TARJETA DE EMBARQUE",
+ "MIN PAR JOUR": "MIN AL DÍA",
+ "TEST DE NIVEAU": "PRUEBA DE NIVEL"
 }

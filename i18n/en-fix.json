@@ -299,5 +299,15 @@
  "Passer en mode sombre": "Switch to dark mode",
  "écrit…": "typing…",
  "parle…": "speaking…",
- "Aujourd'hui": "Today"
+ "Aujourd'hui": "Today",
+ "TA LANGUE": "YOUR LANGUAGE",
+ "DESTINATION": "DESTINATION",
+ "MOTIF DU VOYAGE": "PURPOSE OF TRIP",
+ "NIVEAU": "LEVEL",
+ "RYTHME": "PACE",
+ "PASSAGER": "PASSENGER",
+ "BILLET": "TICKET",
+ "CARTE D'EMBARQUEMENT": "BOARDING PASS",
+ "MIN PAR JOUR": "MIN A DAY",
+ "TEST DE NIVEAU": "LEVEL TEST"
 }
